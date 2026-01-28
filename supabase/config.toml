@@ -1,0 +1,13 @@
+project_id = "pqfvsqeofqpavxwzilef"
+
+[functions.list-employees]
+verify_jwt = false
+
+[functions.create-employee]
+verify_jwt = false
+
+[functions.reset-password]
+verify_jwt = false
+
+[functions.export-database]
+verify_jwt = false
