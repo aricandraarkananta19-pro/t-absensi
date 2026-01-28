@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import ManagerRoute from "@/components/ManagerRoute";
+import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import EditPasswordKaryawan from "./pages/EditPasswordKaryawan";
@@ -52,6 +53,7 @@ const App = () => (
       <AuthProvider>
         <Toaster />
         <Sonner />
+        <PWAUpdatePrompt />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<RootRedirect />} />

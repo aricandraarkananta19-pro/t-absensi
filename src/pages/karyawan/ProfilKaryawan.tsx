@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, User, Phone, MapPin, Building2, Briefcase, Calendar, Save, Mail } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Building2, Briefcase, Save, Mail, ChevronRight, LogOut, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import MobileNavigation from "@/components/MobileNavigation";
 
 const profileSchema = z.object({
   full_name: z.string().min(2, "Nama minimal 2 karakter"),
@@ -36,7 +38,8 @@ interface Profile {
 
 const ProfilKaryawan = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const isMobile = useIsMobile();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -132,6 +135,15 @@ const ProfilKaryawan = () => {
     setIsLoading(false);
   };
 
+  const handleLogout = async () => {
+    await signOut();
+    toast({
+      title: "Logout berhasil",
+      description: "Sampai jumpa kembali!",
+    });
+    navigate("/auth");
+  };
+
   if (isFetching) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -140,6 +152,209 @@ const ProfilKaryawan = () => {
     );
   }
 
+  // ==========================================
+  // iOS MOBILE VIEW
+  // ==========================================
+  if (isMobile) {
+    return (
+      <div className="ios-mobile-container">
+        {/* iOS Profile Header */}
+        <header className="ios-header" style={{ paddingBottom: "100px" }}>
+          <div className="relative z-10">
+            {/* Back Button Row */}
+            <div className="flex items-center justify-between mb-6">
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="p-2 -ml-2 rounded-full bg-white/10 active:bg-white/20 transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5 text-white" />
+              </button>
+              <h1 className="text-lg font-semibold text-white">Profil Saya</h1>
+              <div className="w-9" /> {/* Spacer for alignment */}
+            </div>
+
+            {/* Profile Info */}
+            <div className="ios-profile-header">
+              <div className="ios-avatar">
+                <User className="h-12 w-12" />
+              </div>
+              <h2 className="ios-profile-name">
+                {profile?.full_name || user?.email?.split("@")[0]}
+              </h2>
+              <p className="ios-profile-email">{user?.email}</p>
+              {profile?.position && (
+                <div className="mt-2 px-4 py-1.5 bg-white/20 rounded-full">
+                  <span className="text-sm text-white/90">{profile.position}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* Profile Content */}
+        <div className="px-4 -mt-16">
+          {/* Quick Actions */}
+          <div className="ios-list mb-6">
+            <button
+              onClick={() => navigate("/edit-password")}
+              className="ios-list-item w-full text-left"
+            >
+              <div className="ios-list-icon" style={{ background: "linear-gradient(135deg, #5856D6 0%, #AF52DE 100%)" }}>
+                <Key className="h-4 w-4 text-white" />
+              </div>
+              <div className="ios-list-content">
+                <p className="ios-list-title">Ubah Password</p>
+                <p className="ios-list-subtitle">Ganti kata sandi akun</p>
+              </div>
+              <ChevronRight className="ios-list-chevron h-5 w-5" />
+            </button>
+            <button
+              onClick={handleLogout}
+              className="ios-list-item w-full text-left"
+            >
+              <div className="ios-list-icon" style={{ background: "linear-gradient(135deg, #FF3B30 0%, #FF2D55 100%)" }}>
+                <LogOut className="h-4 w-4 text-white" />
+              </div>
+              <div className="ios-list-content">
+                <p className="ios-list-title text-red-500">Logout</p>
+                <p className="ios-list-subtitle">Keluar dari akun</p>
+              </div>
+              <ChevronRight className="ios-list-chevron h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Profile Form */}
+          <h3 className="ios-section-header">Informasi Pribadi</h3>
+          <div className="ios-card p-4 mb-6">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="full_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Nama Lengkap</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Nama lengkap" className="ios-input" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Nomor Telepon</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="08xxxxxxxxxx" className="ios-input" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="department"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Departemen</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Nama departemen" className="ios-input" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="position"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Jabatan</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Jabatan Anda" className="ios-input" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Alamat</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} placeholder="Alamat lengkap" rows={3} className="rounded-xl border-gray-200" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <button
+                  type="submit"
+                  className="ios-btn-primary flex items-center justify-center gap-2 mt-6"
+                  disabled={isLoading}
+                  style={{ background: "linear-gradient(180deg, hsl(211 100% 55%) 0%, hsl(211 100% 50%) 100%)", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)" }}
+                >
+                  {isLoading ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : (
+                    <Save className="h-5 w-5" />
+                  )}
+                  Simpan Perubahan
+                </button>
+              </form>
+            </Form>
+          </div>
+
+          {/* Account Info */}
+          <h3 className="ios-section-header">Informasi Akun</h3>
+          <div className="ios-list mb-8">
+            <div className="ios-list-item">
+              <div className="ios-list-icon" style={{ background: "linear-gradient(135deg, #5AC8FA 0%, #007AFF 100%)" }}>
+                <Mail className="h-4 w-4 text-white" />
+              </div>
+              <div className="ios-list-content">
+                <p className="ios-list-title">Email</p>
+                <p className="ios-list-subtitle">{user?.email}</p>
+              </div>
+            </div>
+            {profile?.join_date && (
+              <div className="ios-list-item">
+                <div className="ios-list-icon" style={{ background: "linear-gradient(135deg, #34C759 0%, #30D158 100%)" }}>
+                  <Briefcase className="h-4 w-4 text-white" />
+                </div>
+                <div className="ios-list-content">
+                  <p className="ios-list-title">Bergabung Sejak</p>
+                  <p className="ios-list-subtitle">
+                    {new Date(profile.join_date).toLocaleDateString("id-ID", {
+                      month: "long",
+                      year: "numeric"
+                    })}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* iOS Bottom Navigation */}
+        <MobileNavigation />
+      </div>
+    );
+  }
+
+  // ==========================================
+  // DESKTOP VIEW (Original - Unchanged)
+  // ==========================================
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
