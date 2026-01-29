@@ -256,16 +256,18 @@ const Laporan = () => {
 
   // Employee report export data
   const employeeExportColumns = [
-    { header: "Nama", key: "nama", width: 120 },
-    { header: "Departemen", key: "departemen", width: 80 },
-    { header: "Total Hadir", key: "total_hadir", width: 50 },
-    { header: "Tepat Waktu", key: "tepat_waktu", width: 50 },
-    { header: "Terlambat", key: "terlambat", width: 50 },
-    { header: "Cuti", key: "cuti", width: 40 },
+    { header: "No.", key: "no", width: 30 },
+    { header: "Employee Name", key: "nama", width: 120 },
+    { header: "Department", key: "departemen", width: 80 },
+    { header: "Total Attendance", key: "total_hadir", width: 60 },
+    { header: "On Time", key: "tepat_waktu", width: 50 },
+    { header: "Late", key: "terlambat", width: 50 },
+    { header: "Leave", key: "cuti", width: 40 },
   ];
 
   const getEmployeeExportData = () => {
-    return filteredReports.map(emp => ({
+    return filteredReports.map((emp, index) => ({
+      no: index + 1,
       nama: emp.full_name || "-",
       departemen: emp.department || "-",
       total_hadir: emp.total_attendance,
@@ -275,12 +277,13 @@ const Laporan = () => {
     }));
   };
 
-  const monthLabel = new Date(reportMonth + "-01").toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+  // English month label for report
+  const monthLabelEnglish = new Date(reportMonth + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   const handleExportEmployeeExcel = () => {
     exportToExcel({
-      title: "Laporan Kehadiran Karyawan",
-      subtitle: monthLabel,
+      title: "EMPLOYEE ATTENDANCE REPORT",
+      subtitle: monthLabelEnglish,
       filename: `laporan-karyawan-${reportMonth}`,
       columns: employeeExportColumns,
       data: getEmployeeExportData(),
@@ -288,11 +291,11 @@ const Laporan = () => {
     toast({ title: "Berhasil", description: "File Excel berhasil didownload" });
   };
 
-  const handleExportEmployeePDF = () => {
-    exportToPDF({
-      title: "Laporan Kehadiran Karyawan",
-      subtitle: monthLabel,
-      filename: `laporan-karyawan-${reportMonth}`,
+  const handleExportEmployeePDF = async () => {
+    await exportToPDF({
+      title: "EMPLOYEE ATTENDANCE REPORT",
+      subtitle: monthLabelEnglish,
+      filename: `employee-attendance-report-${reportMonth}`,
       columns: employeeExportColumns,
       data: getEmployeeExportData(),
     });
