@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface SystemSettings {
@@ -33,29 +33,20 @@ const defaultSettings: SystemSettings = {
   attendanceStartDate: new Date().toISOString().split("T")[0],
 };
 
+// Helper function to safely parse integer with fallback
+const safeParseInt = (value: string | undefined, fallback: number): number => {
+  if (!value) return fallback;
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? fallback : parsed;
+};
+
 export const useSystemSettings = () => {
   const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchSettings();
-
-    // Setup realtime subscription
-    const channel = supabase
-      .channel("settings-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "system_settings" },
-        () => fetchSettings()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
+    setLoadError(null);
     try {
       const { data, error } = await supabase
         .from("system_settings")
@@ -92,16 +83,36 @@ export const useSystemSettings = () => {
           requirePhotoOnClockIn: settingsMap.require_photo_on_clock_in === "true",
           autoClockOut: settingsMap.auto_clock_out === "true",
           autoClockOutTime: settingsMap.auto_clock_out_time || defaultSettings.autoClockOutTime,
-          maxLeaveDays: parseInt(settingsMap.max_leave_days) || defaultSettings.maxLeaveDays,
+          // NaN protection for maxLeaveDays
+          maxLeaveDays: safeParseInt(settingsMap.max_leave_days, defaultSettings.maxLeaveDays),
           attendanceStartDate: activeStartDate,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching settings:", error);
+      setLoadError(error.message || "Failed to load settings");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchSettings();
+
+    // Setup realtime subscription
+    const channel = supabase
+      .channel("settings-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "system_settings" },
+        () => fetchSettings()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchSettings]);
 
   // Helper function to check if time is after threshold
   const isAfterTime = (threshold: string): boolean => {
@@ -138,6 +149,7 @@ export const useSystemSettings = () => {
   return {
     settings,
     isLoading,
+    loadError,
     isAfterTime,
     isBeforeTime,
     isWithinAttendancePeriod,

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Clock, Users, Shield, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Clock, Users, Shield } from "lucide-react";
 import talentaLogo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -270,15 +270,14 @@ const Auth = () => {
               }`}
           >
             {/* Logo for desktop right side */}
-            <div className="hidden lg:block text-center mb-8">
-              <div className="inline-flex items-center gap-2 mb-2">
-                <Sparkles className="w-6 h-6 text-[#7dc242] animate-pulse" />
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-[#0066b3] to-[#0077cc] bg-clip-text text-transparent tracking-wide">
+            <div className="hidden lg:block text-center mb-10">
+              <div className="inline-flex flex-col items-center gap-1">
+                <h1 className="text-4xl font-extrabold bg-gradient-to-r from-[#0066b3] via-[#0077cc] to-[#00aaff] bg-clip-text text-transparent tracking-tight">
                   T-ABSENSI
                 </h1>
-                <Sparkles className="w-6 h-6 text-[#7dc242] animate-pulse" />
+                <div className="h-1 w-16 bg-gradient-to-r from-[#7dc242] to-[#5aa530] rounded-full" />
               </div>
-              <p className="text-gray-500 text-sm">Attendance Management System</p>
+              <p className="text-slate-500 text-sm font-medium mt-3 tracking-wide">Attendance Management System</p>
             </div>
 
             {/* Welcome Text with animation */}

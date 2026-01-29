@@ -92,26 +92,32 @@ const RekapAbsensi = () => {
 
     const { data, error } = await supabase
       .from("attendance")
-      .select("*")
+      .select(`
+        *,
+        profile:profiles (
+          full_name,
+          department
+        )
+      `)
       .gte("clock_in", startOfDay.toISOString())
       .lte("clock_in", endOfDay.toISOString())
       .order("clock_in", { ascending: false });
 
     if (!error && data) {
-      // Filter only karyawan attendance records
-      const karyawanData = data.filter(record => karyawanUserIds.has(record.user_id));
+      // Filter only karyawan attendance records if needed, 
+      // or rely on the fact that admins see everyone.
+      // If strict role filtering is needed:
+      const filteredData = data.filter(record => karyawanUserIds.has(record.user_id));
 
-      const attendanceWithProfiles = await Promise.all(
-        karyawanData.map(async (record) => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name, department")
-            .eq("user_id", record.user_id)
-            .maybeSingle();
-          return { ...record, profile };
-        })
-      );
-      setAttendance(attendanceWithProfiles);
+      // Transform data structure to match expected state
+      // Supabase returns nested object, ensuring it fits AttendanceRecord interface
+      const transformedData = filteredData.map(record => ({
+        ...record,
+        // Ensure profile is not an array (it shouldn't be with single relationship)
+        profile: Array.isArray(record.profile) ? record.profile[0] : record.profile
+      }));
+
+      setAttendance(transformedData);
     }
     setIsLoading(false);
   };

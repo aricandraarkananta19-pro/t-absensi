@@ -22,7 +22,14 @@ import { supabase } from "@/integrations/supabase/client";
 const employeeSchema = z.object({
   full_name: z.string().min(2, "Nama minimal 2 karakter"),
   email: z.string().email("Email tidak valid").optional().or(z.literal("")),
-  password: z.string().min(6, "Password minimal 6 karakter").optional().or(z.literal("")),
+  password: z.string()
+    .min(8, "Password minimal 8 karakter")
+    .regex(/[A-Z]/, "Harus ada huruf besar (A-Z)")
+    .regex(/[a-z]/, "Harus ada huruf kecil (a-z)")
+    .regex(/[0-9]/, "Harus ada angka (0-9)")
+    .regex(/[!@#$%^&*(),.?":{}|<>_\-+=]/, "Harus ada karakter khusus (!@#$%...)")
+    .optional()
+    .or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   department: z.string().optional().or(z.literal("")),
   position: z.string().optional().or(z.literal("")),
@@ -94,7 +101,7 @@ const KelolaKaryawan = () => {
         emailMap = emailResponse.data.emails;
       }
     } catch (e) {
-      console.error("Failed to fetch emails:", e);
+      if (import.meta.env.DEV) console.error("Failed to fetch emails:", e);
     }
 
     const { data: profiles, error } = await supabase
@@ -103,22 +110,25 @@ const KelolaKaryawan = () => {
       .order("created_at", { ascending: false });
 
     if (!error && profiles) {
-      // Get roles for each profile
-      const employeesWithRoles = await Promise.all(
-        profiles.map(async (profile) => {
-          const { data: roleData } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", profile.user_id)
-            .maybeSingle();
+      // FIX #3: Batch role queries instead of N+1
+      const userIds = profiles.map(p => p.user_id);
 
-          return {
-            ...profile,
-            role: roleData?.role || "karyawan",
-            email: emailMap[profile.user_id] || "",
-          };
-        })
-      );
+      // Single query for all roles
+      const { data: allRoles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", userIds);
+
+      // Create a map for O(1) lookup
+      const roleMap = new Map(allRoles?.map(r => [r.user_id, r.role]) || []);
+
+      // Map profiles with roles from the batch result
+      const employeesWithRoles = profiles.map((profile) => ({
+        ...profile,
+        role: roleMap.get(profile.user_id) || "karyawan",
+        email: emailMap[profile.user_id] || "",
+      }));
+
       setEmployees(employeesWithRoles);
     }
     setIsLoading(false);

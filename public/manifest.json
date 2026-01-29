@@ -1,0 +1,85 @@
+{
+    "name": "T-Absensi - Sistem Absensi Karyawan",
+    "short_name": "T-Absensi",
+    "description": "Sistem Absensi & Manajemen Karyawan Modern by Talenta Traincom Indonesia. Clock-in, Clock-out, & Laporan Kehadiran.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "theme_color": "#0066b3",
+    "background_color": "#f8fafc",
+    "categories": [
+        "business",
+        "productivity",
+        "utilities"
+    ],
+    "lang": "id",
+    "dir": "ltr",
+    "icons": [
+        {
+            "src": "/favicon.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/favicon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/favicon.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/favicon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Dashboard",
+            "short_name": "Dashboard",
+            "description": "Buka Dashboard HR",
+            "url": "/dashboard",
+            "icons": [
+                {
+                    "src": "/favicon.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Clock In",
+            "short_name": "Absensi",
+            "description": "Rekam kehadiran Anda",
+            "url": "/karyawan/absensi",
+            "icons": [
+                {
+                    "src": "/favicon.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Riwayat",
+            "short_name": "Riwayat",
+            "description": "Lihat riwayat kehadiran",
+            "url": "/karyawan/riwayat",
+            "icons": [
+                {
+                    "src": "/favicon.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ],
+    "screenshots": [],
+    "prefer_related_applications": false,
+    "related_applications": []
+}

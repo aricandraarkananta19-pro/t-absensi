@@ -3,8 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Users, Clock, Key, Settings, ChevronRight, LogOut,
   BarChart3, FileText, Calendar, Building2, Shield,
-  CheckCircle2, AlertCircle, UserCheck, UserX, TrendingUp, RefreshCw
+  CheckCircle2, AlertCircle, UserCheck, UserX, TrendingUp, RefreshCw,
+  Download, Bell, MoreVertical, ArrowUpRight, Briefcase, FolderOpen, TrendingDown, Menu
 } from "lucide-react";
+import BottomNavigation from "@/components/layout/BottomNavigation";
+import MiniSidebar from "@/components/layout/MiniSidebar";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell
@@ -14,13 +17,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
-
 import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
 
 const AUTO_REFRESH_INTERVAL = 60000; // 1 minute
@@ -38,6 +40,24 @@ interface MonthlyData {
   terlambat: number;
 }
 
+// Enterprise color palette - Talenta Traincom Blue/Green Theme
+const COLORS = {
+  primary: "#0066b3",        // Talenta Blue
+  primaryLight: "#00aaff",
+  primaryDark: "#004080",
+  accent: "#7dc242",         // Talenta Green
+  accentLight: "#a5d76e",
+  accentDark: "#5aa530",
+  success: "#10B981",
+  warning: "#F59E0B",
+  danger: "#EF4444",
+  info: "#3B82F6",
+  slate: "#64748B",
+  background: "#F8FAFC",
+  card: "#FFFFFF",
+  border: "#E2E8F0",
+};
+
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -52,6 +72,7 @@ const AdminDashboard = () => {
     approvedLeaveThisMonth: 0,
     attendanceThisMonth: 0,
     attendanceRate: 0,
+    newEmployeesThisMonth: 0,
   });
   const [recentAttendance, setRecentAttendance] = useState<Array<{
     id: string;
@@ -61,11 +82,18 @@ const AdminDashboard = () => {
   }>>([]);
   const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
-  const [statusDistribution, setStatusDistribution] = useState<Array<{ name: string; value: number; color: string }>>([]);
+  const [departmentData, setDepartmentData] = useState<Array<{ name: string; value: number; color: string }>>([]);
   const [attendanceBreakdown, setAttendanceBreakdown] = useState({ onTime: 0, late: 0, earlyLeave: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [nextRefresh, setNextRefresh] = useState(AUTO_REFRESH_INTERVAL / 1000);
+  const [announcements] = useState([
+    { id: 1, title: "Rapat Umum Perusahaan", date: "5 Des 2025 - 15.00", type: "event" },
+    { id: 2, title: "Batas Waktu Review Kinerja", date: "15 Des 2025", type: "deadline" },
+    { id: 3, title: "Kebijakan Kesehatan Kantor Baru", date: "Berlaku 1 Nov 2025", type: "policy" },
+    { id: 4, title: "Pelatihan Sistem HR Baru", date: "22 Des 2025 - 10.00", type: "training" },
+    { id: 5, title: "Workshop Keberagaman & Inklusi", date: "24 Des 2025 - 13.00", type: "event" },
+  ]);
 
   // Fetch all dashboard data in parallel for faster loading
   const fetchAllData = useCallback(async (showLoading = true) => {
@@ -84,6 +112,7 @@ const AdminDashboard = () => {
         fetchRecentAttendance(karyawanUserIds),
         fetchWeeklyTrend(karyawanUserIds),
         fetchMonthlyTrend(karyawanUserIds),
+        fetchDepartmentDistribution(karyawanUserIds),
       ]);
       setLastRefresh(new Date());
     } finally {
@@ -157,6 +186,34 @@ const AdminDashboard = () => {
     });
   };
 
+  const fetchDepartmentDistribution = async (karyawanUserIds: Set<string>) => {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, department");
+
+    if (profiles) {
+      const karyawanProfiles = profiles.filter(p => karyawanUserIds.has(p.user_id));
+      const deptCounts: Record<string, number> = {};
+
+      karyawanProfiles.forEach(p => {
+        const dept = p.department || "Others";
+        deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+      });
+
+      const colors = ["#0066b3", "#00aaff", "#7dc242", "#5aa530", "#10B981", "#06B6D4"];
+      const deptData = Object.entries(deptCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([name, value], index) => ({
+          name,
+          value,
+          color: colors[index % colors.length],
+        }));
+
+      setDepartmentData(deptData);
+    }
+  };
+
   const fetchStats = async (karyawanUserIds: Set<string>) => {
     const today = new Date();
     const startOfTodayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
@@ -175,7 +232,7 @@ const AdminDashboard = () => {
       approvedLeavesResult,
       monthAttendanceResult,
     ] = await Promise.all([
-      supabase.from("profiles").select("user_id"),
+      supabase.from("profiles").select("user_id, created_at"),
       today >= startDate
         ? supabase.from("attendance").select("user_id, status")
           .gte("clock_in", startOfTodayLocal.toISOString())
@@ -196,12 +253,17 @@ const AdminDashboard = () => {
     const karyawanProfiles = profilesResult.data?.filter(p => karyawanUserIds.has(p.user_id)) || [];
     const totalEmployees = karyawanProfiles.length;
 
+    // New employees this month
+    const newEmployeesThisMonth = karyawanProfiles.filter(p => {
+      const created = new Date(p.created_at);
+      return created >= startOfMonth && created <= endOfMonth;
+    }).length;
+
     // FR-03: Hadir Hari Ini (Karyawan Only)
     const karyawanTodayAttendance = todayAttendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
     const presentToday = karyawanTodayAttendance.length;
     const lateToday = karyawanTodayAttendance.filter(a => a.status === "late").length;
     const earlyLeaveToday = karyawanTodayAttendance.filter(a => a.status === "early_leave").length;
-    // "Hadir tepat waktu" = semua yang hadir dikurangi yang terlambat dan pulang awal
     const onTimeToday = presentToday - lateToday - earlyLeaveToday;
 
     // FR-04: Tidak Hadir (Karyawan Only)
@@ -228,17 +290,9 @@ const AdminDashboard = () => {
       approvedLeaveThisMonth: karyawanApprovedLeaves.length,
       attendanceThisMonth: karyawanMonthAttendance.length,
       attendanceRate: Math.min(100, attendanceRate),
+      newEmployeesThisMonth,
     });
 
-    // Update status distribution for TODAY (synced with stats cards)
-    // Hadir = semua yang absen (termasuk terlambat dan pulang awal)
-    // Total should equal totalEmployees: presentToday + absentToday
-    setStatusDistribution([
-      { name: "Hadir", value: presentToday, color: "hsl(158, 64%, 42%)" },
-      { name: "Tidak Hadir", value: absentToday, color: "hsl(215, 16%, 47%)" },
-    ]);
-
-    // Store breakdown for tooltip
     setAttendanceBreakdown({
       onTime: onTimeToday,
       late: lateToday,
@@ -248,18 +302,16 @@ const AdminDashboard = () => {
 
   const fetchWeeklyTrend = async (karyawanUserIds: Set<string>) => {
     const today = new Date();
-    const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    // Get total employees and all attendance for last 7 days in parallel
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(today.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    // Get last 12 months data
+    const startOfYear = new Date(today.getFullYear(), 0, 1);
     const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
 
     const [profilesResult, attendanceResult] = await Promise.all([
       supabase.from("profiles").select("user_id"),
       supabase.from("attendance").select("user_id, status, clock_in")
-        .gte("clock_in", sevenDaysAgo.toISOString())
+        .gte("clock_in", startOfYear.toISOString())
         .lte("clock_in", endOfToday.toISOString()),
     ]);
 
@@ -269,22 +321,30 @@ const AdminDashboard = () => {
 
     const weekData: WeeklyData[] = [];
 
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+    // Get last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
 
-      const dayAttendance = allAttendance.filter(a => a.clock_in.startsWith(dateStr));
-      const presentCount = dayAttendance.filter(a => a.status === "present").length;
-      const lateCount = dayAttendance.filter(a => a.status === "late").length;
-      const dayOfWeek = date.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const monthAttendance = allAttendance.filter(a => {
+        const clockIn = new Date(a.clock_in);
+        return clockIn >= monthStart && clockIn <= monthEnd;
+      });
+
+      const presentCount = monthAttendance.filter(a => a.status === "present").length;
+      const lateCount = monthAttendance.filter(a => a.status === "late").length;
+
+      // Calculate percentage for visualization
+      const workDays = getWorkDaysInMonth(date.getFullYear(), date.getMonth());
+      const expected = totalEmployees * workDays;
+      const percentage = expected > 0 ? Math.round(((presentCount + lateCount) / expected) * 100) : 0;
 
       weekData.push({
-        day: dayNames[dayOfWeek],
-        hadir: presentCount,
+        day: monthNames[date.getMonth()],
+        hadir: Math.min(100, percentage),
         terlambat: lateCount,
-        tidakHadir: isWeekend ? 0 : Math.max(0, totalEmployees - presentCount - lateCount),
+        tidakHadir: Math.max(0, 100 - percentage),
       });
     }
 
@@ -293,40 +353,35 @@ const AdminDashboard = () => {
 
   const fetchMonthlyTrend = async (karyawanUserIds: Set<string>) => {
     const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+    const startOfYear = new Date(today.getFullYear(), 0, 1);
+    const endOfYear = new Date(today.getFullYear(), 11, 31, 23, 59, 59, 999);
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    // Fetch all month attendance in one query
-    const { data: monthAttendance } = await supabase
+    // Fetch all year attendance in one query
+    const { data: yearAttendance } = await supabase
       .from("attendance")
       .select("user_id, status, clock_in")
-      .gte("clock_in", startOfMonth.toISOString())
-      .lte("clock_in", endOfMonth.toISOString());
+      .gte("clock_in", startOfYear.toISOString())
+      .lte("clock_in", endOfYear.toISOString());
 
-    const allAttendance = monthAttendance?.filter(a => karyawanUserIds.has(a.user_id)) || [];
+    const allAttendance = yearAttendance?.filter(a => karyawanUserIds.has(a.user_id)) || [];
     const monthData: MonthlyData[] = [];
 
-    for (let week = 0; week < 4; week++) {
-      const weekStart = new Date(startOfMonth);
-      weekStart.setDate(startOfMonth.getDate() + (week * 7));
+    for (let month = 0; month <= today.getMonth(); month++) {
+      const monthStart = new Date(today.getFullYear(), month, 1);
+      const monthEnd = new Date(today.getFullYear(), month + 1, 0, 23, 59, 59, 999);
 
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      weekEnd.setHours(23, 59, 59, 999);
-
-      if (weekStart > today) break;
-
-      const weekAttendance = allAttendance.filter(a => {
+      const monthAttendance = allAttendance.filter(a => {
         const clockIn = new Date(a.clock_in);
-        return clockIn >= weekStart && clockIn <= weekEnd;
+        return clockIn >= monthStart && clockIn <= monthEnd;
       });
 
-      const presentCount = weekAttendance.filter(a => a.status === "present").length;
-      const lateCount = weekAttendance.filter(a => a.status === "late").length;
+      const presentCount = monthAttendance.filter(a => a.status === "present").length;
+      const lateCount = monthAttendance.filter(a => a.status === "late").length;
 
       monthData.push({
-        week: `Minggu ${week + 1}`,
-        hadir: presentCount,
+        week: monthNames[month],
+        hadir: presentCount + lateCount,
         terlambat: lateCount,
       });
     }
@@ -391,9 +446,11 @@ const AdminDashboard = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "present":
-        return <Badge className="bg-success/20 text-success border-0 text-xs">Hadir</Badge>;
+        return <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs font-medium">Hadir</Badge>;
       case "late":
-        return <Badge className="bg-warning/20 text-warning border-0 text-xs">Terlambat</Badge>;
+        return <Badge className="bg-amber-100 text-amber-700 border-0 text-xs font-medium">Terlambat</Badge>;
+      case "absent":
+        return <Badge className="bg-red-100 text-red-700 border-0 text-xs font-medium">Tidak Hadir</Badge>;
       default:
         return <Badge variant="secondary" className="text-xs">{status}</Badge>;
     }
@@ -405,49 +462,49 @@ const AdminDashboard = () => {
       title: "Kelola Karyawan",
       description: "Tambah, edit, hapus data karyawan",
       href: "/admin/karyawan",
-      color: "bg-primary/10 text-primary",
+      color: "bg-violet-100 text-violet-600",
     },
     {
       icon: Clock,
       title: "Rekap Absensi",
       description: "Lihat semua data kehadiran",
       href: "/admin/absensi",
-      color: "bg-accent/10 text-accent",
+      color: "bg-blue-100 text-blue-600",
     },
     {
       icon: BarChart3,
       title: "Laporan",
-      description: "Generate laporan karyawan",
+      description: "Laporan kehadiran karyawan",
       href: "/admin/laporan",
-      color: "bg-info/10 text-info",
+      color: "bg-emerald-100 text-emerald-600",
     },
     {
       icon: Building2,
       title: "Departemen",
       description: "Kelola struktur organisasi",
       href: "/admin/departemen",
-      color: "bg-warning/10 text-warning",
+      color: "bg-amber-100 text-amber-600",
     },
     {
       icon: Shield,
       title: "Kelola Role",
       description: "Atur hak akses user",
       href: "/admin/role",
-      color: "bg-purple-500/10 text-purple-500",
+      color: "bg-purple-100 text-purple-600",
     },
     {
       icon: Key,
       title: "Reset Password",
       description: "Reset password karyawan",
       href: "/admin/reset-password",
-      color: "bg-destructive/10 text-destructive",
+      color: "bg-rose-100 text-rose-600",
     },
     {
       icon: Settings,
       title: "Pengaturan",
       description: "Konfigurasi sistem",
       href: "/admin/pengaturan",
-      color: "bg-muted-foreground/10 text-muted-foreground",
+      color: "bg-slate-100 text-slate-600",
     },
   ];
 
@@ -456,8 +513,8 @@ const AdminDashboard = () => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-card border border-border rounded-lg shadow-lg p-3">
-          <p className="font-medium text-foreground mb-1">{label}</p>
+        <div className="bg-white border border-slate-200 rounded-xl shadow-lg p-3">
+          <p className="font-semibold text-slate-900 mb-1">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name}: {entry.value}
@@ -469,459 +526,796 @@ const AdminDashboard = () => {
     return null;
   };
 
-  const PieTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      const isHadir = data.name === "Hadir";
-
-      return (
-        <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[140px]">
-          <p className="font-medium text-foreground mb-2" style={{ color: data.payload.color }}>
-            {data.name}: {data.value}
-          </p>
-          {isHadir && (
-            <div className="space-y-1 pt-1 border-t border-border">
-              <p className="text-xs text-muted-foreground font-medium">Detail:</p>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-success" />
-                <span className="text-xs text-foreground">Tepat Waktu: {attendanceBreakdown.onTime}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-warning" />
-                <span className="text-xs text-foreground">Terlambat: {attendanceBreakdown.late}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-orange-500" />
-                <span className="text-xs text-foreground">Pulang Awal: {attendanceBreakdown.earlyLeave}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-    return null;
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    return name.split(" ").map(n => n.charAt(0)).slice(0, 2).join("").toUpperCase();
   };
 
+  // Heatmap data for attendance
+  const getHeatmapData = () => {
+    const hours = ["09:00", "08:30", "08:00", "07:30"];
+    const months = ["Jan", "Feb", "Mar", "Apr", "Mei"];
+    return { hours, months };
+  };
+
+  const heatmapData = getHeatmapData();
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-24 items-center justify-center">
-                <img src={logoImage} alt="Logo" className="h-full w-auto object-contain" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
-                  <Badge className="bg-primary text-primary-foreground">Admin</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">Talenta Digital Attendance</p>
-              </div>
+    <div className="min-h-screen bg-slate-50 pb-20 lg:pb-0">
+      {/* ===== MOBILE BOTTOM NAVIGATION ===== */}
+      <BottomNavigation />
+
+      {/* ===== TABLET MINI SIDEBAR ===== */}
+      <MiniSidebar
+        userInitials={getInitials(user?.user_metadata?.full_name || "Admin")}
+        onLogout={handleLogout}
+      />
+
+      {/* ===== DESKTOP SIDEBAR - Dark Navy Theme ===== */}
+      <aside className="fixed left-0 top-0 bottom-0 w-64 bg-slate-900 z-50 hidden lg:flex flex-col">
+        {/* Logo */}
+        <div className="p-6 border-b border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#0066b3] to-[#00aaff] flex items-center justify-center shadow-lg shadow-blue-500/25">
+              <img src={logoImage} alt="Logo" className="h-6 w-6 object-contain" />
             </div>
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:block text-right">
-                <p className="text-sm font-medium text-foreground">
-                  {user?.user_metadata?.full_name || "Administrator"}
-                </p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                className="gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
+            <div>
+              <h1 className="font-bold text-white">Talenta</h1>
+              <p className="text-xs text-slate-400">Enterprise HRIS</p>
             </div>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8 animate-fade-in flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">
-              Dashboard Administrator
-            </h2>
-            <p className="text-muted-foreground">Kelola semua aspek sistem karyawan dan absensi</p>
+        {/* Navigation */}
+        <nav className="flex-1 p-4 overflow-y-auto">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-3">Menu Utama</p>
+          <div className="space-y-1">
+            <Link
+              to="/dashboard"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#0066b3]/20 to-[#7dc242]/10 text-white font-medium transition-all border border-[#0066b3]/30"
+            >
+              <BarChart3 className="h-5 w-5 text-[#00aaff]" />
+              <span>Dashboard</span>
+            </Link>
+            {menuItems.slice(0, 3).map((item) => (
+              <Link
+                key={item.title}
+                to={item.href}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all"
+              >
+                <item.icon className="h-5 w-5" />
+                <span>{item.title}</span>
+              </Link>
+            ))}
           </div>
+
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-3 px-3">Pengaturan</p>
+          <div className="space-y-1">
+            {menuItems.slice(3).map((item) => (
+              <Link
+                key={item.title}
+                to={item.href}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-all"
+              >
+                <item.icon className="h-5 w-5" />
+                <span>{item.title}</span>
+              </Link>
+            ))}
+          </div>
+        </nav>
+
+        {/* User Profile */}
+        <div className="p-4 border-t border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="text-right text-xs text-muted-foreground hidden sm:block">
-              <p>Update terakhir: {lastRefresh.toLocaleTimeString("id-ID")}</p>
-              <p>Auto refresh: {nextRefresh}s</p>
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#0066b3] to-[#7dc242] flex items-center justify-center shadow-md">
+              <span className="text-sm font-semibold text-white">
+                {getInitials(user?.user_metadata?.full_name || "Admin")}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white truncate">
+                {user?.user_metadata?.full_name || "Administrator"}
+              </p>
+              <p className="text-xs text-slate-400">Administrator</p>
             </div>
             <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManualRefresh}
-              disabled={isLoading}
-              className="gap-2"
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-800"
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
+      </aside>
 
-        {/* Primary Stats Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-          {isLoading ? (
-            <>
-              {[...Array(4)].map((_, i) => (
-                <Card key={i} className="border-border">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-8 w-16" />
-                        <Skeleton className="h-3 w-20" />
+      {/* ===== MAIN CONTENT ===== */}
+      <main className="md:ml-16 lg:ml-64 transition-all duration-300">
+        {/* Header - Responsive */}
+        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
+          <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+            <div className="flex items-center justify-between">
+              {/* Left side - Title (hidden on mobile, show simplified) */}
+              <div className="flex-1 min-w-0">
+                {/* Mobile: Show avatar with greeting */}
+                <div className="flex items-center gap-3 sm:hidden">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#0066b3] to-[#7dc242] flex items-center justify-center shadow-md">
+                    <span className="text-sm font-semibold text-white">
+                      {getInitials(user?.user_metadata?.full_name || "Admin")}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500">Selamat datang,</p>
+                    <p className="text-base font-semibold text-slate-900 truncate">
+                      {user?.user_metadata?.full_name || "Administrator"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tablet & Desktop: Show full title */}
+                <div className="hidden sm:block">
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Dashboard</h1>
+                  <p className="text-slate-500 text-sm mt-0.5 hidden md:block">Ringkasan aktivitas & kinerja karyawan</p>
+                </div>
+              </div>
+
+              {/* Right side - Actions */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* Mobile: Notification Bell */}
+                <Button variant="ghost" size="icon" className="h-10 w-10 sm:hidden text-slate-500">
+                  <Bell className="h-5 w-5" />
+                </Button>
+
+                {/* Tablet+: Refresh indicator */}
+                <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg">
+                  <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span className="hidden md:inline">Refresh otomatis: {nextRefresh}d</span>
+                  <span className="md:hidden">{nextRefresh}d</span>
+                </div>
+
+                {/* Export Button */}
+                <Button
+                  onClick={handleManualRefresh}
+                  size="sm"
+                  className="bg-gradient-to-r from-[#0066b3] to-[#00aaff] hover:from-[#0055a3] hover:to-[#0099ee] text-white gap-2 shadow-lg shadow-blue-500/25 hover:shadow-xl transition-all h-9 sm:h-10 px-3 sm:px-4"
+                >
+                  <Download className="h-4 w-4" />
+                  <span className="hidden sm:inline">Ekspor</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Content - Responsive padding */}
+        <div className="p-4 sm:p-6 lg:p-8">
+          {/* KPI Summary Cards - Responsive Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mb-6 sm:mb-8">
+            {isLoading ? (
+              [...Array(4)].map((_, i) => (
+                <Card key={i} className="border-slate-200 shadow-sm">
+                  <CardContent className="p-6">
+                    <Skeleton className="h-4 w-24 mb-3" />
+                    <Skeleton className="h-8 w-20 mb-2" />
+                    <Skeleton className="h-3 w-32" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <>
+                {/* Total Employees - Blue Top Border */}
+                <Card className="border-0 shadow-md hover:shadow-lg transition-all bg-white md:bg-white/90 md:backdrop-blur-lg overflow-hidden relative md:border md:border-white/30 md:shadow-xl">
+                  <div className="h-1 bg-gradient-to-r from-[#0066b3] to-[#00aaff]" />
+                  {/* Faded Background Icon */}
+                  <Users className="absolute right-4 top-8 h-20 w-20 sm:h-24 sm:w-24 text-[#0066b3]/10" />
+                  <CardContent className="p-4 sm:p-6 relative z-10">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-500">Total Karyawan</p>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-3xl font-bold text-slate-900">{stats.totalEmployees.toLocaleString()}</span>
+                          <span className="text-sm text-slate-500">Orang</span>
+                        </div>
+                        {/* Trend Label */}
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
+                            <TrendingUp className="h-3 w-3" />
+                            +{stats.newEmployeesThisMonth} bulan ini
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">Dari {stats.departments} departemen</p>
                       </div>
-                      <Skeleton className="h-12 w-12 rounded-lg" />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Lihat Detail</DropdownMenuItem>
+                          <DropdownMenuItem>Ekspor Data</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </>
-          ) : (
-            <>
-              <Card className="border-border animate-fade-in">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Karyawan Aktif (Wajib Absensi)</p>
-                      <div className="text-3xl font-bold text-foreground">{stats.totalEmployees}</div>
-                      <p className="text-xs text-muted-foreground mt-1">Manager & Admin tidak termasuk</p>
-                    </div>
-                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Users className="h-6 w-6 text-primary" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-border animate-fade-in" style={{ animationDelay: "0.1s" }}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Hadir Hari Ini</p>
-                      <div className="text-3xl font-bold text-success">{stats.presentToday}</div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {stats.lateToday > 0 && <span className="text-warning">{stats.lateToday} terlambat</span>}
-                        {stats.lateToday === 0 && "Tepat waktu semua"}
-                      </p>
-                    </div>
-                    <div className="h-12 w-12 rounded-lg bg-success/10 flex items-center justify-center">
-                      <UserCheck className="h-6 w-6 text-success" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border animate-fade-in" style={{ animationDelay: "0.2s" }}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Tidak Hadir</p>
-                      <div className="text-3xl font-bold text-warning">{stats.absentToday}</div>
-                      <p className="text-xs text-muted-foreground mt-1">Belum absen hari ini</p>
-                    </div>
-                    <div className="h-12 w-12 rounded-lg bg-warning/10 flex items-center justify-center">
-                      <UserX className="h-6 w-6 text-warning" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border animate-fade-in" style={{ animationDelay: "0.3s" }}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Pengajuan Cuti</p>
-                      <div className="text-3xl font-bold text-info">{stats.pendingLeave}</div>
-                      <p className="text-xs text-muted-foreground mt-1">Menunggu persetujuan</p>
-                    </div>
-                    <div className="h-12 w-12 rounded-lg bg-info/10 flex items-center justify-center">
-                      <FileText className="h-6 w-6 text-info" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          )}
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid gap-4 lg:grid-cols-2 mb-6">
-          {/* Weekly Trend Chart */}
-          <Card className="border-border animate-fade-in" style={{ animationDelay: "0.4s" }}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                Tren Kehadiran Mingguan
-              </CardTitle>
-              <CardDescription>7 hari terakhir</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorHadir" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(158, 64%, 42%)" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(158, 64%, 42%)" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorTerlambat" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 32%, 91%)" />
-                    <XAxis
-                      dataKey="day"
-                      tick={{ fontSize: 12, fill: "hsl(215, 16%, 47%)" }}
-                      axisLine={{ stroke: "hsl(214, 32%, 91%)" }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 12, fill: "hsl(215, 16%, 47%)" }}
-                      axisLine={{ stroke: "hsl(214, 32%, 91%)" }}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Area
-                      type="monotone"
-                      dataKey="hadir"
-                      stroke="hsl(158, 64%, 42%)"
-                      fillOpacity={1}
-                      fill="url(#colorHadir)"
-                      name="Hadir"
-                      strokeWidth={2}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="terlambat"
-                      stroke="hsl(38, 92%, 50%)"
-                      fillOpacity={1}
-                      fill="url(#colorTerlambat)"
-                      name="Terlambat"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-center gap-6 mt-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-success" />
-                  <span className="text-xs text-muted-foreground">Hadir</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-warning" />
-                  <span className="text-xs text-muted-foreground">Terlambat</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Monthly Trend Chart */}
-          <Card className="border-border animate-fade-in" style={{ animationDelay: "0.5s" }}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-info" />
-                Tren Kehadiran Bulanan
-              </CardTitle>
-              <CardDescription>{currentMonth}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 32%, 91%)" />
-                    <XAxis
-                      dataKey="week"
-                      tick={{ fontSize: 12, fill: "hsl(215, 16%, 47%)" }}
-                      axisLine={{ stroke: "hsl(214, 32%, 91%)" }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 12, fill: "hsl(215, 16%, 47%)" }}
-                      axisLine={{ stroke: "hsl(214, 32%, 91%)" }}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar
-                      dataKey="hadir"
-                      fill="hsl(158, 64%, 42%)"
-                      name="Hadir"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="terlambat"
-                      fill="hsl(38, 92%, 50%)"
-                      name="Terlambat"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-center gap-6 mt-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-success" />
-                  <span className="text-xs text-muted-foreground">Hadir</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-warning" />
-                  <span className="text-xs text-muted-foreground">Terlambat</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Secondary Stats */}
-        <div className="grid gap-4 lg:grid-cols-3 mb-8">
-          {/* Attendance Rate Card */}
-          <Card className="border-border animate-fade-in" style={{ animationDelay: "0.6s" }}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                Tingkat Kehadiran
-              </CardTitle>
-              <CardDescription>{currentMonth}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-end justify-between">
-                  <span className="text-4xl font-bold text-foreground">{stats.attendanceRate}%</span>
-                  <span className="text-sm text-muted-foreground">{stats.attendanceThisMonth} kehadiran</span>
-                </div>
-                <Progress value={stats.attendanceRate} className="h-2" />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Target: 95%</span>
-                  <span>{stats.attendanceRate >= 95 ? "✓ Tercapai" : "Belum tercapai"}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Status Distribution */}
-          <Card className="border-border animate-fade-in" style={{ animationDelay: "0.7s" }}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-accent" />
-                Distribusi Status
-              </CardTitle>
-              <CardDescription>7 hari terakhir</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[120px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={statusDistribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={35}
-                      outerRadius={50}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {statusDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<PieTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-center gap-4 mt-2">
-                {statusDistribution.map((item, index) => (
-                  <div key={index} className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs text-muted-foreground">{item.name}: {item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Attendance Card */}
-          <Card className="border-border animate-fade-in" style={{ animationDelay: "0.8s" }}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="h-4 w-4 text-accent" />
-                Absensi Terbaru
-              </CardTitle>
-              <CardDescription>Hari ini</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recentAttendance.length === 0 ? (
-                <div className="text-center py-4">
-                  <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Belum ada absensi hari ini</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {recentAttendance.map((record) => (
-                    <div key={record.id} className="flex items-center justify-between py-1">
-                      <div className="flex items-center gap-2">
-                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-xs font-medium text-primary">
-                            {record.full_name.charAt(0).toUpperCase()}
+                {/* Attendance Today - Green Top Border */}
+                <Card className="border-0 shadow-md hover:shadow-lg transition-all bg-white md:bg-white/90 md:backdrop-blur-lg overflow-hidden relative md:border md:border-white/30 md:shadow-xl">
+                  <div className="h-1 bg-gradient-to-r from-[#7dc242] to-[#5aa530]" />
+                  {/* Faded Background Icon */}
+                  <UserCheck className="absolute right-4 top-8 h-20 w-20 sm:h-24 sm:w-24 text-[#7dc242]/10" />
+                  <CardContent className="p-4 sm:p-6 relative z-10">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-500">Kehadiran Hari Ini</p>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-3xl font-bold text-emerald-600">
+                            {stats.totalEmployees > 0 ? Math.round((stats.presentToday / stats.totalEmployees) * 100) : 0}%
+                          </span>
+                          <span className="text-sm text-slate-500">Hadir</span>
+                        </div>
+                        {/* Trend Label */}
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
+                            <TrendingUp className="h-3 w-3" />
+                            +5% dari kemarin
                           </span>
                         </div>
-                        <span className="text-sm font-medium text-foreground truncate max-w-[100px]">
-                          {record.full_name}
-                        </span>
+                        <p className="text-xs text-slate-400 mt-1">{stats.presentToday} dari {stats.totalEmployees} karyawan</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{formatTime(record.clock_in)}</span>
-                        {getStatusBadge(record.status)}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Lihat Detail</DropdownMenuItem>
+                          <DropdownMenuItem>Ekspor Data</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Pending Leave Requests - Amber Top Border */}
+                <Card className="border-0 shadow-md hover:shadow-lg transition-all bg-white md:bg-white/90 md:backdrop-blur-lg overflow-hidden relative md:border md:border-white/30 md:shadow-xl">
+                  <div className="h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
+                  {/* Faded Background Icon */}
+                  <Calendar className="absolute right-4 top-8 h-20 w-20 sm:h-24 sm:w-24 text-amber-500/10" />
+                  <CardContent className="p-4 sm:p-6 relative z-10">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-500">Pengajuan Cuti Tertunda</p>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-3xl font-bold text-amber-600">{stats.pendingLeave}</span>
+                          <span className="text-sm text-slate-500">Menunggu</span>
+                        </div>
+                        {/* Trend Label */}
+                        <div className="flex items-center gap-1.5 mt-2">
+                          {stats.pendingLeave > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+                              <AlertCircle className="h-3 w-3" />
+                              Perlu review
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Semua selesai
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">{stats.approvedLeaveThisMonth} disetujui bulan ini</p>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Lihat Semua</DropdownMenuItem>
+                          <DropdownMenuItem>Proses Pengajuan</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Performance Rate - Teal Top Border */}
+                <Card className="border-0 shadow-md hover:shadow-lg transition-all bg-white md:bg-white/90 md:backdrop-blur-lg overflow-hidden relative md:border md:border-white/30 md:shadow-xl">
+                  <div className="h-1 bg-gradient-to-r from-teal-500 to-cyan-500" />
+                  {/* Faded Background Icon */}
+                  <TrendingUp className="absolute right-4 top-8 h-20 w-20 sm:h-24 sm:w-24 text-teal-500/10" />
+                  <CardContent className="p-4 sm:p-6 relative z-10">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-500">Rate Kehadiran Bulanan</p>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-3xl font-bold text-teal-600">{stats.attendanceRate}%</span>
+                          <span className="text-sm text-slate-500">Rate</span>
+                        </div>
+                        {/* Trend Label */}
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 text-xs font-medium">
+                            <TrendingUp className="h-3 w-3" />
+                            +2.3% dari bulan lalu
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">{stats.attendanceThisMonth} kehadiran tercatat</p>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Lihat Detail</DropdownMenuItem>
+                          <DropdownMenuItem>Status Orientasi</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </div>
+
+          {/* Main Analytics Section - Responsive Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            {/* Attendance Overview Chart - Takes 2 columns on lg */}
+            <Card className="border-slate-200 shadow-sm md:col-span-2 lg:col-span-2 bg-white md:bg-white/90 md:backdrop-blur-lg md:border-white/30 md:shadow-xl">
+              <CardHeader className="pb-2 px-4 sm:px-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base sm:text-lg font-semibold text-slate-900">Ringkasan Kehadiran</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">Tren persentase kehadiran bulanan</CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>Ekspor Grafik</DropdownMenuItem>
+                      <DropdownMenuItem>Lihat Detail</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent className="px-2 sm:px-6">
+                {/* Chart with horizontal scroll on mobile */}
+                <div className="chart-scroll-container scrollbar-hide">
+                  <div className="h-[220px] sm:h-[280px] min-w-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#0066b3" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#7dc242" stopOpacity={0.05} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                        <XAxis
+                          dataKey="day"
+                          tick={{ fontSize: 12, fill: "#64748B" }}
+                          axisLine={{ stroke: "#E2E8F0" }}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 12, fill: "#64748B" }}
+                          axisLine={false}
+                          tickLine={false}
+                          domain={[60, 100]}
+                          tickFormatter={(value) => `${value}%`}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Area
+                          type="monotone"
+                          dataKey="hadir"
+                          stroke="#0066b3"
+                          strokeWidth={2.5}
+                          fillOpacity={1}
+                          fill="url(#colorAttendance)"
+                          name="Tingkat Kehadiran"
+                          dot={{ fill: "#0066b3", strokeWidth: 0, r: 4 }}
+                          activeDot={{ r: 6, fill: "#7dc242", stroke: "#fff", strokeWidth: 2 }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Workforce by Department - Donut Chart */}
+            <Card className="border-slate-200 shadow-sm bg-white md:bg-white/90 md:backdrop-blur-lg md:border-white/30 md:shadow-xl md:col-span-2 lg:col-span-1">
+              <CardHeader className="pb-2 px-4 sm:px-6">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base sm:text-lg font-semibold text-slate-900">Karyawan per Departemen</CardTitle>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>Lihat Semua</DropdownMenuItem>
+                      <DropdownMenuItem>Ekspor</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent className="px-4 sm:px-6">
+                {departmentData.length === 0 ? (
+                  /* Empty State */
+                  <div className="flex flex-col items-center justify-center py-8 sm:py-12">
+                    <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center mb-4 border border-slate-200/60">
+                      <FolderOpen className="h-7 w-7 sm:h-8 sm:w-8 text-slate-400" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-700 mb-1">Belum Ada Data</h3>
+                    <p className="text-xs text-slate-400 text-center max-w-xs">Data departemen akan muncul setelah karyawan ditambahkan</p>
+                  </div>
+                ) : (
+                  /* Donut Chart with Legend - Responsive Layout */
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    {/* Donut Chart */}
+                    <div className="h-[140px] w-[140px] sm:h-[180px] sm:w-[180px] flex-shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={departmentData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={75}
+                            paddingAngle={3}
+                            dataKey="value"
+                          >
+                            {departmentData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: number) => [`${value} karyawan`, 'Jumlah']}
+                            contentStyle={{
+                              borderRadius: '8px',
+                              border: '1px solid #e2e8f0',
+                              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Legend on the Right */}
+                    <div className="flex-1 space-y-2">
+                      {departmentData.slice(0, 5).map((dept) => (
+                        <div key={dept.name} className="flex items-center gap-2">
+                          <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: dept.color }} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-slate-700 truncate">{dept.name}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-xs font-semibold text-slate-900">{dept.value}</span>
+                            <span className="text-xs text-slate-400 ml-1">
+                              ({stats.totalEmployees > 0 ? ((dept.value / stats.totalEmployees) * 100).toFixed(0) : 0}%)
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                      {departmentData.length > 5 && (
+                        <p className="text-xs text-slate-400 pl-4">+{departmentData.length - 5} lainnya</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Secondary Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Payroll/Attendance Overview (Bar Chart) */}
+            <Card className="border-slate-200 shadow-sm lg:col-span-1 bg-white">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-slate-900">Ringkasan Kehadiran</CardTitle>
+                    <CardDescription>Hadir vs terlambat bulanan</CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>Lihat Detail</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="flex gap-4 mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-sm bg-[#0066b3]" />
+                    <span className="text-xs text-slate-500">Hadir</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-sm bg-[#7dc242]" />
+                    <span className="text-xs text-slate-500">Terlambat</span>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {monthlyData.length === 0 ? (
+                  /* Empty State for Attendance Summary */
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center mb-4 border border-slate-200/60">
+                      <FolderOpen className="h-8 w-8 text-slate-400" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-700 mb-1">Belum Ada Data Kehadiran</h3>
+                    <p className="text-xs text-slate-400 text-center max-w-xs">Data kehadiran akan muncul setelah karyawan mulai absensi</p>
+                  </div>
+                ) : (
+                  <div className="h-[200px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                        <XAxis
+                          dataKey="week"
+                          tick={{ fontSize: 11, fill: "#64748B" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 11, fill: "#64748B" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar
+                          dataKey="hadir"
+                          fill="#0066b3"
+                          name="Hadir"
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={30}
+                        />
+                        <Bar
+                          dataKey="terlambat"
+                          fill="#7dc242"
+                          name="Terlambat"
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={30}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Attendance Heatmap */}
+            <Card className="border-slate-200 shadow-sm bg-white">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold text-slate-900">Peta Panas Kehadiran</CardTitle>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>Lihat Lengkap</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {heatmapData.hours.map((hour, hourIndex) => (
+                    <div key={hour} className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400 w-12">{hour}</span>
+                      <div className="flex gap-1 flex-1">
+                        {heatmapData.months.map((month, monthIndex) => {
+                          const intensity = Math.random();
+                          const bgColor = intensity > 0.7 ? '#0066b3' :
+                            intensity > 0.4 ? '#00aaff' :
+                              intensity > 0.2 ? '#7dc242' : '#d4edda';
+                          return (
+                            <div
+                              key={`${hour}-${month}`}
+                              className="flex-1 h-8 rounded transition-all hover:scale-105"
+                              style={{ backgroundColor: bgColor }}
+                              title={`${month} ${hour}: ${Math.round(intensity * 100)}%`}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2 mt-3">
+                    <span className="text-xs text-slate-400 w-12"></span>
+                    <div className="flex gap-1 flex-1">
+                      {heatmapData.months.map(month => (
+                        <span key={month} className="flex-1 text-center text-xs text-slate-400">{month}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Company Announcements */}
+            <Card className="border-slate-200 shadow-sm bg-white">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold text-slate-900">Pengumuman Perusahaan</CardTitle>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>Lihat Semua</DropdownMenuItem>
+                      <DropdownMenuItem>Tambah Baru</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {announcements.slice(0, 5).map((item, index) => (
+                    <div key={item.id} className="flex items-start gap-3">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 text-violet-600 text-xs font-semibold">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-700 truncate">{item.title}</p>
+                        <p className="text-xs text-slate-400">{item.date}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Activity & Quick Links */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Attendance */}
+            <Card className="border-slate-200 shadow-sm lg:col-span-2 bg-white">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-slate-900">Absensi Terbaru</CardTitle>
+                    <CardDescription>Aktivitas absen masuk hari ini</CardDescription>
+                  </div>
+                  <Link to="/admin/absensi">
+                    <Button variant="ghost" size="sm" className="text-violet-600 hover:text-violet-700 gap-1">
+                      Lihat Semua
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {recentAttendance.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Clock className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-sm text-slate-500">Belum ada absensi hari ini</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentAttendance.map((record) => (
+                      <div key={record.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
+                            <span className="text-sm font-semibold text-white">
+                              {getInitials(record.full_name)}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-slate-900">{record.full_name}</p>
+                            <p className="text-xs text-slate-500">Masuk pukul {formatTime(record.clock_in)}</p>
+                          </div>
+                        </div>
+                        {getStatusBadge(record.status)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Quick Stats */}
+            <Card className="border-slate-200 shadow-sm bg-white">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-slate-900">Ringkasan Bulan Ini</CardTitle>
+                <CardDescription>{currentMonth}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-slate-600">Tingkat Kehadiran</span>
+                    <span className={`text-sm font-semibold ${stats.attendanceRate >= 95 ? 'text-emerald-600' : stats.attendanceRate >= 80 ? 'text-amber-600' : 'text-red-600'}`}>
+                      {stats.attendanceRate >= 95 ? '✓ Tercapai' : 'Perlu Ditingkatkan'}
+                    </span>
+                  </div>
+                  <div className="flex items-end gap-2 mb-2">
+                    <span className="text-3xl font-bold text-violet-600">{stats.attendanceRate}%</span>
+                    <span className="text-sm text-slate-500 mb-1">dari target</span>
+                  </div>
+                  <Progress value={stats.attendanceRate} className="h-2 bg-violet-100" />
+                  <p className="text-xs text-slate-500 mt-2">{stats.attendanceThisMonth} total kehadiran bulan ini</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                    <UserCheck className="h-5 w-5 text-emerald-600 mb-2" />
+                    <p className="text-2xl font-bold text-emerald-700">{stats.presentToday}</p>
+                    <p className="text-xs text-emerald-600">Hadir Hari Ini</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-100">
+                    <AlertCircle className="h-5 w-5 text-amber-600 mb-2" />
+                    <p className="text-2xl font-bold text-amber-700">{stats.lateToday}</p>
+                    <p className="text-xs text-amber-600">Terlambat Hari Ini</p>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Briefcase className="h-4 w-4 text-slate-500" />
+                    <span className="text-sm font-medium text-slate-600">Cuti Disetujui</span>
+                  </div>
+                  <p className="text-xl font-bold text-slate-700">{stats.approvedLeaveThisMonth}</p>
+                  <p className="text-xs text-slate-500">karyawan cuti bulan ini</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Menu Grid */}
-        <h3 className="mb-4 text-lg font-semibold text-foreground">Menu Admin</h3>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {menuItems.map((item, index) => (
-            <Link
-              key={item.title}
-              to={item.href}
-              className="block animate-fade-in"
-              style={{ animationDelay: `${(index + 9) * 0.1}s` }}
-            >
-              <Card className="group h-full border-border transition-all duration-300 hover:border-primary/30 hover:shadow-lg">
-                <CardHeader className="pb-3">
-                  <div className={`mb-3 flex h-12 w-12 items-center justify-center rounded-lg ${item.color}`}>
-                    <item.icon className="h-6 w-6" />
-                  </div>
-                  <CardTitle className="flex items-center justify-between text-lg">
-                    {item.title}
-                    <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                  </CardTitle>
-                  <CardDescription>{item.description}</CardDescription>
-                </CardHeader>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        {/* Footer */}
+        <footer className="border-t border-slate-200 bg-white mt-8">
+          <div className="px-6 lg:px-8 py-4">
+            <p className="text-center text-sm text-slate-400">
+              © 2025 Talenta Digital Sistem Absensi. Hak cipta dilindungi.
+            </p>
+          </div>
+        </footer>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card mt-12">
-        <div className="container mx-auto px-4 py-4">
-          <p className="text-center text-sm text-muted-foreground">
-            © 2025 Talenta Digital Attendance System. All rights reserved.
-          </p>
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 lg:hidden z-50">
+        <div className="flex items-center justify-around py-2">
+          <Link to="/dashboard" className="flex flex-col items-center gap-1 px-4 py-2 text-violet-600">
+            <BarChart3 className="h-5 w-5" />
+            <span className="text-xs font-medium">Dashboard</span>
+          </Link>
+          <Link to="/admin/karyawan" className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500">
+            <Users className="h-5 w-5" />
+            <span className="text-xs">Karyawan</span>
+          </Link>
+          <Link to="/admin/absensi" className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500">
+            <Clock className="h-5 w-5" />
+            <span className="text-xs">Absensi</span>
+          </Link>
+          <Link to="/admin/laporan" className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500">
+            <FileText className="h-5 w-5" />
+            <span className="text-xs">Laporan</span>
+          </Link>
+          <Link to="/admin/pengaturan" className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500">
+            <Settings className="h-5 w-5" />
+            <span className="text-xs">Pengaturan</span>
+          </Link>
         </div>
-      </footer>
+      </nav>
     </div>
   );
 };

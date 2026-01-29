@@ -17,7 +17,7 @@ import ProfilKaryawan from "./pages/karyawan/ProfilKaryawan";
 import PengajuanCuti from "./pages/karyawan/PengajuanCuti";
 import KelolaKaryawan from "./pages/admin/KelolaKaryawan";
 import RekapAbsensi from "./pages/admin/RekapAbsensi";
-import Laporan from "./pages/admin/Laporan";
+import LaporanKehadiran from "./pages/admin/LaporanKehadiran";
 import ResetPassword from "./pages/admin/ResetPassword";
 import Pengaturan from "./pages/admin/Pengaturan";
 import Departemen from "./pages/admin/Departemen";
@@ -161,7 +161,7 @@ const App = () => (
               path="/admin/laporan"
               element={
                 <AdminRoute>
-                  <Laporan />
+                  <LaporanKehadiran />
                 </AdminRoute>
               }
             />
