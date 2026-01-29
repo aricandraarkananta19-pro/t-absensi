@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_periods: {
+        Row: {
+          id: string
+          start_date: string
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          start_date: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          start_date?: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           clock_in: string

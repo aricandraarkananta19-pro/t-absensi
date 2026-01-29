@@ -63,11 +63,22 @@ export const useSystemSettings = () => {
 
       if (error) throw error;
 
+      // Disable caching for attendance period to ensure freshness
+      const { data: periodData } = await supabase
+        .from("attendance_periods")
+        .select("start_date")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .maybeSingle();
+
       if (data) {
         const settingsMap: Record<string, string> = {};
         data.forEach((item: { key: string; value: string }) => {
           settingsMap[item.key] = item.value;
         });
+
+        // Use periodData.start_date if available, otherwise fallback to system_settings or default
+        const activeStartDate = periodData?.start_date || settingsMap.attendance_start_date || defaultSettings.attendanceStartDate;
 
         setSettings({
           companyName: settingsMap.company_name || defaultSettings.companyName,
@@ -82,7 +93,7 @@ export const useSystemSettings = () => {
           autoClockOut: settingsMap.auto_clock_out === "true",
           autoClockOutTime: settingsMap.auto_clock_out_time || defaultSettings.autoClockOutTime,
           maxLeaveDays: parseInt(settingsMap.max_leave_days) || defaultSettings.maxLeaveDays,
-          attendanceStartDate: settingsMap.attendance_start_date || defaultSettings.attendanceStartDate,
+          attendanceStartDate: activeStartDate,
         });
       }
     } catch (error) {

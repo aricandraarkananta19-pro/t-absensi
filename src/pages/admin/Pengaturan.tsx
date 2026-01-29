@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Settings, Clock, Building2, Bell, Shield, Save, Trash2, AlertTriangle, Loader2, CalendarDays, Download, FileSpreadsheet, Database } from "lucide-react";
+import { ArrowLeft, Settings, Clock, Building2, Bell, Shield, Save, Trash2, AlertTriangle, Loader2, CalendarDays, Download, FileSpreadsheet, Database, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +47,8 @@ const Pengaturan = () => {
   const [isResettingAll, setIsResettingAll] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [originalStartDate, setOriginalStartDate] = useState("");
+  const [newStartDate, setNewStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [isStartingNewPeriod, setIsStartingNewPeriod] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -60,11 +62,21 @@ const Pengaturan = () => {
 
       if (error) throw error;
 
+      // Fetch active attendance period
+      const { data: periodData } = await supabase
+        .from("attendance_periods")
+        .select("start_date")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .maybeSingle();
+
       if (data) {
         const settingsMap: Record<string, string> = {};
         data.forEach((item: { key: string; value: string }) => {
           settingsMap[item.key] = item.value;
         });
+
+        const activeStartDate = periodData?.start_date || settingsMap.attendance_start_date || new Date().toISOString().split("T")[0];
 
         setSettings({
           companyName: settingsMap.company_name || "PT. Talenta Traincom Indonesia",
@@ -79,14 +91,63 @@ const Pengaturan = () => {
           autoClockOut: settingsMap.auto_clock_out === "true",
           autoClockOutTime: settingsMap.auto_clock_out_time || "22:00",
           maxLeaveDays: parseInt(settingsMap.max_leave_days) || 12,
-          attendanceStartDate: settingsMap.attendance_start_date || new Date().toISOString().split("T")[0],
+          attendanceStartDate: activeStartDate,
         });
-        setOriginalStartDate(settingsMap.attendance_start_date || new Date().toISOString().split("T")[0]);
+        setOriginalStartDate(activeStartDate);
+        // Initialize newStartDate with current active date for better UX (or today)
+        setNewStartDate(new Date().toISOString().split("T")[0]);
       }
     } catch (error) {
       console.error("Error fetching settings:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleStartNewPeriod = async () => {
+    setIsStartingNewPeriod(true);
+    try {
+      // 1. Deactivate old periods
+      await supabase
+        .from("attendance_periods")
+        .update({ is_active: false })
+        .eq("is_active", true);
+
+      // 2. Create new period
+      const { error } = await supabase
+        .from("attendance_periods")
+        .insert({
+          start_date: newStartDate,
+          is_active: true
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Periode absensi baru telah dimulai."
+      });
+
+      // Update local state without full reload
+      setSettings(prev => ({ ...prev, attendanceStartDate: newStartDate }));
+      setOriginalStartDate(newStartDate);
+
+      // Also update system settings for backward compatibility if desired, 
+      // but we should primarily rely on attendance_periods now.
+      await supabase
+        .from("system_settings")
+        .update({ value: newStartDate })
+        .eq("key", "attendance_start_date");
+
+    } catch (error: any) {
+      console.error("Error starting new period:", error);
+      toast({
+        variant: "destructive",
+        title: "Gagal",
+        description: error.message || "Gagal memulai periode baru"
+      });
+    } finally {
+      setIsStartingNewPeriod(false);
     }
   };
 
@@ -418,19 +479,38 @@ const Pengaturan = () => {
                 <CalendarDays className="h-5 w-5 text-primary" />
                 <div>
                   <CardTitle className="text-lg">Periode Absensi Aktif</CardTitle>
-                  <CardDescription>Tentukan tanggal mulai pencatatan absensi</CardDescription>
+                  <CardDescription>Atur periode aktif untuk laporan dan rekap</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+
+              {/* Active Period Display */}
+              <div className="p-4 bg-background border rounded-lg shadow-sm">
+                <Label className="text-muted-foreground mb-2 block">Periode Aktif Saat Ini</Label>
+                <div className="flex items-center gap-3">
+                  <CalendarDays className="h-5 w-5 text-primary" />
+                  <span className="text-xl font-bold">
+                    {new Date(settings.attendanceStartDate).toLocaleDateString("id-ID", {
+                      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                    })}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Laporan dan rekap saat ini menampilkan data mulai dari tanggal ini.
+                </p>
+              </div>
+
+              <Separator />
+
               {/* Backup Section */}
               <div className="p-4 rounded-lg border border-warning/30 bg-warning/5">
                 <div className="flex items-start gap-3">
                   <Database className="h-5 w-5 text-warning mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-medium text-foreground mb-1">Backup Data Sebelum Mengubah Periode</p>
+                    <p className="font-medium text-foreground mb-1">Backup Data</p>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Disarankan untuk backup data sebelum mengubah tanggal mulai periode absensi.
+                      Sangat disarankan untuk membackup data sebelum memulai periode baru.
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -470,45 +550,49 @@ const Pengaturan = () => {
 
               <Separator />
 
-              <div className="space-y-2">
-                <Label htmlFor="attendanceStartDate">Tanggal Mulai Absensi</Label>
-                <Input
-                  id="attendanceStartDate"
-                  type="date"
-                  value={settings.attendanceStartDate}
-                  onChange={(e) => setSettings({ ...settings, attendanceStartDate: e.target.value })}
-                  className="max-w-[200px]"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Sistem hanya akan menghitung dan menampilkan absensi mulai dari tanggal ini.
-                  Data sebelum tanggal ini tidak akan masuk dalam rekap dan laporan.
-                </p>
-              </div>
-
-              {/* Warning if date changed */}
-              {hasStartDateChanged && (
-                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
-                  <p className="text-sm text-destructive font-medium">
-                    ⚠️ Tanggal periode absensi akan diubah dari{" "}
-                    {new Date(originalStartDate).toLocaleDateString("id-ID")} ke{" "}
-                    {new Date(settings.attendanceStartDate).toLocaleDateString("id-ID")}.
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Pastikan Anda sudah melakukan backup data sebelum menyimpan perubahan.
+              {/* Start New Period */}
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <Label className="text-base font-semibold">Mulai Periode Baru</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Pilih tanggal mulai untuk periode baru.
                   </p>
                 </div>
-              )}
 
-              <div className="p-3 rounded-lg bg-info/10 border border-info/20">
-                <p className="text-sm text-info-foreground">
-                  <strong>Periode aktif dimulai:</strong>{" "}
-                  {new Date(settings.attendanceStartDate).toLocaleDateString("id-ID", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </p>
+                <div className="flex flex-col sm:flex-row gap-4 items-end">
+                  <div className="space-y-2 w-full sm:w-auto">
+                    <Label htmlFor="newStartDate">Tanggal Mulai Baru</Label>
+                    <Input
+                      id="newStartDate"
+                      type="date"
+                      value={newStartDate}
+                      onChange={(e) => setNewStartDate(e.target.value)}
+                      className="w-full sm:w-[200px]"
+                    />
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button className="gap-2 w-full sm:w-auto" disabled={isStartingNewPeriod}>
+                        <RefreshCw className="h-4 w-4" />
+                        {isStartingNewPeriod ? "Memproses..." : "Terapkan Periode Baru"}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Konfirmasi Periode Baru</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Anda akan mengubah awal periode absensi menjadi <strong>{new Date(newStartDate).toLocaleDateString("id-ID")}</strong>.
+                          <br /><br />
+                          Data periode sebelumnya akan tetap tersimpan di database, namun laporan aktif akan direset mulai tanggal ini.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleStartNewPeriod}>Ya, Terapkan</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </CardContent>
           </Card>
