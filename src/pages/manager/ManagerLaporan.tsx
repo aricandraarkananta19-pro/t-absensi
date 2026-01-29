@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  ArrowLeft, FileText, Calendar, CheckCircle2, XCircle, 
+import {
+  ArrowLeft, FileText, Calendar, CheckCircle2, XCircle,
   Clock, Search, Users, Download, BarChart3, RefreshCw, FileSpreadsheet, Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToPDF, exportToExcel } from "@/lib/exportUtils";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
+import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
 
 interface LeaveRequest {
   id: string;
@@ -80,8 +81,19 @@ const ManagerLaporan = () => {
       .order("created_at", { ascending: false });
 
     if (!error && data) {
+      // Get karyawan user IDs (FR-01: Filter Role Wajib Absensi)
+      const { data: karyawanRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ABSENSI_WAJIB_ROLE);
+
+      const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
+
+      // Filter only karyawan leave requests
+      const karyawanRequests = data.filter(req => karyawanUserIds.has(req.user_id));
+
       const requestsWithProfiles = await Promise.all(
-        data.map(async (request) => {
+        karyawanRequests.map(async (request) => {
           const { data: profile } = await supabase
             .from("profiles")
             .select("full_name, department")
@@ -96,23 +108,34 @@ const ManagerLaporan = () => {
   };
 
   const fetchEmployeeReports = async () => {
+    // Get karyawan user IDs
+    const { data: karyawanRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .in("role", ABSENSI_WAJIB_ROLE);
+
+    const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
+
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, full_name, department");
 
     if (!profiles) return;
 
+    // Filter only karyawan profiles
+    const karyawanProfiles = profiles.filter(p => karyawanUserIds.has(p.user_id));
+
     const startOfMonth = new Date(`${reportMonth}-01`);
     const attendanceStartDate = new Date(settings.attendanceStartDate);
     attendanceStartDate.setHours(0, 0, 0, 0);
-    
+
     const effectiveStartDate = startOfMonth > attendanceStartDate ? startOfMonth : attendanceStartDate;
-    
+
     const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0);
     endOfMonth.setHours(23, 59, 59, 999);
 
     if (endOfMonth < attendanceStartDate) {
-      setEmployeeReports(profiles.map(profile => ({
+      setEmployeeReports(karyawanProfiles.map(profile => ({
         user_id: profile.user_id,
         full_name: profile.full_name,
         department: profile.department,
@@ -125,7 +148,7 @@ const ManagerLaporan = () => {
     }
 
     const reports: EmployeeReport[] = await Promise.all(
-      profiles.map(async (profile) => {
+      karyawanProfiles.map(async (profile) => {
         const { data: attendance } = await supabase
           .from("attendance")
           .select("status")

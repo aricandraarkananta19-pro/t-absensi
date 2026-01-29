@@ -21,6 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { exportToCSV, exportToPDF, exportToExcel } from "@/lib/exportUtils";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 
+import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
+
 interface LeaveRequest {
   id: string;
   user_id: string;
@@ -91,13 +93,13 @@ const Laporan = () => {
   }, [reportMonth]);
 
   const fetchLeaveRequests = async () => {
-    // Get admin user IDs to exclude
-    const { data: adminRoles } = await supabase
+    // Get karyawan user IDs (FR-01: Filter Role Wajib Absensi)
+    const { data: karyawanRoles } = await supabase
       .from("user_roles")
       .select("user_id")
-      .eq("role", "admin");
+      .in("role", ABSENSI_WAJIB_ROLE);
 
-    const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+    const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
 
     const { data, error } = await supabase
       .from("leave_requests")
@@ -105,11 +107,11 @@ const Laporan = () => {
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      // Filter out admin leave requests
-      const nonAdminRequests = data.filter(req => !adminUserIds.has(req.user_id));
+      // Filter only karyawan leave requests
+      const karyawanRequests = data.filter(req => karyawanUserIds.has(req.user_id));
 
       const requestsWithProfiles = await Promise.all(
-        nonAdminRequests.map(async (request) => {
+        karyawanRequests.map(async (request) => {
           const { data: profile } = await supabase
             .from("profiles")
             .select("full_name, department")
@@ -124,23 +126,23 @@ const Laporan = () => {
   };
 
   const fetchEmployeeReports = async () => {
-    // Get all admin user IDs to exclude them from reports
-    const { data: adminRoles } = await supabase
+    // Get karyawan user IDs
+    const { data: karyawanRoles } = await supabase
       .from("user_roles")
       .select("user_id")
-      .eq("role", "admin");
+      .in("role", ABSENSI_WAJIB_ROLE);
 
-    const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+    const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
 
-    // Get all profiles (excluding admins)
+    // Get all profiles
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, full_name, department");
 
     if (!profiles) return;
 
-    // Filter out admin profiles
-    const nonAdminProfiles = profiles.filter(p => !adminUserIds.has(p.user_id));
+    // Filter only karyawan profiles
+    const karyawanProfiles = profiles.filter(p => karyawanUserIds.has(p.user_id));
 
     // Get attendance for the selected month, but only from attendance start date
     const startOfMonth = new Date(`${reportMonth}-01`);
@@ -155,7 +157,7 @@ const Laporan = () => {
 
     // If the entire month is before attendance start date, return empty reports
     if (endOfMonth < attendanceStartDate) {
-      setEmployeeReports(nonAdminProfiles.map(profile => ({
+      setEmployeeReports(karyawanProfiles.map(profile => ({
         user_id: profile.user_id,
         full_name: profile.full_name,
         department: profile.department,
@@ -168,7 +170,7 @@ const Laporan = () => {
     }
 
     const reports: EmployeeReport[] = await Promise.all(
-      nonAdminProfiles.map(async (profile) => {
+      karyawanProfiles.map(async (profile) => {
         // Get attendance count - only from effective start date
         const { data: attendance } = await supabase
           .from("attendance")

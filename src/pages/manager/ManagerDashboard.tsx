@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { 
-  Users, Clock, LogOut, BarChart3, Calendar, Building2, FileCheck 
+import {
+  Users, Clock, LogOut, BarChart3, Calendar, Building2, FileCheck
 } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
+import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
 
 const ManagerDashboard = () => {
   const { user, signOut } = useAuth();
@@ -55,35 +56,48 @@ const ManagerDashboard = () => {
   }, [settingsLoading, settings.attendanceStartDate]);
 
   const fetchStats = async () => {
-    // Get total employees
-    const { count: totalEmployees } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true });
+    // Get karyawan user IDs (FR-01: Filter Role Wajib Absensi)
+    const { data: karyawanRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .in("role", ABSENSI_WAJIB_ROLE);
 
-    // Get today's attendance
+    const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
+
+    // Get total employees (karyawan only)
+    const { count: totalEmployees } = await supabase
+      .from("user_roles")
+      .select("*", { count: "exact", head: true })
+      .in("role", ABSENSI_WAJIB_ROLE);
+
+    // Get today's attendance (karyawan only)
     const today = new Date();
     const todayStr = today.toISOString().split("T")[0];
     const startDate = new Date(settings.attendanceStartDate);
     startDate.setHours(0, 0, 0, 0);
-    
+
     let presentToday = 0;
-    
+
     if (today >= startDate) {
-      const { count } = await supabase
+      const { data: attendanceData } = await supabase
         .from("attendance")
-        .select("*", { count: "exact", head: true })
+        .select("user_id")
         .gte("clock_in", `${todayStr}T00:00:00`)
         .lt("clock_in", `${todayStr}T23:59:59`);
-      presentToday = count || 0;
+
+      // Filter for karyawan only
+      const karyawanAttendance = attendanceData?.filter(a => karyawanUserIds.has(a.user_id)) || [];
+      presentToday = karyawanAttendance.length;
     }
 
-    // Get unique departments
-    const { data: departments } = await supabase
+    // Get unique departments (karyawan only)
+    const { data: profiles } = await supabase
       .from("profiles")
-      .select("department")
+      .select("user_id, department")
       .not("department", "is", null);
 
-    const uniqueDepartments = new Set(departments?.map(d => d.department).filter(Boolean));
+    const karyawanProfiles = profiles?.filter(p => karyawanUserIds.has(p.user_id)) || [];
+    const uniqueDepartments = new Set(karyawanProfiles.map(p => p.department).filter(Boolean));
 
     setStats({
       totalEmployees: totalEmployees || 0,
@@ -182,7 +196,7 @@ const ManagerDashboard = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Karyawan</p>
+                  <p className="text-sm text-muted-foreground">Total Karyawan (Wajib Absensi)</p>
                   <div className="text-3xl font-bold text-foreground">{stats.totalEmployees}</div>
                 </div>
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">

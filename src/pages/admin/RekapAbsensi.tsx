@@ -17,6 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { exportToCSV, exportToPDF, exportToExcel } from "@/lib/exportUtils";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 
+import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
+
 interface AttendanceRecord {
   id: string;
   user_id: string;
@@ -75,13 +77,13 @@ const RekapAbsensi = () => {
       return;
     }
 
-    // Get admin user IDs to exclude
-    const { data: adminRoles } = await supabase
+    // Get karyawan user IDs (FR-01: Filter Role Wajib Absensi)
+    const { data: karyawanRoles } = await supabase
       .from("user_roles")
       .select("user_id")
-      .eq("role", "admin");
+      .in("role", ABSENSI_WAJIB_ROLE);
 
-    const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+    const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
 
     const startOfDay = new Date(filterDate);
     startOfDay.setHours(0, 0, 0, 0);
@@ -96,11 +98,11 @@ const RekapAbsensi = () => {
       .order("clock_in", { ascending: false });
 
     if (!error && data) {
-      // Filter out admin attendance records
-      const nonAdminData = data.filter(record => !adminUserIds.has(record.user_id));
+      // Filter only karyawan attendance records
+      const karyawanData = data.filter(record => karyawanUserIds.has(record.user_id));
 
       const attendanceWithProfiles = await Promise.all(
-        nonAdminData.map(async (record) => {
+        karyawanData.map(async (record) => {
           const { data: profile } = await supabase
             .from("profiles")
             .select("full_name, department")

@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { 
-  Users, Clock, Key, Settings, ChevronRight, LogOut, 
+import {
+  Users, Clock, Key, Settings, ChevronRight, LogOut,
   BarChart3, FileText, Calendar, Building2, Shield,
   CheckCircle2, AlertCircle, UserCheck, UserX, TrendingUp, RefreshCw
 } from "lucide-react";
-import { 
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell 
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell
 } from "recharts";
 import logoImage from "@/assets/logo.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
+
+import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
 
 const AUTO_REFRESH_INTERVAL = 60000; // 1 minute
 
@@ -59,7 +61,7 @@ const AdminDashboard = () => {
   }>>([]);
   const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
-const [statusDistribution, setStatusDistribution] = useState<Array<{ name: string; value: number; color: string }>>([]);
+  const [statusDistribution, setStatusDistribution] = useState<Array<{ name: string; value: number; color: string }>>([]);
   const [attendanceBreakdown, setAttendanceBreakdown] = useState({ onTime: 0, late: 0, earlyLeave: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -69,19 +71,19 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
   const fetchAllData = useCallback(async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
     try {
-      // Get admin user IDs once and reuse
-      const { data: adminRoles } = await supabase
+      // Get karyawan user IDs (FR-01: Filter Role Wajib Absensi)
+      const { data: karyawanRoles } = await supabase
         .from("user_roles")
         .select("user_id")
-        .eq("role", "admin");
-      const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+        .in("role", ABSENSI_WAJIB_ROLE);
+      const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
 
       // Run all fetches in parallel
       await Promise.all([
-        fetchStats(adminUserIds),
-        fetchRecentAttendance(adminUserIds),
-        fetchWeeklyTrend(adminUserIds),
-        fetchMonthlyTrend(adminUserIds),
+        fetchStats(karyawanUserIds),
+        fetchRecentAttendance(karyawanUserIds),
+        fetchWeeklyTrend(karyawanUserIds),
+        fetchMonthlyTrend(karyawanUserIds),
       ]);
       setLastRefresh(new Date());
     } finally {
@@ -155,7 +157,7 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
     });
   };
 
-  const fetchStats = async (adminUserIds: Set<string>) => {
+  const fetchStats = async (karyawanUserIds: Set<string>) => {
     const today = new Date();
     const startOfTodayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
     const endOfTodayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
@@ -176,8 +178,8 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
       supabase.from("profiles").select("user_id"),
       today >= startDate
         ? supabase.from("attendance").select("user_id, status")
-            .gte("clock_in", startOfTodayLocal.toISOString())
-            .lte("clock_in", endOfTodayLocal.toISOString())
+          .gte("clock_in", startOfTodayLocal.toISOString())
+          .lte("clock_in", endOfTodayLocal.toISOString())
         : Promise.resolve({ data: [] }),
       supabase.from("profiles").select("department").not("department", "is", null),
       supabase.from("leave_requests").select("user_id").eq("status", "pending"),
@@ -190,26 +192,30 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
         .lte("clock_in", endOfMonth.toISOString()),
     ]);
 
-    const nonAdminProfiles = profilesResult.data?.filter(p => !adminUserIds.has(p.user_id)) || [];
-    const totalEmployees = nonAdminProfiles.length;
+    // FR-02: Total Karyawan Aktif (Karyawan Only)
+    const karyawanProfiles = profilesResult.data?.filter(p => karyawanUserIds.has(p.user_id)) || [];
+    const totalEmployees = karyawanProfiles.length;
 
-    const nonAdminTodayAttendance = todayAttendanceResult.data?.filter(a => !adminUserIds.has(a.user_id)) || [];
-    const presentToday = nonAdminTodayAttendance.length;
-    const lateToday = nonAdminTodayAttendance.filter(a => a.status === "late").length;
-    const earlyLeaveToday = nonAdminTodayAttendance.filter(a => a.status === "early_leave").length;
+    // FR-03: Hadir Hari Ini (Karyawan Only)
+    const karyawanTodayAttendance = todayAttendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
+    const presentToday = karyawanTodayAttendance.length;
+    const lateToday = karyawanTodayAttendance.filter(a => a.status === "late").length;
+    const earlyLeaveToday = karyawanTodayAttendance.filter(a => a.status === "early_leave").length;
     // "Hadir tepat waktu" = semua yang hadir dikurangi yang terlambat dan pulang awal
     const onTimeToday = presentToday - lateToday - earlyLeaveToday;
+
+    // FR-04: Tidak Hadir (Karyawan Only)
     const absentToday = Math.max(0, totalEmployees - presentToday);
 
     const uniqueDepartments = new Set(departmentsResult.data?.map(d => d.department).filter(Boolean));
-    const nonAdminPendingLeaves = pendingLeavesResult.data?.filter(l => !adminUserIds.has(l.user_id)) || [];
-    const nonAdminApprovedLeaves = approvedLeavesResult.data?.filter(l => !adminUserIds.has(l.user_id)) || [];
-    const nonAdminMonthAttendance = monthAttendanceResult.data?.filter(a => !adminUserIds.has(a.user_id)) || [];
+    const karyawanPendingLeaves = pendingLeavesResult.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
+    const karyawanApprovedLeaves = approvedLeavesResult.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
+    const karyawanMonthAttendance = monthAttendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
 
     const workDaysThisMonth = getWorkDaysInMonth(today.getFullYear(), today.getMonth());
     const expectedAttendance = totalEmployees * workDaysThisMonth;
-    const attendanceRate = expectedAttendance > 0 
-      ? Math.round((nonAdminMonthAttendance.length / expectedAttendance) * 100) 
+    const attendanceRate = expectedAttendance > 0
+      ? Math.round((karyawanMonthAttendance.length / expectedAttendance) * 100)
       : 0;
 
     setStats({
@@ -218,9 +224,9 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
       lateToday,
       absentToday,
       departments: uniqueDepartments.size,
-      pendingLeave: nonAdminPendingLeaves.length,
-      approvedLeaveThisMonth: nonAdminApprovedLeaves.length,
-      attendanceThisMonth: nonAdminMonthAttendance.length,
+      pendingLeave: karyawanPendingLeaves.length,
+      approvedLeaveThisMonth: karyawanApprovedLeaves.length,
+      attendanceThisMonth: karyawanMonthAttendance.length,
       attendanceRate: Math.min(100, attendanceRate),
     });
 
@@ -240,10 +246,10 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
     });
   };
 
-  const fetchWeeklyTrend = async (adminUserIds: Set<string>) => {
+  const fetchWeeklyTrend = async (karyawanUserIds: Set<string>) => {
     const today = new Date();
     const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-    
+
     // Get total employees and all attendance for last 7 days in parallel
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(today.getDate() - 6);
@@ -257,23 +263,23 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
         .lte("clock_in", endOfToday.toISOString()),
     ]);
 
-    const nonAdminProfiles = profilesResult.data?.filter(p => !adminUserIds.has(p.user_id)) || [];
-    const totalEmployees = nonAdminProfiles.length;
-    const allAttendance = attendanceResult.data?.filter(a => !adminUserIds.has(a.user_id)) || [];
+    const karyawanProfiles = profilesResult.data?.filter(p => karyawanUserIds.has(p.user_id)) || [];
+    const totalEmployees = karyawanProfiles.length;
+    const allAttendance = attendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
 
     const weekData: WeeklyData[] = [];
-    
+
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      
+
       const dayAttendance = allAttendance.filter(a => a.clock_in.startsWith(dateStr));
       const presentCount = dayAttendance.filter(a => a.status === "present").length;
       const lateCount = dayAttendance.filter(a => a.status === "late").length;
       const dayOfWeek = date.getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      
+
       weekData.push({
         day: dayNames[dayOfWeek],
         hadir: presentCount,
@@ -281,11 +287,11 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
         tidakHadir: isWeekend ? 0 : Math.max(0, totalEmployees - presentCount - lateCount),
       });
     }
-    
+
     setWeeklyData(weekData);
   };
 
-  const fetchMonthlyTrend = async (adminUserIds: Set<string>) => {
+  const fetchMonthlyTrend = async (karyawanUserIds: Set<string>) => {
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
@@ -297,38 +303,38 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
       .gte("clock_in", startOfMonth.toISOString())
       .lte("clock_in", endOfMonth.toISOString());
 
-    const allAttendance = monthAttendance?.filter(a => !adminUserIds.has(a.user_id)) || [];
+    const allAttendance = monthAttendance?.filter(a => karyawanUserIds.has(a.user_id)) || [];
     const monthData: MonthlyData[] = [];
-    
+
     for (let week = 0; week < 4; week++) {
       const weekStart = new Date(startOfMonth);
       weekStart.setDate(startOfMonth.getDate() + (week * 7));
-      
+
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       weekEnd.setHours(23, 59, 59, 999);
-      
+
       if (weekStart > today) break;
-      
+
       const weekAttendance = allAttendance.filter(a => {
         const clockIn = new Date(a.clock_in);
         return clockIn >= weekStart && clockIn <= weekEnd;
       });
-      
+
       const presentCount = weekAttendance.filter(a => a.status === "present").length;
       const lateCount = weekAttendance.filter(a => a.status === "late").length;
-      
+
       monthData.push({
         week: `Minggu ${week + 1}`,
         hadir: presentCount,
         terlambat: lateCount,
       });
     }
-    
+
     setMonthlyData(monthData);
   };
 
-  const fetchRecentAttendance = async (adminUserIds: Set<string>) => {
+  const fetchRecentAttendance = async (karyawanUserIds: Set<string>) => {
     const today = new Date();
     const startOfTodayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
     const endOfTodayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
@@ -346,9 +352,9 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
 
     if (attendanceResult.data) {
       const profileMap = new Map(profilesResult.data?.map(p => [p.user_id, p.full_name]) || []);
-      const nonAdminData = attendanceResult.data.filter(a => !adminUserIds.has(a.user_id));
-      
-      const attendanceWithNames = nonAdminData.slice(0, 5).map(record => ({
+      const karyawanData = attendanceResult.data.filter(a => karyawanUserIds.has(a.user_id));
+
+      const attendanceWithNames = karyawanData.slice(0, 5).map(record => ({
         id: record.id,
         full_name: profileMap.get(record.user_id) || "Unknown",
         clock_in: record.clock_in,
@@ -467,7 +473,7 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
     if (active && payload && payload.length) {
       const data = payload[0];
       const isHadir = data.name === "Hadir";
-      
+
       return (
         <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[140px]">
           <p className="font-medium text-foreground mb-2" style={{ color: data.payload.color }}>
@@ -588,9 +594,9 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Total Karyawan</p>
+                      <p className="text-sm text-muted-foreground">Total Karyawan Aktif (Wajib Absensi)</p>
                       <div className="text-3xl font-bold text-foreground">{stats.totalEmployees}</div>
-                      <p className="text-xs text-muted-foreground mt-1">Aktif terdaftar</p>
+                      <p className="text-xs text-muted-foreground mt-1">Manager & Admin tidak termasuk</p>
                     </div>
                     <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Users className="h-6 w-6 text-primary" />
@@ -598,7 +604,7 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card className="border-border animate-fade-in" style={{ animationDelay: "0.1s" }}>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -616,7 +622,7 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card className="border-border animate-fade-in" style={{ animationDelay: "0.2s" }}>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -631,7 +637,7 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card className="border-border animate-fade-in" style={{ animationDelay: "0.3s" }}>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -667,40 +673,40 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
                   <AreaChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorHadir" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(158, 64%, 42%)" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(158, 64%, 42%)" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="hsl(158, 64%, 42%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(158, 64%, 42%)" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="colorTerlambat" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 32%, 91%)" />
-                    <XAxis 
-                      dataKey="day" 
+                    <XAxis
+                      dataKey="day"
                       tick={{ fontSize: 12, fill: "hsl(215, 16%, 47%)" }}
                       axisLine={{ stroke: "hsl(214, 32%, 91%)" }}
                     />
-                    <YAxis 
+                    <YAxis
                       tick={{ fontSize: 12, fill: "hsl(215, 16%, 47%)" }}
                       axisLine={{ stroke: "hsl(214, 32%, 91%)" }}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    <Area 
-                      type="monotone" 
-                      dataKey="hadir" 
-                      stroke="hsl(158, 64%, 42%)" 
-                      fillOpacity={1} 
-                      fill="url(#colorHadir)" 
+                    <Area
+                      type="monotone"
+                      dataKey="hadir"
+                      stroke="hsl(158, 64%, 42%)"
+                      fillOpacity={1}
+                      fill="url(#colorHadir)"
                       name="Hadir"
                       strokeWidth={2}
                     />
-                    <Area 
-                      type="monotone" 
-                      dataKey="terlambat" 
-                      stroke="hsl(38, 92%, 50%)" 
-                      fillOpacity={1} 
-                      fill="url(#colorTerlambat)" 
+                    <Area
+                      type="monotone"
+                      dataKey="terlambat"
+                      stroke="hsl(38, 92%, 50%)"
+                      fillOpacity={1}
+                      fill="url(#colorTerlambat)"
                       name="Terlambat"
                       strokeWidth={2}
                     />
@@ -734,26 +740,26 @@ const [statusDistribution, setStatusDistribution] = useState<Array<{ name: strin
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(214, 32%, 91%)" />
-                    <XAxis 
-                      dataKey="week" 
+                    <XAxis
+                      dataKey="week"
                       tick={{ fontSize: 12, fill: "hsl(215, 16%, 47%)" }}
                       axisLine={{ stroke: "hsl(214, 32%, 91%)" }}
                     />
-                    <YAxis 
+                    <YAxis
                       tick={{ fontSize: 12, fill: "hsl(215, 16%, 47%)" }}
                       axisLine={{ stroke: "hsl(214, 32%, 91%)" }}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar 
-                      dataKey="hadir" 
-                      fill="hsl(158, 64%, 42%)" 
-                      name="Hadir" 
+                    <Bar
+                      dataKey="hadir"
+                      fill="hsl(158, 64%, 42%)"
+                      name="Hadir"
                       radius={[4, 4, 0, 0]}
                     />
-                    <Bar 
-                      dataKey="terlambat" 
-                      fill="hsl(38, 92%, 50%)" 
-                      name="Terlambat" 
+                    <Bar
+                      dataKey="terlambat"
+                      fill="hsl(38, 92%, 50%)"
+                      name="Terlambat"
                       radius={[4, 4, 0, 0]}
                     />
                   </BarChart>
