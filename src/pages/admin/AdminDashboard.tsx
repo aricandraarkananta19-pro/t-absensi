@@ -200,10 +200,19 @@ const AdminDashboard = () => {
         deptCounts[dept] = (deptCounts[dept] || 0) + 1;
       });
 
-      const colors = ["#0066b3", "#00aaff", "#7dc242", "#5aa530", "#10B981", "#06B6D4"];
+      const colors = [
+        "#0066b3", // Blue
+        "#F59E0B", // Amber/Orange
+        "#10B981", // Emerald 
+        "#EC4899", // Pink
+        "#8B5CF6", // Purple
+        "#06B6D4", // Cyan
+        "#EF4444", // Red
+        "#64748B"  // Slate
+      ];
       const deptData = Object.entries(deptCounts)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 6)
+        .slice(0, 8)
         .map(([name, value], index) => ({
           name,
           value,
