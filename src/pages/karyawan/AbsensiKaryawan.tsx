@@ -276,9 +276,9 @@ const AbsensiKaryawan = () => {
   // ==========================================
   if (isMobile) {
     return (
-      <div className="ios-mobile-container">
+      <div className="ios-mobile-container" style={{ paddingBottom: "calc(160px + env(safe-area-inset-bottom))" }}>
         {/* iOS Header with Clock */}
-        <div className="ios-header" style={{ paddingBottom: "80px" }}>
+        <div className="ios-header" style={{ paddingBottom: "32px" }}>
           <div className="relative z-10">
             {/* Back Button Row */}
             <div className="flex items-center gap-3 mb-6">
@@ -324,63 +324,36 @@ const AbsensiKaryawan = () => {
           </div>
         </div>
 
-        {/* Main Content - Clock Button Area */}
-        <div className="px-4 -mt-12">
-          {/* Clock In/Out Button */}
-          {!todayAttendance ? (
-            // Clock In State
-            <div className="flex flex-col items-center mb-8">
-              <button
-                onClick={handleClockIn}
-                disabled={isLoading}
-                className={`ios-clock-btn pulsing ${isLoading ? "opacity-70" : ""}`}
-              >
-                {isLoading ? (
-                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent" />
-                ) : (
-                  <>
-                    <Fingerprint className="h-14 w-14" />
-                    <span className="text-lg font-semibold">Clock In</span>
-                  </>
-                )}
-              </button>
-              <p className="mt-4 text-sm text-muted-foreground text-center">
-                Ketuk untuk mencatat kehadiran Anda
-              </p>
-            </div>
-          ) : !todayAttendance.clock_out ? (
-            // Working / Waiting for Clock Out
-            <div className="flex flex-col items-center mb-8">
-              <button
-                onClick={handleClockOut}
-                disabled={isLoading}
-                className={`ios-clock-btn clock-out ${isLoading ? "opacity-70" : ""}`}
-              >
-                {isLoading ? (
-                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent" />
-                ) : (
-                  <>
-                    <LogOut className="h-14 w-14" />
-                    <span className="text-lg font-semibold">Clock Out</span>
-                  </>
-                )}
-              </button>
-              <p className="mt-4 text-sm text-muted-foreground text-center">
-                Ketuk untuk mencatat pulang
-              </p>
-            </div>
-          ) : (
-            // All Done State
-            <div className="flex flex-col items-center mb-8">
-              <div className="w-[180px] h-[180px] rounded-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-green-500/20 to-green-500/10 border-8 border-green-500/10">
-                <CheckCircle2 className="h-14 w-14 text-green-500" />
-                <span className="text-lg font-semibold text-green-600">Selesai</span>
+        {/* Main Content */}
+        <div className="px-4 mt-6">
+          {/* Status Display Area (Non-interactive) */}
+          <div className="flex flex-col items-center mb-6">
+            {!todayAttendance ? (
+              <div className="w-[120px] h-[120px] rounded-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-gray-100 to-gray-50 border-4 border-white shadow-lg">
+                <LogIn className="h-10 w-10 text-gray-400" />
+                <span className="text-sm font-semibold text-gray-500">Belum Absen</span>
               </div>
-              <p className="mt-4 text-sm text-muted-foreground text-center">
-                Absensi hari ini sudah lengkap
-              </p>
-            </div>
-          )}
+            ) : !todayAttendance.clock_out ? (
+              <div className="w-[120px] h-[120px] rounded-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-green-50 to-green-100 border-4 border-white shadow-lg pulsing">
+                <Timer className="h-10 w-10 text-green-600" />
+                <span className="text-sm font-semibold text-green-700">Bekerja</span>
+              </div>
+            ) : (
+              <div className="w-[120px] h-[120px] rounded-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-blue-50 to-blue-100 border-4 border-white shadow-lg">
+                <CheckCircle2 className="h-10 w-10 text-blue-600" />
+                <span className="text-sm font-semibold text-blue-700">Selesai</span>
+              </div>
+            )}
+
+            {/* Status Text */}
+            <p className="mt-4 text-center text-muted-foreground text-sm max-w-[200px]">
+              {!todayAttendance
+                ? "Silakan lakukan clock in untuk memulai jam kerja Anda hari ini"
+                : !todayAttendance.clock_out
+                  ? "Jangan lupa clock out sebelum pulang"
+                  : "Terima kasih atas kerja keras Anda hari ini"}
+            </p>
+          </div>
 
           {/* Status Badge */}
           {todayAttendance && (
@@ -464,6 +437,49 @@ const AbsensiKaryawan = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Sticky Action Bar */}
+        <div
+          className="fixed left-0 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-gray-200/50 z-40"
+          style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
+        >
+          {!todayAttendance ? (
+            <button
+              onClick={handleClockIn}
+              disabled={isLoading}
+              className="ios-btn-primary w-full flex items-center justify-center gap-3 shadow-lg shadow-green-500/20"
+            >
+              {isLoading ? (
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <>
+                  <Fingerprint className="h-6 w-6" />
+                  <span>Clock In Sekarang</span>
+                </>
+              )}
+            </button>
+          ) : !todayAttendance.clock_out ? (
+            <button
+              onClick={handleClockOut}
+              disabled={isLoading}
+              className="ios-btn-primary clock-out w-full flex items-center justify-center gap-3 shadow-lg shadow-red-500/20"
+            >
+              {isLoading ? (
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <>
+                  <LogOut className="h-6 w-6" />
+                  <span>Clock Out Sekarang</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="w-full h-[56px] rounded-2xl flex items-center justify-center gap-2 bg-gray-100 text-gray-400 font-medium">
+              <CheckCircle2 className="h-5 w-5" />
+              <span>Absensi Selesai</span>
+            </div>
+          )}
         </div>
 
         {/* iOS Bottom Navigation */}

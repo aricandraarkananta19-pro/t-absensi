@@ -244,19 +244,7 @@ const Auth = () => {
             />
           </div>
 
-          {/* Status badge */}
-          <div
-            className={`absolute bottom-12 left-12 right-12 flex justify-center transform transition-all duration-1000 delay-1000 ${mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-              }`}
-          >
-            <div className="flex items-center gap-3 px-6 py-3 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm">
-              <div className="relative">
-                <div className="w-2 h-2 rounded-full bg-[#7dc242]" />
-                <div className="absolute inset-0 w-2 h-2 rounded-full bg-[#7dc242] animate-ping" />
-              </div>
-              <span className="text-white/70 text-sm">Sistem Absensi & Manajemen Karyawan</span>
-            </div>
-          </div>
+
         </div>
       </div>
 

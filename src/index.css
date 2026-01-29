@@ -204,9 +204,10 @@
 }
 
 /* ==========================================
-   iOS MOBILE ONLY STYLES  
-   Target: iPhone Safari / WebView
-   Breakpoint: max-width 430px (iPhone 15 Pro Max)
+   MOBILE STYLES  
+   Target: All mobile devices including iOS Safari
+   Breakpoint: max-width 768px (standard mobile)
+   Admin routes EXCLUDED via JS hook
    ========================================== */
 
 /* iOS Safe Area Variables */
@@ -335,9 +336,9 @@
    iOS MOBILE MEDIA QUERIES (Mobile Only)
    ========================================== */
 
-@media screen and (max-width: 430px) {
+@media screen and (max-width: 768px) {
 
-  /* iOS Base Styles */
+  /* Mobile Base Styles */
   body {
     background: hsl(var(--ios-gray-bg));
     -webkit-font-smoothing: antialiased;
@@ -346,12 +347,13 @@
     overscroll-behavior-y: contain;
   }
 
-  /* iOS Mobile Container */
+  /* Mobile Container - CRITICAL: Bottom padding prevents navbar overlap */
   .ios-mobile-container {
     min-height: 100vh;
     min-height: 100dvh;
     padding-top: var(--ios-safe-top);
-    padding-bottom: calc(80px + var(--ios-safe-bottom));
+    /* 80px navbar + safe-area + extra 16px for floating buttons */
+    padding-bottom: calc(96px + var(--ios-safe-bottom));
     background: linear-gradient(180deg, hsl(var(--ios-gray-bg)) 0%, hsl(240 6% 94%) 100%);
   }
 
@@ -495,42 +497,65 @@
     font-size: 48px;
   }
 
-  /* iOS Bottom Navigation */
+  /* Fixed Bottom Navigation - CRITICAL: 64px height + safe area */
   .ios-bottom-nav {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 1000;
-    background: rgba(255, 255, 255, 0.92);
+    height: calc(64px + var(--ios-safe-bottom));
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-top: 0.5px solid rgba(0, 0, 0, 0.1);
+    border-top: 0.5px solid rgba(0, 0, 0, 0.12);
     padding: 8px 0 calc(8px + var(--ios-safe-bottom));
     display: flex;
     justify-content: space-around;
-    align-items: center;
+    align-items: flex-start;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
   }
 
   .dark .ios-bottom-nav {
-    background: rgba(20, 20, 25, 0.95);
+    background: rgba(20, 20, 25, 0.98);
     border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2);
   }
 
   .ios-nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 4px 16px;
+    gap: 2px;
+    padding: 6px 12px;
+    min-width: 60px;
     color: hsl(var(--muted-foreground));
     text-decoration: none;
     transition: all 0.2s ease;
     -webkit-tap-highlight-color: transparent;
+    border-radius: 12px;
+    position: relative;
+  }
+
+  .ios-nav-item:active {
+    background: rgba(0, 0, 0, 0.05);
+    transform: scale(0.95);
   }
 
   .ios-nav-item.active {
     color: hsl(var(--ios-blue));
+  }
+
+  .ios-nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: hsl(var(--ios-blue));
+    border-radius: 50%;
   }
 
   .ios-nav-item .icon {
@@ -545,6 +570,11 @@
     font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.1px;
+    line-height: 1.2;
+  }
+
+  .ios-nav-item.active .label {
+    font-weight: 600;
   }
 
   /* iOS Menu Grid */
@@ -1034,7 +1064,7 @@
 }
 
 /* Prevent iOS zoom on input focus */
-@media screen and (max-width: 430px) {
+@media screen and (max-width: 768px) {
 
   input,
   select,
@@ -1043,8 +1073,8 @@
   }
 }
 
-/* iOS Touch Optimization */
-@media screen and (max-width: 430px) {
+/* Touch Optimization */
+@media screen and (max-width: 768px) {
 
   button,
   a,

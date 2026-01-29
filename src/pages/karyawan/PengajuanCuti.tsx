@@ -414,7 +414,7 @@ const PengajuanCuti = () => {
                   <div className="flex items-start gap-3">
                     <div className={`ios-list-icon flex-shrink-0 ${getLeaveTypeIcon(request.leave_type)}`}>
                       <FileText className={`h-4 w-4 ${request.leave_type === "cuti" ? "text-blue-500" :
-                          request.leave_type === "sakit" ? "text-red-500" : "text-purple-500"
+                        request.leave_type === "sakit" ? "text-red-500" : "text-purple-500"
                         }`} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -466,11 +466,12 @@ const PengajuanCuti = () => {
           )}
         </div>
 
-        {/* Floating Action Button */}
+        {/* Floating Action Button - Positioned above bottom nav */}
         <button
           onClick={() => setDialogOpen(true)}
-          className="fixed right-4 bottom-24 w-14 h-14 rounded-full flex items-center justify-center shadow-lg z-50"
+          className="fixed right-4 w-14 h-14 rounded-full flex items-center justify-center shadow-lg z-50"
           style={{
+            bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
             background: "linear-gradient(135deg, #FF9500 0%, #FF6B00 100%)",
             boxShadow: "0 4px 16px rgba(255, 149, 0, 0.4)"
           }}

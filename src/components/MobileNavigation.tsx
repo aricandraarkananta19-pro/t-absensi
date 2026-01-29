@@ -15,11 +15,18 @@ const navItems: NavItem[] = [
     { icon: User, label: "Profil", href: "/karyawan/profil" },
 ];
 
+/**
+ * Mobile Bottom Navigation for Employee UI
+ * - Fixed 64px height + safe-area padding for iOS
+ * - Icons + labels for clear navigation
+ * - Proper z-index to stay above content
+ * - Never shown on Admin/Manager routes (handled by useIsMobile hook)
+ */
 const MobileNavigation = () => {
     const location = useLocation();
 
     return (
-        <nav className="ios-bottom-nav">
+        <nav className="ios-bottom-nav" role="navigation" aria-label="Mobile navigation">
             {navItems.map((item) => {
                 const isActive = location.pathname === item.href ||
                     (item.href === "/dashboard" && location.pathname === "/");
@@ -29,9 +36,10 @@ const MobileNavigation = () => {
                         key={item.href}
                         to={item.href}
                         className={`ios-nav-item ${isActive ? "active" : ""}`}
+                        aria-current={isActive ? "page" : undefined}
                     >
                         <div className="icon">
-                            <item.icon className="h-6 w-6" />
+                            <item.icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 2} />
                         </div>
                         <span className="label">{item.label}</span>
                     </Link>
@@ -42,3 +50,4 @@ const MobileNavigation = () => {
 };
 
 export default MobileNavigation;
+
