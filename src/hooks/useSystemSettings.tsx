@@ -114,6 +114,54 @@ export const useSystemSettings = () => {
     };
   }, [fetchSettings]);
 
+  // Map camelCase keys to snake_case for DB
+  const mapToDbKey = (key: string): string => {
+    const mapping: Record<string, string> = {
+      companyName: "company_name",
+      clockInStart: "clock_in_start",
+      clockInEnd: "clock_in_end",
+      clockOutStart: "clock_out_start",
+      clockOutEnd: "clock_out_end",
+      lateThreshold: "late_threshold",
+      enableLocationTracking: "enable_location_tracking",
+      enableNotifications: "enable_notifications",
+      requirePhotoOnClockIn: "require_photo_on_clock_in",
+      autoClockOut: "auto_clock_out",
+      autoClockOutTime: "auto_clock_out_time",
+      maxLeaveDays: "max_leave_days",
+      attendanceStartDate: "attendance_start_date",
+    };
+    return mapping[key] || key;
+  };
+
+  const updateSettings = async (newSettings: Partial<SystemSettings>) => {
+    setIsLoading(true);
+    try {
+      const updates = Object.entries(newSettings).map(([key, value]) => ({
+        key: mapToDbKey(key),
+        value: typeof value === "boolean" ? value.toString() : value.toString(),
+        updated_at: new Date().toISOString(),
+      }));
+
+      for (const update of updates) {
+        const { error } = await supabase
+          .from("system_settings")
+          .upsert(update, { onConflict: "key" });
+
+        if (error) throw error;
+      }
+
+      // Update local state immediately for optimistic UI
+      setSettings((prev) => ({ ...prev, ...newSettings }));
+
+    } catch (error: any) {
+      console.error("Error updating settings:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Helper function to check if time is after threshold
   const isAfterTime = (threshold: string): boolean => {
     const now = new Date();
@@ -150,6 +198,7 @@ export const useSystemSettings = () => {
     settings,
     isLoading,
     loadError,
+    updateSettings,
     isAfterTime,
     isBeforeTime,
     isWithinAttendancePeriod,

@@ -21,6 +21,7 @@ import { useSystemSettings } from "@/hooks/useSystemSettings";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
 import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { startOfMonth, endOfMonth, isAfter, format } from "date-fns";
 import { id } from "date-fns/locale";
 
@@ -54,6 +55,7 @@ const getTodayDate = () => {
 const RekapAbsensi = () => {
   const navigate = useNavigate();
   const { isLoading: settingsLoading } = useSystemSettings();
+  const isMobile = useIsMobile();
 
   const [dailyData, setDailyData] = useState<any[]>([]);
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats[]>([]);
@@ -322,6 +324,114 @@ const RekapAbsensi = () => {
   const filteredData = viewMode === 'daily'
     ? dailyData.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : monthlyStats.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  // ==========================================
+  // MOBILE VIEW - Native List Cards
+  // ==========================================
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-slate-50 pb-[env(safe-area-inset-bottom)]">
+        {/* Slim Header - Fixed */}
+        <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 h-[52px] px-4 flex items-center justify-between" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full active:bg-slate-100 transition-colors">
+              <ChevronLeft className="w-6 h-6 text-slate-900" />
+            </button>
+            <h1 className="text-base font-semibold text-slate-900 tracking-tight">Laporan Kehadiran</h1>
+          </div>
+
+          {/* Month/Date Selector Compact */}
+          <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200">
+            <button onClick={goToPrevious} className="p-1.5 rounded-md active:bg-white active:shadow-sm"><ChevronLeft className="w-4 h-4 text-slate-500" /></button>
+            <span className="text-xs font-semibold text-slate-700 mx-2 min-w-[80px] text-center">
+              {viewMode === 'daily' ? format(new Date(filterDate), 'MMM yyyy', { locale: id }) : format(selectedMonth, 'MMM yyyy', { locale: id })}
+            </span>
+            <button onClick={goToNext} className="p-1.5 rounded-md active:bg-white active:shadow-sm"><ChevronRight className="w-4 h-4 text-slate-500" /></button>
+          </div>
+        </header>
+
+        {/* View Toggle - Sticky underneath header */}
+        <div className="sticky z-40 bg-slate-50/95 backdrop-blur-sm px-4 py-3 border-b border-slate-100" style={{ top: "calc(52px + env(safe-area-inset-top))" }}>
+          <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200">
+            <button onClick={() => setViewMode('daily')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${viewMode === 'daily' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Harian</button>
+            <button onClick={() => setViewMode('monthly')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${viewMode === 'monthly' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Bulanan</button>
+          </div>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="px-4 pb-20 space-y-4 pt-2">
+          {filteredData.length > 0 ? filteredData.map((item, i) => (
+            <div key={i} className="bg-white rounded-[20px] p-4 shadow-sm border border-slate-100 relative overflow-hidden active:scale-[0.98] transition-transform duration-200">
+              {/* Row 1: Identity */}
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-[17px] font-bold text-slate-900 leading-tight mb-1">{item.name}</h3>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{item.department}</p>
+                </div>
+                {viewMode === 'daily' && (
+                  <div className="scale-90 origin-top-right">
+                    {getStatusBadge((item as any).status)}
+                  </div>
+                )}
+              </div>
+
+              {/* Row 2: Attendance Summary */}
+              {viewMode === 'daily' ? (
+                <div className="flex items-center justify-between bg-slate-50 rounded-xl p-3">
+                  <div className="text-center">
+                    <p className="text-[10px] text-slate-400 font-semibold mb-0.5 uppercase">Masuk</p>
+                    <p className="text-base font-bold text-slate-800 tabular-nums">
+                      {(item as any).clock_in ? format(new Date((item as any).clock_in), 'HH:mm') : '--:--'}
+                    </p>
+                  </div>
+                  <div className="w-px h-8 bg-slate-200 mx-2" />
+                  <div className="text-center">
+                    <p className="text-[10px] text-slate-400 font-semibold mb-0.5 uppercase">Pulang</p>
+                    <p className="text-base font-bold text-slate-800 tabular-nums">
+                      {(item as any).clock_out ? format(new Date((item as any).clock_out), 'HH:mm') : '--:--'}
+                    </p>
+                  </div>
+                  <div className="w-px h-8 bg-slate-200 mx-2" />
+                  <div className="text-center">
+                    <p className="text-[10px] text-slate-400 font-semibold mb-0.5 uppercase">Durasi</p>
+                    <p className="text-base font-bold text-blue-600 tabular-nums">
+                      {calculateDuration((item as any).clock_in, (item as any).clock_out)}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between text-sm font-medium">
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs text-slate-400 mb-1">Hadir</span>
+                    <span className="text-lg font-bold text-green-600">{(item as MonthlyStats).present}</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs text-slate-400 mb-1">Telat</span>
+                    <span className="text-lg font-bold text-amber-600">{(item as MonthlyStats).late}</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs text-slate-400 mb-1">Alpha</span>
+                    <span className="text-lg font-bold text-red-600">{(item as MonthlyStats).absent}</span>
+                  </div>
+                  <div className="flex flex-col items-center border-l border-slate-200 pl-4 ml-2">
+                    <span className="text-xs text-slate-400 mb-1">Total</span>
+                    <span className="text-lg font-bold text-slate-700">{(item as MonthlyStats).total_attendance}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )) : (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                <Search className="w-6 h-6 text-slate-400" />
+              </div>
+              <p className="text-slate-500 font-medium">Tidak ada data kehadiran</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <EnterpriseLayout

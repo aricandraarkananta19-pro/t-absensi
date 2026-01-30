@@ -1506,3 +1506,19 @@
 .pt-safe {
   padding-top: env(safe-area-inset-top)
 }
+
+/* Global Mobile Fixes - Native Feel */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
+  /* Prevents bounce on body */
+}
+
+body {
+  overscroll-behavior-y: auto;
+  /* Allows bounce on scrollable areas if needed, but prevents pull-to-refresh on body if packaged */
+}
