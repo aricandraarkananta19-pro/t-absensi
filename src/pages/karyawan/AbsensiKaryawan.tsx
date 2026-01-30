@@ -333,7 +333,7 @@ const AbsensiKaryawan = () => {
 
         {/* Sticky Action Bar */}
         <div
-          className="fixed left-0 right-0 p-5 bg-white rounded-t-[32px] shadow-[0_-5px_30px_rgba(0,0,0,0.15)] z-40 pb-[calc(16px+env(safe-area-inset-bottom))]"
+          className="fixed left-0 right-0 bottom-[calc(68px+env(safe-area-inset-bottom))] p-5 bg-white rounded-t-[32px] shadow-[0_-5px_30px_rgba(0,0,0,0.15)] z-40"
         >
           <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
 

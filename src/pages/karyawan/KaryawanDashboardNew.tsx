@@ -180,29 +180,32 @@ const KaryawanDashboardNew = () => {
     // ==========================================
     if (isMobile) {
         return (
-            <div className="ios-mobile-container bg-[#F2F2F7]">
+            <div className="ios-mobile-container bg-[#F2F2F7] min-h-screen">
                 {/* Fixed Header - Glassmorphism */}
-                <header className="ios-header fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-b border-white/20 pb-4 pt-safe shadow-[0_1px_0_rgba(0,0,0,0.05)]">
-                    <div className="px-5 pt-2 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-sky-500 shadow-lg shadow-blue-500/30 flex items-center justify-center">
-                                <span className="font-bold text-white text-xs tracking-wider">TTI</span>
-                            </div>
-                            <div>
-                                <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">Talenta Absensi</h1>
-                                <p className="text-[11px] text-slate-400 font-medium tracking-wide uppercase mt-0.5">Employee Portal</p>
-                            </div>
+                <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/50 shadow-sm pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-3 px-5 transition-all duration-300">
+                    <div className="flex items-center justify-between w-full relative">
+                        {/* Left: Logo */}
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-sky-500 shadow-md flex items-center justify-center shrink-0">
+                            <span className="font-bold text-white text-[10px] tracking-wider">TTI</span>
                         </div>
+
+                        {/* Middle: Title */}
+                        <div className="flex flex-col items-center justify-center flex-1 mx-2">
+                            <h1 className="text-[15px] font-semibold text-slate-900 leading-tight">Talenta Absensi</h1>
+                            <p className="text-[10px] text-slate-500 font-medium tracking-wider uppercase opacity-80 leading-tight mt-0.5">Employee Portal</p>
+                        </div>
+
+                        {/* Right: Profile */}
                         <button
                             onClick={() => navigate("/karyawan/profil")}
-                            className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 active:bg-slate-200 transition-colors"
+                            className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center border border-slate-200/60 active:bg-slate-100 transition-colors shrink-0"
                         >
-                            <User className="h-5 w-5 text-slate-600" />
+                            <User className="h-4.5 w-4.5 text-slate-600" />
                         </button>
                     </div>
                 </header>
 
-                <div className="pt-[calc(env(safe-area-inset-top)+84px)] px-5 pb-32 space-y-6">
+                <div className="pt-[calc(env(safe-area-inset-top)+85px)] px-5 pb-[calc(80px+env(safe-area-inset-bottom))] space-y-6">
                     {/* Greeting & Date */}
                     <div>
                         <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{greeting},<br />{user?.user_metadata?.full_name?.split(" ")[0]}!</h2>

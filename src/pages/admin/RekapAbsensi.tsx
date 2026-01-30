@@ -1,36 +1,32 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, Clock, Search, Calendar, Users, CheckCircle2,
-  XCircle, AlertCircle, Download, RotateCw, FileSpreadsheet, FileText,
+  ArrowLeft, Clock, Search, Calendar as CalendarIcon, Users, CheckCircle2,
+  XCircle, AlertCircle, Download, FileSpreadsheet, FileText,
   LayoutDashboard, BarChart3, Building2, Key, Settings, Shield, Database,
-  Timer, CalendarClock, ChevronLeft, ChevronRight, Lock
+  ChevronLeft, ChevronRight, LogIn, LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToCSV } from "@/lib/exportUtils";
-import { exportAttendanceExcel, exportAttendanceHRPDF, AttendanceReportData, EmployeeAttendance } from "@/lib/attendanceExportUtils";
+import { exportAttendanceExcel, exportAttendanceHRPDF, AttendanceReportData } from "@/lib/attendanceExportUtils";
 import { generateAttendancePeriod } from "@/lib/attendanceGenerator";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
 import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { startOfMonth, endOfMonth, isAfter, format } from "date-fns";
+import { startOfMonth, endOfMonth, format, addDays, subDays } from "date-fns";
 import { id } from "date-fns/locale";
-
-// Talenta Brand Colors
-const BRAND_COLORS = {
-  blue: "#1A5BA8",
-  lightBlue: "#00A0E3",
-  green: "#7DC242",
-};
+import { DateRange } from "react-day-picker";
 
 interface MonthlyStats {
   user_id: string;
@@ -41,15 +37,13 @@ interface MonthlyStats {
   early_leave: number;
   absent: number;
   total_attendance: number;
-  // Detail Arrays for Export
   absentDates: string[];
   lateDates: string[];
   leaveDates: string[];
-  leave: number; // Added leave count
+  leave: number;
 }
 
 const getTodayDate = () => {
-  // Jakarta Timezone Date
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
 };
 
@@ -63,16 +57,21 @@ const RekapAbsensi = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // View Modes: Daily, Monthly, Range
+  const [viewMode, setViewMode] = useState<"daily" | "monthly" | "range">("daily");
+
+  // Date Filters
   const [filterDate, setFilterDate] = useState(getTodayDate());
-  const [viewMode, setViewMode] = useState<"daily" | "monthly">("daily");
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  });
 
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [totalEmployees, setTotalEmployees] = useState(0);
-  const [isPeriodLocked, setIsPeriodLocked] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
 
-  // Menu sections for sidebar
+  // Menu sections
   const menuSections = [
     {
       title: "Menu Utama",
@@ -105,69 +104,70 @@ const RekapAbsensi = () => {
 
       // 2. Get Profiles
       const { data: profilesData } = await supabase.from("profiles").select("user_id, full_name, department, join_date");
-      const activeKaryawan = profilesData?.filter(p => karyawanUserIds.has(p.user_id)) || [];
+      const activeKaryawan = profilesData?.filter(p => karyawanUserIds.has(p.user_id)).sort((a, b) => (a.full_name || "").localeCompare(b.full_name || "")) || [];
       setTotalEmployees(activeKaryawan.length);
 
-      // 3. Date Range
-      let start, end;
+      // 3. Determine Date Range based on View Mode
+      let start: Date, end: Date;
+
       if (viewMode === "daily") {
         start = new Date(filterDate);
         start.setHours(0, 0, 0, 0);
         end = new Date(filterDate);
         end.setHours(23, 59, 59, 999);
-      } else {
+      } else if (viewMode === "monthly") {
         start = startOfMonth(selectedMonth);
         end = endOfMonth(selectedMonth);
+      } else {
+        // Range Mode
+        start = dateRange?.from || new Date();
+        start.setHours(0, 0, 0, 0);
+        end = dateRange?.to || new Date();
+        end.setHours(23, 59, 59, 999);
       }
 
-      // Query 2: Valid Attendance
+      // 4. Query Attendance
       const { data: attendanceData, error: attendanceError } = await supabase
         .from("attendance")
         .select("*")
-        .gte("clock_in", start.toISOString()) // Safety buffer handled by generator
-        .lt("clock_in", new Date(new Date(end).setDate(end.getDate() + 1)).toISOString());
+        .gte("clock_in", start.toISOString())
+        .lte("clock_in", new Date(new Date(end).getTime() + 86400000).toISOString()); // Buffer for timezone
 
       if (attendanceError) throw attendanceError;
 
-      // Query 3: Approved Leaves
+      // 5. Query Leaves
       const { data: leaveData, error: leaveError } = await supabase
         .from("leave_requests")
         .select("*")
         .eq("status", "approved");
-      // We fetch all approved leaves to be safe, or optimize with date range if needed.
-      // Client-side filtering is acceptable for reasonable dataset sizes.
 
       if (leaveError) throw leaveError;
 
-      // -------------------------------------------
-      // 2. MERGE & PROCESS
-      // -------------------------------------------
-
-      // DAILY VIEW LOGIC ... (omitted for brevity, assume unaffected or needs update later?)
-      // Actually Daily View needs leaves too?
-      // Current Daily View (lines 151+) maps 'attendanceData'.
-      // If an employee is on Leave, they won't be in 'attendanceData'.
-      // So Daily View won't show them as "Cuti".
-      // The user complained about "Monthly Attendance Recap".
-      // I will focus on Monthly Stats first (lines 169+).
-
-      // 5. Process
+      // 6. Process Logic
       if (viewMode === "daily") {
+        // Daily View Mapping
         const todayStr = getTodayDate();
         const merged = activeKaryawan.map(employee => {
           const record = attendanceData?.find(a => {
-            // Safe date check
             if (!a.clock_in) return false;
             const rDate = new Date(a.clock_in).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
             return a.user_id === employee.user_id && rDate === filterDate;
           });
 
-          // Fallback status logic for single day
+          // Accurate Status Logic
           let status = record?.status;
+
           if (!record) {
-            if (filterDate > todayStr) status = 'future';
+            const empJoin = employee.join_date ? new Date(employee.join_date).toISOString().split('T')[0] : '2000-01-01';
+            if (filterDate < empJoin) status = 'future'; // Before join
+            else if (filterDate > todayStr) status = 'future';
             else if (filterDate === todayStr) status = 'pending';
             else status = 'absent';
+          } else {
+            // Check for Not Clocked Out
+            if (record.clock_in && !record.clock_out && filterDate === todayStr) {
+              status = 'not_clocked_out';
+            }
           }
 
           return {
@@ -182,16 +182,26 @@ const RekapAbsensi = () => {
           };
         });
 
-        // Sort: Present first
-        merged.sort((a, b) => (b.clock_in ? 1 : 0) - (a.clock_in ? 1 : 0));
+        // Sort: Active first (not_clocked_out > present > late > pending > absent)
+        merged.sort((a, b) => {
+          const getScore = (s: string) => {
+            if (s === 'not_clocked_out') return 5;
+            if (s === 'present' || s === 'late') return 4;
+            if (s === 'pending') return 3;
+            return 1;
+          }
+          return getScore(b.status) - getScore(a.status);
+        });
+
         setDailyData(merged);
 
       } else {
-        // MONTHLY AGGREGATION using generateAttendancePeriod
+        // Monthly OR Range View -> Aggregated Stats
         const stats: MonthlyStats[] = activeKaryawan.map(employee => {
           const empRecords = attendanceData?.filter(r => r.user_id === employee.user_id) || [];
           const empLeaves = leaveData?.filter(l => l.user_id === employee.user_id) || [];
 
+          // Use Generator to fill blanks
           const normalized = generateAttendancePeriod(start, end, empRecords, empLeaves);
 
           const s: MonthlyStats = {
@@ -203,9 +213,13 @@ const RekapAbsensi = () => {
           };
 
           normalized.forEach(day => {
-            // STRICT RULE: Ignore all data before attendance start date
+            // Ignore pre-join dates
+            if (employee.join_date && new Date(day.date) < new Date(employee.join_date)) return;
+
+            // Ignore pre-system start dates
             if (new Date(day.date) < new Date(settings.attendanceStartDate)) return;
 
+            // Mapping Status Logic
             if (day.status === 'present') { s.present++; s.total_attendance++; }
             else if (day.status === 'late') { s.late++; s.total_attendance++; s.lateDates.push(day.date); }
             else if (day.status === 'early_leave') { s.early_leave++; s.total_attendance++; }
@@ -213,19 +227,21 @@ const RekapAbsensi = () => {
               s.leave++;
               s.leaveDates.push(day.date);
             }
-            else if ((day.status === 'absent' || day.status === 'alpha') && !day.isWeekend) {
-              // Only count absent if it's strictly absent (not weekend/future)
+            else if ((day.status === 'absent' || day.status === 'alpha') && !day.isWeekend && day.status !== 'future') {
               s.absent++;
               s.absentDates.push(day.date);
             }
+            // 'weekend' and 'future' ignored for stats
           });
 
           return s;
         });
+
+        // Sort by Absent count (high to low) for manager attention, or Name
+        stats.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
         setMonthlyStats(stats);
       }
-
-      setLastUpdated(new Date());
 
     } catch (err: any) {
       console.error(err);
@@ -233,34 +249,52 @@ const RekapAbsensi = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [filterDate, selectedMonth, viewMode]);
+  }, [filterDate, selectedMonth, dateRange, viewMode]);
+
+  // Realtime Subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-attendance-rekap')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'attendance' },
+        () => {
+          fetchAttendance();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchAttendance]);
 
   useEffect(() => {
     if (!settingsLoading) fetchAttendance();
   }, [settingsLoading, fetchAttendance]);
 
-  // Sync is mostly redundant now but useful for hard-refreshing or debugging
-  const handleSyncAbsence = () => fetchAttendance();
-
+  // Navigation Handlers
   const goToPrevious = () => {
     if (viewMode === "daily") {
       const d = new Date(filterDate); d.setDate(d.getDate() - 1);
       setFilterDate(d.toISOString().split("T")[0]);
-    } else {
+    } else if (viewMode === "monthly") {
       setSelectedMonth(prev => { const d = new Date(prev); d.setMonth(d.getMonth() - 1); return d; });
     }
   };
+
   const goToNext = () => {
     if (viewMode === "daily") {
       const d = new Date(filterDate); d.setDate(d.getDate() + 1);
       setFilterDate(d.toISOString().split("T")[0]);
-    } else {
+    } else if (viewMode === "monthly") {
       setSelectedMonth(prev => { const d = new Date(prev); d.setMonth(d.getMonth() + 1); return d; });
     }
   };
 
   const calculateDuration = (inTime: any, outTime: any) => {
-    if (!inTime || !outTime) return "-";
+    if (!inTime) return "-";
+    if (!outTime) return "Berjalan"; // Ongoing
     const ms = new Date(outTime).getTime() - new Date(inTime).getTime();
     const h = Math.floor(ms / 3600000);
     const m = Math.floor((ms % 3600000) / 60000);
@@ -276,19 +310,22 @@ const RekapAbsensi = () => {
 
   // EXPORT
   const handleExport = (type: 'csv' | 'excel' | 'pdf') => {
-    if (dailyData.length === 0 && monthlyStats.length === 0) return;
+    if (viewMode === 'monthly' || viewMode === 'range') {
+      const reportTitle = viewMode === 'range'
+        ? `Laporan_${dateRange?.from ? format(dateRange.from, 'dd-MM-yyyy') : ''}_sd_${dateRange?.to ? format(dateRange.to, 'dd-MM-yyyy') : ''}`
+        : `Laporan_Bulanan_${format(selectedMonth, 'MMM_yyyy')}`;
 
-    if (viewMode === 'monthly') {
-      // Use SPECIALIZED Export
       const reportData: AttendanceReportData = {
-        period: format(selectedMonth, 'MMMM yyyy', { locale: id }),
-        periodStart: format(startOfMonth(selectedMonth), 'yyyy-MM-dd'),
-        periodEnd: format(endOfMonth(selectedMonth), 'yyyy-MM-dd'),
+        period: viewMode === 'range' && dateRange?.from && dateRange?.to
+          ? `${format(dateRange.from, 'dd MMM yyyy', { locale: id })} - ${format(dateRange.to, 'dd MMM yyyy', { locale: id })}`
+          : format(selectedMonth, 'MMMM yyyy', { locale: id }),
+        periodStart: viewMode === 'range' && dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : format(startOfMonth(selectedMonth), 'yyyy-MM-dd'),
+        periodEnd: viewMode === 'range' && dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : format(endOfMonth(selectedMonth), 'yyyy-MM-dd'),
         totalEmployees: monthlyStats.length,
         totalPresent: monthlyStats.reduce((a, b) => a + b.present, 0),
         totalAbsent: monthlyStats.reduce((a, b) => a + b.absent, 0),
         totalLate: monthlyStats.reduce((a, b) => a + b.late, 0),
-        totalLeave: 0, // Need Leave logic separately if implemented
+        totalLeave: 0,
         employees: monthlyStats.map(m => ({
           name: m.name,
           department: m.department,
@@ -304,11 +341,10 @@ const RekapAbsensi = () => {
         leaveRequests: []
       };
 
-      if (type === 'excel') exportAttendanceExcel(reportData, `Laporan_Bulanan_${format(selectedMonth, 'MMM_yyyy')}`);
-      if (type === 'pdf') exportAttendanceHRPDF(reportData, `Laporan_Bulanan_${format(selectedMonth, 'MMM_yyyy')}`);
+      if (type === 'excel') exportAttendanceExcel(reportData, reportTitle);
+      if (type === 'pdf') exportAttendanceHRPDF(reportData, reportTitle);
       if (type === 'csv') toast({ description: "CSV tersedia di mode Harian." });
     } else {
-      // DAILY EXPORT (Simple)
       const dataForExport = dailyData.map((d, i) => ({
         No: i + 1,
         Nama: d.name,
@@ -335,7 +371,6 @@ const RekapAbsensi = () => {
         ],
         data: dataForExport,
       });
-      else toast({ description: "Gunakan Mode Bulanan untuk Laporan Lengkap PDF/Excel" });
     }
   };
 
@@ -345,250 +380,268 @@ const RekapAbsensi = () => {
       case "late": return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-0"><AlertCircle className="w-3 h-3 mr-1" />Terlambat</Badge>;
       case "absent":
       case "alpha": return <Badge className="bg-red-100 text-red-700 hover:bg-red-200 border-0"><XCircle className="w-3 h-3 mr-1" />Alpha</Badge>;
+      case "not_clocked_out": return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-0 animate-pulse"><Clock className="w-3 h-3 mr-1" />Belum Pulang</Badge>;
       case "pending": return <Badge variant="secondary" className="text-slate-500">Belum Hadir</Badge>;
       case "future": return <Badge variant="outline" className="text-slate-300">-</Badge>;
       default: return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
-  // Filter
-  const filteredData = viewMode === 'daily'
-    ? dailyData.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : monthlyStats.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Filter Data
+  const filteredData = (viewMode === 'daily' ? dailyData : monthlyStats)
+    .filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   // ==========================================
-  // MOBILE VIEW - Native List Cards
+  // MOBILE VIEW
   // ==========================================
   if (isMobile) {
     return (
       <div className="min-h-screen bg-slate-50 pb-[env(safe-area-inset-bottom)]">
-        {/* Slim Header - Fixed */}
         <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 h-[52px] px-4 flex items-center justify-between" style={{ paddingTop: "env(safe-area-inset-top)" }}>
           <div className="flex items-center gap-3">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full active:bg-slate-100 transition-colors">
               <ChevronLeft className="w-6 h-6 text-slate-900" />
             </button>
-            <h1 className="text-base font-semibold text-slate-900 tracking-tight">Laporan Kehadiran</h1>
+            <h1 className="text-base font-semibold text-slate-900 tracking-tight">Laporan</h1>
           </div>
-
-          {/* Month/Date Selector Compact */}
-          <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200">
-            <button onClick={goToPrevious} className="p-1.5 rounded-md active:bg-white active:shadow-sm"><ChevronLeft className="w-4 h-4 text-slate-500" /></button>
-            <span className="text-xs font-semibold text-slate-700 mx-2 min-w-[80px] text-center">
-              {viewMode === 'daily' ? format(new Date(filterDate), 'MMM yyyy', { locale: id }) : format(selectedMonth, 'MMM yyyy', { locale: id })}
-            </span>
-            <button onClick={goToNext} className="p-1.5 rounded-md active:bg-white active:shadow-sm"><ChevronRight className="w-4 h-4 text-slate-500" /></button>
+          <div className="flex items-center gap-2">
+            {/* Simple View Toggle for Mobile */}
+            <select
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value as any)}
+              className="text-xs font-semibold bg-slate-100 border-none rounded-lg py-1.5 pl-2 pr-6"
+            >
+              <option value="daily">Harian</option>
+              <option value="monthly">Bulanan</option>
+              <option value="range">Range</option>
+            </select>
           </div>
         </header>
 
-        {/* View Toggle - Sticky underneath header */}
-        <div className="sticky z-40 bg-slate-50/95 backdrop-blur-sm px-4 py-3 border-b border-slate-100" style={{ top: "calc(52px + env(safe-area-inset-top))" }}>
-          <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-            <button onClick={() => setViewMode('daily')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${viewMode === 'daily' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Harian</button>
-            <button onClick={() => setViewMode('monthly')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${viewMode === 'monthly' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Bulanan</button>
+        <div className="pt-[calc(52px+env(safe-area-inset-top))] px-4 pb-20 space-y-4">
+          {/* Date Controls Mobile */}
+          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100 mt-2">
+            {viewMode === 'range' ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-medium text-slate-500">Pilih Rentang Tanggal</p>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal text-xs h-9">
+                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>{format(dateRange.from, "d MMM")} - {format(dateRange.to, "d MMM yyyy")}</>
+                        ) : (
+                          format(dateRange.from, "d MMM yyyy")
+                        )
+                      ) : (
+                        <span>Pilih tanggal</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={dateRange?.from}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={1}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPrevious}><ChevronLeft className="w-4 h-4" /></Button>
+                <span className="text-sm font-semibold text-slate-700">
+                  {viewMode === 'daily' ? format(new Date(filterDate), 'dd MMM yyyy', { locale: id }) : format(selectedMonth, 'MMMM yyyy', { locale: id })}
+                </span>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNext}><ChevronRight className="w-4 h-4" /></Button>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Scrollable Content */}
-        <div className="px-4 pb-20 space-y-4 pt-2">
+          {/* Content List */}
           {filteredData.length > 0 ? filteredData.map((item, i) => (
-            <div key={i} className="bg-white rounded-[20px] p-4 shadow-sm border border-slate-100 relative overflow-hidden active:scale-[0.98] transition-transform duration-200">
-              {/* Row 1: Identity */}
-              <div className="flex justify-between items-start mb-4">
+            <div key={i} className="bg-white rounded-[20px] p-4 shadow-sm border border-slate-100">
+              <div className="flex justify-between mb-3">
                 <div>
-                  <h3 className="text-[17px] font-bold text-slate-900 leading-tight mb-1">{item.name}</h3>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{item.department}</p>
+                  <h3 className="text-base font-bold text-slate-900">{item.name}</h3>
+                  <p className="text-xs text-slate-500">{item.department}</p>
                 </div>
-                {viewMode === 'daily' && (
-                  <div className="scale-90 origin-top-right">
-                    {getStatusBadge((item as any).status)}
-                  </div>
-                )}
+                {viewMode === 'daily' && getStatusBadge((item as any).status)}
               </div>
 
-              {/* Row 2: Attendance Summary */}
               {viewMode === 'daily' ? (
-                <div className="flex items-center justify-between bg-slate-50 rounded-xl p-3">
-                  <div className="text-center">
-                    <p className="text-[10px] text-slate-400 font-semibold mb-0.5 uppercase">Masuk</p>
-                    <p className="text-base font-bold text-slate-800 tabular-nums">
-                      {(item as any).clock_in ? format(new Date((item as any).clock_in), 'HH:mm') : '--:--'}
-                    </p>
+                <div className="flex items-center justify-between bg-slate-50 rounded-xl p-3 text-xs">
+                  <div>
+                    <span className="block text-slate-400 mb-0.5">Masuk</span>
+                    <span className="font-bold">{(item as any).clock_in ? format(new Date((item as any).clock_in), 'HH:mm') : '-'}</span>
                   </div>
-                  <div className="w-px h-8 bg-slate-200 mx-2" />
-                  <div className="text-center">
-                    <p className="text-[10px] text-slate-400 font-semibold mb-0.5 uppercase">Pulang</p>
-                    <p className="text-base font-bold text-slate-800 tabular-nums">
-                      {(item as any).clock_out ? format(new Date((item as any).clock_out), 'HH:mm') : '--:--'}
-                    </p>
+                  <div className="w-px h-8 bg-slate-200" />
+                  <div>
+                    <span className="block text-slate-400 mb-0.5">Pulang</span>
+                    <span className="font-bold">{(item as any).clock_out ? format(new Date((item as any).clock_out), 'HH:mm') : '-'}</span>
                   </div>
-                  <div className="w-px h-8 bg-slate-200 mx-2" />
-                  <div className="text-center">
-                    <p className="text-[10px] text-slate-400 font-semibold mb-0.5 uppercase">Durasi</p>
-                    <p className="text-base font-bold text-blue-600 tabular-nums">
-                      {calculateDuration((item as any).clock_in, (item as any).clock_out)}
-                    </p>
+                  <div className="w-px h-8 bg-slate-200" />
+                  <div>
+                    <span className="block text-slate-400 mb-0.5">Durasi</span>
+                    <span className="font-bold text-blue-600">{calculateDuration((item as any).clock_in, (item as any).clock_out)}</span>
                   </div>
                 </div>
               ) : (
-                <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between text-sm font-medium">
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs text-slate-400 mb-1">Hadir</span>
-                    <span className="text-lg font-bold text-green-600">{(item as MonthlyStats).present}</span>
+                <div className="grid grid-cols-4 gap-1 text-center bg-slate-50 p-2 rounded-xl">
+                  <div>
+                    <span className="block text-xs font-bold text-green-600">{(item as MonthlyStats).present}</span>
+                    <span className="text-[10px] text-slate-500">Hadir</span>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs text-slate-400 mb-1">Telat</span>
-                    <span className="text-lg font-bold text-amber-600">{(item as MonthlyStats).late}</span>
+                  <div>
+                    <span className="block text-xs font-bold text-amber-600">{(item as MonthlyStats).late}</span>
+                    <span className="text-[10px] text-slate-500">Telat</span>
                   </div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs text-slate-400 mb-1">Alpha</span>
-                    <span className="text-lg font-bold text-red-600">{(item as MonthlyStats).absent}</span>
+                  <div>
+                    <span className="block text-xs font-bold text-red-600">{(item as MonthlyStats).absent}</span>
+                    <span className="text-[10px] text-slate-500">Alpha</span>
                   </div>
-                  <div className="flex flex-col items-center border-l border-slate-200 pl-4 ml-2">
-                    <span className="text-xs text-slate-400 mb-1">Total</span>
-                    <span className="text-lg font-bold text-slate-700">{(item as MonthlyStats).total_attendance}</span>
+                  <div>
+                    <span className="block text-xs font-bold text-slate-800">{(item as MonthlyStats).total_attendance}</span>
+                    <span className="text-[10px] text-slate-500">Total</span>
                   </div>
                 </div>
               )}
             </div>
           )) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                <Search className="w-6 h-6 text-slate-400" />
-              </div>
-              <p className="text-slate-500 font-medium">Tidak ada data kehadiran</p>
-            </div>
+            <div className="text-center py-10 text-slate-400 font-medium">Tidak ada data</div>
           )}
         </div>
       </div>
     );
   }
 
+  // ==========================================
+  // DESKTOP VIEW
+  // ==========================================
   return (
     <EnterpriseLayout
       title="Rekap Absensi"
-      subtitle={viewMode === 'daily' ? format(new Date(filterDate), 'dd MMMM yyyy', { locale: id }) : format(selectedMonth, 'MMMM yyyy', { locale: id })}
+      subtitle="Monitoring kehadiran karyawan realtime"
       menuSections={menuSections}
       roleLabel="Administrator"
       showRefresh={true}
       onRefresh={fetchAttendance}
     >
-      {/* Controls Area */}
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-white shadow-sm border-slate-200">
-          <CardContent className="p-4 flex flex-col gap-2">
-            <div className="flex justify-between items-center bg-slate-100 p-1 rounded-lg">
-              <button onClick={() => setViewMode('daily')} className={cn("flex-1 text-xs font-medium py-1.5 rounded-md transition-all", viewMode === 'daily' ? "bg-white shadow text-slate-900" : "text-slate-500")}>Harian</button>
-              <button onClick={() => setViewMode('monthly')} className={cn("flex-1 text-xs font-medium py-1.5 rounded-md transition-all", viewMode === 'monthly' ? "bg-white shadow text-slate-900" : "text-slate-500")}>Bulanan</button>
-            </div>
-            <div className="flex items-center justify-between mt-2">
-              <Button variant="ghost" size="icon" onClick={goToPrevious}><ChevronLeft className="w-4 h-4" /></Button>
-              <span className="text-sm font-semibold text-slate-700">
-                {viewMode === 'daily' ? format(new Date(filterDate), 'dd MMM yyyy', { locale: id }) : format(selectedMonth, 'MMMM yyyy', { locale: id })}
-              </span>
-              <Button variant="ghost" size="icon" onClick={goToNext}><ChevronRight className="w-4 h-4" /></Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="space-y-6">
+        {/* Controls */}
+        <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+          {/* View Selector */}
+          <div className="flex bg-slate-100 p-1 rounded-lg shrink-0">
+            {(['daily', 'monthly', 'range'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setViewMode(m)}
+                className={cn(
+                  "px-4 py-2 text-sm font-medium rounded-md transition-all capitalize",
+                  viewMode === m ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+                )}
+              >
+                {m === 'range' ? 'Periode' : (m === 'daily' ? 'Harian' : 'Bulanan')}
+              </button>
+            ))}
+          </div>
 
-        <Card className="bg-white shadow-sm border-slate-200 md:col-span-2">
-          <CardContent className="p-4 flex items-center justify-between h-full">
-            <div className="relative w-full max-w-sm">
+          {/* Date Picker Area */}
+          <div className="flex-1 flex items-center gap-4">
+            {viewMode === 'range' ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>{format(dateRange.from, "d MMM yyyy")} - {format(dateRange.to, "d MMM yyyy")}</>
+                      ) : (
+                        format(dateRange.from, "d MMM yyyy")
+                      )
+                    ) : (
+                      <span>Pilih rentang tanggal</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-1">
+                <Button variant="ghost" size="icon" onClick={goToPrevious}><ChevronLeft className="w-4 h-4" /></Button>
+                <span className="w-40 text-center font-semibold text-slate-700">
+                  {viewMode === 'daily' ? format(new Date(filterDate), 'dd MMMM yyyy', { locale: id }) : format(selectedMonth, 'MMMM yyyy', { locale: id })}
+                </span>
+                <Button variant="ghost" size="icon" onClick={goToNext}><ChevronRight className="w-4 h-4" /></Button>
+              </div>
+            )}
+
+            <div className="ml-auto w-64 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input placeholder="Cari karyawan..." className="pl-9" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              <Input placeholder="Cari nama karyawan..." className="pl-9" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             </div>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className="bg-blue-700 hover:bg-blue-800 gap-2"><Download className="w-4 h-4" /> Export</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleExport('excel')}><FileSpreadsheet className="w-4 h-4 mr-2" />Excel (Lengkap)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('pdf')}><FileText className="w-4 h-4 mr-2" />PDF (Lengkap)</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('csv')}><FileText className="w-4 h-4 mr-2" />CSV (Simple)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('excel')}><FileSpreadsheet className="w-4 h-4 mr-2" />Excel Report</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('pdf')}><FileText className="w-4 h-4 mr-2" />PDF Report</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Stats Grid */}
-      {viewMode === 'monthly' && (
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <Card className="bg-white shadow-sm"><CardContent className="p-4"><p className="text-xs text-slate-500">Total Karyawan</p><p className="text-2xl font-bold text-slate-800">{monthStatsTotal.employees}</p></CardContent></Card>
-          <Card className="bg-white shadow-sm"><CardContent className="p-4"><p className="text-xs text-slate-500">Hadir</p><p className="text-2xl font-bold text-green-600">{monthStatsTotal.present}</p></CardContent></Card>
-          <Card className="bg-white shadow-sm"><CardContent className="p-4"><p className="text-xs text-slate-500">Terlambat</p><p className="text-2xl font-bold text-amber-600">{monthStatsTotal.late}</p></CardContent></Card>
-          <Card className="bg-white shadow-sm"><CardContent className="p-4"><p className="text-xs text-slate-500">Alpha</p><p className="text-2xl font-bold text-red-600">{monthStatsTotal.absent}</p></CardContent></Card>
-        </div>
-      )}
-
-      {/* Mobile List View */}
-      <div className="md:hidden space-y-4">
-        {filteredData.length > 0 ? filteredData.map((item, i) => (
-          <div key={i} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex flex-col gap-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="font-semibold text-slate-800">{item.name}</h4>
-                <p className="text-xs text-slate-500">{item.department}</p>
-              </div>
-              {viewMode === 'daily' && getStatusBadge((item as any).status)}
-            </div>
-
-            {viewMode === 'daily' ? (
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                <div className="bg-slate-50 p-2 rounded-lg text-center">
-                  <p className="text-[10px] uppercase text-slate-400 font-semibold">Masuk</p>
-                  <p className="text-sm font-medium text-slate-700">
-                    {(item as any).clock_in ? format(new Date((item as any).clock_in), 'HH:mm') : '-'}
-                  </p>
-                </div>
-                <div className="bg-slate-50 p-2 rounded-lg text-center">
-                  <p className="text-[10px] uppercase text-slate-400 font-semibold">Pulang</p>
-                  <p className="text-sm font-medium text-slate-700">
-                    {(item as any).clock_out ? format(new Date((item as any).clock_out), 'HH:mm') : '-'}
-                  </p>
-                </div>
-                <div className="bg-blue-50 p-2 rounded-lg text-center">
-                  <p className="text-[10px] uppercase text-blue-400 font-semibold">Durasi</p>
-                  <p className="text-sm font-medium text-blue-700">
-                    {calculateDuration((item as any).clock_in, (item as any).clock_out)}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-4 gap-2 mt-2">
-                <div className="bg-green-50 p-2 rounded-lg text-center flex flex-col justify-center">
-                  <span className="text-lg font-bold text-green-700 leading-none">{(item as MonthlyStats).present}</span>
-                  <span className="text-[10px] text-green-600">Hadir</span>
-                </div>
-                <div className="bg-amber-50 p-2 rounded-lg text-center flex flex-col justify-center">
-                  <span className="text-lg font-bold text-amber-700 leading-none">{(item as MonthlyStats).late}</span>
-                  <span className="text-[10px] text-amber-600">Telat</span>
-                </div>
-                <div className="bg-red-50 p-2 rounded-lg text-center flex flex-col justify-center">
-                  <span className="text-lg font-bold text-red-700 leading-none">{(item as MonthlyStats).absent}</span>
-                  <span className="text-[10px] text-red-600">Alpha</span>
-                </div>
-                <div className="bg-slate-50 p-2 rounded-lg text-center flex flex-col justify-center">
-                  <span className="text-lg font-bold text-slate-700 leading-none">{(item as MonthlyStats).total_attendance}</span>
-                  <span className="text-[10px] text-slate-500">Total</span>
-                </div>
-              </div>
-            )}
           </div>
-        )) : (
-          <div className="text-center py-8 text-slate-500 bg-white rounded-xl border border-dashed border-slate-200">
-            Tidak ada data
+        </div>
+
+        {/* Stats Summary (Monthly/Range Only) */}
+        {viewMode !== 'daily' && (
+          <div className="grid grid-cols-4 gap-4">
+            <Card className="bg-white border-slate-200 shadow-sm">
+              <CardContent className="p-4 flex flex-col justify-center">
+                <span className="text-xs font-semibold text-slate-400 uppercase">Hadir</span>
+                <span className="text-2xl font-bold text-green-600">{monthStatsTotal.present}</span>
+              </CardContent>
+            </Card>
+            <Card className="bg-white border-slate-200 shadow-sm">
+              <CardContent className="p-4 flex flex-col justify-center">
+                <span className="text-xs font-semibold text-slate-400 uppercase">Terlambat</span>
+                <span className="text-2xl font-bold text-amber-600">{monthStatsTotal.late}</span>
+              </CardContent>
+            </Card>
+            <Card className="bg-white border-slate-200 shadow-sm">
+              <CardContent className="p-4 flex flex-col justify-center">
+                <span className="text-xs font-semibold text-slate-400 uppercase">Alpha</span>
+                <span className="text-2xl font-bold text-red-600">{monthStatsTotal.absent}</span>
+              </CardContent>
+            </Card>
+            <Card className="bg-white border-slate-200 shadow-sm">
+              <CardContent className="p-4 flex flex-col justify-center">
+                <span className="text-xs font-semibold text-slate-400 uppercase">Total Karyawan</span>
+                <span className="text-2xl font-bold text-slate-800">{monthStatsTotal.employees}</span>
+              </CardContent>
+            </Card>
           </div>
         )}
-      </div>
 
-      {/* Desktop Data Table */}
-      <Card className="hidden md:block shadow-sm border-slate-200 bg-white">
-        <CardContent className="p-0">
+        {/* Table View */}
+        <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
           <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50">
-                <TableHead>Nama</TableHead>
+            <TableHeader className="bg-slate-50">
+              <TableRow>
+                <TableHead>Nama Karyawan</TableHead>
                 <TableHead>Departemen</TableHead>
                 {viewMode === 'daily' ? (
                   <>
@@ -602,40 +655,55 @@ const RekapAbsensi = () => {
                     <TableHead className="text-center">Hadir</TableHead>
                     <TableHead className="text-center">Terlambat</TableHead>
                     <TableHead className="text-center">Alpha</TableHead>
-                    <TableHead className="text-center">Total Hari</TableHead>
+                    <TableHead className="text-center">Total</TableHead>
                   </>
                 )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length > 0 ? filteredData.map((item, i) => (
-                <TableRow key={i} className="hover:bg-slate-50">
+                <TableRow key={i} className="hover:bg-slate-50 transition-colors">
                   <TableCell className="font-medium text-slate-700">{item.name}</TableCell>
                   <TableCell className="text-slate-500">{item.department}</TableCell>
                   {viewMode === 'daily' ? (
                     <>
-                      <TableCell>{(item as any).clock_in ? format(new Date((item as any).clock_in), 'HH:mm') : '-'}</TableCell>
-                      <TableCell>{(item as any).clock_out ? format(new Date((item as any).clock_out), 'HH:mm') : '-'}</TableCell>
+                      <TableCell>
+                        {(item as any).clock_in ? (
+                          <div className="flex items-center gap-2 text-green-700 bg-green-50 w-fit px-2 py-1 rounded">
+                            <LogIn className="w-3 h-3" />
+                            {format(new Date((item as any).clock_in), 'HH:mm')}
+                          </div>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {(item as any).clock_out ? (
+                          <div className="flex items-center gap-2 text-blue-700 bg-blue-50 w-fit px-2 py-1 rounded">
+                            <LogOut className="w-3 h-3" />
+                            {format(new Date((item as any).clock_out), 'HH:mm')}
+                          </div>
+                        ) : '-'}
+                      </TableCell>
                       <TableCell>{calculateDuration((item as any).clock_in, (item as any).clock_out)}</TableCell>
                       <TableCell>{getStatusBadge((item as any).status)}</TableCell>
                     </>
                   ) : (
                     <>
-                      <TableCell className="text-center text-green-600 font-bold">{(item as MonthlyStats).present}</TableCell>
-                      <TableCell className="text-center text-amber-600 font-bold">{(item as MonthlyStats).late}</TableCell>
-                      <TableCell className="text-center text-red-600 font-bold">{(item as MonthlyStats).absent}</TableCell>
+                      <TableCell className="text-center font-bold text-green-600">{(item as MonthlyStats).present}</TableCell>
+                      <TableCell className="text-center font-bold text-amber-600">{(item as MonthlyStats).late}</TableCell>
+                      <TableCell className="text-center font-bold text-red-600">{(item as MonthlyStats).absent}</TableCell>
                       <TableCell className="text-center font-medium">{(item as MonthlyStats).total_attendance}</TableCell>
                     </>
                   )}
                 </TableRow>
               )) : (
-                <TableRow><TableCell colSpan={6} className="h-24 text-center text-slate-400">Tidak ada data</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center text-slate-400">Tidak ada data untuk periode ini</TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
-
+        </Card>
+      </div>
     </EnterpriseLayout>
   );
 };

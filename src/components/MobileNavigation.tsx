@@ -36,7 +36,7 @@ const MobileNavigation = () => {
 
     return (
         <nav
-            className="ios-bottom-nav"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200/60 pb-[env(safe-area-inset-bottom)] flex justify-between px-6 items-center shadow-[0_-4px_10px_rgba(0,0,0,0.03)] h-[calc(64px+env(safe-area-inset-bottom))]"
             role="navigation"
             aria-label="Mobile navigation"
         >
@@ -48,20 +48,26 @@ const MobileNavigation = () => {
                         key={item.href}
                         to={item.href}
                         className={cn(
-                            "ios-nav-item",
-                            active && "active"
+                            "flex flex-col items-center justify-center gap-1 w-16 h-full transition-all duration-300 relative",
+                            active ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
                         )}
                         aria-current={active ? "page" : undefined}
                     >
-                        <div className="icon">
+                        <div className={cn(
+                            "relative p-1.5 rounded-xl transition-all duration-300",
+                            active ? "bg-blue-50/50" : "bg-transparent"
+                        )}>
                             <item.icon
                                 className={cn(
-                                    "w-6 h-6 transition-all",
-                                    active ? "stroke-[2.5px]" : "stroke-2"
+                                    "w-6 h-6 transition-all duration-300",
+                                    active ? "stroke-[2.5px] scale-105" : "stroke-[2px]"
                                 )}
                             />
                         </div>
-                        <span className="label">{item.label}</span>
+                        <span className={cn(
+                            "text-[10px] font-medium tracking-wide transition-all",
+                            active ? "font-semibold" : ""
+                        )}>{item.label}</span>
                     </Link>
                 );
             })}
