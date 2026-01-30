@@ -243,121 +243,119 @@ const PengajuanCuti = () => {
     return (
       <div className="ios-mobile-container">
         {/* iOS Header */}
-        <header className="ios-header" style={{ paddingBottom: "24px" }}>
-          <div className="relative z-10">
-            {/* Back Button Row */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => navigate("/dashboard")}
-                  className="p-2 -ml-2 rounded-full bg-white/10 active:bg-white/20 transition-colors"
-                >
-                  <ArrowLeft className="h-5 w-5 text-white" />
-                </button>
-                <div>
-                  <h1 className="text-lg font-semibold text-white">Pengajuan Cuti</h1>
-                  <p className="text-sm text-white/70">Ajukan izin atau cuti</p>
-                </div>
+        <header className="ios-header-slim">
+          {/* Back Button Row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="ios-back-btn"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <div>
+                <h1 className="ios-header-title">Pengajuan Cuti</h1>
+                <p className="ios-header-subtitle">Ajukan izin atau cuti</p>
               </div>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <button className="p-2 rounded-full bg-white/20 active:bg-white/30 transition-colors">
-                    <Plus className="h-5 w-5 text-white" />
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="mx-4 rounded-2xl max-w-[calc(100vw-32px)]">
-                  <DialogHeader>
-                    <DialogTitle>Pengajuan Cuti Baru</DialogTitle>
-                    <DialogDescription>
-                      Isi form di bawah untuk mengajukan cuti atau izin
-                    </DialogDescription>
-                  </DialogHeader>
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="leave_type"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Jenis Cuti</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Pilih jenis cuti" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="cuti">Cuti Tahunan</SelectItem>
-                                <SelectItem value="sakit">Sakit</SelectItem>
-                                <SelectItem value="izin">Izin</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="start_date"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Tanggal Mulai</FormLabel>
-                              <FormControl>
-                                <Input {...field} type="date" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="end_date"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Tanggal Selesai</FormLabel>
-                              <FormControl>
-                                <Input {...field} type="date" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={form.control}
-                        name="reason"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Alasan</FormLabel>
+            </div>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <button className="p-2 rounded-xl bg-white/20 active:bg-white/30 transition-colors shadow-sm border border-white/10">
+                  <Plus className="h-5 w-5 text-white" />
+                </button>
+              </DialogTrigger>
+              <DialogContent className="mx-4 rounded-2xl max-w-[calc(100vw-32px)]">
+                <DialogHeader>
+                  <DialogTitle>Pengajuan Cuti Baru</DialogTitle>
+                  <DialogDescription>
+                    Isi form di bawah untuk mengajukan cuti atau izin
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="leave_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Jenis Cuti</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <Textarea {...field} placeholder="Jelaskan alasan pengajuan cuti" rows={3} />
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih jenis cuti" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="cuti">Cuti Tahunan</SelectItem>
+                              <SelectItem value="sakit">Sakit</SelectItem>
+                              <SelectItem value="izin">Izin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="start_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tanggal Mulai</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="date" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
 
-                      <div className="flex gap-3 pt-2">
-                        <Button type="button" variant="outline" className="flex-1" onClick={() => setDialogOpen(false)}>
-                          Batal
-                        </Button>
-                        <Button type="submit" className="flex-1" disabled={isLoading}>
-                          {isLoading ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                          ) : (
-                            "Ajukan"
-                          )}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-            </div>
+                      <FormField
+                        control={form.control}
+                        name="end_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tanggal Selesai</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="date" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="reason"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Alasan</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} placeholder="Jelaskan alasan pengajuan cuti" rows={3} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex gap-3 pt-2">
+                      <Button type="button" variant="outline" className="flex-1" onClick={() => setDialogOpen(false)}>
+                        Batal
+                      </Button>
+                      <Button type="submit" className="flex-1" disabled={isLoading}>
+                        {isLoading ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                        ) : (
+                          "Ajukan"
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
         </header>
 
@@ -385,89 +383,91 @@ const PengajuanCuti = () => {
           {/* Leave Requests List */}
           <h3 className="ios-section-header">Riwayat Pengajuan</h3>
 
-          {isFetching ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            </div>
-          ) : leaveRequests.length === 0 ? (
-            <div className="ios-card p-8 text-center">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground">Belum Ada Pengajuan</h3>
-              <p className="text-muted-foreground mb-4">Anda belum mengajukan cuti atau izin</p>
-              <button
-                onClick={() => setDialogOpen(true)}
-                className="ios-btn-primary flex items-center justify-center gap-2 mx-auto"
-                style={{ maxWidth: "200px", background: "linear-gradient(180deg, hsl(211 100% 55%) 0%, hsl(211 100% 50%) 100%)", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)" }}
-              >
-                <Plus className="h-5 w-5" />
-                Ajukan Cuti
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {leaveRequests.map((request, index) => (
-                <div
-                  key={request.id}
-                  className="ios-card p-4"
-                  style={{ animationDelay: `${index * 0.05}s` }}
+          {
+            isFetching ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              </div>
+            ) : leaveRequests.length === 0 ? (
+              <div className="ios-card p-8 text-center">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground">Belum Ada Pengajuan</h3>
+                <p className="text-muted-foreground mb-4">Anda belum mengajukan cuti atau izin</p>
+                <button
+                  onClick={() => setDialogOpen(true)}
+                  className="ios-btn-primary flex items-center justify-center gap-2 mx-auto"
+                  style={{ maxWidth: "200px", background: "linear-gradient(180deg, hsl(211 100% 55%) 0%, hsl(211 100% 50%) 100%)", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)" }}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className={`ios-list-icon flex-shrink-0 ${getLeaveTypeIcon(request.leave_type)}`}>
-                      <FileText className={`h-4 w-4 ${request.leave_type === "cuti" ? "text-blue-500" :
-                        request.leave_type === "sakit" ? "text-red-500" : "text-purple-500"
-                        }`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="font-semibold text-foreground text-sm">
-                          {getLeaveTypeLabel(request.leave_type)}
-                        </span>
-                        {getIOSStatusBadge(request.status)}
+                  <Plus className="h-5 w-5" />
+                  Ajukan Cuti
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {leaveRequests.map((request, index) => (
+                  <div
+                    key={request.id}
+                    className="ios-card p-4"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`ios-list-icon flex-shrink-0 ${getLeaveTypeIcon(request.leave_type)}`}>
+                        <FileText className={`h-4 w-4 ${request.leave_type === "cuti" ? "text-blue-500" :
+                          request.leave_type === "sakit" ? "text-red-500" : "text-purple-500"
+                          }`} />
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                        <Calendar className="h-3 w-3" />
-                        <span>
-                          {new Date(request.start_date).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "short"
-                          })}
-                          {" - "}
-                          {new Date(request.end_date).toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric"
-                          })}
-                        </span>
-                        <span className="px-2 py-0.5 bg-gray-100 rounded-full ml-1">
-                          {calculateDays(request.start_date, request.end_date)} hari
-                        </span>
-                      </div>
-                      {request.reason && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">{request.reason}</p>
-                      )}
-                      {request.status === "rejected" && request.rejection_reason && (
-                        <div className="mt-2 p-2 rounded-lg bg-red-50 text-xs text-red-600">
-                          <strong>Alasan ditolak:</strong> {request.rejection_reason}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="font-semibold text-foreground text-sm">
+                            {getLeaveTypeLabel(request.leave_type)}
+                          </span>
+                          {getIOSStatusBadge(request.status)}
                         </div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                          <Calendar className="h-3 w-3" />
+                          <span>
+                            {new Date(request.start_date).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short"
+                            })}
+                            {" - "}
+                            {new Date(request.end_date).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric"
+                            })}
+                          </span>
+                          <span className="px-2 py-0.5 bg-gray-100 rounded-full ml-1">
+                            {calculateDays(request.start_date, request.end_date)} hari
+                          </span>
+                        </div>
+                        {request.reason && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">{request.reason}</p>
+                        )}
+                        {request.status === "rejected" && request.rejection_reason && (
+                          <div className="mt-2 p-2 rounded-lg bg-red-50 text-xs text-red-600">
+                            <strong>Alasan ditolak:</strong> {request.rejection_reason}
+                          </div>
+                        )}
+                      </div>
+                      {request.status === "pending" && (
+                        <button
+                          onClick={() => handleDelete(request.id)}
+                          className="p-2 rounded-full hover:bg-red-50 active:bg-red-100 transition-colors flex-shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </button>
                       )}
                     </div>
-                    {request.status === "pending" && (
-                      <button
-                        onClick={() => handleDelete(request.id)}
-                        className="p-2 rounded-full hover:bg-red-50 active:bg-red-100 transition-colors flex-shrink-0"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </button>
-                    )}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )
+          }
+        </div >
 
         {/* Floating Action Button - Positioned above bottom nav */}
-        <button
+        < button
           onClick={() => setDialogOpen(true)}
           className="fixed right-4 w-14 h-14 rounded-full flex items-center justify-center shadow-lg z-50"
           style={{
@@ -477,11 +477,11 @@ const PengajuanCuti = () => {
           }}
         >
           <Plus className="h-6 w-6 text-white" />
-        </button>
+        </button >
 
         {/* iOS Bottom Navigation */}
-        <MobileNavigation />
-      </div>
+        < MobileNavigation />
+      </div >
     );
   }
 

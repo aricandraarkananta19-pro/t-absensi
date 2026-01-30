@@ -1,5 +1,5 @@
 import { useLocation, Link } from "react-router-dom";
-import { LayoutDashboard, Clock, History, FileText, Settings } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -8,65 +8,63 @@ interface NavItem {
     href: string;
 }
 
+/**
+ * iOS-Style Bottom Navigation (68px height + safe area)
+ * 4 Items: Dashboard, Employees, Reports, Menu
+ * - Fixed at bottom with safe area padding
+ * - Icon + Label for each item
+ * - Clear active state with brand color
+ * - Minimum 44px tap target
+ * - Doesn't overlap with content
+ */
 const navItems: NavItem[] = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: Clock, label: "Absen", href: "/karyawan/absensi" },
-    { icon: History, label: "Rekap", href: "/karyawan/riwayat" },
-    { icon: FileText, label: "Laporan", href: "/karyawan/laporan" },
-    { icon: Settings, label: "Setting", href: "/karyawan/profil" },
+    { icon: Users, label: "Karyawan", href: "/karyawan/absensi" },
+    { icon: FileText, label: "Laporan", href: "/karyawan/riwayat" },
+    { icon: Menu, label: "Menu", href: "/karyawan/profil" },
 ];
 
-/**
- * Mobile Bottom Navigation for Employee UI (Premium iOS Style)
- * - Fixed height + safe-area padding for iOS
- * - 5 Items as requested
- * - Premium Glassmorphism look
- */
 const MobileNavigation = () => {
     const location = useLocation();
 
+    const isActive = (href: string) => {
+        if (href === "/dashboard") {
+            return location.pathname === "/dashboard" || location.pathname === "/";
+        }
+        return location.pathname === href || location.pathname.startsWith(href);
+    };
+
     return (
         <nav
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200/60 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.03)]"
+            className="ios-bottom-nav"
             role="navigation"
             aria-label="Mobile navigation"
         >
-            <div className="flex items-center justify-around h-[64px] px-2 bg-gradient-to-t from-white/50 to-transparent">
-                {navItems.map((item) => {
-                    const isActive = location.pathname === item.href ||
-                        (item.href === "/dashboard" && location.pathname === "/");
+            {navItems.map((item) => {
+                const active = isActive(item.href);
 
-                    return (
-                        <Link
-                            key={item.href}
-                            to={item.href}
-                            className={cn(
-                                "flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-200 active:scale-95 touch-manipulation group",
-                                isActive ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
-                            )}
-                            aria-current={isActive ? "page" : undefined}
-                        >
-                            <div className={cn(
-                                "relative p-1.5 rounded-2xl transition-all duration-300",
-                                isActive && "bg-blue-50/80 shadow-sm"
-                            )}>
-                                <item.icon
-                                    className={cn(
-                                        "w-5 h-5 transition-transform duration-300",
-                                        isActive ? "stroke-[2.5px] scale-105" : "stroke-2 group-hover:scale-105"
-                                    )}
-                                />
-                            </div>
-                            <span className={cn(
-                                "text-[10px] font-medium tracking-tight transition-colors duration-200",
-                                isActive ? "text-blue-700 font-semibold" : "text-slate-500"
-                            )}>
-                                {item.label}
-                            </span>
-                        </Link>
-                    );
-                })}
-            </div>
+                return (
+                    <Link
+                        key={item.href}
+                        to={item.href}
+                        className={cn(
+                            "ios-nav-item",
+                            active && "active"
+                        )}
+                        aria-current={active ? "page" : undefined}
+                    >
+                        <div className="icon">
+                            <item.icon
+                                className={cn(
+                                    "w-6 h-6 transition-all",
+                                    active ? "stroke-[2.5px]" : "stroke-2"
+                                )}
+                            />
+                        </div>
+                        <span className="label">{item.label}</span>
+                    </Link>
+                );
+            })}
         </nav>
     );
 };

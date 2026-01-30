@@ -216,40 +216,35 @@ const KaryawanDashboard = () => {
   };
 
   // ==========================================
-  // iOS MOBILE VIEW
+  // iOS MOBILE VIEW - Native Feel
   // ==========================================
   if (isMobile) {
     return (
       <div className="ios-mobile-container">
-        {/* iOS Header with Gradient */}
-        <header className="ios-header">
+        {/* iOS Header - Slim 56px */}
+        <header className="ios-header-slim">
           <div className="relative z-10">
-            {/* Top Row - Logo and Logout */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <img src={logoImage} alt="T-Absensi" className="h-8 w-auto brightness-0 invert" />
-                <span className="text-white/80 text-sm font-medium">T-Absensi</span>
+            {/* Compact Row - Greeting & Logout */}
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <h1 className="ios-header-title">{greeting}! 👋</h1>
+                <p className="ios-header-subtitle truncate">
+                  {user?.user_metadata?.full_name || "Karyawan"}
+                </p>
               </div>
               <button
                 onClick={handleLogout}
-                className="p-2 rounded-full bg-white/10 active:bg-white/20 transition-colors"
+                className="ios-back-btn ml-3"
               >
-                <LogOut className="h-5 w-5 text-white" />
+                <LogOut className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Greeting */}
-            <div className="mb-4">
-              <h1 className="ios-greeting">{greeting}! 👋</h1>
-              <p className="ios-greeting-subtitle">
-                {user?.user_metadata?.full_name || "Karyawan"}
-              </p>
-            </div>
-
-            {/* Date & Time Display */}
-            <div className="flex items-center justify-between">
-              <div className="ios-date-display">
-                {formatDate(currentTime)}
+            {/* Date & Location */}
+            <div className="flex items-center justify-between mt-3">
+              <div className="ios-date-badge">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{formatDate(currentTime).split(',')[0]}</span>
               </div>
               <div className="ios-location-badge">
                 <MapPin className="h-3.5 w-3.5" />
@@ -259,18 +254,20 @@ const KaryawanDashboard = () => {
           </div>
         </header>
 
-        {/* Quick Action Card - Floating */}
+        {/* Quick Action Card */}
         <div
           className="ios-quick-action"
           onClick={() => navigate("/karyawan/absensi")}
+          role="button"
+          tabIndex={0}
         >
           <div className={`ios-quick-action-icon ${attendanceStatus.status}`}>
             {attendanceStatus.status === "done" ? (
-              <CheckCircle2 className="h-7 w-7" />
+              <CheckCircle2 className="h-6 w-6" />
             ) : attendanceStatus.status === "pending" ? (
-              <Clock className="h-7 w-7" />
+              <Clock className="h-6 w-6" />
             ) : (
-              <LogIn className="h-7 w-7" />
+              <LogIn className="h-6 w-6" />
             )}
           </div>
           <div className="ios-quick-action-content">
@@ -286,62 +283,57 @@ const KaryawanDashboard = () => {
           <ChevronRight className="ios-quick-action-arrow h-5 w-5" />
         </div>
 
-        {/* Stats Section */}
-        <div className="px-4 mb-6">
-          <h3 className="ios-section-header">Statistik Bulan Ini</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="ios-stats-card">
-              <div className="ios-stats-value green">{monthStats.present}</div>
-              <div className="ios-stats-label">Hadir</div>
-            </div>
-            <div className="ios-stats-card">
-              <div className="ios-stats-value orange">{monthStats.late}</div>
-              <div className="ios-stats-label">Terlambat</div>
-            </div>
-            <div className="ios-stats-card">
-              <div className="ios-stats-value blue">{Math.max(0, settings.maxLeaveDays - usedLeaveDays)}</div>
-              <div className="ios-stats-label">Sisa Cuti</div>
-            </div>
+        {/* Stats Grid - Vertical Summary */}
+        <h3 className="ios-section-header">Statistik Bulan Ini</h3>
+        <div className="ios-stats-grid">
+          <div className="ios-stat-card">
+            <div className="ios-stat-value green">{monthStats.present}</div>
+            <div className="ios-stat-label">Hadir</div>
+          </div>
+          <div className="ios-stat-card">
+            <div className="ios-stat-value orange">{monthStats.late}</div>
+            <div className="ios-stat-label">Terlambat</div>
+          </div>
+          <div className="ios-stat-card">
+            <div className="ios-stat-value blue">{Math.max(0, settings.maxLeaveDays - usedLeaveDays)}</div>
+            <div className="ios-stat-label">Sisa Cuti</div>
           </div>
         </div>
 
         {/* Menu Grid */}
-        <div className="px-4">
-          <h3 className="ios-section-header">Menu</h3>
-          <div className="ios-menu-grid">
-            {menuItems.map((item) => (
-              <Link
-                key={item.title}
-                to={item.href}
-                className="ios-menu-item"
-              >
-                <div className={`ios-menu-icon ${item.iosColor}`}>
-                  <item.icon className="h-6 w-6" />
-                </div>
-                <div className="ios-menu-title">{item.title}</div>
-                <div className="ios-menu-desc">{item.description}</div>
-              </Link>
-            ))}
-          </div>
+        <h3 className="ios-section-header">Menu</h3>
+        <div className="ios-menu-grid">
+          {menuItems.map((item) => (
+            <Link
+              key={item.title}
+              to={item.href}
+              className="ios-menu-item"
+            >
+              <div className={`ios-menu-icon ${item.iosColor}`}>
+                <item.icon className="h-5 w-5" />
+              </div>
+              <div className="ios-menu-title">{item.title}</div>
+            </Link>
+          ))}
         </div>
 
-        {/* Work Hours Info */}
-        <div className="px-4 mt-6 mb-8">
-          <div className="ios-card p-4">
+        {/* Work Hours Card */}
+        <div className="px-4 mt-6 mb-4">
+          <div className="ios-card ios-card-content">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-blue-500" />
+              <div className="ios-time-icon duration">
+                <Clock className="h-5 w-5" />
               </div>
-              <h4 className="font-semibold text-foreground">Jam Kerja</h4>
+              <h4 className="font-semibold text-[15px]">Jam Kerja</h4>
             </div>
-            <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="space-y-1.5 text-[13px]">
               <div className="flex justify-between">
-                <span>Clock In</span>
-                <span className="font-medium text-foreground">{settings.clockInStart} - {settings.clockInEnd}</span>
+                <span className="text-slate-500">Clock In</span>
+                <span className="font-medium">{settings.clockInStart} - {settings.clockInEnd}</span>
               </div>
               <div className="flex justify-between">
-                <span>Clock Out</span>
-                <span className="font-medium text-foreground">{settings.clockOutStart} - {settings.clockOutEnd}</span>
+                <span className="text-slate-500">Clock Out</span>
+                <span className="font-medium">{settings.clockOutStart} - {settings.clockOutEnd}</span>
               </div>
             </div>
           </div>
@@ -414,19 +406,19 @@ const KaryawanDashboard = () => {
 
         {/* Quick Action - Absensi */}
         <Card className={`border-border mb-8 animate-fade-in ${todayAttendance?.clock_out
-            ? "bg-gradient-to-r from-success/5 to-success/10"
-            : todayAttendance
-              ? "bg-gradient-to-r from-warning/5 to-warning/10"
-              : "bg-gradient-to-r from-primary/5 to-accent/5"
+          ? "bg-gradient-to-r from-success/5 to-success/10"
+          : todayAttendance
+            ? "bg-gradient-to-r from-warning/5 to-warning/10"
+            : "bg-gradient-to-r from-primary/5 to-accent/5"
           }`}>
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className={`h-16 w-16 rounded-full flex items-center justify-center ${todayAttendance?.clock_out
-                    ? "bg-success/20"
-                    : todayAttendance
-                      ? "bg-warning/20"
-                      : "bg-accent/20"
+                  ? "bg-success/20"
+                  : todayAttendance
+                    ? "bg-warning/20"
+                    : "bg-accent/20"
                   }`}>
                   {todayAttendance?.clock_out ? (
                     <CheckCircle2 className="h-8 w-8 text-success" />

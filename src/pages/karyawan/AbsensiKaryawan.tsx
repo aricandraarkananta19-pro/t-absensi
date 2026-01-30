@@ -238,224 +238,117 @@ const AbsensiKaryawan = () => {
     }
   };
 
-  const getIOSStatusBadge = (status: string) => {
-    switch (status) {
-      case "present":
-        return (
-          <div className="ios-status-badge success">
-            <span className="dot" />
-            <span>Hadir Tepat Waktu</span>
-          </div>
-        );
-      case "late":
-        return (
-          <div className="ios-status-badge warning">
-            <span className="dot" />
-            <span>Terlambat</span>
-          </div>
-        );
-      case "early_leave":
-        return (
-          <div className="ios-status-badge info">
-            <span className="dot" />
-            <span>Pulang Awal</span>
-          </div>
-        );
-      default:
-        return (
-          <div className="ios-status-badge info">
-            <span className="dot" />
-            <span>{status}</span>
-          </div>
-        );
-    }
-  };
-
   // ==========================================
-  // iOS MOBILE VIEW
+  // iOS MOBILE VIEW - Native Feel
   // ==========================================
   if (isMobile) {
     return (
       <div className="ios-mobile-container" style={{ paddingBottom: "calc(160px + env(safe-area-inset-bottom))" }}>
-        {/* iOS Header with Clock */}
-        <div className="ios-header" style={{ paddingBottom: "32px" }}>
-          <div className="relative z-10">
-            {/* Back Button Row */}
-            <div className="flex items-center gap-3 mb-6">
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="p-2 -ml-2 rounded-full bg-white/10 active:bg-white/20 transition-colors"
-              >
-                <ArrowLeft className="h-5 w-5 text-white" />
-              </button>
-              <div>
-                <h1 className="text-lg font-semibold text-white">Absensi</h1>
-                <p className="text-sm text-white/70">Clock In & Clock Out</p>
-              </div>
+        {/* iOS Header - Slim & Transparent for Clock Page */}
+        <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-[calc(env(safe-area-inset-top)+10px)] pb-2 bg-transparent transition-all">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/10 text-white shadow-lg active:scale-95 transition-transform"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div className="px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/10 text-white font-medium text-sm shadow-lg flex items-center gap-2">
+              <MapPin className="h-3.5 w-3.5 text-white/90" />
+              <span>{location || "Lokasi..."}</span>
             </div>
-
-            {/* Date Display */}
-            <div className="text-center mb-4">
-              <p className="ios-date-display text-white/80">
-                <Calendar className="inline h-4 w-4 mr-1.5" />
-                {formatDate(currentTime)}
-              </p>
-            </div>
-
-            {/* Large Digital Clock */}
-            <div className="text-center">
-              <div className="ios-clock-display">
-                {formatTime(currentTime).split(":").map((part, i) => (
-                  <span key={i}>
-                    {i > 0 && <span className="ios-clock-seconds">:</span>}
-                    <span className={i === 2 ? "ios-clock-seconds" : ""}>{part}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Location Badge */}
-            <div className="flex justify-center mt-4">
-              <div className="ios-location-badge">
-                <MapPin className="h-3.5 w-3.5" />
-                <span>{location || "Mendapatkan lokasi..."}</span>
-              </div>
-            </div>
+            <div className="w-10" /> {/* Spacer */}
           </div>
-        </div>
+        </header>
 
-        {/* Main Content */}
-        <div className="px-4 mt-6">
-          {/* Status Display Area (Non-interactive) */}
-          <div className="flex flex-col items-center mb-6">
-            {!todayAttendance ? (
-              <div className="w-[120px] h-[120px] rounded-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-gray-100 to-gray-50 border-4 border-white shadow-lg">
-                <LogIn className="h-10 w-10 text-gray-400" />
-                <span className="text-sm font-semibold text-gray-500">Belum Absen</span>
-              </div>
-            ) : !todayAttendance.clock_out ? (
-              <div className="w-[120px] h-[120px] rounded-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-green-50 to-green-100 border-4 border-white shadow-lg pulsing">
-                <Timer className="h-10 w-10 text-green-600" />
-                <span className="text-sm font-semibold text-green-700">Bekerja</span>
-              </div>
-            ) : (
-              <div className="w-[120px] h-[120px] rounded-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-blue-50 to-blue-100 border-4 border-white shadow-lg">
-                <CheckCircle2 className="h-10 w-10 text-blue-600" />
-                <span className="text-sm font-semibold text-blue-700">Selesai</span>
-              </div>
-            )}
+        {/* Dynamic Background for Clock Page */}
+        <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#1A5BA8] to-[#0D305A]" />
 
-            {/* Status Text */}
-            <p className="mt-4 text-center text-muted-foreground text-sm max-w-[200px]">
-              {!todayAttendance
-                ? "Silakan lakukan clock in untuk memulai jam kerja Anda hari ini"
-                : !todayAttendance.clock_out
-                  ? "Jangan lupa clock out sebelum pulang"
-                  : "Terima kasih atas kerja keras Anda hari ini"}
+        <div className="relative z-10 flex flex-col min-h-[85vh] justify-center items-center text-white px-6">
+          {/* Date Display */}
+          <div className="mb-4 px-4 py-1.5 rounded-full bg-white/10 border border-white/5 backdrop-blur-sm animate-fade-in-up">
+            <p className="text-sm font-medium text-white/90">
+              {formatDate(currentTime)}
             </p>
           </div>
 
-          {/* Status Badge */}
-          {todayAttendance && (
-            <div className="flex justify-center mb-6">
-              {getIOSStatusBadge(todayAttendance.status)}
+          {/* Large Digital Clock */}
+          <div className="mb-10 text-center relative animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+            <div className="text-[72px] font-thin tracking-tighter leading-none tabular-nums drop-shadow-xl font-mono">
+              {formatTime(currentTime)}
             </div>
-          )}
+            <p className="text-white/60 text-sm mt-2 font-light tracking-wide">WIB (Waktu Indonesia Barat)</p>
+          </div>
 
-          {/* Time Cards */}
-          {todayAttendance && (
-            <div className="space-y-3 mb-6">
-              {/* Clock In Time */}
-              <div className="ios-time-card">
-                <div className="ios-time-icon in">
-                  <LogIn className="h-5 w-5 text-green-500" />
-                </div>
-                <div className="ios-time-info">
-                  <p className="ios-time-label">Clock In</p>
-                  <p className="ios-time-value green">
-                    {formatTimeShort(new Date(todayAttendance.clock_in))}
-                  </p>
-                </div>
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
+          {/* Status Circle */}
+          <div className="mb-12 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            {!todayAttendance ? (
+              <div className="w-48 h-48 rounded-full flex flex-col items-center justify-center gap-3 bg-white/5 backdrop-blur-sm border-2 border-white/20 shadow-2xl relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent opacity-50" />
+                <LogIn className="h-12 w-12 text-white/80" />
+                <span className="text-base font-medium text-white/90">Belum Masuk</span>
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20" />
               </div>
+            ) : !todayAttendance.clock_out ? (
+              <div className="w-48 h-48 rounded-full flex flex-col items-center justify-center gap-3 bg-green-500/20 backdrop-blur-md border-2 border-green-400/30 shadow-[0_0_40px_rgba(34,197,94,0.3)] relative overflow-hidden animate-pulse-slow">
+                <Timer className="h-12 w-12 text-green-400" />
+                <div className="text-center">
+                  <span className="block text-base font-bold text-green-100">Sedang Bekerja</span>
+                  <span className="text-xs text-green-200/80">{formatTimeShort(new Date(todayAttendance.clock_in))}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="w-48 h-48 rounded-full flex flex-col items-center justify-center gap-3 bg-blue-500/20 backdrop-blur-md border-2 border-blue-400/30 shadow-[0_0_40px_rgba(59,130,246,0.3)] relative">
+                <CheckCircle2 className="h-12 w-12 text-blue-400" />
+                <span className="text-base font-bold text-blue-100">Selesai</span>
+                <div className="text-xs px-3 py-1 bg-blue-500/30 rounded-full text-blue-100 border border-blue-400/20">
+                  {getWorkDuration()}
+                </div>
+              </div>
+            )}
+          </div>
 
-              {/* Clock Out Time */}
-              <div className="ios-time-card">
-                <div className={`ios-time-icon ${todayAttendance.clock_out ? "out" : "duration"}`}>
-                  <LogOut className={`h-5 w-5 ${todayAttendance.clock_out ? "text-red-500" : "text-gray-400"}`} />
-                </div>
-                <div className="ios-time-info">
-                  <p className="ios-time-label">Clock Out</p>
-                  {todayAttendance.clock_out ? (
-                    <p className="ios-time-value red">
-                      {formatTimeShort(new Date(todayAttendance.clock_out))}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Belum clock out</p>
-                  )}
-                </div>
+          {/* Today's Summary - Floating Card style */}
+          {todayAttendance && (
+            <div className="w-full bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex items-center justify-between shadow-lg animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+              <div className="text-center flex-1 border-r border-white/10">
+                <p className="text-xs text-white/60 mb-1">Masuk</p>
+                <p className="text-lg font-bold text-white">
+                  {formatTimeShort(new Date(todayAttendance.clock_in))}
+                </p>
+              </div>
+              <div className="text-center flex-1">
+                <p className="text-xs text-white/60 mb-1">Pulang</p>
                 {todayAttendance.clock_out ? (
-                  <CheckCircle2 className="h-5 w-5 text-red-500" />
+                  <p className="text-lg font-bold text-white">
+                    {formatTimeShort(new Date(todayAttendance.clock_out))}
+                  </p>
                 ) : (
-                  <XCircle className="h-5 w-5 text-gray-300" />
+                  <p className="text-lg font-bold text-white/40">-:-</p>
                 )}
               </div>
-
-              {/* Work Duration */}
-              <div className="ios-time-card">
-                <div className="ios-time-icon duration">
-                  <Timer className="h-5 w-5 text-blue-500" />
-                </div>
-                <div className="ios-time-info">
-                  <p className="ios-time-label">Durasi Kerja</p>
-                  <p className="ios-time-value blue">{getWorkDuration()}</p>
-                </div>
-              </div>
             </div>
           )}
-
-          {/* Work Hours Info */}
-          <div className="ios-card p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-blue-500" />
-              </div>
-              <h4 className="font-semibold text-foreground">Jam Kerja</h4>
-            </div>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <div className="flex justify-between">
-                <span>Clock In</span>
-                <span className="font-medium text-foreground">{settings.clockInStart} - {settings.clockInEnd}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Terlambat setelah</span>
-                <span className="font-medium text-orange-500">{settings.lateThreshold}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Clock Out</span>
-                <span className="font-medium text-foreground">{settings.clockOutStart} - {settings.clockOutEnd}</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Sticky Action Bar */}
         <div
-          className="fixed left-0 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-gray-200/50 z-40"
-          style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
+          className="fixed left-0 right-0 p-5 bg-white rounded-t-[32px] shadow-[0_-5px_30px_rgba(0,0,0,0.15)] z-40 pb-[calc(16px+env(safe-area-inset-bottom))]"
         >
+          <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
+
           {!todayAttendance ? (
             <button
               onClick={handleClockIn}
               disabled={isLoading}
-              className="ios-btn-primary w-full flex items-center justify-center gap-3 shadow-lg shadow-green-500/20"
+              className="w-full h-14 rounded-2xl bg-[#007AFF] active:scale-[0.98] transition-transform flex items-center justify-center gap-3 shadow-lg shadow-blue-500/30 text-white font-semibold text-lg"
             >
               {isLoading ? (
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
                 <>
                   <Fingerprint className="h-6 w-6" />
-                  <span>Clock In Sekarang</span>
+                  <span>Geser Masuk</span>
                 </>
               )}
             </button>
@@ -463,23 +356,27 @@ const AbsensiKaryawan = () => {
             <button
               onClick={handleClockOut}
               disabled={isLoading}
-              className="ios-btn-primary clock-out w-full flex items-center justify-center gap-3 shadow-lg shadow-red-500/20"
+              className="w-full h-14 rounded-2xl bg-[#FF3B30] active:scale-[0.98] transition-transform flex items-center justify-center gap-3 shadow-lg shadow-red-500/30 text-white font-semibold text-lg"
             >
               {isLoading ? (
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
                 <>
                   <LogOut className="h-6 w-6" />
-                  <span>Clock Out Sekarang</span>
+                  <span>Geser Pulang</span>
                 </>
               )}
             </button>
           ) : (
-            <div className="w-full h-[56px] rounded-2xl flex items-center justify-center gap-2 bg-gray-100 text-gray-400 font-medium">
+            <div className="w-full h-14 rounded-2xl bg-slate-100 flex items-center justify-center gap-2 text-slate-500 font-medium">
               <CheckCircle2 className="h-5 w-5" />
-              <span>Absensi Selesai</span>
+              <span>Shift Selesai</span>
             </div>
           )}
+
+          <p className="text-center text-xs text-slate-400 mt-4">
+            Pastikan lokasi Anda akurat sebelum melakukan absensi.
+          </p>
         </div>
 
         {/* iOS Bottom Navigation */}

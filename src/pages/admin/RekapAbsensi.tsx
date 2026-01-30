@@ -180,7 +180,7 @@ const RekapAbsensi = () => {
             if (day.status === 'present') { s.present++; s.total_attendance++; }
             else if (day.status === 'late') { s.late++; s.total_attendance++; s.lateDates.push(day.date); }
             else if (day.status === 'early_leave') { s.early_leave++; s.total_attendance++; }
-            else if ((day.status === 'absent' || day.status === 'alpha') && !day.isWeekend && day.status !== 'future') {
+            else if ((day.status === 'absent' || day.status === 'alpha') && !day.isWeekend) {
               // Only count absent if it's strictly absent (not weekend/future)
               s.absent++;
               s.absentDates.push(day.date);
@@ -289,6 +289,17 @@ const RekapAbsensi = () => {
 
       if (type === 'csv') exportToCSV({
         filename: `Absensi_Harian_${filterDate}`,
+        title: `Laporan Harian ${filterDate}`,
+        columns: [
+          { header: "No", key: "No" },
+          { header: "Nama", key: "Nama" },
+          { header: "Departemen", key: "Departemen" },
+          { header: "Masuk", key: "Masuk" },
+          { header: "Keluar", key: "Keluar" },
+          { header: "Durasi", key: "Durasi" },
+          { header: "Status", key: "Status" },
+          { header: "Keterangan", key: "Keterangan" },
+        ],
         data: dataForExport,
       });
       else toast({ description: "Gunakan Mode Bulanan untuk Laporan Lengkap PDF/Excel" });
@@ -369,8 +380,69 @@ const RekapAbsensi = () => {
         </div>
       )}
 
-      {/* Data Table */}
-      <Card className="shadow-sm border-slate-200 bg-white">
+      {/* Mobile List View */}
+      <div className="md:hidden space-y-4">
+        {filteredData.length > 0 ? filteredData.map((item, i) => (
+          <div key={i} className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 flex flex-col gap-3">
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="font-semibold text-slate-800">{item.name}</h4>
+                <p className="text-xs text-slate-500">{item.department}</p>
+              </div>
+              {viewMode === 'daily' && getStatusBadge((item as any).status)}
+            </div>
+
+            {viewMode === 'daily' ? (
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                <div className="bg-slate-50 p-2 rounded-lg text-center">
+                  <p className="text-[10px] uppercase text-slate-400 font-semibold">Masuk</p>
+                  <p className="text-sm font-medium text-slate-700">
+                    {(item as any).clock_in ? format(new Date((item as any).clock_in), 'HH:mm') : '-'}
+                  </p>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-lg text-center">
+                  <p className="text-[10px] uppercase text-slate-400 font-semibold">Pulang</p>
+                  <p className="text-sm font-medium text-slate-700">
+                    {(item as any).clock_out ? format(new Date((item as any).clock_out), 'HH:mm') : '-'}
+                  </p>
+                </div>
+                <div className="bg-blue-50 p-2 rounded-lg text-center">
+                  <p className="text-[10px] uppercase text-blue-400 font-semibold">Durasi</p>
+                  <p className="text-sm font-medium text-blue-700">
+                    {calculateDuration((item as any).clock_in, (item as any).clock_out)}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-2 mt-2">
+                <div className="bg-green-50 p-2 rounded-lg text-center flex flex-col justify-center">
+                  <span className="text-lg font-bold text-green-700 leading-none">{(item as MonthlyStats).present}</span>
+                  <span className="text-[10px] text-green-600">Hadir</span>
+                </div>
+                <div className="bg-amber-50 p-2 rounded-lg text-center flex flex-col justify-center">
+                  <span className="text-lg font-bold text-amber-700 leading-none">{(item as MonthlyStats).late}</span>
+                  <span className="text-[10px] text-amber-600">Telat</span>
+                </div>
+                <div className="bg-red-50 p-2 rounded-lg text-center flex flex-col justify-center">
+                  <span className="text-lg font-bold text-red-700 leading-none">{(item as MonthlyStats).absent}</span>
+                  <span className="text-[10px] text-red-600">Alpha</span>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-lg text-center flex flex-col justify-center">
+                  <span className="text-lg font-bold text-slate-700 leading-none">{(item as MonthlyStats).total_attendance}</span>
+                  <span className="text-[10px] text-slate-500">Total</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )) : (
+          <div className="text-center py-8 text-slate-500 bg-white rounded-xl border border-dashed border-slate-200">
+            Tidak ada data
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Data Table */}
+      <Card className="hidden md:block shadow-sm border-slate-200 bg-white">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -401,10 +473,10 @@ const RekapAbsensi = () => {
                   <TableCell className="text-slate-500">{item.department}</TableCell>
                   {viewMode === 'daily' ? (
                     <>
-                      <TableCell>{item.clock_in ? format(new Date(item.clock_in), 'HH:mm') : '-'}</TableCell>
-                      <TableCell>{item.clock_out ? format(new Date(item.clock_out), 'HH:mm') : '-'}</TableCell>
-                      <TableCell>{calculateDuration(item.clock_in, item.clock_out)}</TableCell>
-                      <TableCell>{getStatusBadge(item.status)}</TableCell>
+                      <TableCell>{(item as any).clock_in ? format(new Date((item as any).clock_in), 'HH:mm') : '-'}</TableCell>
+                      <TableCell>{(item as any).clock_out ? format(new Date((item as any).clock_out), 'HH:mm') : '-'}</TableCell>
+                      <TableCell>{calculateDuration((item as any).clock_in, (item as any).clock_out)}</TableCell>
+                      <TableCell>{getStatusBadge((item as any).status)}</TableCell>
                     </>
                   ) : (
                     <>

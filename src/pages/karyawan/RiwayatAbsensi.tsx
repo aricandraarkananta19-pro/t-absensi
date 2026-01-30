@@ -140,104 +140,115 @@ const RiwayatAbsensi = () => {
   };
 
   // ==========================================
-  // iOS MOBILE VIEW
+  // iOS MOBILE VIEW - Native Feel
   // ==========================================
   if (isMobile) {
     return (
       <div className="ios-mobile-container">
-        {/* iOS Header */}
-        <header className="ios-header" style={{ paddingBottom: "24px" }}>
+        {/* iOS Header - Slim 56px */}
+        <header className="ios-header-slim">
           <div className="relative z-10">
             {/* Back Button Row */}
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate("/dashboard")}
-                className="p-2 -ml-2 rounded-full bg-white/10 active:bg-white/20 transition-colors"
+                className="ios-back-btn"
               >
-                <ArrowLeft className="h-5 w-5 text-white" />
+                <ArrowLeft className="h-4 w-4" />
               </button>
-              <div>
-                <h1 className="text-lg font-semibold text-white">Riwayat Kehadiran</h1>
-                <p className="text-sm text-white/70">Daftar Lengkap</p>
+              <div className="flex-1 min-w-0">
+                <h1 className="ios-header-title">Riwayat Kehadiran</h1>
+                <p className="ios-header-subtitle truncate">Periode Lengkap</p>
               </div>
             </div>
 
-            {/* Month Selector Mobile */}
-            <div className="flex items-center justify-between bg-white/10 rounded-lg p-1">
-              <button onClick={handlePrevMonth} className="p-2 text-white hover:bg-white/10 rounded-md">
+            {/* Month Selector - Compact */}
+            <div className="flex items-center justify-between bg-white/10 rounded-xl p-1.5 mt-3">
+              <button onClick={handlePrevMonth} className="p-2 text-white hover:bg-white/10 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center">
                 <ChevronLeft className="h-5 w-5" />
               </button>
-              <span className="text-white font-medium">
+              <span className="text-white font-medium text-[15px]">
                 {format(currentMonth, "MMMM yyyy", { locale: id })}
               </span>
-              <button onClick={handleNextMonth} className="p-2 text-white hover:bg-white/10 rounded-md">
+              <button onClick={handleNextMonth} className="p-2 text-white hover:bg-white/10 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center">
                 <ChevronRight className="h-5 w-5" />
               </button>
             </div>
           </div>
         </header>
 
-        {/* Content */}
-        <div className="px-4 py-4 pb-24">
+        {/* Content - Employee List Cards */}
+        <div className="pt-4 pb-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Stats Summary for Mobile? Optional but nice. Keeping it simple list for now as requested. */}
-
-              <div className="ios-list">
-                {attendanceList.map((record, index) => (
-                  <div
-                    key={record.date}
-                    className={`ios-list-item ${record.status === 'weekend' ? 'opacity-60 bg-slate-50' : ''}`}
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <div className={`ios-list-icon ${record.status === "present" ? "bg-gradient-to-br from-green-500/20 to-green-500/10"
-                        : record.status === "late" ? "bg-gradient-to-br from-orange-500/20 to-orange-500/10"
-                          : record.status === "absent" ? "bg-gradient-to-br from-red-500/20 to-red-500/10"
-                            : "bg-slate-100"
-                      }`}>
-                      {record.status === "present" ? <CheckCircle2 className="h-4 w-4 text-green-500" /> :
-                        record.status === "late" ? <AlertCircle className="h-4 w-4 text-orange-500" /> :
-                          record.status === "absent" || record.status === "alpha" ? <XCircle className="h-4 w-4 text-red-500" /> :
-                            <Calendar className="h-4 w-4 text-slate-400" />}
-                    </div>
-
-                    <div className="ios-list-content flex-1 min-w-0">
-                      <p className="ios-list-title text-sm font-medium">
-                        {record.formattedDate}
-                      </p>
-
-                      {record.status !== 'weekend' && record.status !== 'future' && (
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <LogIn className="h-3 w-3 text-green-500" />
-                            {formatTime(record.clockIn)}
-                          </span>
-                          <span className="text-muted-foreground text-xs">→</span>
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <LogOut className="h-3 w-3 text-blue-500" />
-                            {formatTime(record.clockOut)}
-                          </span>
-                          {record.clockIn && record.clockOut && (
-                            <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-muted-foreground">
-                              {calculateDuration(record.clockIn, record.clockOut)}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      {record.status === 'weekend' && <p className="text-xs text-muted-foreground mt-1">Hari Libur</p>}
-                      {record.status === 'absent' && <p className="text-xs text-red-500 mt-1">Tidak ada catatan kehadiran</p>}
-                    </div>
-
-                    <div className="flex-shrink-0">
-                      {getIOSStatusBadge(record.status)}
-                    </div>
+            <div className="ios-employee-list">
+              {attendanceList.map((record, index) => (
+                <div
+                  key={record.date}
+                  className={`ios-employee-card ${record.status === 'weekend' ? 'opacity-60' : ''}`}
+                  style={{ animationDelay: `${index * 0.03}s` }}
+                >
+                  {/* Status Icon */}
+                  <div className={`ios-employee-avatar ${record.status === "present" ? "bg-gradient-to-br from-green-500 to-green-600" :
+                      record.status === "late" ? "bg-gradient-to-br from-orange-500 to-orange-600" :
+                        record.status === "absent" || record.status === "alpha" ? "bg-gradient-to-br from-red-500 to-red-600" :
+                          "bg-slate-300"
+                    }`}>
+                    {record.status === "present" ? <CheckCircle2 className="h-5 w-5 text-white" /> :
+                      record.status === "late" ? <AlertCircle className="h-5 w-5 text-white" /> :
+                        record.status === "absent" || record.status === "alpha" ? <XCircle className="h-5 w-5 text-white" /> :
+                          <Calendar className="h-5 w-5 text-white" />}
                   </div>
-                ))}
-              </div>
+
+                  {/* Info */}
+                  <div className="ios-employee-info">
+                    <p className="ios-employee-name">{record.formattedDate}</p>
+
+                    {record.status !== 'weekend' && record.status !== 'future' && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="flex items-center gap-1 text-[12px] text-slate-500">
+                          <LogIn className="h-3 w-3 text-green-500" />
+                          {formatTime(record.clockIn)}
+                        </span>
+                        <span className="text-slate-400 text-[11px]">→</span>
+                        <span className="flex items-center gap-1 text-[12px] text-slate-500">
+                          <LogOut className="h-3 w-3 text-blue-500" />
+                          {formatTime(record.clockOut)}
+                        </span>
+                        {record.clockIn && record.clockOut && (
+                          <span className="text-[11px] px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">
+                            {calculateDuration(record.clockIn, record.clockOut)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {record.status === 'weekend' && <p className="ios-employee-dept">Hari Libur</p>}
+                    {record.status === 'absent' && <p className="text-[12px] text-red-500 mt-0.5">Tidak ada kehadiran</p>}
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className="flex-shrink-0">
+                    {record.status === "present" && (
+                      <span className="ios-status-badge present"><span className="dot" />Hadir</span>
+                    )}
+                    {record.status === "late" && (
+                      <span className="ios-status-badge late"><span className="dot" />Telat</span>
+                    )}
+                    {(record.status === "absent" || record.status === "alpha") && (
+                      <span className="ios-status-badge absent"><span className="dot" />Alpha</span>
+                    )}
+                    {record.status === "weekend" && (
+                      <span className="text-[11px] text-slate-400 font-medium px-2 py-1 bg-slate-100 rounded-lg">Libur</span>
+                    )}
+                    {record.status === "future" && (
+                      <span className="text-[11px] text-slate-400 font-medium">-</span>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

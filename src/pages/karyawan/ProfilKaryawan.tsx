@@ -153,38 +153,38 @@ const ProfilKaryawan = () => {
   }
 
   // ==========================================
-  // iOS MOBILE VIEW
+  // iOS MOBILE VIEW - Native Feel
   // ==========================================
   if (isMobile) {
     return (
-      <div className="ios-mobile-container">
-        {/* iOS Profile Header */}
-        <header className="ios-header" style={{ paddingBottom: "100px" }}>
+      <div className="ios-mobile-container" style={{ paddingBottom: "calc(100px + env(safe-area-inset-bottom))" }}>
+        {/* iOS Profile Header - Expanded */}
+        <header className="ios-header" style={{ maxHeight: "none", height: "auto", paddingBottom: "100px", position: "relative", zIndex: 10 }}>
           <div className="relative z-10">
             {/* Back Button Row */}
             <div className="flex items-center justify-between mb-6">
               <button
                 onClick={() => navigate("/dashboard")}
-                className="p-2 -ml-2 rounded-full bg-white/10 active:bg-white/20 transition-colors"
+                className="ios-back-btn"
               >
-                <ArrowLeft className="h-5 w-5 text-white" />
+                <ArrowLeft className="h-4 w-4" />
               </button>
-              <h1 className="text-lg font-semibold text-white">Profil Saya</h1>
-              <div className="w-9" /> {/* Spacer for alignment */}
+              <h1 className="ios-header-title">Profil Saya</h1>
+              <div className="w-8" /> {/* Spacer */}
             </div>
 
             {/* Profile Info */}
-            <div className="ios-profile-header">
-              <div className="ios-avatar">
-                <User className="h-12 w-12" />
+            <div className="ios-profile-header flex flex-col items-center">
+              <div className="ios-avatar w-20 h-20 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-3 shadow-lg border-2 border-white/30">
+                <User className="h-10 w-10 text-white" />
               </div>
-              <h2 className="ios-profile-name">
+              <h2 className="text-xl font-bold text-white mb-1">
                 {profile?.full_name || user?.email?.split("@")[0]}
               </h2>
-              <p className="ios-profile-email">{user?.email}</p>
+              <p className="text-white/70 text-sm mb-3">{user?.email}</p>
               {profile?.position && (
-                <div className="mt-2 px-4 py-1.5 bg-white/20 rounded-full">
-                  <span className="text-sm text-white/90">{profile.position}</span>
+                <div className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full border border-white/10">
+                  <span className="text-xs font-medium text-white">{profile.position}</span>
                 </div>
               )}
             </div>
@@ -192,34 +192,38 @@ const ProfilKaryawan = () => {
         </header>
 
         {/* Profile Content */}
-        <div className="px-4 -mt-16">
+        <div className="px-4 -mt-16 relative z-20">
           {/* Quick Actions */}
-          <div className="ios-list mb-6">
+          <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 overflow-hidden mb-6">
             <button
               onClick={() => navigate("/edit-password")}
-              className="ios-list-item w-full text-left"
+              className="w-full p-4 flex items-center justify-between border-b border-gray-100 active:bg-gray-50 transition-colors"
             >
-              <div className="ios-list-icon" style={{ background: "linear-gradient(135deg, #5856D6 0%, #AF52DE 100%)" }}>
-                <Key className="h-4 w-4 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                  <Key className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-gray-900">Ubah Password</p>
+                  <p className="text-xs text-gray-500">Amankan akun Anda</p>
+                </div>
               </div>
-              <div className="ios-list-content">
-                <p className="ios-list-title">Ubah Password</p>
-                <p className="ios-list-subtitle">Ganti kata sandi akun</p>
-              </div>
-              <ChevronRight className="ios-list-chevron h-5 w-5" />
+              <ChevronRight className="h-5 w-5 text-gray-300" />
             </button>
             <button
               onClick={handleLogout}
-              className="ios-list-item w-full text-left"
+              className="w-full p-4 flex items-center justify-between active:bg-red-50 transition-colors group"
             >
-              <div className="ios-list-icon" style={{ background: "linear-gradient(135deg, #FF3B30 0%, #FF2D55 100%)" }}>
-                <LogOut className="h-4 w-4 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center text-white shadow-md">
+                  <LogOut className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-red-600 group-active:text-red-700">Logout</p>
+                  <p className="text-xs text-red-400">Keluar dari aplikasi</p>
+                </div>
               </div>
-              <div className="ios-list-content">
-                <p className="ios-list-title text-red-500">Logout</p>
-                <p className="ios-list-subtitle">Keluar dari akun</p>
-              </div>
-              <ChevronRight className="ios-list-chevron h-5 w-5" />
+              <ChevronRight className="h-5 w-5 text-gray-300" />
             </button>
           </div>
 
@@ -233,9 +237,9 @@ const ProfilKaryawan = () => {
                   name="full_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium">Nama Lengkap</FormLabel>
+                      <FormLabel className="text-xs font-medium text-gray-500 uppercase tracking-wide">Nama Lengkap</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Nama lengkap" className="ios-input" />
+                        <Input {...field} placeholder="Nama lengkap" className="h-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -247,9 +251,9 @@ const ProfilKaryawan = () => {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium">Nomor Telepon</FormLabel>
+                      <FormLabel className="text-xs font-medium text-gray-500 uppercase tracking-wide">Nomor Telepon</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="08xxxxxxxxxx" className="ios-input" />
+                        <Input {...field} placeholder="08xxxxxxxxxx" className="h-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -261,9 +265,9 @@ const ProfilKaryawan = () => {
                   name="department"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium">Departemen</FormLabel>
+                      <FormLabel className="text-xs font-medium text-gray-500 uppercase tracking-wide">Departemen</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Nama departemen" className="ios-input" />
+                        <Input {...field} placeholder="Nama departemen" className="h-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -275,9 +279,9 @@ const ProfilKaryawan = () => {
                   name="position"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium">Jabatan</FormLabel>
+                      <FormLabel className="text-xs font-medium text-gray-500 uppercase tracking-wide">Jabatan</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Jabatan Anda" className="ios-input" />
+                        <Input {...field} placeholder="Jabatan Anda" className="h-10 bg-gray-50 border-gray-200 focus:bg-white transition-colors" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -289,9 +293,9 @@ const ProfilKaryawan = () => {
                   name="address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium">Alamat</FormLabel>
+                      <FormLabel className="text-xs font-medium text-gray-500 uppercase tracking-wide">Alamat</FormLabel>
                       <FormControl>
-                        <Textarea {...field} placeholder="Alamat lengkap" rows={3} className="rounded-xl border-gray-200" />
+                        <Textarea {...field} placeholder="Alamat lengkap" rows={3} className="bg-gray-50 border-gray-200 focus:bg-white transition-colors resize-none rounded-xl" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -302,7 +306,6 @@ const ProfilKaryawan = () => {
                   type="submit"
                   className="ios-btn-primary flex items-center justify-center gap-2 mt-6"
                   disabled={isLoading}
-                  style={{ background: "linear-gradient(180deg, hsl(211 100% 55%) 0%, hsl(211 100% 50%) 100%)", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)" }}
                 >
                   {isLoading ? (
                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -317,24 +320,24 @@ const ProfilKaryawan = () => {
 
           {/* Account Info */}
           <h3 className="ios-section-header">Informasi Akun</h3>
-          <div className="ios-list mb-8">
-            <div className="ios-list-item">
-              <div className="ios-list-icon" style={{ background: "linear-gradient(135deg, #5AC8FA 0%, #007AFF 100%)" }}>
-                <Mail className="h-4 w-4 text-white" />
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+            <div className="p-4 flex items-center gap-3 border-b border-gray-50">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+                <Mail className="h-4 w-4" />
               </div>
-              <div className="ios-list-content">
-                <p className="ios-list-title">Email</p>
-                <p className="ios-list-subtitle">{user?.email}</p>
+              <div>
+                <p className="text-xs text-gray-500">Email</p>
+                <p className="text-sm font-medium text-gray-900">{user?.email}</p>
               </div>
             </div>
             {profile?.join_date && (
-              <div className="ios-list-item">
-                <div className="ios-list-icon" style={{ background: "linear-gradient(135deg, #34C759 0%, #30D158 100%)" }}>
-                  <Briefcase className="h-4 w-4 text-white" />
+              <div className="p-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                  <Briefcase className="h-4 w-4" />
                 </div>
-                <div className="ios-list-content">
-                  <p className="ios-list-title">Bergabung Sejak</p>
-                  <p className="ios-list-subtitle">
+                <div>
+                  <p className="text-xs text-gray-500">Bergabung Sejak</p>
+                  <p className="text-sm font-medium text-gray-900">
                     {new Date(profile.join_date).toLocaleDateString("id-ID", {
                       month: "long",
                       year: "numeric"
