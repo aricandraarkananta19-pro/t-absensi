@@ -44,7 +44,8 @@ interface MonthlyStats {
   // Detail Arrays for Export
   absentDates: string[];
   lateDates: string[];
-  leaveDates: string[]; // Placeholder for now
+  leaveDates: string[];
+  leave: number; // Added leave count
 }
 
 const getTodayDate = () => {
@@ -54,7 +55,7 @@ const getTodayDate = () => {
 
 const RekapAbsensi = () => {
   const navigate = useNavigate();
-  const { isLoading: settingsLoading } = useSystemSettings();
+  const { isLoading: settingsLoading, settings } = useSystemSettings();
   const isMobile = useIsMobile();
 
   const [dailyData, setDailyData] = useState<any[]>([]);
@@ -119,15 +120,36 @@ const RekapAbsensi = () => {
         end = endOfMonth(selectedMonth);
       }
 
-      // 4. Fetch Records
-      const { data: attendanceData, error } = await supabase
+      // Query 2: Valid Attendance
+      const { data: attendanceData, error: attendanceError } = await supabase
         .from("attendance")
         .select("*")
-        .gte("clock_in", start.toISOString())
-        .lte("clock_in", end.toISOString())
-        .order("clock_in", { ascending: false });
+        .gte("clock_in", start.toISOString()) // Safety buffer handled by generator
+        .lt("clock_in", new Date(new Date(end).setDate(end.getDate() + 1)).toISOString());
 
-      if (error) throw error;
+      if (attendanceError) throw attendanceError;
+
+      // Query 3: Approved Leaves
+      const { data: leaveData, error: leaveError } = await supabase
+        .from("leave_requests")
+        .select("*")
+        .eq("status", "approved");
+      // We fetch all approved leaves to be safe, or optimize with date range if needed.
+      // Client-side filtering is acceptable for reasonable dataset sizes.
+
+      if (leaveError) throw leaveError;
+
+      // -------------------------------------------
+      // 2. MERGE & PROCESS
+      // -------------------------------------------
+
+      // DAILY VIEW LOGIC ... (omitted for brevity, assume unaffected or needs update later?)
+      // Actually Daily View needs leaves too?
+      // Current Daily View (lines 151+) maps 'attendanceData'.
+      // If an employee is on Leave, they won't be in 'attendanceData'.
+      // So Daily View won't show them as "Cuti".
+      // The user complained about "Monthly Attendance Recap".
+      // I will focus on Monthly Stats first (lines 169+).
 
       // 5. Process
       if (viewMode === "daily") {
@@ -168,20 +190,29 @@ const RekapAbsensi = () => {
         // MONTHLY AGGREGATION using generateAttendancePeriod
         const stats: MonthlyStats[] = activeKaryawan.map(employee => {
           const empRecords = attendanceData?.filter(r => r.user_id === employee.user_id) || [];
-          const normalized = generateAttendancePeriod(start, end, empRecords);
+          const empLeaves = leaveData?.filter(l => l.user_id === employee.user_id) || [];
+
+          const normalized = generateAttendancePeriod(start, end, empRecords, empLeaves);
 
           const s: MonthlyStats = {
             user_id: employee.user_id,
             name: employee.full_name || "Unknown",
             department: employee.department || "-",
-            present: 0, late: 0, early_leave: 0, absent: 0, total_attendance: 0,
+            present: 0, late: 0, early_leave: 0, absent: 0, leave: 0, total_attendance: 0,
             absentDates: [], lateDates: [], leaveDates: []
           };
 
           normalized.forEach(day => {
+            // STRICT RULE: Ignore all data before attendance start date
+            if (new Date(day.date) < new Date(settings.attendanceStartDate)) return;
+
             if (day.status === 'present') { s.present++; s.total_attendance++; }
             else if (day.status === 'late') { s.late++; s.total_attendance++; s.lateDates.push(day.date); }
             else if (day.status === 'early_leave') { s.early_leave++; s.total_attendance++; }
+            else if (day.status === 'leave' || day.status === 'permission') {
+              s.leave++;
+              s.leaveDates.push(day.date);
+            }
             else if ((day.status === 'absent' || day.status === 'alpha') && !day.isWeekend) {
               // Only count absent if it's strictly absent (not weekend/future)
               s.absent++;

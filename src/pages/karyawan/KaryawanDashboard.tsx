@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import MobileNavigation from "@/components/MobileNavigation";
+import { generateAttendancePeriod } from "@/lib/attendanceGenerator";
 
 interface AttendanceRecord {
   id: string;
@@ -50,7 +51,7 @@ const KaryawanDashboard = () => {
       fetchMonthStats();
       fetchUsedLeaveDays();
     }
-  }, [user]);
+  }, [user, settings]);
 
   const fetchUsedLeaveDays = async () => {
     if (!user) return;
@@ -107,17 +108,34 @@ const KaryawanDashboard = () => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    const { data } = await supabase
+    // Apply strict Attendance Start Date logic
+    const settingStart = new Date(settings.attendanceStartDate);
+    // If start date is in the future relative to month start, use that.
+    const effectiveStart = settingStart > startOfMonth ? settingStart : startOfMonth;
+
+    const { data: attendanceData } = await supabase
       .from("attendance")
-      .select("status")
+      .select("*")
       .eq("user_id", user.id)
-      .gte("clock_in", startOfMonth.toISOString())
+      .gte("clock_in", effectiveStart.toISOString())
       .lte("clock_in", endOfMonth.toISOString());
 
-    if (data) {
-      const present = data.filter(d => d.status === "present").length;
-      const late = data.filter(d => d.status === "late").length;
-      setMonthStats({ present, late, absent: 0 });
+    const { data: leaveData } = await supabase
+      .from("leave_requests")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("status", "approved");
+
+    if (attendanceData) {
+      // Use shared generator logic for consistency with Admin Report
+      const dailyStatuses = generateAttendancePeriod(effectiveStart, endOfMonth, attendanceData, leaveData || []);
+
+      const present = dailyStatuses.filter(d => d.status === "present").length;
+      const late = dailyStatuses.filter(d => d.status === "late").length;
+      // Strictly define absent using the generator's logic (excluding weekends/leaves/future)
+      const absent = dailyStatuses.filter(d => d.status === "absent" || d.status === "alpha").length;
+
+      setMonthStats({ present, late, absent });
     }
   };
 

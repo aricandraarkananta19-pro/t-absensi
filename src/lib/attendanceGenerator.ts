@@ -1,4 +1,4 @@
-import { addDays, format } from "date-fns";
+import { addDays, format, isWithinInterval, parseISO } from "date-fns";
 import { id } from "date-fns/locale";
 
 export interface DailyAttendanceStatus {
@@ -13,15 +13,23 @@ export interface DailyAttendanceStatus {
     isWeekend: boolean;
 }
 
+export interface LeaveRecord {
+    start_date: string;
+    end_date: string;
+    leave_type: string;
+    status: string; // 'approved'
+}
+
 /**
  * Generates a complete list of daily attendance statuses for a given period.
- * Automatically fills in missing dates with 'absent', 'weekend', or 'future' statuses.
+ * Automatically fills in missing dates with 'absent', 'weekend', 'future', or 'leave' statuses.
  * USES ASIA/JAKARTA TIMEZONE for comparison.
  */
 export const generateAttendancePeriod = (
     startDate: Date,
     endDate: Date,
-    records: any[]
+    records: any[],
+    leaves: LeaveRecord[] = []
 ): DailyAttendanceStatus[] => {
     const normalized: DailyAttendanceStatus[] = [];
 
@@ -38,7 +46,7 @@ export const generateAttendancePeriod = (
         const dateStr = format(currentDate, 'yyyy-MM-dd');
         const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
 
-        // Find existing record for this date
+        // 1. Find existing attendance record
         // Normalize DB timestamp to Jakarta Date String (YYYY-MM-DD)
         const record = records.find(r => {
             if (!r.clock_in) return false;
@@ -48,6 +56,13 @@ export const generateAttendancePeriod = (
             return recordDateJakarta === dateStr;
         });
 
+        // 2. Find Approved Leave
+        // Check if dateStr is within any leave range
+        const leave = leaves.find(l => {
+            if (l.status !== 'approved') return false;
+            return dateStr >= l.start_date && dateStr <= l.end_date;
+        });
+
         let status: DailyAttendanceStatus['status'] = 'absent';
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
@@ -55,17 +70,19 @@ export const generateAttendancePeriod = (
 
         if (record) {
             status = (record.status as any) || 'present';
+        } else if (leave) {
+            status = 'leave';
         } else {
             // Comparison: dateStr vs todayStr
             if (dateStr > todayStr) {
                 status = 'future';
             } else if (dateStr === todayStr) {
-                // Today with no record yet -> Pending (Display as Future/- for now to avoid premature Absent)
+                // Today with no record yet -> Pending (Display as Future to avoid premature Absent)
                 status = 'future';
             } else if (isWeekend) {
                 status = 'weekend';
             } else {
-                // Past day (strictly < today), no record, not weekend -> ABSENT
+                // Past day (strictly < today), no record, not qualified leave, not weekend -> ABSENT
                 status = 'absent';
             }
         }
@@ -78,7 +95,7 @@ export const generateAttendancePeriod = (
             clockIn: record?.clock_in || null,
             clockOut: record?.clock_out || null,
             recordId: record?.id || null,
-            notes: record?.notes || null,
+            notes: record?.notes || (leave ? `Cuti: ${leave.leave_type}` : null),
             isWeekend
         });
 

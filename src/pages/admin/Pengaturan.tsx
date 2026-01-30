@@ -4,7 +4,7 @@ import {
   ArrowLeft, Building2, Clock, MapPin, CalendarDays,
   ShieldAlert, Save, RotateCcw, Download, Trash2,
   ChevronRight, Settings, Smartphone, Bell, Database,
-  FileText, Briefcase
+  FileText, Briefcase, Info
 } from "lucide-react";
 import { useSystemSettings, SystemSettings } from "@/hooks/useSystemSettings";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -71,6 +71,7 @@ const Pengaturan = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetType, setResetType] = useState<"attendance" | "leaves" | "all">("attendance");
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
   // Sync with fetched settings
   useEffect(() => {
@@ -88,17 +89,61 @@ const Pengaturan = () => {
     setHasChanges(true);
   };
 
+  // Prevent accidental navigation
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = "Perubahan belum disimpan. Yakin ingin keluar?";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasChanges]);
+
+  // Keyboard shortcut (Ctrl+S)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (hasChanges) {
+          setShowSaveConfirm(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasChanges]);
+
   // ==========================================
   // SAVE / UPDATE LOGIC
   // ==========================================
-  const handleSave = async () => {
+  const executeSave = async () => {
     setIsSaving(true);
+    setShowSaveConfirm(false);
     try {
       // Validation Logic
       if (formData.companyName.length < 3) throw new Error("Nama perusahaan minimal 3 karakter");
       // Time validation logic...
 
+      // 1. Update System Settings
       await updateSettings(formData);
+
+      // 2. Update Active Period (Manually enforce consistency)
+      if (formData.attendanceStartDate !== settings.attendanceStartDate) {
+        const { data: activePeriod } = await supabase
+          .from("attendance_periods")
+          .select("id")
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (activePeriod) {
+          await supabase
+            .from("attendance_periods")
+            .update({ start_date: formData.attendanceStartDate })
+            .eq("id", activePeriod.id);
+        }
+      }
 
       toast({
         title: "Pengaturan Disimpan",
@@ -115,6 +160,11 @@ const Pengaturan = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSave = () => {
+    // ALWAYS require confirmation
+    setShowSaveConfirm(true);
   };
 
   const handleCancel = () => {
@@ -381,6 +431,30 @@ const Pengaturan = () => {
 
   const renderSystemSettings = () => (
     <div className="space-y-6">
+      <Card className="border-slate-200 shadow-sm border-l-4 border-l-blue-600">
+        <CardHeader>
+          <CardTitle>Tanggal Mulai Absensi (Periode Aktif)</CardTitle>
+          <CardDescription>Absensi karyawan dihitung mulai dari tanggal ini.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label>Tanggal Mulai</Label>
+            <div className="relative">
+              <Input
+                type="date"
+                value={formData.attendanceStartDate}
+                onChange={(e) => handleChange("attendanceStartDate", e.target.value)}
+                className="pl-10"
+              />
+              <CalendarDays className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+            </div>
+            <p className="text-xs text-amber-600 flex items-center gap-1 mt-2">
+              <Info className="w-3 h-3" /> Perubahan akan mempengaruhi perhitungan semua laporan & dashboard
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="border-red-100 bg-red-50/10 shadow-sm">
         <CardHeader>
           <CardTitle className="text-red-700 flex items-center gap-2">
@@ -445,7 +519,9 @@ const Pengaturan = () => {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
+
       </AlertDialog>
+
     </div>
   );
 
@@ -473,11 +549,7 @@ const Pengaturan = () => {
             </button>
             <h1 className="text-base font-semibold text-slate-900">Pengaturan</h1>
           </div>
-          {hasChanges && (
-            <Button size="sm" onClick={handleSave} disabled={isSaving}>
-              {isSaving ? "Menyimpan..." : "Simpan"}
-            </Button>
-          )}
+          {/* Global Save Bar handles actions now */}
         </header>
 
         <div className="px-4 py-4 space-y-4 mt-[52px]">
@@ -502,12 +574,12 @@ const Pengaturan = () => {
         </div>
 
         {/* Mobile Edit Sheet */}
-        <Sheet open={!!activeMobileSheet} onOpenChange={(open) => !open && handleCancel()}>
+        <Sheet open={!!activeMobileSheet} onOpenChange={(open) => !open && setActiveMobileSheet(null)}>
           <SheetContent side="bottom" className="h-[90vh] rounded-t-[20px] p-0 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white">
               <h2 className="font-semibold text-lg">{SECTIONS.find(s => s.id === activeMobileSheet)?.label}</h2>
               <div className="flex gap-2">
-                <Button size="sm" variant="ghost" onClick={handleCancel}>Batal</Button>
+                <Button size="sm" variant="ghost" onClick={() => setActiveMobileSheet(null)}>Tutup</Button>
                 <Button size="sm" onClick={handleSave} disabled={isSaving}>Simpan</Button>
               </div>
             </div>
@@ -516,6 +588,41 @@ const Pengaturan = () => {
             </div>
           </SheetContent>
         </Sheet>
+
+        {/* Global Save Action Bar (Mobile) */}
+        <div className={`fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 transition-transform duration-300 ${hasChanges ? 'translate-y-0' : 'translate-y-full'}`}>
+          <div className="flex gap-3">
+            <Button variant="outline" className="flex-1 border-slate-300 text-slate-700" onClick={handleCancel}>Batalkan</Button>
+            <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white shadow-md" onClick={handleSave} disabled={isSaving}>
+              {isSaving ? "..." : "Simpan"}
+            </Button>
+          </div>
+        </div>
+        {/* Global Save Confirmation Dialog (Mobile) */}
+        <AlertDialog open={showSaveConfirm} onOpenChange={setShowSaveConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Konfirmasi Simpan Perubahan</AlertDialogTitle>
+              <AlertDialogDescription>
+                {formData.attendanceStartDate !== settings.attendanceStartDate ? (
+                  <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-amber-800 mb-3 text-sm">
+                    <b>PERINGATAN:</b> Tanggal Mulai Absensi berubah! <br />
+                    Ini akan memicu perhitungan ulang pada seluruh laporan.
+                  </div>
+                ) : (
+                  <p className="mb-3">Anda akan menyimpan perubahan pengaturan sistem.</p>
+                )}
+                <p>Pastikan data yang dimasukkan sudah benar. Apakah Anda yakin melakukan update?</p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Periksa Lagi</AlertDialogCancel>
+              <AlertDialogAction onClick={executeSave} className="bg-primary hover:bg-primary/90">
+                Ya, Simpan
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
@@ -537,17 +644,7 @@ const Pengaturan = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {hasChanges && (
-              <div className="flex items-center gap-2 mr-4 animate-in fade-in slide-in-from-right-4">
-                <span className="text-sm text-amber-600 font-medium bg-amber-50 px-3 py-1 rounded-full">
-                  Perubahan belum disimpan
-                </span>
-                <Button variant="ghost" onClick={handleCancel}>Batal</Button>
-                <Button onClick={handleSave} disabled={isSaving}>
-                  {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
-                </Button>
-              </div>
-            )}
+            {/* Global Save Bar handles actions */}
           </div>
         </div>
       </header>
@@ -576,6 +673,47 @@ const Pengaturan = () => {
             {getContent(activeSection)}
           </main>
         </div>
+        {/* Global Save Action Bar (Desktop) */}
+        <div className={`fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 transition-transform duration-300 ${hasChanges ? 'translate-y-0' : 'translate-y-full'}`}>
+          <div className="container mx-auto flex items-center justify-between max-w-5xl">
+            <div className="hidden md:flex flex-col">
+              <span className="text-sm font-bold text-slate-800">Perubahan belum disimpan</span>
+              <span className="text-xs text-slate-500">Pastikan Anda menyimpan konfigurasi sebelum keluar.</span>
+            </div>
+            <div className="flex gap-3 w-full md:w-auto">
+              <Button variant="outline" className="flex-1 md:flex-none border-slate-300 text-slate-700" onClick={handleCancel}>Batalkan</Button>
+              <Button className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white shadow-md" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Global Save Confirmation Dialog (Desktop) */}
+        <AlertDialog open={showSaveConfirm} onOpenChange={setShowSaveConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Konfirmasi Simpan Perubahan</AlertDialogTitle>
+              <AlertDialogDescription>
+                {formData.attendanceStartDate !== settings.attendanceStartDate ? (
+                  <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-amber-800 mb-3">
+                    <b>PERINGATAN:</b> Tanggal Mulai Absensi berubah! <br />
+                    Ini akan memicu perhitungan ulang pada seluruh laporan.
+                  </div>
+                ) : (
+                  <p className="mb-3">Anda akan menyimpan perubahan pengaturan sistem.</p>
+                )}
+                <p>Pastikan data yang dimasukkan sudah benar. Apakah Anda yakin melakukan update?</p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Periksa Lagi</AlertDialogCancel>
+              <AlertDialogAction onClick={executeSave} className="bg-primary hover:bg-primary/90">
+                Ya, Simpan
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
