@@ -1,14 +1,14 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
     ArrowLeft, FileText, Calendar, CheckCircle2, XCircle, Clock, Search, Users,
     Download, BarChart3, RefreshCw, FileSpreadsheet, Building2,
     AlertTriangle, CalendarDays, ChevronDown, ChevronRight, Home, ChevronRightIcon,
-    TrendingUp, UserCheck, UserX, Timer, Briefcase, Filter, LayoutGrid
+    TrendingUp, UserCheck, UserX, Timer, Briefcase, Filter, LayoutGrid, LayoutDashboard, Key, Settings, Shield, Database, Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,6 +26,16 @@ import { exportToPDF, exportToExcel } from "@/lib/exportUtils";
 import { exportAttendanceExcel, exportAttendanceHRPDF, exportAttendanceManagementPDF, AttendanceReportData } from "@/lib/attendanceExportUtils";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
+import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
+import { cn } from "@/lib/utils";
+
+// Talenta Brand Colors
+const BRAND_COLORS = {
+    blue: "#1A5BA8",
+    lightBlue: "#00A0E3",
+    green: "#7DC242",
+};
+
 
 // =============== SKELETON LOADER COMPONENT ===============
 const SkeletonCard = () => (
@@ -113,7 +123,7 @@ interface EmployeeReport {
 const LaporanKehadiran = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const { settings } = useSystemSettings();
+    const { settings, isLoading: settingsLoading } = useSystemSettings();
 
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [employeeReports, setEmployeeReports] = useState<EmployeeReport[]>([]);
@@ -129,6 +139,7 @@ const LaporanKehadiran = () => {
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<EmployeeReport | null>(null);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
     // Helper: Convert string to Title Case
     const toTitleCase = (str: string | null): string => {
@@ -143,7 +154,10 @@ const LaporanKehadiran = () => {
         return value && value.trim() !== "" ? value : placeholder;
     };
 
+    // Wait for settings to load before fetching data
     useEffect(() => {
+        if (settingsLoading) return;
+
         fetchLeaveRequests();
         fetchEmployeeReports();
         fetchDepartments();
@@ -159,7 +173,7 @@ const LaporanKehadiran = () => {
             .subscribe();
 
         return () => { supabase.removeChannel(leaveChannel); supabase.removeChannel(attendanceChannel); };
-    }, [reportMonth]);
+    }, [reportMonth, settingsLoading, settings]);
 
     const fetchDepartments = async () => {
         const { data } = await supabase.from("profiles").select("department").not("department", "is", null);
@@ -184,15 +198,29 @@ const LaporanKehadiran = () => {
     };
 
     const fetchEmployeeReports = async () => {
+        setIsLoading(true);
+
         const { data: karyawanRoles } = await supabase.from("user_roles").select("user_id").in("role", ABSENSI_WAJIB_ROLE);
         const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
         const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, department");
-        if (!profiles) return;
+        if (!profiles) {
+            setIsLoading(false);
+            return;
+        }
 
         const karyawanProfiles = profiles.filter(p => karyawanUserIds.has(p.user_id));
         const startOfMonth = new Date(`${reportMonth}-01`);
-        const attendanceStartDate = new Date(settings.attendanceStartDate);
-        attendanceStartDate.setHours(0, 0, 0, 0);
+
+        // Handle missing or invalid attendanceStartDate - default to start of month
+        let attendanceStartDate: Date;
+        if (settings?.attendanceStartDate) {
+            attendanceStartDate = new Date(settings.attendanceStartDate);
+            attendanceStartDate.setHours(0, 0, 0, 0);
+        } else {
+            // Default to start of this month if settings not available
+            attendanceStartDate = startOfMonth;
+        }
+
         const effectiveStartDate = startOfMonth > attendanceStartDate ? startOfMonth : attendanceStartDate;
         const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0);
         endOfMonth.setHours(23, 59, 59, 999);
@@ -301,12 +329,19 @@ const LaporanKehadiran = () => {
             })
         );
         setEmployeeReports(reports);
+        setLastUpdated(new Date());
+        setIsLoading(false);
     };
 
-    const attendanceStartDateObj = new Date(settings.attendanceStartDate);
+    // Safe date calculations with null check
+    const attendanceStartDateObj = settings?.attendanceStartDate
+        ? new Date(settings.attendanceStartDate)
+        : new Date(`${reportMonth}-01`);
     const startOfSelectedMonth = new Date(`${reportMonth}-01`);
     const endOfSelectedMonth = new Date(startOfSelectedMonth.getFullYear(), startOfSelectedMonth.getMonth() + 1, 0);
-    const isMonthBeforeStartDate = endOfSelectedMonth < attendanceStartDateObj;
+    const isMonthBeforeStartDate = settings?.attendanceStartDate
+        ? endOfSelectedMonth < attendanceStartDateObj
+        : false;
 
     const summaryStats = useMemo(() => ({
         totalEmployees: employeeReports.length,
@@ -488,25 +523,30 @@ const LaporanKehadiran = () => {
     const handleExportLeavePDF = () => { exportToPDF({ title: "Laporan Pengajuan Cuti", subtitle: `Per tanggal ${new Date().toLocaleDateString("id-ID")}`, filename: `laporan-cuti-${new Date().toISOString().split("T")[0]}`, columns: leaveExportColumns, data: getLeaveExportData(), orientation: "landscape" }); toast({ title: "Berhasil", description: "PDF berhasil diunduh" }); };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 print:bg-white">
-            {/* Enterprise Header - Dark Navy Theme */}
-            <header className="sticky top-0 z-50 bg-slate-900 border-b border-slate-800 shadow-lg print:static print:bg-white print:shadow-none">
+        <div className="min-h-screen bg-slate-50 print:bg-white">
+            {/* Header with Talenta Brand */}
+            <header
+                className="sticky top-0 z-50 border-b shadow-sm print:static print:bg-white print:shadow-none"
+                style={{
+                    background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
+                }}
+            >
                 <div className="container mx-auto px-4 lg:px-8">
                     {/* Top Bar with Breadcrumbs */}
-                    <div className="flex items-center justify-between py-2 border-b border-slate-800/50 print:hidden">
+                    <div className="flex items-center justify-between py-2 border-b border-white/10 print:hidden">
                         <nav className="flex items-center gap-2 text-sm">
-                            <Link to="/dashboard" className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors">
+                            <Link to="/dashboard" className="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors">
                                 <Home className="h-3.5 w-3.5" />
                                 <span>Dashboard</span>
                             </Link>
-                            <ChevronRightIcon className="h-3.5 w-3.5 text-slate-600" />
-                            <span className="text-slate-300">Admin</span>
-                            <ChevronRightIcon className="h-3.5 w-3.5 text-slate-600" />
+                            <ChevronRightIcon className="h-3.5 w-3.5 text-white/50" />
+                            <span className="text-white/80">Admin</span>
+                            <ChevronRightIcon className="h-3.5 w-3.5 text-white/50" />
                             <span className="text-white font-medium">Laporan Kehadiran</span>
                         </nav>
                         <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-500">Live data</span>
-                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-xs text-white/60">Live data</span>
+                            <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
                         </div>
                     </div>
 
@@ -517,37 +557,37 @@ const LaporanKehadiran = () => {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => navigate("/dashboard")}
-                                className="rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all print:hidden"
+                                className="rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all print:hidden"
                             >
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
                             <div className="flex items-center gap-3">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 shadow-lg shadow-violet-600/20">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 shadow-lg">
                                     <BarChart3 className="h-6 w-6 text-white" />
                                 </div>
                                 <div>
                                     <h1 className="text-xl font-bold text-white tracking-tight">Laporan Kehadiran</h1>
-                                    <p className="text-sm text-slate-400">Human Resources • Enterprise HRIS</p>
+                                    <p className="text-sm text-white/70">Laporan Bulanan • {monthLabelIndonesian}</p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-3 print:hidden">
-                            {/* Date Picker - Outlined Style */}
+                            {/* Date Picker */}
                             <div className="relative">
-                                <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/70 pointer-events-none" />
                                 <Input
                                     type="month"
                                     value={reportMonth}
                                     onChange={(e) => setReportMonth(e.target.value)}
-                                    className="pl-10 w-44 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-violet-500 focus:ring-violet-500/20 rounded-xl"
+                                    className="pl-10 w-44 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white focus:ring-white/20 rounded-xl"
                                 />
                             </div>
 
-                            {/* Export Button - With Shadow */}
+                            {/* Export Button */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white gap-2 shadow-lg shadow-violet-600/25 hover:shadow-xl hover:shadow-violet-600/30 transition-all rounded-xl px-5">
+                                    <Button className="bg-white hover:bg-white/90 gap-2 shadow-md transition-all rounded-xl px-5" style={{ color: BRAND_COLORS.blue }}>
                                         <Download className="h-4 w-4" />
                                         <span className="hidden sm:inline font-medium">Ekspor</span>
                                         <ChevronDown className="h-4 w-4" />
@@ -612,13 +652,16 @@ const LaporanKehadiran = () => {
             </header>
 
             <main className="container mx-auto px-4 lg:px-8 py-8">
-                <Tabs defaultValue="attendance" className="space-y-8">
-                    {/* Modern Tab Switcher */}
-                    <TabsList className="inline-flex h-12 items-center rounded-xl bg-slate-900 p-1.5 shadow-lg print:hidden">
-                        <TabsTrigger value="attendance" className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-slate-900 text-slate-400 font-medium transition-all">
+                <Tabs defaultValue="attendance" className="space-y-6">
+                    {/* Modern Tab Switcher with Talenta Brand */}
+                    <TabsList
+                        className="inline-flex h-12 items-center rounded-xl p-1.5 shadow-md print:hidden"
+                        style={{ backgroundColor: BRAND_COLORS.blue }}
+                    >
+                        <TabsTrigger value="attendance" className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-slate-800 text-white/80 font-medium transition-all">
                             <BarChart3 className="h-4 w-4 mr-2" />Laporan Kehadiran
                         </TabsTrigger>
-                        <TabsTrigger value="leave" className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-slate-900 text-slate-400 font-medium transition-all">
+                        <TabsTrigger value="leave" className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-slate-800 text-white/80 font-medium transition-all">
                             <CalendarDays className="h-4 w-4 mr-2" />Pengajuan Cuti
                         </TabsTrigger>
                     </TabsList>
@@ -633,19 +676,21 @@ const LaporanKehadiran = () => {
                             </div>
                         ) : (
                             <>
-                                {/* Stats Cards with Colored Top Borders */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                                {/* Stats Cards with Talenta Brand Colors */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                     {/* Total Employees Card */}
-                                    <Card className="border-0 shadow-md overflow-hidden bg-white">
-                                        <div className="h-1.5 bg-gradient-to-r from-violet-600 to-indigo-600" />
+                                    <Card className="border-slate-200 shadow-sm bg-white">
                                         <CardContent className="p-5">
                                             <div className="flex items-center justify-between">
                                                 <div>
                                                     <p className="text-sm font-medium text-slate-500 mb-1">Total Karyawan</p>
-                                                    <p className="text-3xl font-bold text-slate-900">{summaryStats.totalEmployees}</p>
+                                                    <p className="text-3xl font-bold text-slate-800">{summaryStats.totalEmployees}</p>
                                                 </div>
-                                                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-violet-100 to-indigo-100 flex items-center justify-center">
-                                                    <Users className="h-6 w-6 text-violet-600" />
+                                                <div
+                                                    className="h-12 w-12 rounded-xl flex items-center justify-center"
+                                                    style={{ backgroundColor: `${BRAND_COLORS.blue}15` }}
+                                                >
+                                                    <Users className="h-6 w-6" style={{ color: BRAND_COLORS.blue }} />
                                                 </div>
                                             </div>
                                             <p className="text-xs text-slate-400 mt-3">Periode: {monthLabelIndonesian}</p>
@@ -653,61 +698,61 @@ const LaporanKehadiran = () => {
                                     </Card>
 
                                     {/* Hadir Card */}
-                                    <Card className="border-0 shadow-md overflow-hidden bg-white">
-                                        <div className="h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500" />
+                                    <Card className="border-slate-200 shadow-sm bg-white">
                                         <CardContent className="p-5">
                                             <div className="flex items-center justify-between">
                                                 <div>
                                                     <p className="text-sm font-medium text-slate-500 mb-1">Total Kehadiran</p>
-                                                    <p className="text-3xl font-bold text-emerald-600">{summaryStats.totalPresent}</p>
+                                                    <p className="text-3xl font-bold" style={{ color: BRAND_COLORS.green }}>{summaryStats.totalPresent}</p>
                                                 </div>
-                                                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center">
-                                                    <UserCheck className="h-6 w-6 text-emerald-600" />
+                                                <div
+                                                    className="h-12 w-12 rounded-xl flex items-center justify-center"
+                                                    style={{ backgroundColor: `${BRAND_COLORS.green}15` }}
+                                                >
+                                                    <UserCheck className="h-6 w-6" style={{ color: BRAND_COLORS.green }} />
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1.5 mt-3">
-                                                <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                                                <span className="text-xs text-emerald-600 font-medium">Kehadiran tercatat</span>
+                                                <TrendingUp className="h-3.5 w-3.5" style={{ color: BRAND_COLORS.green }} />
+                                                <span className="text-xs font-medium" style={{ color: BRAND_COLORS.green }}>Kehadiran tercatat</span>
                                             </div>
                                         </CardContent>
                                     </Card>
 
                                     {/* Tidak Hadir Card */}
-                                    <Card className="border-0 shadow-md overflow-hidden bg-white">
-                                        <div className="h-1.5 bg-gradient-to-r from-red-500 to-rose-500" />
+                                    <Card className="border-slate-200 shadow-sm bg-white">
                                         <CardContent className="p-5">
                                             <div className="flex items-center justify-between">
                                                 <div>
                                                     <p className="text-sm font-medium text-slate-500 mb-1">Tidak Hadir</p>
-                                                    <p className="text-3xl font-bold text-red-600">{summaryStats.totalAbsent}</p>
+                                                    <p className="text-3xl font-bold text-red-500">{summaryStats.totalAbsent}</p>
                                                 </div>
-                                                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-red-100 to-rose-100 flex items-center justify-center">
-                                                    <UserX className="h-6 w-6 text-red-600" />
+                                                <div className="h-12 w-12 rounded-xl bg-red-50 flex items-center justify-center">
+                                                    <UserX className="h-6 w-6 text-red-500" />
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1.5 mt-3">
                                                 <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
-                                                <span className="text-xs text-red-600 font-medium">Perlu perhatian</span>
+                                                <span className="text-xs text-red-500 font-medium">Perlu perhatian</span>
                                             </div>
                                         </CardContent>
                                     </Card>
 
                                     {/* Terlambat Card */}
-                                    <Card className="border-0 shadow-md overflow-hidden bg-white">
-                                        <div className="h-1.5 bg-gradient-to-r from-amber-500 to-orange-500" />
+                                    <Card className="border-slate-200 shadow-sm bg-white">
                                         <CardContent className="p-5">
                                             <div className="flex items-center justify-between">
                                                 <div>
                                                     <p className="text-sm font-medium text-slate-500 mb-1">Keterlambatan</p>
-                                                    <p className="text-3xl font-bold text-amber-600">{summaryStats.totalLate}</p>
+                                                    <p className="text-3xl font-bold text-amber-500">{summaryStats.totalLate}</p>
                                                 </div>
-                                                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
-                                                    <Timer className="h-6 w-6 text-amber-600" />
+                                                <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center">
+                                                    <Timer className="h-6 w-6 text-amber-500" />
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1.5 mt-3">
                                                 <Clock className="h-3.5 w-3.5 text-amber-500" />
-                                                <span className="text-xs text-amber-600 font-medium">Tercatat terlambat</span>
+                                                <span className="text-xs text-amber-500 font-medium">Tercatat terlambat</span>
                                             </div>
                                         </CardContent>
                                     </Card>

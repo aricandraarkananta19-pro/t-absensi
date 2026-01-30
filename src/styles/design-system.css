@@ -1,0 +1,502 @@
+/* ==========================================
+   TALENTA TRAINCOM INDONESIA
+   Enterprise HRIS Design System
+   Light Theme - Professional & Clean
+   ========================================== */
+
+/* Import Professional Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ==========================================
+   TALENTA BRAND COLORS
+   Based on Talenta Traincom Indonesia Logo
+   ========================================== */
+:root {
+    /* Brand Primary - Dark Blue */
+    --talenta-blue-900: 211 72% 25%;
+    --talenta-blue-800: 211 72% 32%;
+    --talenta-blue-700: 211 72% 38%;
+    --talenta-blue-600: 211 72% 45%;
+    --talenta-blue-500: 211 72% 52%;
+    --talenta-blue-400: 200 85% 55%;
+    --talenta-blue-300: 200 85% 65%;
+    --talenta-blue-200: 200 85% 85%;
+    --talenta-blue-100: 200 85% 95%;
+    --talenta-blue-50: 200 85% 98%;
+
+    /* Brand Accent - Green */
+    --talenta-green-600: 90 55% 40%;
+    --talenta-green-500: 90 55% 50%;
+    --talenta-green-400: 90 55% 58%;
+    --talenta-green-300: 90 55% 70%;
+    --talenta-green-200: 90 55% 85%;
+    --talenta-green-100: 90 55% 94%;
+    --talenta-green-50: 90 55% 97%;
+
+    /* Primary Colors (from logo) */
+    --hris-primary: 211 72% 38%;
+    --hris-primary-hover: 211 72% 32%;
+    --hris-primary-light: 200 85% 95%;
+    --hris-primary-dark: 211 72% 25%;
+
+    /* Accent - Talenta Green */
+    --hris-accent: 90 55% 50%;
+    --hris-accent-light: 90 55% 94%;
+    --hris-accent-dark: 90 55% 40%;
+
+    /* Semantic Colors */
+    --hris-success: 152 69% 42%;
+    --hris-success-light: 152 69% 94%;
+    --hris-warning: 38 92% 50%;
+    --hris-warning-light: 38 92% 94%;
+    --hris-danger: 0 84% 60%;
+    --hris-danger-light: 0 84% 96%;
+    --hris-info: 200 85% 50%;
+    --hris-info-light: 200 85% 94%;
+
+    /* Neutral Gray Scale */
+    --hris-gray-50: 210 20% 98%;
+    --hris-gray-100: 214 32% 96%;
+    --hris-gray-200: 214 32% 93%;
+    --hris-gray-300: 214 29% 88%;
+    --hris-gray-400: 215 16% 65%;
+    --hris-gray-500: 215 16% 47%;
+    --hris-gray-600: 215 20% 35%;
+    --hris-gray-700: 216 26% 27%;
+    --hris-gray-800: 217 33% 17%;
+    --hris-gray-900: 222 47% 11%;
+
+    /* Surface Colors - LIGHT THEME */
+    --hris-surface: 0 0% 100%;
+    --hris-surface-elevated: 0 0% 100%;
+    --hris-surface-sunken: 210 20% 98%;
+    --hris-background: 210 25% 97%;
+
+    /* Border & Dividers */
+    --hris-border: 214 32% 91%;
+    --hris-border-strong: 214 29% 84%;
+
+    /* Shadows - Soft Professional Style */
+    --hris-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+    --hris-shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --hris-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+    --hris-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+    --hris-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.06), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+
+    /* Spacing System (4px base) */
+    --hris-space-1: 0.25rem;
+    --hris-space-2: 0.5rem;
+    --hris-space-3: 0.75rem;
+    --hris-space-4: 1rem;
+    --hris-space-5: 1.25rem;
+    --hris-space-6: 1.5rem;
+    --hris-space-8: 2rem;
+    --hris-space-10: 2.5rem;
+    --hris-space-12: 3rem;
+
+    /* Border Radius */
+    --hris-radius-sm: 0.375rem;
+    --hris-radius-md: 0.5rem;
+    --hris-radius-lg: 0.75rem;
+    --hris-radius-xl: 1rem;
+    --hris-radius-2xl: 1.25rem;
+    --hris-radius-full: 9999px;
+
+    /* Typography */
+    --hris-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    /* Layout */
+    --hris-sidebar-width: 260px;
+    --hris-sidebar-collapsed: 72px;
+    --hris-header-height: 64px;
+}
+
+/* ==========================================
+   BASE STYLES - LIGHT THEME
+   ========================================== */
+.hris-base {
+    font-family: var(--hris-font-family);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: hsl(var(--hris-background));
+    color: hsl(var(--hris-gray-900));
+    line-height: 1.5;
+}
+
+/* ==========================================
+   LAYOUT COMPONENTS - LIGHT SIDEBAR
+   ========================================== */
+
+.hris-layout {
+    display: flex;
+    min-height: 100vh;
+    background: hsl(var(--hris-background));
+}
+
+/* Light Sidebar */
+.hris-sidebar-light {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--hris-sidebar-width);
+    background: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 25% 98%) 100%);
+    border-right: 1px solid hsl(var(--hris-border));
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--hris-shadow-sm);
+}
+
+/* Sidebar Logo - Light */
+.hris-sidebar-logo-light {
+    padding: var(--hris-space-5) var(--hris-space-4);
+    border-bottom: 1px solid hsl(var(--hris-border));
+    display: flex;
+    align-items: center;
+    gap: var(--hris-space-3);
+    background: white;
+}
+
+.hris-sidebar-logo-icon-light {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--hris-radius-xl);
+    background: linear-gradient(135deg, hsl(211 72% 38%) 0%, hsl(200 85% 50%) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px hsl(211 72% 38% / 0.25);
+}
+
+.hris-sidebar-logo-text-light h1 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: hsl(var(--hris-gray-900));
+    margin: 0;
+    white-space: nowrap;
+}
+
+.hris-sidebar-logo-text-light p {
+    font-size: 0.75rem;
+    color: hsl(var(--hris-gray-500));
+    margin: 0;
+    white-space: nowrap;
+}
+
+/* Sidebar Navigation - Light */
+.hris-sidebar-nav-light {
+    flex: 1;
+    padding: var(--hris-space-4);
+    overflow-y: auto;
+}
+
+.hris-sidebar-section-title-light {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: hsl(var(--hris-gray-400));
+    padding: 0 var(--hris-space-3);
+    margin-bottom: var(--hris-space-2);
+}
+
+.hris-sidebar-link-light {
+    display: flex;
+    align-items: center;
+    gap: var(--hris-space-3);
+    padding: var(--hris-space-3) var(--hris-space-3);
+    border-radius: var(--hris-radius-lg);
+    color: hsl(var(--hris-gray-600));
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    margin-bottom: 2px;
+}
+
+.hris-sidebar-link-light:hover {
+    background: hsl(var(--talenta-blue-50));
+    color: hsl(var(--talenta-blue-700));
+}
+
+.hris-sidebar-link-light.active {
+    background: linear-gradient(135deg, hsl(var(--talenta-blue-100)) 0%, hsl(var(--talenta-green-100)) 100%);
+    color: hsl(var(--talenta-blue-700));
+    border: 1px solid hsl(var(--talenta-blue-200));
+    font-weight: 600;
+}
+
+.hris-sidebar-link-light svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.hris-sidebar-link-light.active svg {
+    color: hsl(var(--talenta-blue-600));
+}
+
+/* Sidebar User - Light */
+.hris-sidebar-user-light {
+    padding: var(--hris-space-4);
+    border-top: 1px solid hsl(var(--hris-border));
+    background: white;
+    display: flex;
+    align-items: center;
+    gap: var(--hris-space-3);
+}
+
+.hris-user-avatar-light {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--hris-radius-full);
+    background: linear-gradient(135deg, hsl(var(--talenta-blue-500)) 0%, hsl(var(--talenta-green-500)) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: var(--hris-shadow-sm);
+}
+
+.hris-user-name-light {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: hsl(var(--hris-gray-900));
+    margin: 0;
+}
+
+.hris-user-role-light {
+    font-size: 0.75rem;
+    color: hsl(var(--hris-gray-500));
+    margin: 0;
+}
+
+/* ==========================================
+   HEADER - LIGHT THEME
+   ========================================== */
+.hris-header-light {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: hsl(var(--hris-surface) / 0.98);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid hsl(var(--hris-border));
+    height: var(--hris-header-height);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--hris-space-6);
+}
+
+/* ==========================================
+   CARD COMPONENTS - CLEAN & PROFESSIONAL
+   ========================================== */
+.hris-card-clean {
+    background: hsl(var(--hris-surface));
+    border: 1px solid hsl(var(--hris-border));
+    border-radius: var(--hris-radius-xl);
+    box-shadow: var(--hris-shadow-xs);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.hris-card-clean:hover {
+    box-shadow: var(--hris-shadow-sm);
+    border-color: hsl(var(--hris-border-strong));
+}
+
+/* KPI Stat Card - Brand Themed */
+.hris-stat-card-brand {
+    background: white;
+    border: 1px solid hsl(var(--hris-border));
+    border-radius: var(--hris-radius-xl);
+    padding: var(--hris-space-5);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.hris-stat-card-brand:hover {
+    box-shadow: var(--hris-shadow-md);
+    transform: translateY(-2px);
+}
+
+.hris-stat-card-brand::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
+.hris-stat-card-brand[data-color="primary"]::before {
+    background: linear-gradient(90deg, hsl(var(--talenta-blue-600)) 0%, hsl(var(--talenta-blue-400)) 100%);
+}
+
+.hris-stat-card-brand[data-color="success"]::before {
+    background: linear-gradient(90deg, hsl(var(--talenta-green-500)) 0%, hsl(var(--talenta-green-400)) 100%);
+}
+
+.hris-stat-card-brand[data-color="warning"]::before {
+    background: linear-gradient(90deg, hsl(var(--hris-warning)) 0%, hsl(38 92% 58%) 100%);
+}
+
+.hris-stat-card-brand[data-color="info"]::before {
+    background: linear-gradient(90deg, hsl(200 85% 50%) 0%, hsl(200 85% 60%) 100%);
+}
+
+/* ==========================================
+   BUTTON COMPONENTS - BRAND COLORS
+   ========================================== */
+.hris-btn-brand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--hris-space-2);
+    font-family: var(--hris-font-family);
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: var(--hris-space-2) var(--hris-space-4);
+    border-radius: var(--hris-radius-lg);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.hris-btn-brand-primary {
+    background: linear-gradient(135deg, hsl(var(--talenta-blue-600)) 0%, hsl(var(--talenta-blue-500)) 100%);
+    color: white;
+    box-shadow: 0 2px 8px hsl(var(--talenta-blue-600) / 0.25);
+}
+
+.hris-btn-brand-primary:hover:not(:disabled) {
+    box-shadow: 0 4px 12px hsl(var(--talenta-blue-600) / 0.35);
+    transform: translateY(-1px);
+}
+
+.hris-btn-brand-success {
+    background: linear-gradient(135deg, hsl(var(--talenta-green-500)) 0%, hsl(var(--talenta-green-400)) 100%);
+    color: white;
+    box-shadow: 0 2px 8px hsl(var(--talenta-green-500) / 0.25);
+}
+
+/* ==========================================
+   BADGE COMPONENTS - BRAND COLORS
+   ========================================== */
+.hris-badge-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hris-space-1);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: var(--hris-space-1) var(--hris-space-2);
+    border-radius: var(--hris-radius-full);
+}
+
+.hris-badge-brand-primary {
+    background: hsl(var(--talenta-blue-100));
+    color: hsl(var(--talenta-blue-700));
+}
+
+.hris-badge-brand-success {
+    background: hsl(var(--talenta-green-100));
+    color: hsl(var(--talenta-green-600));
+}
+
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+@keyframes hris-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes hris-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.hris-animate-fade-in {
+    animation: hris-fade-in 0.3s ease-out forwards;
+}
+
+.hris-animate-slide-in {
+    animation: hris-slide-in 0.3s ease-out forwards;
+}
+
+/* Staggered animations */
+.hris-stagger-1 {
+    animation-delay: 0.05s;
+}
+
+.hris-stagger-2 {
+    animation-delay: 0.1s;
+}
+
+.hris-stagger-3 {
+    animation-delay: 0.15s;
+}
+
+.hris-stagger-4 {
+    animation-delay: 0.2s;
+}
+
+/* ==========================================
+   LOADING SKELETON
+   ========================================== */
+.hris-skeleton {
+    background: linear-gradient(90deg,
+            hsl(var(--hris-gray-200)) 0%,
+            hsl(var(--hris-gray-100)) 50%,
+            hsl(var(--hris-gray-200)) 100%);
+    background-size: 200% 100%;
+    animation: hris-skeleton-shimmer 1.5s infinite;
+    border-radius: var(--hris-radius-md);
+}
+
+@keyframes hris-skeleton-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ==========================================
+   RESPONSIVE BREAKPOINTS
+   ========================================== */
+@media (max-width: 1024px) {
+    .hris-sidebar-light {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .hris-header-light {
+        padding: 0 var(--hris-space-4);
+    }
+}

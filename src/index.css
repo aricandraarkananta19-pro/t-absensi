@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -15,7 +15,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 224 76% 40%;
+    /* Talenta Brand - Dark Blue */
+    --primary: 211 72% 38%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 214 32% 91%;
@@ -24,7 +25,8 @@
     --muted: 214 32% 91%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 173 58% 39%;
+    /* Talenta Brand - Green */
+    --accent: 90 55% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -32,36 +34,42 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 224 76% 40%;
+    --ring: 211 72% 38%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 224 76% 48%;
+    /* Light Sidebar for Professional Look */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 211 72% 38%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 224 76% 48%;
+    --sidebar-accent: 210 20% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 211 72% 38%;
+
+    /* Talenta Brand Colors */
+    --talenta-blue: 211 72% 38%;
+    --talenta-light-blue: 197 100% 45%;
+    --talenta-green: 90 55% 50%;
 
     /* Custom tokens */
-    --success: 158 64% 42%;
+    --success: 90 55% 50%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --info: 199 89% 48%;
+    --info: 197 100% 45%;
     --info-foreground: 0 0% 100%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(224, 76%, 40%) 0%, hsl(224, 76%, 55%) 100%);
-    --gradient-header: linear-gradient(135deg, hsl(222, 47%, 11%) 0%, hsl(224, 76%, 25%) 100%);
+    /* Gradients - Talenta Brand */
+    --gradient-primary: linear-gradient(135deg, hsl(211, 72%, 38%) 0%, hsl(197, 100%, 45%) 100%);
+    --gradient-header: linear-gradient(135deg, hsl(211, 72%, 38%) 0%, hsl(90, 55%, 50%) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(222 47% 11% / 0.1), 0 2px 4px -2px hsl(222 47% 11% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(222 47% 11% / 0.1), 0 4px 6px -4px hsl(222 47% 11% / 0.1);
-    --shadow-card: 0 1px 3px 0 hsl(222 47% 11% / 0.1), 0 1px 2px -1px hsl(222 47% 11% / 0.1);
+    /* Shadows - Softer for Light Theme */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
   }
 
   .dark {

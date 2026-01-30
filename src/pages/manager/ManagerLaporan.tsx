@@ -46,7 +46,7 @@ interface EmployeeReport {
 
 const ManagerLaporan = () => {
   const navigate = useNavigate();
-  const { settings } = useSystemSettings();
+  const { settings, isLoading: settingsLoading } = useSystemSettings();
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [employeeReports, setEmployeeReports] = useState<EmployeeReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,6 +55,8 @@ const ManagerLaporan = () => {
   const [reportMonth, setReportMonth] = useState(new Date().toISOString().slice(0, 7));
 
   useEffect(() => {
+    if (settingsLoading) return;
+
     fetchLeaveRequests();
     fetchEmployeeReports();
 
@@ -72,7 +74,7 @@ const ManagerLaporan = () => {
       supabase.removeChannel(leaveChannel);
       supabase.removeChannel(attendanceChannel);
     };
-  }, [reportMonth]);
+  }, [reportMonth, settingsLoading, settings]);
 
   const fetchLeaveRequests = async () => {
     const { data, error } = await supabase
@@ -108,6 +110,8 @@ const ManagerLaporan = () => {
   };
 
   const fetchEmployeeReports = async () => {
+    setIsLoading(true);
+
     // Get karyawan user IDs
     const { data: karyawanRoles } = await supabase
       .from("user_roles")
@@ -120,21 +124,31 @@ const ManagerLaporan = () => {
       .from("profiles")
       .select("user_id, full_name, department");
 
-    if (!profiles) return;
+    if (!profiles) {
+      setIsLoading(false);
+      return;
+    }
 
     // Filter only karyawan profiles
     const karyawanProfiles = profiles.filter(p => karyawanUserIds.has(p.user_id));
 
     const startOfMonth = new Date(`${reportMonth}-01`);
-    const attendanceStartDate = new Date(settings.attendanceStartDate);
-    attendanceStartDate.setHours(0, 0, 0, 0);
+
+    // Handle missing or invalid attendanceStartDate
+    let attendanceStartDate: Date;
+    if (settings?.attendanceStartDate) {
+      attendanceStartDate = new Date(settings.attendanceStartDate);
+      attendanceStartDate.setHours(0, 0, 0, 0);
+    } else {
+      attendanceStartDate = startOfMonth;
+    }
 
     const effectiveStartDate = startOfMonth > attendanceStartDate ? startOfMonth : attendanceStartDate;
 
     const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0);
     endOfMonth.setHours(23, 59, 59, 999);
 
-    if (endOfMonth < attendanceStartDate) {
+    if (settings?.attendanceStartDate && endOfMonth < attendanceStartDate) {
       setEmployeeReports(karyawanProfiles.map(profile => ({
         user_id: profile.user_id,
         full_name: profile.full_name,
@@ -144,6 +158,7 @@ const ManagerLaporan = () => {
         late_count: 0,
         leave_count: 0,
       })));
+      setIsLoading(false);
       return;
     }
 
@@ -180,12 +195,17 @@ const ManagerLaporan = () => {
     );
 
     setEmployeeReports(reports);
+    setIsLoading(false);
   };
 
   const startOfSelectedMonth = new Date(`${reportMonth}-01`);
   const endOfSelectedMonth = new Date(startOfSelectedMonth.getFullYear(), startOfSelectedMonth.getMonth() + 1, 0);
-  const attendanceStartDateObj = new Date(settings.attendanceStartDate);
-  const isMonthBeforeStartDate = endOfSelectedMonth < attendanceStartDateObj;
+  const attendanceStartDateObj = settings?.attendanceStartDate
+    ? new Date(settings.attendanceStartDate)
+    : startOfSelectedMonth;
+  const isMonthBeforeStartDate = settings?.attendanceStartDate
+    ? endOfSelectedMonth < attendanceStartDateObj
+    : false;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -249,6 +269,8 @@ const ManagerLaporan = () => {
 
   // English month label for report
   const monthLabelEnglish = new Date(reportMonth + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  // Indonesian month label for UI
+  const monthLabel = new Date(reportMonth + "-01").toLocaleDateString("id-ID", { month: "long", year: "numeric" });
 
   const handleExportEmployeeExcel = () => {
     exportToExcel({
@@ -500,9 +522,11 @@ const ManagerLaporan = () => {
               <CardHeader>
                 <CardTitle className="text-lg flex flex-col gap-1">
                   <span>Laporan Kehadiran - {monthLabel}</span>
-                  <span className="text-sm font-normal text-muted-foreground">
-                    Periode aktif mulai: {new Date(settings.attendanceStartDate).toLocaleDateString("id-ID")}
-                  </span>
+                  {settings?.attendanceStartDate && (
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Periode aktif mulai: {new Date(settings.attendanceStartDate).toLocaleDateString("id-ID")}
+                    </span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">

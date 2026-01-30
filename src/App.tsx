@@ -22,7 +22,7 @@ import ResetPassword from "./pages/admin/ResetPassword";
 import Pengaturan from "./pages/admin/Pengaturan";
 import Departemen from "./pages/admin/Departemen";
 import KelolaRole from "./pages/admin/KelolaRole";
-import ManagerDashboard from "./pages/manager/ManagerDashboard";
+import ManagerDashboard from "./pages/manager/ManagerDashboardNew";
 import ManagerRekapAbsensi from "./pages/manager/ManagerRekapAbsensi";
 import ManagerLaporan from "./pages/manager/ManagerLaporan";
 import ManagerCuti from "./pages/manager/ManagerCuti";
