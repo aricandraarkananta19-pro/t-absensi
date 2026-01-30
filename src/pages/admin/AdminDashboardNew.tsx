@@ -57,23 +57,25 @@ interface MonthlyData {
     terlambat: number;
 }
 
-// Helper function to get yesterday's date for automated report
-const getYesterdayDate = () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 1);
-    return date;
-};
-
-// Helper function to get today's date
-const getTodayDate = () => {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    return date;
-};
-
-// Check if current time is within working hours
-const isWithinWorkingHours = (clockInStart: string, clockOutEnd: string) => {
+// 1. TIMEZONE & DATE ENGINE
+// Helper to get date in Jakarta Timezone
+const getJakartaDate = (offsetDays = 0) => {
+    // Current UTC time
     const now = new Date();
+    // Convert to Jakarta Time string
+    const jakartaTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" });
+    const jakartaDate = new Date(jakartaTimeStr);
+
+    if (offsetDays !== 0) {
+        jakartaDate.setDate(jakartaDate.getDate() + offsetDays);
+    }
+
+    return jakartaDate;
+};
+
+// Check if current time is within working hours (Jakarta Time)
+const isWithinWorkingHours = (clockInStart: string, clockOutEnd: string) => {
+    const now = getJakartaDate();
     const currentTime = now.getHours() * 60 + now.getMinutes();
 
     const [startHour, startMin] = clockInStart.split(":").map(Number);
@@ -90,19 +92,19 @@ const AdminDashboardNew = () => {
     const navigate = useNavigate();
     const { settings, isLoading: settingsLoading } = useSystemSettings();
 
-    // Report date is yesterday for automated daily recap
-    const reportDate = getYesterdayDate();
-    const reportDateStr = reportDate.toISOString().split("T")[0];
-    const reportDateDisplay = reportDate.toLocaleDateString("id-ID", {
+    // 2. MAIN ACTIVE DATE STATE (Today Jakarta)
+    const [activeDate, setActiveDate] = useState(getJakartaDate());
+
+    // Derived Dates
+    const yesterdayDate = getJakartaDate(-1);
+
+    // Display Strings
+    const activeDateDisplay = activeDate.toLocaleDateString("id-ID", {
         weekday: "long",
         day: "numeric",
         month: "long",
         year: "numeric",
     });
-
-    // Today's date for live tracking
-    const todayDate = getTodayDate();
-    const todayDateStr = todayDate.toISOString().split("T")[0];
 
     const [stats, setStats] = useState({
         totalEmployees: 0,
@@ -117,7 +119,7 @@ const AdminDashboardNew = () => {
         newEmployeesThisMonth: 0,
     });
 
-    // Today's live stats (separate from report date)
+    // Validated Live Stats
     const [liveStats, setLiveStats] = useState({
         clockedInToday: 0,
         lateToday: 0,
@@ -134,7 +136,7 @@ const AdminDashboardNew = () => {
     const [departmentData, setDepartmentData] = useState<Array<{ name: string; value: number; color: string }>>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-    const [hasDataForReportDate, setHasDataForReportDate] = useState(true);
+    const [hasDataForToday, setHasDataForToday] = useState(true);
 
     // Menu sections for sidebar
     const menuSections = [
@@ -168,6 +170,32 @@ const AdminDashboardNew = () => {
         })),
     }));
 
+    // 3. AUTO-REFRESH & DATE VALIDATION ENGINE
+    useEffect(() => {
+        // Function to check if date changed (e.g. passed midnight)
+        const checkDateChange = () => {
+            const currentJakarta = getJakartaDate();
+            if (
+                currentJakarta.getDate() !== activeDate.getDate() ||
+                currentJakarta.getMonth() !== activeDate.getMonth() ||
+                currentJakarta.getFullYear() !== activeDate.getFullYear()
+            ) {
+                console.log("Date changed! Updating active date to:", currentJakarta);
+                setActiveDate(currentJakarta); // Will trigger fetchAllData via dependency
+            }
+        };
+
+        const interval = setInterval(() => {
+            checkDateChange();
+            if (!document.hidden) {
+                fetchAllData(false); // Background refresh only if visible
+            }
+        }, AUTO_REFRESH_INTERVAL);
+
+        return () => clearInterval(interval);
+    }, [activeDate]);
+
+
     const fetchAllData = useCallback(async (showLoading = true) => {
         if (showLoading) setIsLoading(true);
         try {
@@ -185,11 +213,11 @@ const AdminDashboardNew = () => {
                 fetchDepartmentDistribution(karyawanUserIds),
             ]);
 
-            setLastUpdated(new Date());
+            setLastUpdated(new Date()); // Local machine time for update timestamp
         } finally {
             setIsLoading(false);
         }
-    }, [settings.attendanceStartDate]);
+    }, [settings.attendanceStartDate, activeDate]); // Depend on activeDate!
 
     useEffect(() => {
         if (!settingsLoading) {
@@ -218,11 +246,12 @@ const AdminDashboardNew = () => {
         };
     }, [settingsLoading, fetchAllData]);
 
-    // Fetch today's live stats (real-time clock-in count)
     const fetchLiveStats = async (karyawanUserIds: Set<string>) => {
-        const today = new Date();
-        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-        const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+        // Use activeDate (Jakarta) for query
+        const startOfToday = new Date(activeDate);
+        startOfToday.setHours(0, 0, 0, 0);
+        const endOfToday = new Date(activeDate);
+        endOfToday.setHours(23, 59, 59, 999);
 
         const { data: todayAttendance } = await supabase
             .from("attendance")
@@ -238,6 +267,9 @@ const AdminDashboardNew = () => {
             lateToday: karyawanTodayAttendance.filter(a => a.status === "late").length,
             lastClockIn: karyawanTodayAttendance[0]?.clock_in || null,
         });
+
+        // Update emptiness check
+        setHasDataForToday(karyawanTodayAttendance.length > 0);
     };
 
     const fetchDepartmentDistribution = async (karyawanUserIds: Set<string>) => {
@@ -254,7 +286,6 @@ const AdminDashboardNew = () => {
                 deptCounts[dept] = (deptCounts[dept] || 0) + 1;
             });
 
-            // Use Talenta brand colors
             const colors = [BRAND_COLORS.blue, BRAND_COLORS.green, BRAND_COLORS.lightBlue, "#8B5CF6", "#EC4899", "#06B6D4"];
             const deptData = Object.entries(deptCounts)
                 .sort((a, b) => b[1] - a[1])
@@ -270,16 +301,15 @@ const AdminDashboardNew = () => {
     };
 
     const fetchStats = async (karyawanUserIds: Set<string>) => {
-        // Use report date (yesterday) for attendance stats
-        const targetDate = getYesterdayDate();
-        const startOfTargetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0);
-        const endOfTargetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999);
+        // Stats based on activeDate (TODAY)
+        const startOfTargetDay = new Date(activeDate);
+        startOfTargetDay.setHours(0, 0, 0, 0);
+        const endOfTargetDay = new Date(activeDate);
+        endOfTargetDay.setHours(23, 59, 59, 999);
 
-        const today = new Date();
+        const today = activeDate;
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        const startDate = new Date(settings.attendanceStartDate);
-        startDate.setHours(0, 0, 0, 0);
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
 
         const [
             profilesResult,
@@ -290,7 +320,7 @@ const AdminDashboardNew = () => {
             monthAttendanceResult,
         ] = await Promise.all([
             supabase.from("profiles").select("user_id, created_at"),
-            // Fetch attendance from yesterday
+            // Fetch attendance from TODAY (activeDate)
             supabase.from("attendance").select("user_id, status")
                 .gte("clock_in", startOfTargetDay.toISOString())
                 .lte("clock_in", endOfTargetDay.toISOString()),
@@ -316,10 +346,9 @@ const AdminDashboardNew = () => {
         const karyawanTargetDayAttendance = targetDayAttendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
         const presentToday = karyawanTargetDayAttendance.length;
         const lateToday = karyawanTargetDayAttendance.filter(a => a.status === "late").length;
+        // Absent is implicitly Total - Present for simple summary, but ideally we query 'absent' status.
+        // For Dashboard quick view, Total - Present is a good estimation if we assume working day.
         const absentToday = Math.max(0, totalEmployees - presentToday);
-
-        // Check if there's data for the report date
-        setHasDataForReportDate(presentToday > 0);
 
         const uniqueDepartments = new Set(departmentsResult.data?.map(d => d.department).filter(Boolean));
         const karyawanPendingLeaves = pendingLeavesResult.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
@@ -347,7 +376,7 @@ const AdminDashboardNew = () => {
     };
 
     const fetchWeeklyTrend = async (karyawanUserIds: Set<string>) => {
-        const today = new Date();
+        const today = activeDate;
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
         const startOfYear = new Date(today.getFullYear(), 0, 1);
         const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
@@ -394,10 +423,12 @@ const AdminDashboardNew = () => {
     };
 
     const fetchRecentAttendance = async (karyawanUserIds: Set<string>) => {
-        // Fetch attendance from yesterday
-        const targetDate = getYesterdayDate();
-        const startOfTargetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0);
-        const endOfTargetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999);
+        // Fetch attendance from TODAY (activeDate) - because user wants "Dashboard data always matches TODAY'S DATE"
+        const targetDate = activeDate;
+        const startOfTargetDay = new Date(targetDate);
+        startOfTargetDay.setHours(0, 0, 0, 0);
+        const endOfTargetDay = new Date(targetDate);
+        endOfTargetDay.setHours(23, 59, 59, 999);
 
         const [attendanceResult, profilesResult] = await Promise.all([
             supabase.from("attendance")
@@ -477,7 +508,7 @@ const AdminDashboardNew = () => {
     return (
         <EnterpriseLayout
             title="Dashboard"
-            subtitle={`Rekap Kehadiran: ${reportDateDisplay}`}
+            subtitle={`Rekap Kehadiran: ${activeDateDisplay}`}
             menuSections={menuWithBadges}
             roleLabel="Administrator"
             showRefresh={true}
@@ -580,24 +611,22 @@ const AdminDashboardNew = () => {
                         <CalendarClock className="h-6 w-6 text-white" />
                     </div>
                     <div className="flex-1">
-                        <p className="text-sm text-slate-600">Data Rekap Otomatis</p>
+                        <p className="text-sm text-slate-600">Terakhir Update</p>
                         <p className="text-base font-semibold text-slate-800">
-                            {reportDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                            {lastUpdated ? lastUpdated.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) : "-"}
                         </p>
                     </div>
-                    {lastUpdated && (
-                        <div className="text-right">
-                            <p className="text-xs text-slate-500">Diperbarui</p>
-                            <p className="text-sm font-medium text-slate-700">
-                                {lastUpdated.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                            </p>
-                        </div>
-                    )}
+                    <div className="text-right">
+                        <p className="text-xs text-slate-500">Status</p>
+                        <Badge variant="outline" className="text-xs border-green-200 text-green-700 bg-green-50">
+                            Sync Aktif
+                        </Badge>
+                    </div>
                 </div>
             </div>
 
             {/* No Data Warning */}
-            {!hasDataForReportDate && !isLoading && (
+            {!hasDataForToday && !isLoading && (
                 <div
                     className="mb-6 p-4 rounded-2xl border flex items-center gap-4"
                     style={{
@@ -609,9 +638,9 @@ const AdminDashboardNew = () => {
                         <AlertCircle className="h-5 w-5 text-amber-600" />
                     </div>
                     <div>
-                        <p className="font-semibold text-amber-800">Tidak ada data kehadiran</p>
+                        <p className="font-semibold text-amber-800">Belum ada absensi hari ini</p>
                         <p className="text-sm text-amber-700">
-                            Belum ada karyawan yang clock-in pada {reportDateDisplay}. Data akan muncul setelah karyawan melakukan absensi.
+                            Menampilkan data live untuk {activeDateDisplay}. Statistik akan muncul saat karyawan mulai clock-in.
                         </p>
                     </div>
                 </div>
@@ -633,7 +662,7 @@ const AdminDashboardNew = () => {
                     isLoading={isLoading}
                 />
                 <StatCard
-                    title="Kehadiran Kemarin"
+                    title="Kehadiran Hari Ini"
                     value={stats.totalEmployees > 0 ? `${Math.round((stats.presentToday / stats.totalEmployees) * 100)}%` : "0%"}
                     trend={{
                         value: `${stats.presentToday} dari ${stats.totalEmployees}`,
@@ -795,8 +824,8 @@ const AdminDashboardNew = () => {
                     <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                             <div>
-                                <CardTitle className="text-base font-semibold text-slate-800">Aktivitas Kemarin</CardTitle>
-                                <CardDescription className="text-sm">Kehadiran {reportDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</CardDescription>
+                                <CardTitle className="text-base font-semibold text-slate-800">Aktivitas Hari Ini</CardTitle>
+                                <CardDescription className="text-sm">Kehadiran {activeDateDisplay}</CardDescription>
                             </div>
                             <Link to="/admin/absensi">
                                 <Button
@@ -834,10 +863,10 @@ const AdminDashboardNew = () => {
                                                 background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
                                             }}
                                         >
-                                            {getInitials(record.full_name)}
+                                            {getInitials(record.full_name || "Unknown User")}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-slate-800 truncate">{record.full_name}</p>
+                                            <p className="text-sm font-medium text-slate-800 truncate">{record.full_name || "Unknown User"}</p>
                                             <p className="text-xs text-slate-500">Clock in {formatTime(record.clock_in)}</p>
                                         </div>
                                         {getStatusBadge(record.status)}

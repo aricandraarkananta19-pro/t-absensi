@@ -1,26 +1,28 @@
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Clock, Search, Calendar, Users, CheckCircle2,
-  XCircle, AlertCircle, Download, RefreshCw, FileSpreadsheet, FileText, Info,
+  XCircle, AlertCircle, Download, RotateCw, FileSpreadsheet, FileText,
   LayoutDashboard, BarChart3, Building2, Key, Settings, Shield, Database,
-  UserCheck, Timer, CalendarClock, ChevronLeft, ChevronRight, Activity
+  Timer, CalendarClock, ChevronLeft, ChevronRight, Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { exportToCSV, exportToPDF, exportToExcel } from "@/lib/exportUtils";
+import { exportToCSV } from "@/lib/exportUtils";
+import { exportAttendanceExcel, exportAttendanceHRPDF, AttendanceReportData, EmployeeAttendance } from "@/lib/attendanceExportUtils";
+import { generateAttendancePeriod } from "@/lib/attendanceGenerator";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
 import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { startOfMonth, endOfMonth, isAfter, format } from "date-fns";
+import { id } from "date-fns/locale";
 
 // Talenta Brand Colors
 const BRAND_COLORS = {
@@ -29,75 +31,43 @@ const BRAND_COLORS = {
   green: "#7DC242",
 };
 
-interface AttendanceRecord {
-  id: string;
+interface MonthlyStats {
   user_id: string;
-  clock_in: string;
-  clock_in_location: string | null;
-  clock_out: string | null;
-  clock_out_location: string | null;
-  status: string;
-  profile?: {
-    full_name: string | null;
-    department: string | null;
-  };
+  name: string;
+  department: string;
+  present: number;
+  late: number;
+  early_leave: number;
+  absent: number;
+  total_attendance: number;
+  // Detail Arrays for Export
+  absentDates: string[];
+  lateDates: string[];
+  leaveDates: string[]; // Placeholder for now
 }
 
-// Helper to get yesterday's date
-const getYesterdayDate = () => {
-  const date = new Date();
-  date.setDate(date.getDate() - 1);
-  return date.toISOString().split("T")[0];
-};
-
-// Helper to find the most recent date with data
-const findMostRecentDataDate = async (karyawanUserIds: Set<string>, maxDaysBack: number = 30): Promise<string | null> => {
-  // Start from i=0 to include today in the search
-  for (let i = 0; i <= maxDaysBack; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-
-    // Use local YYYY-MM-DD to avoid timezone issues
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateStr = `${year}-${month}-${day}`;
-
-    const startOfDay = new Date(dateStr);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(dateStr);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    // Fetch ALL attendance records for this day (no limit) to properly check for karyawan
-    const { data, error } = await supabase
-      .from("attendance")
-      .select("id, user_id")
-      .gte("clock_in", startOfDay.toISOString())
-      .lte("clock_in", endOfDay.toISOString());
-
-    if (!error && data && data.length > 0) {
-      // Check if ANY of this data belongs to karyawan
-      const hasKaryawanData = data.some(record => karyawanUserIds.has(record.user_id));
-      if (hasKaryawanData) {
-        return dateStr;
-      }
-    }
-  }
-  return null;
+const getTodayDate = () => {
+  // Jakarta Timezone Date
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
 };
 
 const RekapAbsensi = () => {
   const navigate = useNavigate();
-  const { settings, isLoading: settingsLoading } = useSystemSettings();
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const { isLoading: settingsLoading } = useSystemSettings();
+
+  const [dailyData, setDailyData] = useState<any[]>([]);
+  const [monthlyStats, setMonthlyStats] = useState<MonthlyStats[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterDate, setFilterDate] = useState(getYesterdayDate());
+  const [filterDate, setFilterDate] = useState(getTodayDate());
+  const [viewMode, setViewMode] = useState<"daily" | "monthly">("daily");
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
+
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [totalEmployees, setTotalEmployees] = useState(0);
-  const [isSearchingData, setIsSearchingData] = useState(false);
+  const [isPeriodLocked, setIsPeriodLocked] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Menu sections for sidebar
   const menuSections = [
@@ -122,713 +92,337 @@ const RekapAbsensi = () => {
     },
   ];
 
-  // Fetch attendance data
   const fetchAttendance = useCallback(async () => {
     setIsLoading(true);
 
-    // Get karyawan user IDs
-    const { data: karyawanRoles } = await supabase
-      .from("user_roles")
-      .select("user_id")
-      .in("role", ABSENSI_WAJIB_ROLE);
-
-    const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
-
-    // Get total employees count
-    const { data: profilesData } = await supabase
-      .from("profiles")
-      .select("user_id");
-
-    const karyawanProfiles = profilesData?.filter(p => karyawanUserIds.has(p.user_id)) || [];
-    setTotalEmployees(karyawanProfiles.length);
-
-    // Check if filter date is before attendance start date
-    const filterDateObj = new Date(filterDate);
-
-    // Safe null check for settings.attendanceStartDate
-    if (settings?.attendanceStartDate) {
-      const startDateObj = new Date(settings.attendanceStartDate);
-      startDateObj.setHours(0, 0, 0, 0);
-
-      if (filterDateObj < startDateObj) {
-        setAttendance([]);
-        setIsLoading(false);
-        return;
-      }
-    }
-
-    const startOfDay = new Date(filterDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(filterDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const { data, error } = await supabase
-      .from("attendance")
-      .select(`
-                *,
-                profile:profiles (
-                    full_name,
-                    department
-                )
-            `)
-      .gte("clock_in", startOfDay.toISOString())
-      .lte("clock_in", endOfDay.toISOString())
-      .order("clock_in", { ascending: false });
-
-    if (!error && data) {
-      const filteredData = data.filter(record => karyawanUserIds.has(record.user_id));
-      const transformedData = filteredData.map(record => ({
-        ...record,
-        profile: Array.isArray(record.profile) ? record.profile[0] : record.profile
-      }));
-      setAttendance(transformedData);
-    }
-
-    setLastUpdated(new Date());
-    setIsLoading(false);
-  }, [filterDate, settings?.attendanceStartDate]);
-
-  // Auto-find data on mount
-  useEffect(() => {
-    const initializeData = async () => {
-      if (settingsLoading) return;
-
-      setIsSearchingData(true);
-
-      // Get karyawan user IDs first
-      const { data: karyawanRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .in("role", ABSENSI_WAJIB_ROLE);
+    try {
+      // 1. Get Karyawan IDs
+      const { data: karyawanRoles } = await supabase.from("user_roles").select("user_id").in("role", ABSENSI_WAJIB_ROLE);
       const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
 
-      // Try to find the most recent date with data
-      const recentDate = await findMostRecentDataDate(karyawanUserIds);
+      // 2. Get Profiles
+      const { data: profilesData } = await supabase.from("profiles").select("user_id, full_name, department, join_date");
+      const activeKaryawan = profilesData?.filter(p => karyawanUserIds.has(p.user_id)) || [];
+      setTotalEmployees(activeKaryawan.length);
 
-      if (recentDate) {
-        setFilterDate(recentDate);
+      // 3. Date Range
+      let start, end;
+      if (viewMode === "daily") {
+        start = new Date(filterDate);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(filterDate);
+        end.setHours(23, 59, 59, 999);
       } else {
-        // Fall back to yesterday
-        setFilterDate(getYesterdayDate());
+        start = startOfMonth(selectedMonth);
+        end = endOfMonth(selectedMonth);
       }
 
-      setIsSearchingData(false);
-    };
+      // 4. Fetch Records
+      const { data: attendanceData, error } = await supabase
+        .from("attendance")
+        .select("*")
+        .gte("clock_in", start.toISOString())
+        .lte("clock_in", end.toISOString())
+        .order("clock_in", { ascending: false });
 
-    initializeData();
-  }, [settingsLoading]);
+      if (error) throw error;
+
+      // 5. Process
+      if (viewMode === "daily") {
+        const todayStr = getTodayDate();
+        const merged = activeKaryawan.map(employee => {
+          const record = attendanceData?.find(a => {
+            // Safe date check
+            if (!a.clock_in) return false;
+            const rDate = new Date(a.clock_in).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+            return a.user_id === employee.user_id && rDate === filterDate;
+          });
+
+          // Fallback status logic for single day
+          let status = record?.status;
+          if (!record) {
+            if (filterDate > todayStr) status = 'future';
+            else if (filterDate === todayStr) status = 'pending';
+            else status = 'absent';
+          }
+
+          return {
+            id: record?.id || `virt-${employee.user_id}`,
+            user_id: employee.user_id,
+            name: employee.full_name || "Unknown",
+            department: employee.department || "-",
+            clock_in: record?.clock_in || null,
+            clock_out: record?.clock_out || null,
+            status: status,
+            notes: record?.notes || null
+          };
+        });
+
+        // Sort: Present first
+        merged.sort((a, b) => (b.clock_in ? 1 : 0) - (a.clock_in ? 1 : 0));
+        setDailyData(merged);
+
+      } else {
+        // MONTHLY AGGREGATION using generateAttendancePeriod
+        const stats: MonthlyStats[] = activeKaryawan.map(employee => {
+          const empRecords = attendanceData?.filter(r => r.user_id === employee.user_id) || [];
+          const normalized = generateAttendancePeriod(start, end, empRecords);
+
+          const s: MonthlyStats = {
+            user_id: employee.user_id,
+            name: employee.full_name || "Unknown",
+            department: employee.department || "-",
+            present: 0, late: 0, early_leave: 0, absent: 0, total_attendance: 0,
+            absentDates: [], lateDates: [], leaveDates: []
+          };
+
+          normalized.forEach(day => {
+            if (day.status === 'present') { s.present++; s.total_attendance++; }
+            else if (day.status === 'late') { s.late++; s.total_attendance++; s.lateDates.push(day.date); }
+            else if (day.status === 'early_leave') { s.early_leave++; s.total_attendance++; }
+            else if ((day.status === 'absent' || day.status === 'alpha') && !day.isWeekend && day.status !== 'future') {
+              // Only count absent if it's strictly absent (not weekend/future)
+              s.absent++;
+              s.absentDates.push(day.date);
+            }
+          });
+
+          return s;
+        });
+        setMonthlyStats(stats);
+      }
+
+      setLastUpdated(new Date());
+
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filterDate, selectedMonth, viewMode]);
 
   useEffect(() => {
-    if (!settingsLoading && !isSearchingData) {
-      fetchAttendance();
+    if (!settingsLoading) fetchAttendance();
+  }, [settingsLoading, fetchAttendance]);
+
+  // Sync is mostly redundant now but useful for hard-refreshing or debugging
+  const handleSyncAbsence = () => fetchAttendance();
+
+  const goToPrevious = () => {
+    if (viewMode === "daily") {
+      const d = new Date(filterDate); d.setDate(d.getDate() - 1);
+      setFilterDate(d.toISOString().split("T")[0]);
+    } else {
+      setSelectedMonth(prev => { const d = new Date(prev); d.setMonth(d.getMonth() - 1); return d; });
     }
-
-    const channel = supabase
-      .channel("attendance-changes-rekap")
-      .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, () => fetchAttendance())
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [filterDate, settingsLoading, isSearchingData, fetchAttendance]);
-
-  // Navigation helpers
-  const goToPreviousDay = () => {
-    const date = new Date(filterDate);
-    date.setDate(date.getDate() - 1);
-    setFilterDate(date.toISOString().split("T")[0]);
   };
-
-  const goToNextDay = () => {
-    const date = new Date(filterDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    date.setDate(date.getDate() + 1);
-    if (date <= today) {
-      setFilterDate(date.toISOString().split("T")[0]);
+  const goToNext = () => {
+    if (viewMode === "daily") {
+      const d = new Date(filterDate); d.setDate(d.getDate() + 1);
+      setFilterDate(d.toISOString().split("T")[0]);
+    } else {
+      setSelectedMonth(prev => { const d = new Date(prev); d.setMonth(d.getMonth() + 1); return d; });
     }
   };
 
-  const goToToday = () => {
-    setFilterDate(new Date().toISOString().split("T")[0]);
+  const calculateDuration = (inTime: any, outTime: any) => {
+    if (!inTime || !outTime) return "-";
+    const ms = new Date(outTime).getTime() - new Date(inTime).getTime();
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    return `${h}j ${m}m`;
   };
 
-  const isBeforeStartDate = settings?.attendanceStartDate
-    ? new Date(filterDate) < new Date(settings.attendanceStartDate)
-    : false;
-  const isToday = filterDate === new Date().toISOString().split("T")[0];
-  const isYesterday = filterDate === getYesterdayDate();
+  const monthStatsTotal = {
+    employees: monthlyStats.length,
+    present: monthlyStats.reduce((acc, curr) => acc + curr.present, 0),
+    late: monthlyStats.reduce((acc, curr) => acc + curr.late, 0),
+    absent: monthlyStats.reduce((acc, curr) => acc + curr.absent, 0),
+  };
+
+  // EXPORT
+  const handleExport = (type: 'csv' | 'excel' | 'pdf') => {
+    if (dailyData.length === 0 && monthlyStats.length === 0) return;
+
+    if (viewMode === 'monthly') {
+      // Use SPECIALIZED Export
+      const reportData: AttendanceReportData = {
+        period: format(selectedMonth, 'MMMM yyyy', { locale: id }),
+        periodStart: format(startOfMonth(selectedMonth), 'yyyy-MM-dd'),
+        periodEnd: format(endOfMonth(selectedMonth), 'yyyy-MM-dd'),
+        totalEmployees: monthlyStats.length,
+        totalPresent: monthlyStats.reduce((a, b) => a + b.present, 0),
+        totalAbsent: monthlyStats.reduce((a, b) => a + b.absent, 0),
+        totalLate: monthlyStats.reduce((a, b) => a + b.late, 0),
+        totalLeave: 0, // Need Leave logic separately if implemented
+        employees: monthlyStats.map(m => ({
+          name: m.name,
+          department: m.department,
+          present: m.present,
+          absent: m.absent,
+          late: m.late,
+          leave: 0,
+          absentDates: m.absentDates,
+          lateDates: m.lateDates,
+          leaveDates: [],
+          remarks: ""
+        })),
+        leaveRequests: []
+      };
+
+      if (type === 'excel') exportAttendanceExcel(reportData, `Laporan_Bulanan_${format(selectedMonth, 'MMM_yyyy')}`);
+      if (type === 'pdf') exportAttendanceHRPDF(reportData, `Laporan_Bulanan_${format(selectedMonth, 'MMM_yyyy')}`);
+      if (type === 'csv') toast({ description: "CSV tersedia di mode Harian." });
+    } else {
+      // DAILY EXPORT (Simple)
+      const dataForExport = dailyData.map((d, i) => ({
+        No: i + 1,
+        Nama: d.name,
+        Departemen: d.department,
+        Masuk: d.clock_in ? format(new Date(d.clock_in), 'HH:mm') : '-',
+        Keluar: d.clock_out ? format(new Date(d.clock_out), 'HH:mm') : '-',
+        Durasi: calculateDuration(d.clock_in, d.clock_out),
+        Status: d.status,
+        Keterangan: d.notes || '-'
+      }));
+
+      if (type === 'csv') exportToCSV({
+        filename: `Absensi_Harian_${filterDate}`,
+        data: dataForExport,
+      });
+      else toast({ description: "Gunakan Mode Bulanan untuk Laporan Lengkap PDF/Excel" });
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "present":
-        return (
-          <Badge
-            className="border-0 text-xs font-medium gap-1"
-            style={{ backgroundColor: `${BRAND_COLORS.green}15`, color: BRAND_COLORS.green }}
-          >
-            <CheckCircle2 className="h-3 w-3" />
-            Hadir
-          </Badge>
-        );
-      case "late":
-        return (
-          <Badge className="bg-amber-50 text-amber-600 border-0 text-xs font-medium gap-1">
-            <AlertCircle className="h-3 w-3" />
-            Terlambat
-          </Badge>
-        );
-      case "early_leave":
-        return (
-          <Badge
-            className="border-0 text-xs font-medium gap-1"
-            style={{ backgroundColor: `${BRAND_COLORS.lightBlue}15`, color: BRAND_COLORS.lightBlue }}
-          >
-            <Clock className="h-3 w-3" />
-            Pulang Awal
-          </Badge>
-        );
-      default:
-        return <Badge variant="secondary" className="text-xs">{status}</Badge>;
+      case "present": return <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-0"><CheckCircle2 className="w-3 h-3 mr-1" />Hadir</Badge>;
+      case "late": return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-0"><AlertCircle className="w-3 h-3 mr-1" />Terlambat</Badge>;
+      case "absent":
+      case "alpha": return <Badge className="bg-red-100 text-red-700 hover:bg-red-200 border-0"><XCircle className="w-3 h-3 mr-1" />Alpha</Badge>;
+      case "pending": return <Badge variant="secondary" className="text-slate-500">Belum Hadir</Badge>;
+      case "future": return <Badge variant="outline" className="text-slate-300">-</Badge>;
+      default: return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("id-ID", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric"
-    });
-  };
-
-  const formatShortDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric"
-    });
-  };
-
-  const calculateDuration = (clockIn: string, clockOut: string | null) => {
-    if (!clockOut) return "-";
-    const start = new Date(clockIn);
-    const end = new Date(clockOut);
-    const diffMs = end.getTime() - start.getTime();
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}j ${minutes}m`;
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "present": return "Hadir";
-      case "late": return "Terlambat";
-      case "early_leave": return "Pulang Awal";
-      default: return status;
-    }
-  };
-
-  const getExportData = () => {
-    return filteredAttendance.map(record => ({
-      nama: record.profile?.full_name || "-",
-      departemen: record.profile?.department || "-",
-      clock_in: formatTime(record.clock_in),
-      clock_out: record.clock_out ? formatTime(record.clock_out) : "-",
-      lokasi_masuk: record.clock_in_location || "-",
-      lokasi_pulang: record.clock_out_location || "-",
-      durasi: calculateDuration(record.clock_in, record.clock_out),
-      status: getStatusLabel(record.status),
-    }));
-  };
-
-  const exportColumns = [
-    { header: "Nama", key: "nama", width: 120 },
-    { header: "Departemen", key: "departemen", width: 80 },
-    { header: "Clock In", key: "clock_in", width: 60 },
-    { header: "Clock Out", key: "clock_out", width: 60 },
-    { header: "Lokasi Masuk", key: "lokasi_masuk", width: 100 },
-    { header: "Lokasi Pulang", key: "lokasi_pulang", width: 100 },
-    { header: "Durasi", key: "durasi", width: 50 },
-    { header: "Status", key: "status", width: 60 },
-  ];
-
-  const handleExportCSV = () => {
-    exportToCSV({
-      title: "Rekap Absensi",
-      subtitle: formatDate(filterDate),
-      filename: `rekap-absensi-${filterDate}`,
-      columns: exportColumns,
-      data: getExportData(),
-    });
-    toast({ title: "Berhasil", description: "File CSV berhasil didownload" });
-  };
-
-  const handleExportExcel = () => {
-    exportToExcel({
-      title: "Rekap Absensi",
-      subtitle: formatDate(filterDate),
-      filename: `rekap-absensi-${filterDate}`,
-      columns: exportColumns,
-      data: getExportData(),
-    });
-    toast({ title: "Berhasil", description: "File Excel berhasil didownload" });
-  };
-
-  const handleExportPDF = () => {
-    exportToPDF({
-      title: "Rekap Absensi",
-      subtitle: formatDate(filterDate),
-      filename: `rekap-absensi-${filterDate}`,
-      columns: exportColumns,
-      data: getExportData(),
-      orientation: "landscape",
-    });
-    toast({ title: "Berhasil", description: "File PDF berhasil didownload" });
-  };
-
-  const filteredAttendance = attendance.filter((record) => {
-    const matchesSearch = record.profile?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      record.profile?.department?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = filterStatus === "all" || record.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
-
-  const stats = {
-    total: attendance.length,
-    present: attendance.filter(a => a.status === "present").length,
-    late: attendance.filter(a => a.status === "late").length,
-    earlyLeave: attendance.filter(a => a.status === "early_leave").length,
-    absent: Math.max(0, totalEmployees - attendance.length),
-  };
-
-  const attendanceRate = totalEmployees > 0 ? Math.round((stats.total / totalEmployees) * 100) : 0;
-
-  const getInitials = (name: string) => {
-    return name.split(" ").map(n => n.charAt(0)).slice(0, 2).join("").toUpperCase();
-  };
+  // Filter
+  const filteredData = viewMode === 'daily'
+    ? dailyData.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : monthlyStats.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <EnterpriseLayout
       title="Rekap Absensi"
-      subtitle={formatDate(filterDate)}
+      subtitle={viewMode === 'daily' ? format(new Date(filterDate), 'dd MMMM yyyy', { locale: id }) : format(selectedMonth, 'MMMM yyyy', { locale: id })}
       menuSections={menuSections}
       roleLabel="Administrator"
       showRefresh={true}
       onRefresh={fetchAttendance}
-      refreshInterval={60}
     >
-      {/* Date Navigation Bar */}
-      <div className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Date Selector */}
-        <div
-          className="p-4 rounded-2xl border flex items-center gap-4"
-          style={{
-            backgroundColor: `${BRAND_COLORS.blue}08`,
-            borderColor: `${BRAND_COLORS.blue}25`
-          }}
-        >
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-            style={{
-              background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
-            }}
-          >
-            <CalendarClock className="h-6 w-6 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-sm text-slate-600 whitespace-nowrap">Tanggal Rekap</p>
-              {isToday && (
-                <Badge variant="secondary" className="text-xs px-2 py-0 h-5 bg-slate-100 text-slate-600 font-normal shrink-0">
-                  Hari Ini
-                </Badge>
-              )}
-              {isYesterday && !isToday && (
-                <Badge variant="secondary" className="text-xs px-2 py-0 h-5 bg-slate-100 text-slate-600 font-normal shrink-0">
-                  Kemarin
-                </Badge>
-              )}
+      {/* Controls Area */}
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-white shadow-sm border-slate-200">
+          <CardContent className="p-4 flex flex-col gap-2">
+            <div className="flex justify-between items-center bg-slate-100 p-1 rounded-lg">
+              <button onClick={() => setViewMode('daily')} className={cn("flex-1 text-xs font-medium py-1.5 rounded-md transition-all", viewMode === 'daily' ? "bg-white shadow text-slate-900" : "text-slate-500")}>Harian</button>
+              <button onClick={() => setViewMode('monthly')} className={cn("flex-1 text-xs font-medium py-1.5 rounded-md transition-all", viewMode === 'monthly' ? "bg-white shadow text-slate-900" : "text-slate-500")}>Bulanan</button>
             </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={goToPreviousDay}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Input
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="w-[130px] h-8 text-sm font-medium shrink-0"
-                max={new Date().toISOString().split("T")[0]}
-              />
-              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={goToNextDay} disabled={isToday}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              {!isToday && (
-                <Button variant="outline" size="sm" onClick={goToToday} className="text-xs shrink-0 whitespace-nowrap px-2 ml-1 h-8">
-                  Hari Ini
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Attendance Rate */}
-        <div
-          className="p-4 rounded-2xl border flex items-center gap-4"
-          style={{
-            backgroundColor: `${BRAND_COLORS.green}08`,
-            borderColor: `${BRAND_COLORS.green}25`
-          }}
-        >
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-            style={{
-              background: `linear-gradient(135deg, ${BRAND_COLORS.green} 0%, #8BC34A 100%)`
-            }}
-          >
-            <Activity className="h-6 w-6 text-white" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm text-slate-600">Tingkat Kehadiran</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold" style={{ color: BRAND_COLORS.green }}>
-                {attendanceRate}%
+            <div className="flex items-center justify-between mt-2">
+              <Button variant="ghost" size="icon" onClick={goToPrevious}><ChevronLeft className="w-4 h-4" /></Button>
+              <span className="text-sm font-semibold text-slate-700">
+                {viewMode === 'daily' ? format(new Date(filterDate), 'dd MMM yyyy', { locale: id }) : format(selectedMonth, 'MMMM yyyy', { locale: id })}
               </span>
-              <span className="text-sm text-slate-500">
-                ({stats.total}/{totalEmployees})
-              </span>
+              <Button variant="ghost" size="icon" onClick={goToNext}><ChevronRight className="w-4 h-4" /></Button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Last Updated */}
-        <div
-          className="p-4 rounded-2xl border flex items-center gap-4"
-          style={{
-            backgroundColor: `${BRAND_COLORS.lightBlue}08`,
-            borderColor: `${BRAND_COLORS.lightBlue}25`
-          }}
-        >
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-            style={{
-              background: `linear-gradient(135deg, ${BRAND_COLORS.lightBlue} 0%, ${BRAND_COLORS.blue} 100%)`
-            }}
-          >
-            <Timer className="h-6 w-6 text-white" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm text-slate-600">Data Real-time</p>
-            <p className="text-base font-semibold text-slate-800">
-              {lastUpdated?.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) || "-"}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchAttendance}
-            className="gap-1"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {/* Warning if date is before start date */}
-      {isBeforeStartDate && (
-        <div
-          className="mb-6 p-4 rounded-2xl border flex items-center gap-4"
-          style={{ backgroundColor: "#FEF3C7", borderColor: "#FCD34D" }}
-        >
-          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-            <Info className="h-5 w-5 text-amber-600" />
-          </div>
-          <div>
-            <p className="font-semibold text-amber-800">Periode Belum Aktif</p>
-            <p className="text-sm text-amber-700">
-              Tanggal yang dipilih sebelum periode absensi aktif ({new Date(settings.attendanceStartDate).toLocaleDateString("id-ID")}). Data tidak tersedia.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
-        <Card className="border-slate-200 shadow-sm bg-white">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div
-                className="h-10 w-10 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: `${BRAND_COLORS.blue}15` }}
-              >
-                <Users className="h-5 w-5" style={{ color: BRAND_COLORS.blue }} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-800">{stats.total}</p>
-                <p className="text-xs text-slate-500">Total Hadir</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 shadow-sm bg-white">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div
-                className="h-10 w-10 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: `${BRAND_COLORS.green}15` }}
-              >
-                <CheckCircle2 className="h-5 w-5" style={{ color: BRAND_COLORS.green }} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold" style={{ color: BRAND_COLORS.green }}>{stats.present}</p>
-                <p className="text-xs text-slate-500">Tepat Waktu</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 shadow-sm bg-white">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                <AlertCircle className="h-5 w-5 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-amber-500">{stats.late}</p>
-                <p className="text-xs text-slate-500">Terlambat</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 shadow-sm bg-white">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div
-                className="h-10 w-10 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: `${BRAND_COLORS.lightBlue}15` }}
-              >
-                <Clock className="h-5 w-5" style={{ color: BRAND_COLORS.lightBlue }} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold" style={{ color: BRAND_COLORS.lightBlue }}>{stats.earlyLeave}</p>
-                <p className="text-xs text-slate-500">Pulang Awal</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 shadow-sm bg-white">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center">
-                <XCircle className="h-5 w-5 text-red-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-red-500">{stats.absent}</p>
-                <p className="text-xs text-slate-500">Tidak Hadir</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters & Export */}
-      <Card className="border-slate-200 shadow-sm bg-white mb-6">
-        <CardContent className="py-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  placeholder="Cari nama atau departemen..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 border-slate-200"
-                />
-              </div>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-full sm:w-[150px] border-slate-200">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Status</SelectItem>
-                  <SelectItem value="present">Hadir</SelectItem>
-                  <SelectItem value="late">Terlambat</SelectItem>
-                  <SelectItem value="early_leave">Pulang Awal</SelectItem>
-                </SelectContent>
-              </Select>
+        <Card className="bg-white shadow-sm border-slate-200 md:col-span-2">
+          <CardContent className="p-4 flex items-center justify-between h-full">
+            <div className="relative w-full max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input placeholder="Cari karyawan..." className="pl-9" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  className="gap-2 text-white"
-                  style={{ backgroundColor: BRAND_COLORS.blue }}
-                >
-                  <Download className="h-4 w-4" />
-                  Export
-                </Button>
+                <Button className="bg-blue-700 hover:bg-blue-800 gap-2"><Download className="w-4 h-4" /> Export</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExportExcel} className="gap-2">
-                  <FileSpreadsheet className="h-4 w-4" style={{ color: BRAND_COLORS.green }} />
-                  Export Excel
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExportCSV} className="gap-2">
-                  <FileText className="h-4 w-4" style={{ color: BRAND_COLORS.blue }} />
-                  Export CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExportPDF} className="gap-2">
-                  <FileText className="h-4 w-4" style={{ color: "#EF4444" }} />
-                  Export PDF
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('excel')}><FileSpreadsheet className="w-4 h-4 mr-2" />Excel (Lengkap)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('pdf')}><FileText className="w-4 h-4 mr-2" />PDF (Lengkap)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('csv')}><FileText className="w-4 h-4 mr-2" />CSV (Simple)</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Link to="/admin/laporan">
-              <Button
-                variant="outline"
-                className="gap-2 border-slate-200"
-              >
-                <BarChart3 className="h-4 w-4" style={{ color: BRAND_COLORS.blue }} />
-                Laporan Bulanan
-              </Button>
-            </Link>
-          </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Stats Grid */}
+      {viewMode === 'monthly' && (
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <Card className="bg-white shadow-sm"><CardContent className="p-4"><p className="text-xs text-slate-500">Total Karyawan</p><p className="text-2xl font-bold text-slate-800">{monthStatsTotal.employees}</p></CardContent></Card>
+          <Card className="bg-white shadow-sm"><CardContent className="p-4"><p className="text-xs text-slate-500">Hadir</p><p className="text-2xl font-bold text-green-600">{monthStatsTotal.present}</p></CardContent></Card>
+          <Card className="bg-white shadow-sm"><CardContent className="p-4"><p className="text-xs text-slate-500">Terlambat</p><p className="text-2xl font-bold text-amber-600">{monthStatsTotal.late}</p></CardContent></Card>
+          <Card className="bg-white shadow-sm"><CardContent className="p-4"><p className="text-xs text-slate-500">Alpha</p><p className="text-2xl font-bold text-red-600">{monthStatsTotal.absent}</p></CardContent></Card>
+        </div>
+      )}
+
+      {/* Data Table */}
+      <Card className="shadow-sm border-slate-200 bg-white">
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50">
+                <TableHead>Nama</TableHead>
+                <TableHead>Departemen</TableHead>
+                {viewMode === 'daily' ? (
+                  <>
+                    <TableHead>Jam Masuk</TableHead>
+                    <TableHead>Jam Keluar</TableHead>
+                    <TableHead>Durasi</TableHead>
+                    <TableHead>Status</TableHead>
+                  </>
+                ) : (
+                  <>
+                    <TableHead className="text-center">Hadir</TableHead>
+                    <TableHead className="text-center">Terlambat</TableHead>
+                    <TableHead className="text-center">Alpha</TableHead>
+                    <TableHead className="text-center">Total Hari</TableHead>
+                  </>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredData.length > 0 ? filteredData.map((item, i) => (
+                <TableRow key={i} className="hover:bg-slate-50">
+                  <TableCell className="font-medium text-slate-700">{item.name}</TableCell>
+                  <TableCell className="text-slate-500">{item.department}</TableCell>
+                  {viewMode === 'daily' ? (
+                    <>
+                      <TableCell>{item.clock_in ? format(new Date(item.clock_in), 'HH:mm') : '-'}</TableCell>
+                      <TableCell>{item.clock_out ? format(new Date(item.clock_out), 'HH:mm') : '-'}</TableCell>
+                      <TableCell>{calculateDuration(item.clock_in, item.clock_out)}</TableCell>
+                      <TableCell>{getStatusBadge(item.status)}</TableCell>
+                    </>
+                  ) : (
+                    <>
+                      <TableCell className="text-center text-green-600 font-bold">{(item as MonthlyStats).present}</TableCell>
+                      <TableCell className="text-center text-amber-600 font-bold">{(item as MonthlyStats).late}</TableCell>
+                      <TableCell className="text-center text-red-600 font-bold">{(item as MonthlyStats).absent}</TableCell>
+                      <TableCell className="text-center font-medium">{(item as MonthlyStats).total_attendance}</TableCell>
+                    </>
+                  )}
+                </TableRow>
+              )) : (
+                <TableRow><TableCell colSpan={6} className="h-24 text-center text-slate-400">Tidak ada data</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      {/* Table */}
-      <Card className="border-slate-200 shadow-sm bg-white">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base font-semibold text-slate-800">
-                Daftar Kehadiran
-              </CardTitle>
-              <CardDescription className="text-sm">
-                {filteredAttendance.length} karyawan ditemukan
-              </CardDescription>
-            </div>
-            {isYesterday && (
-              <Badge
-                className="text-white border-0"
-                style={{ backgroundColor: BRAND_COLORS.green }}
-              >
-                Data Kemarin
-              </Badge>
-            )}
-            {isToday && (
-              <Badge
-                className="text-white border-0"
-                style={{ backgroundColor: BRAND_COLORS.lightBlue }}
-              >
-                Data Hari Ini
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {isLoading || isSearchingData ? (
-            <div className="p-6 space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : filteredAttendance.length === 0 ? (
-            <div className="py-16 text-center">
-              <div
-                className="w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center"
-                style={{ backgroundColor: `${BRAND_COLORS.blue}10` }}
-              >
-                <Clock className="h-10 w-10" style={{ color: `${BRAND_COLORS.blue}50` }} />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-1">Tidak Ada Data</h3>
-              <p className="text-slate-500 text-sm max-w-md mx-auto">
-                Belum ada absensi untuk tanggal {formatShortDate(filterDate)}.
-                {!isToday && " Coba pilih tanggal lain atau gunakan tombol navigasi."}
-              </p>
-              {!isToday && (
-                <div className="flex justify-center gap-2 mt-4">
-                  <Button variant="outline" size="sm" onClick={goToPreviousDay}>
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Hari Sebelumnya
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={goToToday}
-                    style={{ backgroundColor: BRAND_COLORS.blue }}
-                    className="text-white"
-                  >
-                    Hari Ini
-                  </Button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50/50">
-                  <TableHead className="font-semibold text-slate-700">Karyawan</TableHead>
-                  <TableHead className="font-semibold text-slate-700 hidden sm:table-cell">Departemen</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Clock In</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Clock Out</TableHead>
-                  <TableHead className="font-semibold text-slate-700 hidden md:table-cell">Durasi</TableHead>
-                  <TableHead className="font-semibold text-slate-700">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAttendance.map((record, index) => (
-                  <TableRow
-                    key={record.id}
-                    className={cn(
-                      "hover:bg-slate-50 transition-colors",
-                      index === 0 && "bg-gradient-to-r from-green-50/30 to-transparent"
-                    )}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold text-white shadow-sm"
-                          style={{
-                            background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
-                          }}
-                        >
-                          {getInitials(record.profile?.full_name || "?")}
-                        </div>
-                        <span className="font-medium text-slate-800">
-                          {record.profile?.full_name || "-"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell text-slate-500">
-                      {record.profile?.department || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium" style={{ color: BRAND_COLORS.green }}>
-                        {formatTime(record.clock_in)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className={record.clock_out ? "font-medium" : "text-slate-400"} style={record.clock_out ? { color: BRAND_COLORS.lightBlue } : {}}>
-                        {record.clock_out ? formatTime(record.clock_out) : "-"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-slate-500">
-                      {calculateDuration(record.clock_in, record.clock_out)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(record.status)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
     </EnterpriseLayout>
   );
 };

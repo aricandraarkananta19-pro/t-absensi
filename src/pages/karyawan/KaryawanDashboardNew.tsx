@@ -3,13 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     Clock, Key, User, FileText, ChevronRight, LogOut, Calendar,
     CheckCircle2, LogIn, MapPin, History, LayoutDashboard, TrendingUp,
-    Timer, Target, Award
+    Timer, Target, Award, Bell
 } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,7 +66,6 @@ const KaryawanDashboardNew = () => {
 
     const fetchUsedLeaveDays = async () => {
         if (!user) return;
-
         const currentYear = new Date().getFullYear();
         const { data } = await supabase
             .from("leave_requests")
@@ -92,7 +90,6 @@ const KaryawanDashboardNew = () => {
 
     const fetchTodayAttendance = async () => {
         if (!user) return;
-
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
@@ -107,15 +104,12 @@ const KaryawanDashboardNew = () => {
             .order("clock_in", { ascending: false })
             .maybeSingle();
 
-        if (data) {
-            setTodayAttendance(data);
-        }
+        if (data) setTodayAttendance(data);
         setIsLoading(false);
     };
 
     const fetchMonthStats = async () => {
         if (!user) return;
-
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -130,320 +124,208 @@ const KaryawanDashboardNew = () => {
         if (data) {
             const present = data.filter(d => d.status === "present").length;
             const late = data.filter(d => d.status === "late").length;
-            setMonthStats({ present, late, absent: 0 });
+            setMonthStats({ present, late, absent: 0 }); // Absent needs separate logic, simplified here
         }
     };
 
     const handleLogout = async () => {
         await signOut();
-        toast({
-            title: "Logout berhasil",
-            description: "Sampai jumpa kembali!",
-        });
+        toast({ title: "Logout berhasil", description: "Sampai jumpa kembali!" });
         navigate("/auth");
     };
 
-    // Get current time for greeting
     const hour = new Date().getHours();
     const greeting = hour < 12 ? "Selamat Pagi" : hour < 17 ? "Selamat Siang" : "Selamat Malam";
 
     const getAttendanceStatus = () => {
         if (!todayAttendance) {
             return {
-                text: "Belum clock-in hari ini",
+                text: "Belum clock-in",
                 buttonText: "Clock In",
-                showButton: true,
                 status: "waiting",
                 icon: LogIn,
-                color: "primary",
+                color: "blue", // iOS Blue
             };
         }
 
         if (todayAttendance.clock_out) {
             return {
-                text: `Selesai pukul ${new Date(todayAttendance.clock_out).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`,
+                text: `Selesai: ${new Date(todayAttendance.clock_out).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`,
                 buttonText: "Lihat Detail",
-                showButton: true,
                 status: "done",
                 icon: CheckCircle2,
-                color: "success",
+                color: "green", // iOS Green
             };
         }
 
         return {
-            text: `Clock-in ${new Date(todayAttendance.clock_in).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`,
+            text: `Masuk: ${new Date(todayAttendance.clock_in).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`,
             buttonText: "Clock Out",
-            showButton: true,
             status: "pending",
-            icon: Clock,
-            color: "warning",
+            icon: LogOut, // Changed icon for Clock Out
+            color: "red", // iOS Red/Orange for Clock Out
         };
     };
 
     const attendanceStatus = getAttendanceStatus();
     const StatusIcon = attendanceStatus.icon;
     const remainingLeave = Math.max(0, settings.maxLeaveDays - usedLeaveDays);
-    const totalWorkDays = monthStats.present + monthStats.late;
-    const attendanceRate = totalWorkDays > 0 ? Math.round((monthStats.present / totalWorkDays) * 100) : 0;
-
-    const formatTime = (date: Date) => {
-        return date.toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-        });
-    };
 
     const formatDate = (date: Date) => {
-        return date.toLocaleDateString("id-ID", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-        });
+        return date.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
     };
 
-    const menuItems = [
-        {
-            icon: Clock,
-            title: "Absensi",
-            description: "Clock-in / Clock-out",
-            href: "/karyawan/absensi",
-            bgColor: `${BRAND_COLORS.blue}15`,
-            iconColor: BRAND_COLORS.blue,
-        },
-        {
-            icon: History,
-            title: "Riwayat",
-            description: "Rekap kehadiran",
-            href: "/karyawan/riwayat",
-            bgColor: `${BRAND_COLORS.green}15`,
-            iconColor: BRAND_COLORS.green,
-        },
-        {
-            icon: Calendar,
-            title: "Cuti",
-            description: "Ajukan izin/cuti",
-            href: "/karyawan/cuti",
-            bgColor: `${BRAND_COLORS.lightBlue}15`,
-            iconColor: BRAND_COLORS.lightBlue,
-        },
-        {
-            icon: User,
-            title: "Profil",
-            description: "Data pribadi",
-            href: "/karyawan/profil",
-            bgColor: "#8B5CF615",
-            iconColor: "#8B5CF6",
-        },
-    ];
-
     // ==========================================
-    // MOBILE VIEW - Clean Light Theme
+    // MOBILE VIEW (Premium iOS Style)
     // ==========================================
     if (isMobile) {
         return (
-            <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pb-24 font-['Inter',system-ui,sans-serif]">
-                {/* Header - Brand Gradient */}
-                <header className="relative overflow-hidden">
-                    <div
-                        className="absolute inset-0"
-                        style={{
-                            background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 50%, ${BRAND_COLORS.green} 100%)`
-                        }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-
-                    <div className="relative z-10 pt-safe px-5 pb-8">
-                        {/* Top Row */}
-                        <div className="flex items-center justify-between mb-6 pt-4">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-white/20 backdrop-blur-lg p-2 rounded-xl">
-                                    <img
-                                        src={logoImage}
-                                        alt="Logo"
-                                        className="h-8 w-auto"
-                                    />
-                                </div>
-                                <span className="text-white/90 text-sm font-semibold">Talenta Traincom</span>
+            <div className="ios-mobile-container bg-[#F2F2F7]">
+                {/* Fixed Header - Glassmorphism */}
+                <header className="ios-header fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-b border-white/20 pb-4 pt-safe shadow-[0_1px_0_rgba(0,0,0,0.05)]">
+                    <div className="px-5 pt-2 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-sky-500 shadow-lg shadow-blue-500/30 flex items-center justify-center">
+                                <span className="font-bold text-white text-xs tracking-wider">TTI</span>
                             </div>
-                            <button
-                                onClick={handleLogout}
-                                className="p-2.5 rounded-full bg-white/15 backdrop-blur-sm active:bg-white/25 transition-colors"
-                            >
-                                <LogOut className="h-5 w-5 text-white" />
-                            </button>
-                        </div>
-
-                        {/* Greeting */}
-                        <div className="mb-5">
-                            <h1 className="text-2xl font-bold text-white mb-1">
-                                {greeting}! 👋
-                            </h1>
-                            <p className="text-white/80 text-base">
-                                {user?.user_metadata?.full_name || "Karyawan"}
-                            </p>
-                        </div>
-
-                        {/* Date & Location */}
-                        <div className="flex items-center justify-between">
-                            <p className="text-white/70 text-sm">
-                                {formatDate(currentTime)}
-                            </p>
-                            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                                <MapPin className="h-3.5 w-3.5 text-white/80" />
-                                <span className="text-white/90 text-xs font-medium">Kantor</span>
+                            <div>
+                                <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">Talenta Absensi</h1>
+                                <p className="text-[11px] text-slate-400 font-medium tracking-wide uppercase mt-0.5">Employee Portal</p>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Curved Bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 h-6">
-                        <svg viewBox="0 0 1440 48" fill="none" className="w-full h-full">
-                            <path d="M0 48h1440V0C1440 0 1080 48 720 48S0 0 0 0v48z" fill="#f8fafc" />
-                        </svg>
+                        <button
+                            onClick={() => navigate("/karyawan/profil")}
+                            className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 active:bg-slate-200 transition-colors"
+                        >
+                            <User className="h-5 w-5 text-slate-600" />
+                        </button>
                     </div>
                 </header>
 
-                {/* Quick Action Card */}
-                <div className="px-5 -mt-2">
-                    <button
-                        onClick={() => navigate("/karyawan/absensi")}
-                        className={cn(
-                            "w-full p-5 rounded-2xl shadow-md transition-all active:scale-[0.98]",
-                            "flex items-center gap-4 text-left bg-white border border-slate-200"
-                        )}
-                    >
-                        <div
-                            className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                            style={{
-                                background: attendanceStatus.status === "done"
-                                    ? `${BRAND_COLORS.green}15`
-                                    : attendanceStatus.status === "pending"
-                                        ? "#F59E0B15"
-                                        : `${BRAND_COLORS.blue}15`
-                            }}
-                        >
-                            <StatusIcon
-                                className="h-7 w-7"
-                                style={{
-                                    color: attendanceStatus.status === "done"
-                                        ? BRAND_COLORS.green
-                                        : attendanceStatus.status === "pending"
-                                            ? "#F59E0B"
-                                            : BRAND_COLORS.blue
-                                }}
-                            />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-slate-800 text-base">
-                                {attendanceStatus.status === "done"
-                                    ? "Absensi Selesai"
-                                    : attendanceStatus.status === "pending"
-                                        ? "Sedang Bekerja"
-                                        : "Absensi Hari Ini"}
-                            </p>
-                            <p className="text-sm text-slate-500 mt-0.5">{attendanceStatus.text}</p>
-                        </div>
-                        <ChevronRight className="h-5 w-5 text-slate-400" />
-                    </button>
-                </div>
-
-                {/* Stats Section */}
-                <div className="px-5 mt-6">
-                    <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
-                        Statistik Bulan Ini
-                    </h3>
-                    <div className="grid grid-cols-3 gap-3">
-                        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-                            <div className="flex items-center gap-2 mb-2">
-                                <CheckCircle2 className="h-4 w-4" style={{ color: BRAND_COLORS.green }} />
-                                <span className="text-xs text-slate-500">Hadir</span>
-                            </div>
-                            <p className="text-2xl font-bold" style={{ color: BRAND_COLORS.green }}>{monthStats.present}</p>
-                        </div>
-                        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Timer className="h-4 w-4 text-amber-500" />
-                                <span className="text-xs text-slate-500">Telat</span>
-                            </div>
-                            <p className="text-2xl font-bold text-amber-600">{monthStats.late}</p>
-                        </div>
-                        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Calendar className="h-4 w-4" style={{ color: BRAND_COLORS.blue }} />
-                                <span className="text-xs text-slate-500">Sisa Cuti</span>
-                            </div>
-                            <p className="text-2xl font-bold" style={{ color: BRAND_COLORS.blue }}>{remainingLeave}</p>
-                        </div>
+                <div className="pt-[calc(env(safe-area-inset-top)+84px)] px-5 pb-32 space-y-6">
+                    {/* Greeting & Date */}
+                    <div>
+                        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{greeting},<br />{user?.user_metadata?.full_name?.split(" ")[0]}!</h2>
+                        <p className="text-slate-500 font-medium text-sm mt-1 flex items-center gap-2">
+                            <Calendar className="w-4 h-4" /> {formatDate(currentTime)}
+                        </p>
                     </div>
-                </div>
 
-                {/* Menu Grid */}
-                <div className="px-5 mt-6">
-                    <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
-                        Menu
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                        {menuItems.map((item, index) => (
-                            <Link
-                                key={item.title}
-                                to={item.href}
-                                className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm active:scale-[0.98] transition-transform"
-                                style={{ animationDelay: `${index * 0.05}s` }}
-                            >
-                                <div
-                                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
-                                    style={{ backgroundColor: item.bgColor }}
-                                >
-                                    <item.icon className="h-6 w-6" style={{ color: item.iconColor }} />
-                                </div>
-                                <p className="font-semibold text-slate-800 text-sm">{item.title}</p>
-                                <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Work Hours Info */}
-                <div className="px-5 mt-6 mb-4">
+                    {/* Clock Action Card (Central Focus) */}
                     <div
-                        className="rounded-2xl p-4 border"
-                        style={{
-                            backgroundColor: `${BRAND_COLORS.blue}05`,
-                            borderColor: `${BRAND_COLORS.blue}20`
-                        }}
+                        className="bg-white rounded-[24px] p-6 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.06)] border border-white/60 relative overflow-hidden active:scale-[0.98] transition-all duration-300"
+                        onClick={() => navigate("/karyawan/absensi")}
                     >
-                        <div className="flex items-center gap-3 mb-3">
-                            <div
-                                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                                style={{ backgroundColor: `${BRAND_COLORS.blue}15` }}
+                        {/* Dynamic Background Glow */}
+                        <div className={cn(
+                            "absolute -right-10 -top-10 w-32 h-32 rounded-full blur-[50px] opacity-30",
+                            attendanceStatus.color === 'blue' && "bg-blue-500",
+                            attendanceStatus.color === 'green' && "bg-green-500",
+                            attendanceStatus.color === 'red' && "bg-orange-500",
+                        )} />
+
+                        <div className="flex flex-col items-center justify-center gap-4 py-2 relative z-10">
+                            <div className={cn(
+                                "w-20 h-20 rounded-[24px] flex items-center justify-center shadow-lg transition-colors duration-500",
+                                attendanceStatus.color === 'blue' && "bg-blue-600 shadow-blue-500/30",
+                                attendanceStatus.color === 'green' && "bg-green-500 shadow-green-500/30",
+                                attendanceStatus.color === 'red' && "bg-orange-500 shadow-orange-500/30",
+                            )}>
+                                <StatusIcon className="w-9 h-9 text-white stroke-[2.5px]" />
+                            </div>
+
+                            <div className="text-center space-y-1">
+                                <h3 className="text-xl font-bold text-slate-900">{attendanceStatus.status === 'pending' ? 'Sedang Bekerja' : attendanceStatus.status === 'done' ? 'Selesai Bekerja' : 'Mulai Bekerja'}</h3>
+                                <p className={cn(
+                                    "text-sm font-medium",
+                                    attendanceStatus.color === 'blue' && "text-blue-600",
+                                    attendanceStatus.color === 'green' && "text-green-600",
+                                    attendanceStatus.color === 'red' && "text-orange-600",
+                                )}>{attendanceStatus.text}</p>
+                            </div>
+
+                            <Button
+                                className={cn(
+                                    "w-full rounded-2xl h-12 text-base font-semibold shadow-none border-0 mt-2",
+                                    attendanceStatus.color === 'blue' && "bg-blue-50 text-blue-700 hover:bg-blue-100",
+                                    attendanceStatus.color === 'green' && "bg-green-50 text-green-700 hover:bg-green-100",
+                                    attendanceStatus.color === 'red' && "bg-orange-50 text-orange-700 hover:bg-orange-100",
+                                )}
                             >
-                                <Clock className="h-5 w-5" style={{ color: BRAND_COLORS.blue }} />
-                            </div>
-                            <h4 className="font-semibold text-slate-800">Jam Kerja</h4>
+                                {attendanceStatus.buttonText}
+                            </Button>
                         </div>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-slate-500">Clock In</span>
-                                <span className="font-medium text-slate-800">{settings.clockInStart} - {settings.clockInEnd}</span>
+                    </div>
+
+                    {/* Stats Grid (Glassmorphism) */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white/70 backdrop-blur-md rounded-[20px] p-5 border border-white/50 shadow-sm flex flex-col gap-3">
+                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                <CheckCircle2 className="w-5 h-5" />
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-500">Clock Out</span>
-                                <span className="font-medium text-slate-800">{settings.clockOutStart} - {settings.clockOutEnd}</span>
+                            <div>
+                                <span className="text-3xl font-bold text-slate-900 block">{monthStats.present}</span>
+                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Hadir</span>
                             </div>
+                        </div>
+                        <div className="bg-white/70 backdrop-blur-md rounded-[20px] p-5 border border-white/50 shadow-sm flex flex-col gap-3">
+                            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                                <Timer className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <span className="text-3xl font-bold text-slate-900 block">{monthStats.late}</span>
+                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Terlambat</span>
+                            </div>
+                        </div>
+                        <div className="col-span-2 bg-gradient-to-r from-blue-600 to-sky-500 rounded-[20px] p-5 shadow-lg shadow-blue-500/20 text-white relative overflow-hidden">
+                            <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10" />
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div>
+                                    <p className="text-blue-100 text-xs font-medium uppercase tracking-wide mb-1">Cuti Tersedia</p>
+                                    <p className="text-3xl font-bold">{remainingLeave} <span className="text-lg font-medium opacity-70">Hari</span></p>
+                                </div>
+                                <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
+                                    <FileText className="w-6 h-6 text-white" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Quick Menu List (Vertical Cards as requested) */}
+                    <div>
+                        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 ml-1">Shortcut</h3>
+                        <div className="space-y-3">
+                            {[
+                                { title: "Riwayat Absensi", subtitle: "Lihat detail kehadiran bulanan", icon: History, color: "bg-purple-100 text-purple-600", href: "/karyawan/riwayat" },
+                                { title: "Ajukan Cuti", subtitle: "Form permohonan izin/cuti", icon: Calendar, color: "bg-rose-100 text-rose-600", href: "/karyawan/cuti" },
+                                { title: "Laporan", subtitle: "Unduh rekap kehadiran", icon: FileText, color: "bg-emerald-100 text-emerald-600", href: "/karyawan/laporan" },
+                            ].map((item) => (
+                                <div
+                                    key={item.title}
+                                    onClick={() => navigate(item.href)}
+                                    className="bg-white rounded-[20px] p-4 flex items-center gap-4 shadow-sm border border-slate-100 active:bg-slate-50 transition-colors"
+                                >
+                                    <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", item.color)}>
+                                        <item.icon className="w-6 h-6" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-semibold text-slate-900 text-sm">{item.title}</h4>
+                                        <p className="text-xs text-slate-500 mt-0.5">{item.subtitle}</p>
+                                    </div>
+                                    <ChevronRight className="w-5 h-5 text-slate-300" />
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
 
-                {/* Bottom Navigation */}
                 <MobileNavigation />
             </div>
         );
     }
 
     // ==========================================
-    // DESKTOP VIEW - Clean Light Theme
+    // DESKTOP VIEW - Clean Light Theme (Unchanged logic, just ensure existing consistency)
     // ==========================================
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50 font-['Inter',system-ui,sans-serif]">
@@ -504,7 +386,7 @@ const KaryawanDashboardNew = () => {
                     <p className="text-slate-500">{formatDate(currentTime)}</p>
                 </div>
 
-                {/* Quick Action Card */}
+                {/* Quick Action CardDesktop */}
                 <Card className={cn(
                     "mb-8 border-0 shadow-md overflow-hidden bg-white"
                 )}>
@@ -566,7 +448,7 @@ const KaryawanDashboardNew = () => {
                     </CardContent>
                 </Card>
 
-                {/* Stats Cards */}
+                {/* Stats Cards Desktop */}
                 <div className="grid gap-4 sm:grid-cols-3 mb-8">
                     <Card className="border-slate-200 shadow-sm bg-white hover:shadow-md transition-shadow">
                         <CardContent className="py-6">
@@ -618,24 +500,29 @@ const KaryawanDashboardNew = () => {
                     </Card>
                 </div>
 
-                {/* Menu Grid */}
+                {/* Menu Grid Desktop */}
                 <h3 className="text-lg font-semibold text-slate-800 mb-4">Menu</h3>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {menuItems.map((item, index) => (
+                    {[
+                        { title: "Absensi", desc: "Clock-in / Clock-out", icon: Clock, href: "/karyawan/absensi", color: BRAND_COLORS.blue },
+                        { title: "Riwayat", desc: "Rekap kehadiran", icon: History, href: "/karyawan/riwayat", color: BRAND_COLORS.green },
+                        { title: "Cuti", desc: "Ajukan izin/cuti", icon: Calendar, href: "/karyawan/cuti", color: BRAND_COLORS.lightBlue },
+                        { title: "Profil", desc: "Data pribadi", icon: User, href: "/karyawan/profil", color: "#8B5CF6" },
+                    ].map((item) => (
                         <Link key={item.title} to={item.href}>
                             <Card className="h-full border-slate-200 shadow-sm bg-white hover:shadow-md hover:border-slate-300 transition-all group">
                                 <CardHeader className="pb-3">
                                     <div
                                         className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-all group-hover:shadow-md"
-                                        style={{ backgroundColor: item.bgColor }}
+                                        style={{ backgroundColor: `${item.color}15` }}
                                     >
-                                        <item.icon className="h-6 w-6" style={{ color: item.iconColor }} />
+                                        <item.icon className="h-6 w-6" style={{ color: item.color }} />
                                     </div>
                                     <CardTitle className="flex items-center justify-between text-base text-slate-800">
                                         {item.title}
                                         <ChevronRight className="h-5 w-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
                                     </CardTitle>
-                                    <CardDescription className="text-sm">{item.description}</CardDescription>
+                                    <CardDescription className="text-sm">{item.desc}</CardDescription>
                                 </CardHeader>
                             </Card>
                         </Link>

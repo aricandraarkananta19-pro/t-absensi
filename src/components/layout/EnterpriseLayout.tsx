@@ -3,13 +3,14 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     LayoutDashboard, Users, Clock, BarChart3, Calendar, Building2,
     Shield, Key, Settings, LogOut, ChevronLeft, ChevronRight,
-    RefreshCw, Download, Bell, Search, Menu, X
+    RefreshCw, Download, Bell, Menu, X, MoreHorizontal, FileText, UserCog
 } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface MenuItem {
     icon: React.ElementType;
@@ -55,8 +56,8 @@ const EnterpriseLayout = ({
     const navigate = useNavigate();
     const location = useLocation();
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [nextRefresh, setNextRefresh] = useState(refreshInterval);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const getInitials = (name: string) => {
         return name.split(" ").map(n => n.charAt(0)).slice(0, 2).join("").toUpperCase();
@@ -64,7 +65,6 @@ const EnterpriseLayout = ({
 
     useEffect(() => {
         if (!showRefresh) return;
-
         const countdownInterval = setInterval(() => {
             setNextRefresh(prev => {
                 if (prev <= 1) {
@@ -74,57 +74,46 @@ const EnterpriseLayout = ({
                 return prev - 1;
             });
         }, 1000);
-
         return () => clearInterval(countdownInterval);
     }, [showRefresh, refreshInterval, onRefresh]);
 
     const handleLogout = async () => {
         await signOut();
-        toast({
-            title: "Logout berhasil",
-            description: "Sampai jumpa kembali!",
-        });
+        toast({ title: "Logout berhasil", description: "Sampai jumpa kembali!" });
         navigate("/auth");
     };
 
     const handleManualRefresh = () => {
         onRefresh?.();
         setNextRefresh(refreshInterval);
-        toast({
-            title: "Data diperbarui",
-            description: "Dashboard telah di-refresh",
-        });
+        toast({ title: "Data diperbarui", description: "Dashboard telah di-refresh" });
     };
 
     const userName = user?.user_metadata?.full_name || "Administrator";
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 font-['Inter',system-ui,sans-serif]">
-            {/* Mobile Overlay */}
-            {isMobileMenuOpen && (
-                <div
-                    className="fixed inset-0 bg-black/30 z-40 lg:hidden backdrop-blur-sm"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                />
-            )}
+    // ADMIN MOBILE NAV ITEMS
+    const adminMobileNav = [
+        { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+        { icon: Users, label: "Karyawan", href: "/admin/karyawan" },
+        { icon: FileText, label: "Laporan", href: "/admin/laporan" }, // Short for Reports
+        { icon: MoreHorizontal, label: "Menu", href: "#menu" }, // Trigger for full menu
+    ];
 
-            {/* LIGHT SIDEBAR - Talenta Brand Theme */}
+    return (
+        <div className="min-h-screen bg-slate-50 font-['Inter',system-ui,sans-serif] pb-24 lg:pb-0">
+            {/* LIGHT SIDEBAR - DESKTOP ONLY */}
             <aside
                 className={cn(
-                    "fixed left-0 top-0 bottom-0 z-50 flex flex-col transition-all duration-300 ease-out",
+                    "hidden lg:flex fixed left-0 top-0 bottom-0 z-50 flex-col transition-all duration-300 ease-out",
                     "bg-white border-r border-slate-200 shadow-sm",
-                    isCollapsed ? "w-[72px]" : "w-[260px]",
-                    isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+                    isCollapsed ? "w-[72px]" : "w-[260px]"
                 )}
             >
-                {/* Logo - Light */}
+                {/* Logo */}
                 <div className="flex items-center h-16 px-4 border-b border-slate-100 bg-white">
                     <div className="flex items-center gap-3 min-w-0">
                         <div
-                            className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
-                            style={{
-                                background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
-                            }}
+                            className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-md bg-gradient-to-br from-blue-700 to-sky-500"
                         >
                             <img src={logoImage} alt="Logo" className="h-6 w-6 object-contain" />
                         </div>
@@ -137,8 +126,8 @@ const EnterpriseLayout = ({
                     </div>
                 </div>
 
-                {/* Navigation - Light */}
-                <nav className="flex-1 px-3 py-4 overflow-y-auto bg-slate-50/50">
+                {/* Navigation */}
+                <nav className="flex-1 px-3 py-4 overflow-y-auto bg-slate-50/50 scrollbar-thin">
                     {menuSections.map((section, sectionIndex) => (
                         <div key={sectionIndex} className="mb-6">
                             {!isCollapsed && (
@@ -148,39 +137,18 @@ const EnterpriseLayout = ({
                             )}
                             <div className="space-y-1">
                                 {section.items.map((item) => {
-                                    const isActive = location.pathname === item.href ||
-                                        (item.href !== "/dashboard" && location.pathname.startsWith(item.href));
-
+                                    const isActive = location.pathname === item.href || (item.href !== "/dashboard" && location.pathname.startsWith(item.href));
                                     return (
                                         <Link
                                             key={item.title}
                                             to={item.href}
-                                            onClick={() => setIsMobileMenuOpen(false)}
                                             className={cn(
                                                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative",
-                                                isActive
-                                                    ? "text-white shadow-md"
-                                                    : "text-slate-600 hover:text-slate-800 hover:bg-white hover:shadow-sm"
+                                                isActive ? "text-white shadow-md bg-gradient-to-br from-blue-700 to-sky-500" : "text-slate-600 hover:text-slate-800 hover:bg-white hover:shadow-sm"
                                             )}
-                                            style={isActive ? {
-                                                background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
-                                            } : undefined}
                                         >
-                                            <item.icon className={cn(
-                                                "h-5 w-5 flex-shrink-0 transition-colors",
-                                                isActive ? "text-white" : "text-slate-500 group-hover:text-slate-700"
-                                            )} />
-                                            {!isCollapsed && (
-                                                <span className="truncate">{item.title}</span>
-                                            )}
-                                            {!isCollapsed && item.badge && item.badge > 0 && (
-                                                <span
-                                                    className="ml-auto px-2 py-0.5 text-xs font-semibold text-white rounded-full"
-                                                    style={{ backgroundColor: BRAND_COLORS.green }}
-                                                >
-                                                    {item.badge}
-                                                </span>
-                                            )}
+                                            <item.icon className={cn("h-5 w-5 flex-shrink-0 transition-colors", isActive ? "text-white" : "text-slate-500 group-hover:text-slate-700")} />
+                                            {!isCollapsed && <span className="truncate">{item.title}</span>}
                                             {isCollapsed && (
                                                 <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-sm rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 shadow-lg">
                                                     {item.title}
@@ -197,26 +165,16 @@ const EnterpriseLayout = ({
                 {/* Collapse Toggle */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 bg-white border border-slate-200 rounded-full items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors shadow-sm"
+                    className="absolute -right-3 top-20 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors shadow-sm"
                 >
                     {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
                 </button>
 
-                {/* User Profile - Light */}
+                {/* Profile */}
                 <div className="p-3 border-t border-slate-100 bg-white">
-                    <div className={cn(
-                        "flex items-center gap-3",
-                        isCollapsed && "justify-center"
-                    )}>
-                        <div
-                            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-sm"
-                            style={{
-                                background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.green} 100%)`
-                            }}
-                        >
-                            <span className="text-sm font-semibold text-white">
-                                {getInitials(userName)}
-                            </span>
+                    <div className={cn("flex items-center gap-3", isCollapsed && "justify-center")}>
+                        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-700 via-sky-500 to-green-500 text-white font-semibold">
+                            {getInitials(userName)}
                         </div>
                         {!isCollapsed && (
                             <>
@@ -224,13 +182,7 @@ const EnterpriseLayout = ({
                                     <p className="text-sm font-semibold text-slate-800 truncate">{userName}</p>
                                     <p className="text-xs text-slate-500">{roleLabel}</p>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleLogout}
-                                    className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50"
-                                    title="Logout"
-                                >
+                                <Button variant="ghost" size="icon" onClick={handleLogout} className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50">
                                     <LogOut className="h-4 w-4" />
                                 </Button>
                             </>
@@ -239,106 +191,121 @@ const EnterpriseLayout = ({
                 </div>
             </aside>
 
-            {/* Main Content */}
+            {/* MAIN CONTENT */}
             <main className={cn(
-                "transition-all duration-300 ease-out",
+                "transition-all duration-300 ease-out min-h-screen",
                 isCollapsed ? "lg:ml-[72px]" : "lg:ml-[260px]"
             )}>
-                {/* Header - Light */}
-                <header className="sticky top-0 z-30 h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80">
+                {/* Header - Sticky */}
+                <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 lg:bg-white/95 transition-all">
                     <div className="flex items-center h-full px-4 lg:px-6 gap-4">
-                        {/* Mobile Menu Toggle */}
-                        <button
-                            onClick={() => setIsMobileMenuOpen(true)}
-                            className="lg:hidden p-2 -ml-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                        >
-                            <Menu className="h-5 w-5" />
-                        </button>
+                        {/* Mobile Logo Only */}
+                        <div className="lg:hidden flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center shadow-sm">
+                                <img src={logoImage} alt="Logo" className="h-5 w-5 object-contain" />
+                            </div>
+                        </div>
 
                         {/* Title */}
                         <div className="flex-1 min-w-0">
-                            <h1 className="text-xl font-bold text-slate-800 truncate">{title}</h1>
-                            {subtitle && (
-                                <p className="text-sm text-slate-500 truncate hidden sm:block">{subtitle}</p>
-                            )}
+                            <h1 className="text-lg lg:text-xl font-bold text-slate-800 truncate">{title}</h1>
+                            {subtitle && <p className="text-xs lg:text-sm text-slate-500 truncate hidden sm:block">{subtitle}</p>}
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            {/* Refresh Indicator */}
+                        <div className="flex items-center gap-2">
                             {showRefresh && (
                                 <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg">
                                     <RefreshCw className="h-3.5 w-3.5" />
-                                    <span className="hidden md:inline">Auto-refresh:</span>
-                                    <span className="font-medium">{nextRefresh}s</span>
+                                    <span className="hidden md:inline">Auto: {nextRefresh}s</span>
                                 </div>
                             )}
-
-                            {/* Manual Refresh */}
-                            {onRefresh && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleManualRefresh}
-                                    className="h-9 gap-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
-                                >
-                                    <RefreshCw className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Refresh</span>
-                                </Button>
-                            )}
-
-                            {/* Export Button - Brand Color */}
-                            <Button
-                                size="sm"
-                                className="h-9 gap-2 text-white shadow-md hover:shadow-lg transition-all"
-                                style={{
-                                    background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
-                                }}
-                            >
-                                <Download className="h-4 w-4" />
-                                <span className="hidden sm:inline">Export</span>
+                            <Button size="sm" className="h-9 gap-2 text-white shadow-sm bg-gradient-to-r from-blue-700 to-sky-600 hover:to-sky-700 hidden sm:flex">
+                                <Download className="h-4 w-4" /> Export
                             </Button>
 
-                            {/* Notifications */}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 sm:hidden text-slate-500 hover:text-slate-700"
-                            >
-                                <Bell className="h-5 w-5" />
+                            {/* Mobile User Menu Trigger (just logout for mobile simplicity if needed) */}
+                            <Button variant="ghost" size="icon" className="lg:hidden text-slate-500" onClick={handleLogout}>
+                                <LogOut className="h-5 w-5" />
                             </Button>
                         </div>
                     </div>
                 </header>
 
-                {/* Page Content */}
-                <div className="p-4 lg:p-6">
+                {/* Content Container with Safe Area Awareness */}
+                <div className="p-4 lg:p-6 pb-safe lg:pb-6">
                     {children}
                 </div>
             </main>
 
-            {/* Mobile Bottom Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200 lg:hidden z-30 pb-safe">
-                <div className="flex h-full items-center justify-around px-2">
-                    {menuSections[0]?.items.slice(0, 4).map((item) => {
-                        const isActive = location.pathname === item.href;
+            {/* ADMIN MOBILE BOTTOM NAV (iOS Style) */}
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
+                <div className="flex items-center justify-around h-[64px] px-2 bg-gradient-to-t from-white/50 to-transparent">
+                    {adminMobileNav.map((item) => {
+                        const isActive = location.pathname === item.href || (item.href !== "/dashboard" && location.pathname.startsWith(item.href) && item.href !== "#menu");
+
+                        if (item.href === "#menu") {
+                            return (
+                                <Sheet key={item.label} open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                                    <SheetTrigger asChild>
+                                        <button className="flex flex-col items-center justify-center w-full h-full gap-1 text-slate-400 active:scale-95 transition-transform group">
+                                            <div className="p-1.5 rounded-2xl group-active:bg-slate-100"><item.icon className="w-5 h-5 stroke-2" /></div>
+                                            <span className="text-[10px] font-medium tracking-tight">Menu</span>
+                                        </button>
+                                    </SheetTrigger>
+                                    <SheetContent side="bottom" className="h-[85vh] rounded-t-[20px] p-0 flex flex-col">
+                                        <div className="p-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50 rounded-t-[20px] shrink-0">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center text-white font-bold shadow-md">{getInitials(userName)}</div>
+                                            <div><p className="font-bold text-slate-800">{userName}</p><p className="text-xs text-slate-500 uppercase tracking-wide">{roleLabel}</p></div>
+                                        </div>
+                                        <div className="flex-1 overflow-y-auto p-4 pb-20 grid grid-cols-2 gap-3 content-start">
+                                            {menuSections.flatMap(s => s.items).map((menuItem) => (
+                                                <Button
+                                                    key={menuItem.title}
+                                                    variant="outline"
+                                                    className="h-auto py-5 flex flex-col gap-3 items-center justify-center bg-white border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all rounded-2xl"
+                                                    onClick={() => {
+                                                        navigate(menuItem.href);
+                                                        setIsMobileMenuOpen(false);
+                                                    }}
+                                                >
+                                                    <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                                                        <menuItem.icon className="w-6 h-6" />
+                                                    </div>
+                                                    <span className="text-xs font-semibold text-slate-700">{menuItem.title}</span>
+                                                </Button>
+                                            ))}
+                                            <Button
+                                                variant="destructive"
+                                                className="col-span-2 mt-4 bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 shadow-none h-12 rounded-xl"
+                                                onClick={handleLogout}
+                                            >
+                                                <LogOut className="w-4 h-4 mr-2" /> Logout
+                                            </Button>
+                                        </div>
+                                    </SheetContent>
+                                </Sheet>
+                            );
+                        }
+
                         return (
                             <Link
-                                key={item.title}
+                                key={item.label}
                                 to={item.href}
                                 className={cn(
-                                    "flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-[64px]",
-                                    isActive ? "text-white" : "text-slate-500"
+                                    "flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-200 active:scale-95 group",
+                                    isActive ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
                                 )}
-                                style={isActive ? { color: BRAND_COLORS.blue } : undefined}
                             >
-                                <item.icon className="h-5 w-5" />
-                                <span className="text-[10px] font-medium truncate">{item.title.split(" ")[0]}</span>
+                                <div className={cn("relative p-1.5 rounded-2xl transition-colors", isActive && "bg-blue-50/80 shadow-sm")}>
+                                    <item.icon className={cn("w-5 h-5 transition-transform", isActive ? "scale-105 stroke-[2.5px]" : "stroke-2 group-hover:scale-105")} />
+                                </div>
+                                <span className={cn("text-[10px] font-medium tracking-tight transition-colors", isActive ? "text-blue-700 font-semibold" : "text-slate-500")}>{item.label}</span>
                             </Link>
                         );
                     })}
                 </div>
-            </div>
+            </nav>
         </div>
     );
 };
