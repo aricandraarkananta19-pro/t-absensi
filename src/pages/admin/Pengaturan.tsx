@@ -298,6 +298,16 @@ const Pengaturan = () => {
               placeholder="PT. Contoh Indonesia"
             />
           </div>
+          {/* Save Button - Bottom Right */}
+          <div className="flex justify-end pt-4">
+            <Button
+              onClick={handleSave}
+              disabled={!hasChanges || isSaving}
+              className="rounded-full px-6 py-2 bg-[#1A5BA8] hover:bg-[#154a8a] text-white font-medium text-sm shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -332,6 +342,16 @@ const Pengaturan = () => {
               <Input type="time" value={formData.clockOutEnd} onChange={(e) => handleChange("clockOutEnd", e.target.value)} />
             </div>
           </div>
+          {/* Save Button - Bottom Right */}
+          <div className="flex justify-end pt-4">
+            <Button
+              onClick={handleSave}
+              disabled={!hasChanges || isSaving}
+              className="rounded-full px-6 py-2 bg-[#1A5BA8] hover:bg-[#154a8a] text-white font-medium text-sm shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -344,6 +364,16 @@ const Pengaturan = () => {
             <Label>Batas Keterlambatan</Label>
             <Input type="time" value={formData.lateThreshold} onChange={(e) => handleChange("lateThreshold", e.target.value)} />
             <p className="text-xs text-slate-500">Lewat dari jam ini dianggap "Terlambat".</p>
+          </div>
+          {/* Save Button - Bottom Right */}
+          <div className="flex justify-end pt-4">
+            <Button
+              onClick={handleSave}
+              disabled={!hasChanges || isSaving}
+              className="rounded-full px-6 py-2 bg-[#1A5BA8] hover:bg-[#154a8a] text-white font-medium text-sm shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -401,6 +431,16 @@ const Pengaturan = () => {
               />
             </div>
           )}
+          {/* Save Button - Bottom Right */}
+          <div className="flex justify-end pt-4">
+            <Button
+              onClick={handleSave}
+              disabled={!hasChanges || isSaving}
+              className="rounded-full px-6 py-2 bg-[#1A5BA8] hover:bg-[#154a8a] text-white font-medium text-sm shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -424,6 +464,16 @@ const Pengaturan = () => {
             />
             <span className="text-sm text-slate-500">hari / tahun</span>
           </div>
+        </div>
+        {/* Save Button - Bottom Right */}
+        <div className="flex justify-end pt-4">
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges || isSaving}
+            className="rounded-full px-6 py-2 bg-[#1A5BA8] hover:bg-[#154a8a] text-white font-medium text-sm shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -451,6 +501,16 @@ const Pengaturan = () => {
             <p className="text-xs text-amber-600 flex items-center gap-1 mt-2">
               <Info className="w-3 h-3" /> Perubahan akan mempengaruhi perhitungan semua laporan & dashboard
             </p>
+          </div>
+          {/* Save Button - Bottom Right */}
+          <div className="flex justify-end pt-4">
+            <Button
+              onClick={handleSave}
+              disabled={!hasChanges || isSaving}
+              className="rounded-full px-6 py-2 bg-[#1A5BA8] hover:bg-[#154a8a] text-white font-medium text-sm shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
           </div>
         </CardContent>
       </Card>
