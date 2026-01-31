@@ -189,7 +189,7 @@ const LaporanKehadiran = () => {
         const { data: karyawanRoles } = await supabase.from("user_roles").select("user_id").in("role", ABSENSI_WAJIB_ROLE);
         const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
 
-        const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, department");
+        const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, department, created_at, join_date");
         if (!profiles) { setIsLoading(false); return; }
 
         const karyawanProfiles = profiles.filter(p => karyawanUserIds.has(p.user_id))
@@ -214,8 +214,19 @@ const LaporanKehadiran = () => {
             const empRecords = attendanceData?.filter(a => a.user_id === employee.user_id) || [];
             const empLeaves = leaveDataWithUser?.filter(l => l.user_id === employee.user_id) || [];
 
+            // Normalize Start Date
+            // Priority: System Attendance Start Date (Active Period) > Employee Join Date > Default
+            // User Request: Force all employees to be counted from the Active Period Start Date, even if they joined later.
+            const rawJoinDate = employee.join_date || employee.created_at;
+            const joinDate = rawJoinDate ? new Date(rawJoinDate) : new Date('2000-01-01');
+            const systemStartDate = settings?.attendanceStartDate ? new Date(settings.attendanceStartDate) : null;
+
+            const effectiveStartDate = systemStartDate || joinDate;
+
+            const effectiveStartDateStr = effectiveStartDate.toISOString().split("T")[0];
+
             // GENERATE COMPLETE TIMELINE
-            const timeline = generateAttendancePeriod(startDate, endDate, empRecords, empLeaves);
+            const timeline = generateAttendancePeriod(startDate, endDate, empRecords, empLeaves, effectiveStartDateStr);
 
             // Aggregate Stats
             let present = 0, late = 0, absent = 0, leave = 0;
@@ -224,10 +235,23 @@ const LaporanKehadiran = () => {
             const leaveDates: string[] = [];
 
             timeline.forEach(day => {
-                if (day.status === 'present') present++;
-                else if (day.status === 'late') { late++; lateDates.push(day.date); }
-                else if (day.status === 'early_leave') { present++; } // Count as present but note it
-                else if (day.status === 'leave' || day.status === 'permission' || day.status === 'sick') { leave++; leaveDates.push(day.date); }
+                // Pre-employment days are now handled by generateAttendancePeriod (status='future')
+                // so we don't need manual filtering here.
+
+                // Fix: Late and Early Leave are considered PRESENT
+                if (['present', 'late', 'early_leave'].includes(day.status)) {
+                    present++;
+                }
+
+                if (day.status === 'late') {
+                    late++;
+                    lateDates.push(day.date);
+                }
+
+                if (day.status === 'leave' || day.status === 'permission' || day.status === 'sick') {
+                    leave++;
+                    leaveDates.push(day.date);
+                }
                 else if (day.status === 'absent' || day.status === 'alpha') {
                     if (!day.isWeekend && day.status !== 'future') {
                         absent++;
@@ -260,6 +284,25 @@ const LaporanKehadiran = () => {
         setEmployeeReports(reports);
         setIsLoading(false);
     };
+
+    // Automate Date Range based on Active Period (User Request)
+    // "Automate the attendance details according to the specified active period even if it changes."
+    useEffect(() => {
+        if (settings?.attendanceStartDate) {
+            const activeStart = new Date(settings.attendanceStartDate);
+            // Check if current range is different to avoid unnecessary loops
+            setDateRange(prev => {
+                const currentStartCtx = prev?.from?.toISOString().split('T')[0];
+                if (currentStartCtx !== settings.attendanceStartDate) {
+                    return {
+                        from: activeStart,
+                        to: endOfMonth(new Date())
+                    };
+                }
+                return prev;
+            });
+        }
+    }, [settings?.attendanceStartDate]);
 
     // Initial Load & Subscriptions
     useEffect(() => {
@@ -315,7 +358,10 @@ const LaporanKehadiran = () => {
         totalAbsent: summaryStats.totalAbsent,
         totalLate: summaryStats.totalLate,
         totalLeave: summaryStats.totalLeave,
-        employees: filteredReports.map(emp => ({ ...emp })),
+        employees: filteredReports.map(emp => ({
+            ...emp,
+            name: emp.full_name || '-', // Fix: Map full_name to name
+        })),
         leaveRequests: leaveRequests.filter(r => r.status === "approved").map(req => ({
             name: req.profile?.full_name || "-",
             department: req.profile?.department || "-",
@@ -514,7 +560,7 @@ const LaporanKehadiran = () => {
                                         ) : (
                                             <Table>
                                                 <TableHeader><TableRow className="bg-slate-50">
-                                                    <TableHead>Nama Karyawan</TableHead><TableHead>Departemen</TableHead><TableHead className="text-center">Hadir</TableHead><TableHead className="text-center">Telat</TableHead><TableHead className="text-center">Alpha</TableHead><TableHead className="text-center">Cuti</TableHead><TableHead>Aksi</TableHead>
+                                                    <TableHead>Nama Karyawan</TableHead><TableHead>Departemen</TableHead><TableHead className="text-center">Hadir</TableHead><TableHead className="text-center">Telat</TableHead><TableHead className="text-center">Tidak Hadir</TableHead><TableHead className="text-center">Cuti</TableHead><TableHead>Aksi</TableHead>
                                                 </TableRow></TableHeader>
                                                 <TableBody>
                                                     {filteredReports.map(emp => (
@@ -632,7 +678,7 @@ const LaporanKehadiran = () => {
                                     <TableBody>
                                         {selectedEmployee.details.map((day, idx) => {
                                             // CUSTOM STATUS LOGIC FOR UI
-                                            let displayStatus = day.status;
+                                            let displayStatus: string = day.status;
                                             let statusBadge = <Badge variant="secondary">{day.status}</Badge>;
 
                                             // Check "Belum Pulang"
@@ -647,11 +693,10 @@ const LaporanKehadiran = () => {
                                                     case 'absent':
                                                     case 'alpha': statusBadge = <Badge className="bg-red-100 text-red-700 border-0">Tidak Hadir</Badge>; break;
                                                     case 'leave': statusBadge = <Badge className="bg-purple-100 text-purple-700 border-0">Cuti</Badge>; break;
-                                                    case 'sick': statusBadge = <Badge className="bg-blue-100 text-blue-700 border-0">Sakit</Badge>; break;
                                                     case 'permission': statusBadge = <Badge className="bg-blue-100 text-blue-700 border-0">Izin</Badge>; break;
                                                     case 'weekend': statusBadge = <Badge variant="outline" className="text-slate-400 font-normal">Libur</Badge>; break;
                                                     case 'holiday': statusBadge = <Badge variant="outline" className="text-red-400 font-normal border-red-200 bg-red-50">Libur Nasional</Badge>; break;
-                                                    case 'future': statusBadge = <Badge variant="ghost" className="text-slate-300">-</Badge>; break;
+                                                    case 'future': statusBadge = <Badge variant="secondary" className="text-slate-300">-</Badge>; break;
                                                 }
                                             }
 

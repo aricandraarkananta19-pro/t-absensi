@@ -220,10 +220,20 @@ const RekapAbsensi = () => {
             if (new Date(day.date) < new Date(settings.attendanceStartDate)) return;
 
             // Mapping Status Logic
-            if (day.status === 'present') { s.present++; s.total_attendance++; }
-            else if (day.status === 'late') { s.late++; s.total_attendance++; s.lateDates.push(day.date); }
-            else if (day.status === 'early_leave') { s.early_leave++; s.total_attendance++; }
-            else if (day.status === 'leave' || day.status === 'permission') {
+            if (['present', 'late', 'early_leave'].includes(day.status)) {
+              s.present++;
+              s.total_attendance++;
+            }
+
+            if (day.status === 'late') {
+              s.late++;
+              s.lateDates.push(day.date);
+            }
+            if (day.status === 'early_leave') {
+              s.early_leave++;
+            }
+
+            if (day.status === 'leave' || day.status === 'permission') {
               s.leave++;
               s.leaveDates.push(day.date);
             }
@@ -392,135 +402,7 @@ const RekapAbsensi = () => {
     .filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   // ==========================================
-  // MOBILE VIEW
-  // ==========================================
-  if (isMobile) {
-    return (
-      <div className="min-h-screen bg-slate-50 pb-[env(safe-area-inset-bottom)]">
-        <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 h-[52px] px-4 flex items-center justify-between" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full active:bg-slate-100 transition-colors">
-              <ChevronLeft className="w-6 h-6 text-slate-900" />
-            </button>
-            <h1 className="text-base font-semibold text-slate-900 tracking-tight">Laporan</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Simple View Toggle for Mobile */}
-            <select
-              value={viewMode}
-              onChange={(e) => setViewMode(e.target.value as any)}
-              className="text-xs font-semibold bg-slate-100 border-none rounded-lg py-1.5 pl-2 pr-6"
-            >
-              <option value="daily">Harian</option>
-              <option value="monthly">Bulanan</option>
-              <option value="range">Range</option>
-            </select>
-          </div>
-        </header>
-
-        <div className="pt-[calc(52px+env(safe-area-inset-top))] px-4 pb-20 space-y-4">
-          {/* Date Controls Mobile */}
-          <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-100 mt-2">
-            {viewMode === 'range' ? (
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-medium text-slate-500">Pilih Rentang Tanggal</p>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal text-xs h-9">
-                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                      {dateRange?.from ? (
-                        dateRange.to ? (
-                          <>{format(dateRange.from, "d MMM")} - {format(dateRange.to, "d MMM yyyy")}</>
-                        ) : (
-                          format(dateRange.from, "d MMM yyyy")
-                        )
-                      ) : (
-                        <span>Pilih tanggal</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      initialFocus
-                      mode="range"
-                      defaultMonth={dateRange?.from}
-                      selected={dateRange}
-                      onSelect={setDateRange}
-                      numberOfMonths={1}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPrevious}><ChevronLeft className="w-4 h-4" /></Button>
-                <span className="text-sm font-semibold text-slate-700">
-                  {viewMode === 'daily' ? format(new Date(filterDate), 'dd MMM yyyy', { locale: id }) : format(selectedMonth, 'MMMM yyyy', { locale: id })}
-                </span>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNext}><ChevronRight className="w-4 h-4" /></Button>
-              </div>
-            )}
-          </div>
-
-          {/* Content List */}
-          {filteredData.length > 0 ? filteredData.map((item, i) => (
-            <div key={i} className="bg-white rounded-[20px] p-4 shadow-sm border border-slate-100">
-              <div className="flex justify-between mb-3">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">{item.name}</h3>
-                  <p className="text-xs text-slate-500">{item.department}</p>
-                </div>
-                {viewMode === 'daily' && getStatusBadge((item as any).status)}
-              </div>
-
-              {viewMode === 'daily' ? (
-                <div className="flex items-center justify-between bg-slate-50 rounded-xl p-3 text-xs">
-                  <div>
-                    <span className="block text-slate-400 mb-0.5">Masuk</span>
-                    <span className="font-bold">{(item as any).clock_in ? format(new Date((item as any).clock_in), 'HH:mm') : '-'}</span>
-                  </div>
-                  <div className="w-px h-8 bg-slate-200" />
-                  <div>
-                    <span className="block text-slate-400 mb-0.5">Pulang</span>
-                    <span className="font-bold">{(item as any).clock_out ? format(new Date((item as any).clock_out), 'HH:mm') : '-'}</span>
-                  </div>
-                  <div className="w-px h-8 bg-slate-200" />
-                  <div>
-                    <span className="block text-slate-400 mb-0.5">Durasi</span>
-                    <span className="font-bold text-blue-600">{calculateDuration((item as any).clock_in, (item as any).clock_out)}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-4 gap-1 text-center bg-slate-50 p-2 rounded-xl">
-                  <div>
-                    <span className="block text-xs font-bold text-green-600">{(item as MonthlyStats).present}</span>
-                    <span className="text-[10px] text-slate-500">Hadir</span>
-                  </div>
-                  <div>
-                    <span className="block text-xs font-bold text-amber-600">{(item as MonthlyStats).late}</span>
-                    <span className="text-[10px] text-slate-500">Telat</span>
-                  </div>
-                  <div>
-                    <span className="block text-xs font-bold text-red-600">{(item as MonthlyStats).absent}</span>
-                    <span className="text-[10px] text-slate-500">Alpha</span>
-                  </div>
-                  <div>
-                    <span className="block text-xs font-bold text-slate-800">{(item as MonthlyStats).total_attendance}</span>
-                    <span className="text-[10px] text-slate-500">Total</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )) : (
-            <div className="text-center py-10 text-slate-400 font-medium">Tidak ada data</div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ==========================================
-  // DESKTOP VIEW
+  // UNIFIED VIEW (Responsive)
   // ==========================================
   return (
     <EnterpriseLayout
@@ -531,31 +413,50 @@ const RekapAbsensi = () => {
       showRefresh={true}
       onRefresh={fetchAttendance}
     >
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Controls */}
         <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-          {/* View Selector */}
-          <div className="flex bg-slate-100 p-1 rounded-lg shrink-0">
-            {(['daily', 'monthly', 'range'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setViewMode(m)}
-                className={cn(
-                  "px-4 py-2 text-sm font-medium rounded-md transition-all capitalize",
-                  viewMode === m ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
-                )}
-              >
-                {m === 'range' ? 'Periode' : (m === 'daily' ? 'Harian' : 'Bulanan')}
-              </button>
-            ))}
+
+          {/* Top Row Mobile: View Mode & Export Icon */}
+          <div className="flex items-center justify-between gap-4">
+            {/* View Selector - Scrollable on mobile */}
+            <div className="flex bg-slate-100 p-1 rounded-lg shrink-0 overflow-x-auto no-scrollbar w-full md:w-auto">
+              {(['daily', 'monthly', 'range'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setViewMode(m)}
+                  className={cn(
+                    "px-4 py-2 text-sm font-medium rounded-md transition-all capitalize whitespace-nowrap flex-1 md:flex-none",
+                    viewMode === m ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  {m === 'range' ? 'Periode' : (m === 'daily' ? 'Harian' : 'Bulanan')}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile Export (Visible only on mobile) */}
+            <div className="md:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-10 w-10 border-slate-200">
+                    <Download className="w-4 h-4 text-slate-600" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport('excel')}><FileSpreadsheet className="w-4 h-4 mr-2" />Excel Report</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('pdf')}><FileText className="w-4 h-4 mr-2" />PDF Report</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {/* Date Picker Area */}
-          <div className="flex-1 flex items-center gap-4">
+          <div className="flex-1 flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-4">
             {viewMode === 'range' ? (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                  <Button variant="outline" className={cn("w-full md:w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateRange?.from ? (
                       dateRange.to ? (
@@ -580,64 +481,67 @@ const RekapAbsensi = () => {
                 </PopoverContent>
               </Popover>
             ) : (
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-1">
-                <Button variant="ghost" size="icon" onClick={goToPrevious}><ChevronLeft className="w-4 h-4" /></Button>
-                <span className="w-40 text-center font-semibold text-slate-700">
-                  {viewMode === 'daily' ? format(new Date(filterDate), 'dd MMMM yyyy', { locale: id }) : format(selectedMonth, 'MMMM yyyy', { locale: id })}
+              <div className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg p-1 w-full md:w-auto">
+                <Button variant="ghost" size="icon" onClick={goToPrevious} className="h-8 w-8"><ChevronLeft className="w-4 h-4" /></Button>
+                <span className="flex-1 md:w-40 text-center font-semibold text-slate-700 text-sm">
+                  {viewMode === 'daily' ? format(new Date(filterDate), 'dd MMM yyyy', { locale: id }) : format(selectedMonth, 'MMMM yyyy', { locale: id })}
                 </span>
-                <Button variant="ghost" size="icon" onClick={goToNext}><ChevronRight className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={goToNext} className="h-8 w-8"><ChevronRight className="w-4 h-4" /></Button>
               </div>
             )}
 
-            <div className="ml-auto w-64 relative">
+            <div className="w-full md:ml-auto md:w-64 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input placeholder="Cari nama karyawan..." className="pl-9" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              <Input placeholder="Cari nama karyawan..." className="pl-9 w-full" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="bg-blue-700 hover:bg-blue-800 gap-2"><Download className="w-4 h-4" /> Export</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleExport('excel')}><FileSpreadsheet className="w-4 h-4 mr-2" />Excel Report</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport('pdf')}><FileText className="w-4 h-4 mr-2" />PDF Report</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Desktop Export Button */}
+            <div className="hidden md:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="bg-blue-700 hover:bg-blue-800 gap-2"><Download className="w-4 h-4" /> Export</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport('excel')}><FileSpreadsheet className="w-4 h-4 mr-2" />Excel Report</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('pdf')}><FileText className="w-4 h-4 mr-2" />PDF Report</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
         {/* Stats Summary (Monthly/Range Only) */}
         {viewMode !== 'daily' && (
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             <Card className="bg-white border-slate-200 shadow-sm">
-              <CardContent className="p-4 flex flex-col justify-center">
-                <span className="text-xs font-semibold text-slate-400 uppercase">Hadir</span>
-                <span className="text-2xl font-bold text-green-600">{monthStatsTotal.present}</span>
+              <CardContent className="p-4 flex flex-col justify-center text-center md:text-left">
+                <span className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase">Hadir</span>
+                <span className="text-xl md:text-2xl font-bold text-green-600">{monthStatsTotal.present}</span>
               </CardContent>
             </Card>
             <Card className="bg-white border-slate-200 shadow-sm">
-              <CardContent className="p-4 flex flex-col justify-center">
-                <span className="text-xs font-semibold text-slate-400 uppercase">Terlambat</span>
-                <span className="text-2xl font-bold text-amber-600">{monthStatsTotal.late}</span>
+              <CardContent className="p-4 flex flex-col justify-center text-center md:text-left">
+                <span className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase">Terlambat</span>
+                <span className="text-xl md:text-2xl font-bold text-amber-600">{monthStatsTotal.late}</span>
               </CardContent>
             </Card>
             <Card className="bg-white border-slate-200 shadow-sm">
-              <CardContent className="p-4 flex flex-col justify-center">
-                <span className="text-xs font-semibold text-slate-400 uppercase">Alpha</span>
-                <span className="text-2xl font-bold text-red-600">{monthStatsTotal.absent}</span>
+              <CardContent className="p-4 flex flex-col justify-center text-center md:text-left">
+                <span className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase">Alpha</span>
+                <span className="text-xl md:text-2xl font-bold text-red-600">{monthStatsTotal.absent}</span>
               </CardContent>
             </Card>
             <Card className="bg-white border-slate-200 shadow-sm">
-              <CardContent className="p-4 flex flex-col justify-center">
-                <span className="text-xs font-semibold text-slate-400 uppercase">Total Karyawan</span>
-                <span className="text-2xl font-bold text-slate-800">{monthStatsTotal.employees}</span>
+              <CardContent className="p-4 flex flex-col justify-center text-center md:text-left">
+                <span className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase">Total Karyawan</span>
+                <span className="text-xl md:text-2xl font-bold text-slate-800">{monthStatsTotal.employees}</span>
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* Table View */}
-        <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
+        {/* Desktop Table View */}
+        <Card className="hidden md:block bg-white border-slate-200 shadow-sm overflow-hidden">
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
@@ -703,6 +607,71 @@ const RekapAbsensi = () => {
             </TableBody>
           </Table>
         </Card>
+
+        {/* Mobile Card List View */}
+        <div className="md:hidden space-y-4">
+          {filteredData.length > 0 ? filteredData.map((item, i) => (
+            <div key={i} className="bg-white rounded-[20px] p-4 shadow-sm border border-slate-100">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm">
+                    {item.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 leading-tight">{item.name}</h3>
+                    <p className="text-[11px] text-slate-500">{item.department}</p>
+                  </div>
+                </div>
+                {viewMode === 'daily' && getStatusBadge((item as any).status)}
+              </div>
+
+              {viewMode === 'daily' ? (
+                <div className="grid grid-cols-3 gap-2 bg-slate-50 rounded-xl p-3 text-xs mt-2">
+                  <div className="text-center p-1">
+                    <span className="block text-[10px] text-slate-400 mb-0.5">Masuk</span>
+                    <span className="font-bold text-slate-800">{(item as any).clock_in ? format(new Date((item as any).clock_in), 'HH:mm') : '-'}</span>
+                  </div>
+                  <div className="text-center border-l border-slate-200 p-1">
+                    <span className="block text-[10px] text-slate-400 mb-0.5">Pulang</span>
+                    <span className="font-bold text-slate-800">{(item as any).clock_out ? format(new Date((item as any).clock_out), 'HH:mm') : '-'}</span>
+                  </div>
+                  <div className="text-center border-l border-slate-200 p-1">
+                    <span className="block text-[10px] text-slate-400 mb-0.5">Durasi</span>
+                    <span className="font-bold text-blue-600">{calculateDuration((item as any).clock_in, (item as any).clock_out)}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 gap-2 text-center bg-slate-50 p-3 rounded-xl mt-2">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-green-600">{(item as MonthlyStats).present}</span>
+                    <span className="text-[10px] text-slate-500">Hadir</span>
+                  </div>
+                  <div className="flex flex-col border-l border-slate-200">
+                    <span className="text-sm font-bold text-amber-600">{(item as MonthlyStats).late}</span>
+                    <span className="text-[10px] text-slate-500">Telat</span>
+                  </div>
+                  <div className="flex flex-col border-l border-slate-200">
+                    <span className="text-sm font-bold text-red-600">{(item as MonthlyStats).absent}</span>
+                    <span className="text-[10px] text-slate-500">Alpha</span>
+                  </div>
+                  <div className="flex flex-col border-l border-slate-200">
+                    <span className="text-sm font-bold text-slate-800">{(item as MonthlyStats).total_attendance}</span>
+                    <span className="text-[10px] text-slate-500">Total</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                <Search className="h-8 w-8 text-slate-300" />
+              </div>
+              <p className="text-slate-500 font-medium">Tidak ada data ditemukan</p>
+              <p className="text-slate-400 text-xs mt-1">Coba ubah filter tanggal atau pencarian</p>
+            </div>
+          )}
+        </div>
+
       </div>
     </EnterpriseLayout>
   );

@@ -94,6 +94,7 @@ const ManagerRekapAbsensi = () => {
   const [filterDate, setFilterDate] = useState(getYesterdayDate());
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [totalEmployees, setTotalEmployees] = useState(0);
+  const [dayLeavesCount, setDayLeavesCount] = useState(0);
   const [isSearchingData, setIsSearchingData] = useState(false);
 
   // Menu sections for sidebar
@@ -171,6 +172,24 @@ const ManagerRekapAbsensi = () => {
       );
       setAttendance(attendanceWithProfiles);
     }
+
+    // Fetch approved leaves for filterDate
+    const { data: leaveData } = await supabase
+      .from("leave_requests")
+      .select("user_id")
+      .eq("status", "approved")
+      .lte("start_date", filterDate)
+      .gte("end_date", filterDate);
+
+    const leavesCount = leaveData?.filter(l => karyawanUserIds.has(l.user_id)).length || 0;
+
+    setTotalEmployees(prev => {
+      // HACK: Store leaves count in a temp state or just calculate stats here?
+      // Better to use a state for stats or derived it.
+      // Since stats is derived from `attendance` state in render, I need `leavesCount` in state.
+      return prev;
+    });
+    setDayLeavesCount(leavesCount);
 
     setLastUpdated(new Date());
     setIsLoading(false);
@@ -368,10 +387,12 @@ const ManagerRekapAbsensi = () => {
 
   const stats = {
     total: attendance.length,
-    present: attendance.filter(a => a.status === "present").length,
+    present: attendance.filter(a => ["present", "late", "early_leave"].includes(a.status)).length,
     late: attendance.filter(a => a.status === "late").length,
     earlyLeave: attendance.filter(a => a.status === "early_leave").length,
-    absent: Math.max(0, totalEmployees - attendance.length),
+    // Fix: Absent = Total - Present - Leaves
+    absent: Math.max(0, totalEmployees - attendance.length - dayLeavesCount),
+    leaves: dayLeavesCount
   };
 
   const attendanceRate = totalEmployees > 0 ? Math.round((stats.total / totalEmployees) * 100) : 0;
@@ -551,7 +572,7 @@ const ManagerRekapAbsensi = () => {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         <Card className="border-slate-200 shadow-sm bg-white">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-3">
@@ -616,12 +637,25 @@ const ManagerRekapAbsensi = () => {
         <Card className="border-slate-200 shadow-sm bg-white">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                <FileCheck className="h-5 w-5 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-purple-500">{stats.leaves}</p>
+                <p className="text-xs text-slate-500">Cuti/Izin</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-slate-200 shadow-sm bg-white">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center">
                 <XCircle className="h-5 w-5 text-red-500" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-red-500">{stats.absent}</p>
-                <p className="text-xs text-slate-500">Tidak Hadir</p>
+                <p className="text-xs text-slate-500">Alpha</p>
               </div>
             </div>
           </CardContent>

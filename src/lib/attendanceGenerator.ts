@@ -29,12 +29,24 @@ export const generateAttendancePeriod = (
     startDate: Date,
     endDate: Date,
     records: any[],
-    leaves: LeaveRecord[] = []
+    leaves: LeaveRecord[] = [],
+    joinDate?: string | Date
 ): DailyAttendanceStatus[] => {
     const normalized: DailyAttendanceStatus[] = [];
 
     // Get Today in Jakarta YYYY-MM-DD to strictly determine "Future" vs "Past"
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+
+    // Normalize Join Date
+    let joinDateStr = '';
+    if (joinDate) {
+        // If it's a string, assume it's ISO or YYYY-MM-DD. If Date, format it.
+        // Created_at is usually ISO string "2024-01-01T..."
+        const d = new Date(joinDate);
+        if (!isNaN(d.getTime())) {
+            joinDateStr = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+        }
+    }
 
     let currentDate = new Date(startDate);
     currentDate.setHours(0, 0, 0, 0);
@@ -45,6 +57,23 @@ export const generateAttendancePeriod = (
     while (currentDate <= end) {
         const dateStr = format(currentDate, 'yyyy-MM-dd');
         const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
+
+        // Check pre-employment
+        if (joinDateStr && dateStr < joinDateStr) {
+            normalized.push({
+                date: dateStr,
+                formattedDate: format(currentDate, 'd MMMM yyyy', { locale: id }),
+                dayName: format(currentDate, 'EEEE', { locale: id }),
+                status: 'future', // Use 'future' to signify N/A / Pre-join
+                clockIn: null,
+                clockOut: null,
+                recordId: null,
+                notes: 'Belum Bergabung',
+                isWeekend: dayOfWeek === 0 || dayOfWeek === 6
+            });
+            currentDate = addDays(currentDate, 1);
+            continue;
+        }
 
         // 1. Find existing attendance record
         // Normalize DB timestamp to Jakarta Date String (YYYY-MM-DD)

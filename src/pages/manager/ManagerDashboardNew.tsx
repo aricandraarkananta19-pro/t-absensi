@@ -198,6 +198,7 @@ const ManagerDashboardNew = () => {
             targetDayAttendanceResult,
             departmentsResult,
             pendingLeavesResult,
+            approvedLeavesResult,
         ] = await Promise.all([
             supabase.from("profiles").select("user_id"),
             supabase.from("attendance").select("user_id, status")
@@ -205,22 +206,32 @@ const ManagerDashboardNew = () => {
                 .lte("clock_in", endOfTargetDay.toISOString()),
             supabase.from("profiles").select("department").not("department", "is", null),
             supabase.from("leave_requests").select("user_id").eq("status", "pending"),
+            supabase.from("leave_requests")
+                .select("user_id")
+                .eq("status", "approved")
+                .lte("start_date", targetDate.toISOString())
+                .gte("end_date", targetDate.toISOString()),
         ]);
 
         const karyawanProfiles = profilesResult.data?.filter(p => karyawanUserIds.has(p.user_id)) || [];
         const totalEmployees = karyawanProfiles.length;
 
         const karyawanTargetDayAttendance = targetDayAttendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
+        const karyawanPendingLeaves = pendingLeavesResult.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
+        const karyawanApprovedLeaves = approvedLeavesResult?.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
+        const employeesOnLeave = new Set(karyawanApprovedLeaves.map(l => l.user_id)).size;
+
         const presentToday = karyawanTargetDayAttendance.length;
         const lateToday = karyawanTargetDayAttendance.filter(a => a.status === "late").length;
         const onTimeToday = presentToday - lateToday;
-        const absentToday = Math.max(0, totalEmployees - presentToday);
+        // Alpha = Total - Present - Leave
+        const absentToday = Math.max(0, totalEmployees - presentToday - employeesOnLeave);
 
         // Check if there's data for the report date
         setHasDataForReportDate(presentToday > 0);
 
         const uniqueDepartments = new Set(departmentsResult.data?.map(d => d.department).filter(Boolean));
-        const karyawanPendingLeaves = pendingLeavesResult.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
+
 
         const onTimeRate = presentToday > 0 ? Math.round((onTimeToday / presentToday) * 100) : 0;
 
@@ -254,7 +265,7 @@ const ManagerDashboardNew = () => {
                 .lt("clock_in", `${dateStr}T23:59:59`);
 
             const karyawanAttendance = dayAttendance?.filter(a => karyawanUserIds.has(a.user_id)) || [];
-            const hadir = karyawanAttendance.filter(a => a.status === "present").length;
+            const hadir = karyawanAttendance.filter(a => a.status === "present" || a.status === "late").length;
             const terlambat = karyawanAttendance.filter(a => a.status === "late").length;
 
             weekData.push({

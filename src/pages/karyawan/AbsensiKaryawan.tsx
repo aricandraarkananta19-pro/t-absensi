@@ -112,6 +112,17 @@ const AbsensiKaryawan = () => {
 
   const handleClockIn = async () => {
     if (!user) return;
+
+    // Validate location before submitting
+    if (settings.enableLocationTracking && !coordinates) {
+      toast({
+        variant: "destructive",
+        title: "Lokasi Belum Terdeteksi",
+        description: "Mohon tunggu hingga indikator lokasi muncul atau aktifkan GPS Anda.",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {

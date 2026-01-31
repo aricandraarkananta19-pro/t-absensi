@@ -122,7 +122,7 @@ const KaryawanDashboardNew = () => {
             .lte("clock_in", endOfMonth.toISOString());
 
         if (data) {
-            const present = data.filter(d => d.status === "present").length;
+            const present = data.filter(d => d.status === "present" || d.status === "late").length;
             const late = data.filter(d => d.status === "late").length;
             setMonthStats({ present, late, absent: 0 }); // Absent needs separate logic, simplified here
         }
@@ -245,6 +245,10 @@ const KaryawanDashboardNew = () => {
                                     attendanceStatus.color === 'green' && "text-green-600",
                                     attendanceStatus.color === 'red' && "text-orange-600",
                                 )}>{attendanceStatus.text}</p>
+                                {/* Shift Schedule Info */}
+                                <p className="text-xs text-slate-400 font-medium bg-slate-100/50 px-2 py-1 rounded-md mt-1">
+                                    Jadwal: {settings.clockInStart} - {settings.clockOutEnd}
+                                </p>
                             </div>
 
                             <Button
@@ -268,7 +272,8 @@ const KaryawanDashboardNew = () => {
                             </div>
                             <div>
                                 <span className="text-3xl font-bold text-slate-900 block">{monthStats.present}</span>
-                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Hadir</span>
+                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Total Hadir</span>
+                                <span className="text-[10px] text-slate-400">(Termasuk Terlambat)</span>
                             </div>
                         </div>
                         <div className="bg-white/70 backdrop-blur-md rounded-[20px] p-5 border border-white/50 shadow-sm flex flex-col gap-3">
@@ -430,6 +435,9 @@ const KaryawanDashboardNew = () => {
                                 <div>
                                     <h3 className="text-lg font-semibold text-slate-800">Absensi Hari Ini</h3>
                                     <p className="text-slate-500">{attendanceStatus.text}</p>
+                                    <p className="text-xs text-slate-400 mt-1 bg-slate-50 inline-block px-2 py-0.5 rounded">
+                                        Shift: {settings.clockInStart} - {settings.clockOutEnd}
+                                    </p>
                                 </div>
                             </div>
                             <Button
@@ -457,9 +465,9 @@ const KaryawanDashboardNew = () => {
                         <CardContent className="py-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-slate-500 mb-1">Hadir Tepat Waktu</p>
+                                    <p className="text-sm text-slate-500 mb-1">Total Hadir</p>
                                     <p className="text-3xl font-bold" style={{ color: BRAND_COLORS.green }}>{monthStats.present}</p>
-                                    <p className="text-xs text-slate-400 mt-1">hari bulan ini</p>
+                                    <p className="text-xs text-slate-400 mt-1">Termasuk Terlambat</p>
                                 </div>
                                 <div
                                     className="w-12 h-12 rounded-xl flex items-center justify-center"

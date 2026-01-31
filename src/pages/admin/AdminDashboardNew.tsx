@@ -318,6 +318,7 @@ const AdminDashboardNew = () => {
             pendingLeavesResult,
             approvedLeavesResult,
             monthAttendanceResult,
+            approvedLeavesTodayResult
         ] = await Promise.all([
             supabase.from("profiles").select("user_id, created_at"),
             // Fetch attendance from TODAY (activeDate)
@@ -333,6 +334,12 @@ const AdminDashboardNew = () => {
             supabase.from("attendance").select("user_id")
                 .gte("clock_in", startOfMonth.toISOString())
                 .lte("clock_in", endOfMonth.toISOString()),
+            // New Query: Leaves for TODAY specifically
+            supabase.from("leave_requests")
+                .select("user_id")
+                .eq("status", "approved")
+                .lte("start_date", activeDate.toISOString())
+                .gte("end_date", activeDate.toISOString()),
         ]);
 
         const karyawanProfiles = profilesResult.data?.filter(p => karyawanUserIds.has(p.user_id)) || [];
@@ -348,11 +355,15 @@ const AdminDashboardNew = () => {
         const lateToday = karyawanTargetDayAttendance.filter(a => a.status === "late").length;
         // Absent is implicitly Total - Present for simple summary, but ideally we query 'absent' status.
         // For Dashboard quick view, Total - Present is a good estimation if we assume working day.
-        const absentToday = Math.max(0, totalEmployees - presentToday);
+
+        const karyawanApprovedLeavesToday = approvedLeavesTodayResult?.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
+        const employeesOnLeaveToday = new Set(karyawanApprovedLeavesToday.map(l => l.user_id)).size;
+
+        const absentToday = Math.max(0, totalEmployees - presentToday - employeesOnLeaveToday);
 
         const uniqueDepartments = new Set(departmentsResult.data?.map(d => d.department).filter(Boolean));
         const karyawanPendingLeaves = pendingLeavesResult.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
-        const karyawanApprovedLeaves = approvedLeavesResult.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
+        const karyawanApprovedLeavesMonth = approvedLeavesResult.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
         const karyawanMonthAttendance = monthAttendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
 
         const workDaysThisMonth = getWorkDaysInMonth(today.getFullYear(), today.getMonth());
@@ -368,7 +379,7 @@ const AdminDashboardNew = () => {
             absentToday,
             departments: uniqueDepartments.size,
             pendingLeave: karyawanPendingLeaves.length,
-            approvedLeaveThisMonth: karyawanApprovedLeaves.length,
+            approvedLeaveThisMonth: karyawanApprovedLeavesMonth.length,
             attendanceThisMonth: karyawanMonthAttendance.length,
             attendanceRate: Math.min(100, attendanceRate),
             newEmployeesThisMonth,

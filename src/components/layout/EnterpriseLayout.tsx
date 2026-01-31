@@ -196,9 +196,9 @@ const EnterpriseLayout = ({
                 "transition-all duration-300 ease-out min-h-screen",
                 isCollapsed ? "lg:ml-[72px]" : "lg:ml-[260px]"
             )}>
-                {/* Header - Sticky */}
-                <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 lg:bg-white/95 transition-all">
-                    <div className="flex items-center h-full px-4 lg:px-6 gap-4">
+                {/* Header - Sticky with safe-area-inset-top */}
+                <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 lg:bg-white/95 transition-all pt-[env(safe-area-inset-top)]">
+                    <div className="flex items-center h-16 px-4 lg:px-6 gap-4">
                         {/* Mobile Logo Only */}
                         <div className="lg:hidden flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center shadow-sm">
@@ -232,14 +232,14 @@ const EnterpriseLayout = ({
                     </div>
                 </header>
 
-                {/* Content Container with Safe Area Awareness */}
-                <div className="p-4 lg:p-6 pb-safe lg:pb-6">
+                {/* Content Container with Safe Area Awareness & Bottom Nav Spacing */}
+                <div className="p-4 lg:p-6 pb-[calc(80px+env(safe-area-inset-bottom))] lg:pb-6">
                     {children}
                 </div>
             </main>
 
             {/* ADMIN MOBILE BOTTOM NAV (iOS Style) */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200 pb-[env(safe-area-inset-bottom)] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
                 <div className="flex items-center justify-around h-[64px] px-2 bg-gradient-to-t from-white/50 to-transparent">
                     {adminMobileNav.map((item) => {
                         const isActive = location.pathname === item.href || (item.href !== "/dashboard" && location.pathname.startsWith(item.href) && item.href !== "#menu");
