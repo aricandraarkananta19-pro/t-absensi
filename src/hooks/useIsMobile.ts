@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 
 /**
- * Mobile breakpoint: 768px
- * This covers all mobile devices including iPhone, Android phones, and small tablets
+ * Mobile breakpoint: 640px (Tailwind sm)
+ * This covers smartphones. Tablets (iPad, etc) will use the Desktop/Tablet view.
  * Admin paths are EXCLUDED from mobile layout - always use desktop
  */
-const MOBILE_BREAKPOINT = 768;
+const MOBILE_BREAKPOINT = 640;
 
 // Admin paths that should NEVER use mobile layout
 const ADMIN_PATHS = [

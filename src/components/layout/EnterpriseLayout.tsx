@@ -104,7 +104,7 @@ const EnterpriseLayout = ({
             {/* LIGHT SIDEBAR - DESKTOP ONLY */}
             <aside
                 className={cn(
-                    "hidden lg:flex fixed left-0 top-0 bottom-0 z-50 flex-col transition-all duration-300 ease-out",
+                    "hidden md:flex fixed left-0 top-0 bottom-0 z-50 flex-col transition-all duration-300 ease-out",
                     "bg-white border-r border-slate-200 shadow-sm",
                     isCollapsed ? "w-[72px]" : "w-[260px]"
                 )}
@@ -194,13 +194,13 @@ const EnterpriseLayout = ({
             {/* MAIN CONTENT */}
             <main className={cn(
                 "transition-all duration-300 ease-out min-h-screen",
-                isCollapsed ? "lg:ml-[72px]" : "lg:ml-[260px]"
+                isCollapsed ? "md:ml-[72px]" : "md:ml-[260px]"
             )}>
-                {/* Header - Sticky with safe-area-inset-top */}
-                <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 lg:bg-white/95 transition-all pt-[env(safe-area-inset-top)]">
+                {/* Header - Relative (Non-Sticky) for Tablet/Desktop */}
+                <header className="relative z-30 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 lg:bg-white/95 transition-all pt-[env(safe-area-inset-top)]">
                     <div className="flex items-center h-16 px-4 lg:px-6 gap-4">
-                        {/* Mobile Logo Only */}
-                        <div className="lg:hidden flex items-center gap-2">
+                        {/* Mobile Logo Only (Show on Mobile < md) */}
+                        <div className="md:hidden flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center shadow-sm">
                                 <img src={logoImage} alt="Logo" className="h-5 w-5 object-contain" />
                             </div>
@@ -224,8 +224,8 @@ const EnterpriseLayout = ({
                                 <Download className="h-4 w-4" /> Export
                             </Button>
 
-                            {/* Mobile User Menu Trigger (just logout for mobile simplicity if needed) */}
-                            <Button variant="ghost" size="icon" className="lg:hidden text-slate-500" onClick={handleLogout}>
+                            {/* Mobile User Menu Trigger */}
+                            <Button variant="ghost" size="icon" className="md:hidden text-slate-500" onClick={handleLogout}>
                                 <LogOut className="h-5 w-5" />
                             </Button>
                         </div>
@@ -233,13 +233,13 @@ const EnterpriseLayout = ({
                 </header>
 
                 {/* Content Container with Safe Area Awareness & Bottom Nav Spacing */}
-                <div className="p-4 lg:p-6 pb-[calc(80px+env(safe-area-inset-bottom))] lg:pb-6">
+                <div className="p-4 lg:p-6 pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-6">
                     {children}
                 </div>
             </main>
 
-            {/* ADMIN MOBILE BOTTOM NAV (iOS Style) */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200 pb-[env(safe-area-inset-bottom)] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
+            {/* ADMIN MOBILE BOTTOM NAV (iOS Style) - Hidden on Tablet (md) */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200 pb-[env(safe-area-inset-bottom)] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
                 <div className="flex items-center justify-around h-[64px] px-2 bg-gradient-to-t from-white/50 to-transparent">
                     {adminMobileNav.map((item) => {
                         const isActive = location.pathname === item.href || (item.href !== "/dashboard" && location.pathname.startsWith(item.href) && item.href !== "#menu");

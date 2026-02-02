@@ -287,7 +287,7 @@ const RiwayatAbsensi = () => {
   // DESKTOP REMAINS PRETTY MUCH THE SAME, JUST CLEANED UP
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <header className="bg-white border-b border-slate-200 relative z-30">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="rounded-full">

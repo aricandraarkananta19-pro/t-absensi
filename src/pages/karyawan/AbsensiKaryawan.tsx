@@ -249,336 +249,194 @@ const AbsensiKaryawan = () => {
     }
   };
 
-  // ==========================================
-  // iOS MOBILE VIEW - Native Feel
-  // ==========================================
-  if (isMobile) {
-    return (
-      <div className="ios-mobile-container" style={{ paddingBottom: "calc(160px + env(safe-area-inset-bottom))" }}>
-        {/* iOS Header - Slim & Transparent for Clock Page */}
-        <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-[calc(env(safe-area-inset-top)+10px)] pb-2 bg-transparent transition-all">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/10 text-white shadow-lg active:scale-95 transition-transform"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div className="px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/10 text-white font-medium text-sm shadow-lg flex items-center gap-2">
-              <MapPin className="h-3.5 w-3.5 text-white/90" />
-              <span>{location || "Lokasi..."}</span>
-            </div>
-            <div className="w-10" /> {/* Spacer */}
-          </div>
-        </header>
+  // Render logic is now unified below
 
-        {/* Dynamic Background for Clock Page */}
-        <div className="fixed inset-0 z-0 bg-gradient-to-b from-[#1A5BA8] to-[#0D305A]" />
-
-        <div className="relative z-10 flex flex-col min-h-[85vh] justify-center items-center text-white px-6">
-          {/* Date Display */}
-          <div className="mb-4 px-4 py-1.5 rounded-full bg-white/10 border border-white/5 backdrop-blur-sm animate-fade-in-up">
-            <p className="text-sm font-medium text-white/90">
-              {formatDate(currentTime)}
-            </p>
-          </div>
-
-          {/* Large Digital Clock */}
-          <div className="mb-10 text-center relative animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            <div className="text-[72px] font-thin tracking-tighter leading-none tabular-nums drop-shadow-xl font-mono">
-              {formatTime(currentTime)}
-            </div>
-            <p className="text-white/60 text-sm mt-2 font-light tracking-wide">WIB (Waktu Indonesia Barat)</p>
-          </div>
-
-          {/* Status Circle */}
-          <div className="mb-12 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            {!todayAttendance ? (
-              <div className="w-48 h-48 rounded-full flex flex-col items-center justify-center gap-3 bg-white/5 backdrop-blur-sm border-2 border-white/20 shadow-2xl relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent opacity-50" />
-                <LogIn className="h-12 w-12 text-white/80" />
-                <span className="text-base font-medium text-white/90">Belum Masuk</span>
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20" />
-              </div>
-            ) : !todayAttendance.clock_out ? (
-              <div className="w-48 h-48 rounded-full flex flex-col items-center justify-center gap-3 bg-green-500/20 backdrop-blur-md border-2 border-green-400/30 shadow-[0_0_40px_rgba(34,197,94,0.3)] relative overflow-hidden animate-pulse-slow">
-                <Timer className="h-12 w-12 text-green-400" />
-                <div className="text-center">
-                  <span className="block text-base font-bold text-green-100">Sedang Bekerja</span>
-                  <span className="text-xs text-green-200/80">{formatTimeShort(new Date(todayAttendance.clock_in))}</span>
-                </div>
-              </div>
-            ) : (
-              <div className="w-48 h-48 rounded-full flex flex-col items-center justify-center gap-3 bg-blue-500/20 backdrop-blur-md border-2 border-blue-400/30 shadow-[0_0_40px_rgba(59,130,246,0.3)] relative">
-                <CheckCircle2 className="h-12 w-12 text-blue-400" />
-                <span className="text-base font-bold text-blue-100">Selesai</span>
-                <div className="text-xs px-3 py-1 bg-blue-500/30 rounded-full text-blue-100 border border-blue-400/20">
-                  {getWorkDuration()}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Today's Summary - Floating Card style */}
-          {todayAttendance && (
-            <div className="w-full bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex items-center justify-between shadow-lg animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-              <div className="text-center flex-1 border-r border-white/10">
-                <p className="text-xs text-white/60 mb-1">Masuk</p>
-                <p className="text-lg font-bold text-white">
-                  {formatTimeShort(new Date(todayAttendance.clock_in))}
-                </p>
-              </div>
-              <div className="text-center flex-1">
-                <p className="text-xs text-white/60 mb-1">Pulang</p>
-                {todayAttendance.clock_out ? (
-                  <p className="text-lg font-bold text-white">
-                    {formatTimeShort(new Date(todayAttendance.clock_out))}
-                  </p>
-                ) : (
-                  <p className="text-lg font-bold text-white/40">-:-</p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Sticky Action Bar */}
-        <div
-          className="fixed left-0 right-0 bottom-[calc(68px+env(safe-area-inset-bottom))] p-5 bg-white rounded-t-[32px] shadow-[0_-5px_30px_rgba(0,0,0,0.15)] z-40"
-        >
-          <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
-
-          {!todayAttendance ? (
-            <button
-              onClick={handleClockIn}
-              disabled={isLoading}
-              className="w-full h-14 rounded-2xl bg-[#007AFF] active:scale-[0.98] transition-transform flex items-center justify-center gap-3 shadow-lg shadow-blue-500/30 text-white font-semibold text-lg"
-            >
-              {isLoading ? (
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              ) : (
-                <>
-                  <Fingerprint className="h-6 w-6" />
-                  <span>Geser Masuk</span>
-                </>
-              )}
-            </button>
-          ) : !todayAttendance.clock_out ? (
-            <button
-              onClick={handleClockOut}
-              disabled={isLoading}
-              className="w-full h-14 rounded-2xl bg-[#FF3B30] active:scale-[0.98] transition-transform flex items-center justify-center gap-3 shadow-lg shadow-red-500/30 text-white font-semibold text-lg"
-            >
-              {isLoading ? (
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              ) : (
-                <>
-                  <LogOut className="h-6 w-6" />
-                  <span>Geser Pulang</span>
-                </>
-              )}
-            </button>
-          ) : (
-            <div className="w-full h-14 rounded-2xl bg-slate-100 flex items-center justify-center gap-2 text-slate-500 font-medium">
-              <CheckCircle2 className="h-5 w-5" />
-              <span>Shift Selesai</span>
-            </div>
-          )}
-
-          <p className="text-center text-xs text-slate-400 mt-4">
-            Pastikan lokasi Anda akurat sebelum melakukan absensi.
-          </p>
-        </div>
-
-        {/* iOS Bottom Navigation */}
-        <MobileNavigation />
-      </div>
-    );
-  }
 
   // ==========================================
-  // DESKTOP VIEW (Original - Unchanged)
+  // UNIFIED RESPONSIVE VIEW (Mobile, Tablet, Desktop)
   // ==========================================
+  // Replaces separate mobile/desktop views with a fluid, adaptive design
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/dashboard")}
-              className="rounded-full"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent">
-                <Clock className="h-5 w-5 text-accent-foreground" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold text-foreground">Absensi</h1>
-                <p className="text-sm text-muted-foreground">Clock In & Clock Out</p>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-b from-[#1A5BA8] to-[#0D305A] text-white font-['Inter',sans-serif] flex flex-col overflow-x-hidden">
+
+      {/* Header - Non-sticky to maximize space and scrolling convenience */}
+      <header className="relative z-20 w-full px-6 py-6 lg:py-8 flex items-center justify-between">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="group flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-all active:scale-95"
+        >
+          <ArrowLeft className="h-5 w-5 text-white/90 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-sm font-medium text-white/90 hidden sm:inline">Dashboard</span>
+        </button>
+
+        {/* Location Badge */}
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10 shadow-lg">
+          <MapPin className="h-4 w-4 text-white/90" />
+          <span className="text-sm font-medium text-white/90 max-w-[200px] truncate">
+            {location || "Mencari lokasi..."}
+          </span>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="mx-auto max-w-lg space-y-6">
-          {/* Current Time Card */}
-          <Card className="border-border shadow-lg animate-fade-in overflow-hidden">
-            <div className="bg-gradient-to-br from-primary to-primary/80 p-6 text-primary-foreground">
-              <div className="text-center">
-                <p className="text-sm opacity-90 mb-1">
-                  <Calendar className="inline h-4 w-4 mr-1" />
+      {/* Main Content - Fluid Grid Layout */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-6 pb-12 lg:pb-24 flex flex-col justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
+
+          {/* Left Column: Clock & Status */}
+          <div className="flex flex-col items-center justify-center text-center space-y-8 lg:space-y-12 animate-fade-in-up">
+
+            {/* Date & Time */}
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/5 backdrop-blur-sm">
+                <Calendar className="h-4 w-4 text-white/80" />
+                <p className="text-sm font-medium text-white/90">
                   {formatDate(currentTime)}
                 </p>
-                <div className="text-5xl font-bold tracking-tight">
+              </div>
+              <div className="relative">
+                <h1 className="text-[64px] sm:text-[80px] lg:text-[100px] font-thin tracking-tighter leading-none tabular-nums font-mono drop-shadow-2xl">
                   {formatTime(currentTime)}
+                </h1>
+                <p className="text-white/50 text-sm sm:text-base font-light tracking-widest uppercase mt-2">Waktu Indonesia Barat</p>
+              </div>
+            </div>
+
+            {/* Status Visualization */}
+            <div className="relative group cursor-default">
+              {/* Background Glow */}
+              <div className={`absolute inset-0 rounded-full blur-[60px] opacity-40 transition-colors duration-700
+                ${!todayAttendance ? 'bg-white' : !todayAttendance.clock_out ? 'bg-green-500' : 'bg-blue-500'}
+              `} />
+
+              <div className={`
+                relative w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80 rounded-full flex flex-col items-center justify-center gap-4 
+                bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl transition-all duration-500
+                ${!todayAttendance ? 'border-white/20' : !todayAttendance.clock_out ? 'border-green-400/30 bg-green-900/10' : 'border-blue-400/30 bg-blue-900/10'}
+              `}>
+                {!todayAttendance ? (
+                  <>
+                    <LogIn className="h-16 w-16 text-white/80" />
+                    <span className="text-xl sm:text-2xl font-light text-white/90">Belum Masuk</span>
+                  </>
+                ) : !todayAttendance.clock_out ? (
+                  <>
+                    <div className="absolute inset-0 border-2 border-green-400/30 rounded-full animate-pulse-slow" />
+                    <Timer className="h-16 w-16 text-green-400" />
+                    <div className="text-center">
+                      <span className="block text-xl sm:text-2xl font-bold text-green-100">Sedang Bekerja</span>
+                      <span className="text-sm sm:text-base text-green-200/80 mt-1">{formatTimeShort(new Date(todayAttendance.clock_in))}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-16 w-16 text-blue-400" />
+                    <div className="text-center">
+                      <span className="block text-xl sm:text-2xl font-bold text-blue-100">Selesai</span>
+                      <div className="mt-2 text-sm px-4 py-1.5 bg-blue-500/20 rounded-full text-blue-100 border border-blue-400/20">
+                        {getWorkDuration()} kerja
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right Column: Actions & Summary */}
+          <div className="w-full max-w-md mx-auto flex flex-col gap-6 lg:gap-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+
+            {/* Shift Info Card */}
+            <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6 lg:p-8 hover:bg-white/10 transition-colors">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-white/70" />
+                Jadwal Shift
+              </h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-4 rounded-2xl bg-white/5 border border-white/5">
+                  <span className="text-white/70">Wajib Masuk</span>
+                  <span className="font-mono font-medium text-white">{settings.clockInStart} - {settings.clockInEnd}</span>
+                </div>
+                <div className="flex justify-between items-center p-4 rounded-2xl bg-white/5 border border-white/5">
+                  <span className="text-white/70">Wajib Pulang</span>
+                  <span className="font-mono font-medium text-white">{settings.clockOutStart} - {settings.clockOutEnd}</span>
                 </div>
               </div>
             </div>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span>{location || "Mendapatkan lokasi..."}</span>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Attendance Status */}
-          {todayAttendance ? (
-            <Card className="border-border shadow-card animate-fade-in" style={{ animationDelay: "0.1s" }}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Status Hari Ini</CardTitle>
-                  {getStatusBadge(todayAttendance.status)}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Clock In Info */}
-                <div className="flex items-center gap-4 p-3 rounded-lg bg-success/10">
-                  <div className="h-10 w-10 rounded-full bg-success/20 flex items-center justify-center">
-                    <LogIn className="h-5 w-5 text-success" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">Clock In</p>
-                    <p className="text-lg font-bold text-success">
-                      {new Date(todayAttendance.clock_in).toLocaleTimeString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                  <CheckCircle2 className="h-5 w-5 text-success" />
-                </div>
-
-                {/* Clock Out Info */}
-                <div className={`flex items-center gap-4 p-3 rounded-lg ${todayAttendance.clock_out ? "bg-info/10" : "bg-muted"
-                  }`}>
-                  <div className={`h-10 w-10 rounded-full flex items-center justify-center ${todayAttendance.clock_out ? "bg-info/20" : "bg-muted-foreground/20"
-                    }`}>
-                    <LogOut className={`h-5 w-5 ${todayAttendance.clock_out ? "text-info" : "text-muted-foreground"
-                      }`} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">Clock Out</p>
-                    {todayAttendance.clock_out ? (
-                      <p className="text-lg font-bold text-info">
-                        {new Date(todayAttendance.clock_out).toLocaleTimeString("id-ID", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Belum clock out</p>
-                    )}
-                  </div>
-                  {todayAttendance.clock_out ? (
-                    <CheckCircle2 className="h-5 w-5 text-info" />
-                  ) : (
-                    <XCircle className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </div>
-
-                {/* Work Duration */}
-                <div className="flex items-center gap-4 p-3 rounded-lg bg-primary/10">
-                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Timer className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Durasi Kerja</p>
-                    <p className="text-lg font-bold text-primary">{getWorkDuration()}</p>
-                  </div>
-                </div>
-
-                {/* Clock Out Button */}
-                {!todayAttendance.clock_out && (
-                  <Button
-                    onClick={handleClockOut}
-                    disabled={isLoading}
-                    variant="destructive"
-                    size="lg"
-                    className="w-full gap-2 mt-4"
-                  >
-                    {isLoading ? (
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-destructive-foreground border-t-transparent" />
-                    ) : (
-                      <LogOut className="h-5 w-5" />
-                    )}
-                    Clock Out
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            /* Clock In Card */
-            <Card className="border-border shadow-card animate-fade-in" style={{ animationDelay: "0.1s" }}>
-              <CardHeader className="text-center">
-                <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-accent/20 flex items-center justify-center">
-                  <LogIn className="h-10 w-10 text-accent" />
-                </div>
-                <CardTitle>Belum Clock In</CardTitle>
-                <CardDescription>
-                  Tekan tombol di bawah untuk mencatat kehadiran Anda
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
+            {/* Action Buttons - No Sticky, Conveniently Placed */}
+            <div className="space-y-4">
+              {!todayAttendance ? (
+                <button
                   onClick={handleClockIn}
                   disabled={isLoading}
-                  size="lg"
-                  className="w-full gap-2"
+                  className="w-full h-20 sm:h-24 rounded-3xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] transition-all flex items-center justify-between px-8 shadow-lg shadow-blue-900/50 group"
                 >
-                  {isLoading ? (
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                  ) : (
-                    <LogIn className="h-5 w-5" />
-                  )}
-                  Clock In Sekarang
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+                  <div className="flex flex-col items-start">
+                    <span className="text-xl sm:text-2xl font-bold text-white">Clock In</span>
+                    <span className="text-blue-100 text-sm sm:text-base">Mulai sesi kerja Anda</span>
+                  </div>
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                    {isLoading ? <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <LogIn className="h-6 w-6 sm:h-7 sm:w-7 text-white" />}
+                  </div>
+                </button>
+              ) : !todayAttendance.clock_out ? (
+                <button
+                  onClick={handleClockOut}
+                  disabled={isLoading}
+                  className="w-full h-20 sm:h-24 rounded-3xl bg-red-600 hover:bg-red-500 active:scale-[0.98] transition-all flex items-center justify-between px-8 shadow-lg shadow-red-900/50 group"
+                >
+                  <div className="flex flex-col items-start">
+                    <span className="text-xl sm:text-2xl font-bold text-white">Clock Out</span>
+                    <span className="text-red-100 text-sm sm:text-base">Akhiri sesi kerja Anda</span>
+                  </div>
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                    {isLoading ? <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <LogOut className="h-6 w-6 sm:h-7 sm:w-7 text-white" />}
+                  </div>
+                </button>
+              ) : (
+                <div className="w-full h-20 sm:h-24 rounded-3xl bg-white/10 border border-white/10 flex items-center justify-center gap-3">
+                  <CheckCircle2 className="h-8 w-8 text-green-400" />
+                  <span className="text-xl font-medium text-white/90">Shift Telah Selesai</span>
+                </div>
+              )}
+            </div>
 
-          {/* Info Card - Dynamic based on settings */}
-          <Card className="border-border animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <CardContent className="pt-6">
-              <h3 className="text-sm font-medium text-foreground mb-2">Jam Kerja</h3>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <p>• Clock In: <span className="font-medium text-foreground">{settings.clockInStart} - {settings.clockInEnd}</span> (Terlambat setelah {settings.lateThreshold})</p>
-                <p>• Clock Out: <span className="font-medium text-foreground">{settings.clockOutStart} - {settings.clockOutEnd}</span> (Pulang awal sebelum {settings.clockOutStart})</p>
+            {/* Today's Summary */}
+            {todayAttendance && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/5 text-center">
+                  <p className="text-xs text-white/60 mb-1 uppercase tracking-wide">Waktu Masuk</p>
+                  <p className="text-xl sm:text-2xl font-mono font-bold text-white">
+                    {formatTimeShort(new Date(todayAttendance.clock_in))}
+                  </p>
+                </div>
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/5 text-center">
+                  <p className="text-xs text-white/60 mb-1 uppercase tracking-wide">Waktu Pulang</p>
+                  <p className="text-xl sm:text-2xl font-mono font-bold text-white">
+                    {todayAttendance.clock_out ? formatTimeShort(new Date(todayAttendance.clock_out)) : "--:--"}
+                  </p>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            )}
+
+          </div>
         </div>
       </main>
+
+      {/* Navigation Links (Non-sticky Footer for convenience) */}
+      {isMobile && (
+        <div className="w-full pb-8 pt-4 px-6 flex justify-center gap-8 lg:hidden">
+          {/* Simple footer links instead of sticky nav if preferred, or rely on dashboard back button. 
+                 Given the user asked for "No sticky content", I'll leave the sticky nav OUT for this page.
+                 The 'Back to Dashboard' prominent button deals with navigation. */}
+        </div>
+      )}
+
     </div>
   );
 };
 
 export default AbsensiKaryawan;
+
