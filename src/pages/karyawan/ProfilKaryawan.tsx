@@ -106,81 +106,93 @@ const ProfilKaryawan = () => {
   // ==========================================
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-slate-50 pb-24">
+      <div className="min-h-screen bg-slate-50 pb-32">
         {/* Profile Header Background */}
-        <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 h-48 rounded-b-[2.5rem] shadow-lg overflow-hidden">
+        <div className="relative bg-gradient-to-br from-blue-700 to-indigo-800 h-40 rounded-b-[2rem] shadow-md overflow-hidden">
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 mix-blend-overlay"></div>
 
           {/* Top Bar inside Header */}
-          <div className="relative z-10 flex items-center justify-between px-4 py-3 pt-[env(safe-area-inset-top)]">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="text-white hover:bg-white/20">
+          <div className="relative z-10 flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+8px)]">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="text-white hover:bg-white/20 rounded-full">
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <span className="text-white font-semibold">Profil Saya</span>
-            <Button variant="ghost" size="icon" className="group" onClick={handleLogout}>
-              <LogOut className="h-5 w-5 text-white/80 group-active:text-white" />
+            <span className="text-white font-semibold tracking-wide">Profil Saya</span>
+            <Button variant="ghost" size="icon" className="group rounded-full" onClick={handleLogout}>
+              <LogOut className="h-5 w-5 text-white/90 group-active:text-white" />
             </Button>
-          </div>
-
-          {/* Avatar Centered Overlap */}
-          <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center">
-            <div className="relative">
-              <div className="h-24 w-24 rounded-full border-4 border-white bg-slate-200 shadow-xl flex items-center justify-center text-slate-400 overflow-hidden">
-                {/* Placeholder Avatar */}
-                <div className="w-full h-full bg-slate-100 flex items-center justify-center text-3xl font-bold text-slate-300">
-                  {profile?.full_name?.charAt(0) || "U"}
-                </div>
-              </div>
-              {/* Camera Icon Badge */}
-              <div className="absolute bottom-0 right-0 h-8 w-8 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center shadow-md">
-                <Camera className="h-4 w-4 text-white" />
-              </div>
-            </div>
           </div>
         </div>
 
-        <div className="mt-14 px-5 text-center">
-          <h2 className="text-xl font-bold text-slate-800 leading-tight">{profile?.full_name}</h2>
-          <p className="text-sm text-slate-500 mt-1">{profile?.position || "Karyawan"}</p>
+        {/* Avatar Section - Perfectly Centered Overlap */}
+        <div className="relative -mt-12 flex flex-col items-center">
+          <div className="relative">
+            <div className="h-24 w-24 rounded-full border-[3px] border-white bg-white shadow-lg flex items-center justify-center overflow-hidden">
+              {/* Placeholder Avatar */}
+              <div className="w-full h-full bg-slate-100 flex items-center justify-center text-3xl font-bold text-slate-400">
+                {profile?.full_name?.charAt(0) || "U"}
+              </div>
+            </div>
+            {/* Camera Icon Badge */}
+            <div className="absolute bottom-0 right-0 h-8 w-8 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center shadow-md active:scale-95 transition-transform">
+              <Camera className="h-4 w-4 text-white" />
+            </div>
+          </div>
+
+          <div className="text-center mt-3 px-6">
+            <h2 className="text-lg font-bold text-slate-800 leading-tight">{profile?.full_name}</h2>
+            <span className="inline-block mt-1 px-3 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[11px] font-semibold border border-blue-100 uppercase tracking-wide">
+              {profile?.position || "Karyawan"}
+            </span>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="px-5 mt-6 space-y-6">
+        <div className="px-5 mt-6 space-y-5">
 
           {/* Personal Form */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-50 flex items-center gap-2">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-50 flex items-center gap-2 bg-slate-50/50">
               <User className="h-4 w-4 text-blue-600" />
-              <h3 className="text-sm font-bold text-slate-700">Informasi Pribadi</h3>
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Informasi Pribadi</h3>
             </div>
             <div className="p-5">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                   <FormField control={form.control} name="phone" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-slate-400 uppercase font-semibold">No. Telepon</FormLabel>
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-xs text-slate-500 font-medium">No. Telepon</FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-2.5 h-4 w-4 text-slate-300" />
-                          <Input {...field} className="pl-9 bg-slate-50 border-slate-200 text-sm" placeholder="08..." />
+                        <div className="relative group">
+                          <Phone className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                          <Input {...field} className="pl-9 h-10 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 transition-all font-medium text-slate-700 rounded-lg text-sm" placeholder="08..." />
                         </div>
                       </FormControl>
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="address" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs text-slate-400 uppercase font-semibold">Alamat Domisili</FormLabel>
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-xs text-slate-500 font-medium">Alamat Domisili</FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-300" />
-                          <Textarea {...field} className="pl-9 bg-slate-50 border-slate-200 text-sm min-h-[80px] resize-none" placeholder="Masukan alamat..." />
+                        <div className="relative group">
+                          <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                          <Textarea {...field} className="pl-9 bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-500 transition-all font-medium text-slate-700 rounded-lg text-sm min-h-[80px] resize-none py-2.5" placeholder="Masukan alamat lengkap..." />
                         </div>
                       </FormControl>
                     </FormItem>
                   )} />
 
-                  <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md shadow-blue-200 h-11" disabled={isLoading}>
-                    {isLoading ? "Menyimpan..." : "Simpan Perubahan"}
+                  <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl shadow-lg shadow-blue-600/20 h-11 font-semibold tracking-wide active:scale-[0.98] transition-all" disabled={isLoading}>
+                    {isLoading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Menyimpan...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Save className="h-4 w-4" />
+                        <span>Simpan Perubahan</span>
+                      </div>
+                    )}
                   </Button>
                 </form>
               </Form>
@@ -188,47 +200,47 @@ const ProfilKaryawan = () => {
           </div>
 
           {/* Employment Info (Read Only) */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-50 flex items-center gap-2">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-50 flex items-center gap-2 bg-slate-50/50">
               <Briefcase className="h-4 w-4 text-blue-600" />
-              <h3 className="text-sm font-bold text-slate-700">Data Pekerjaan</h3>
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Data Pekerjaan</h3>
             </div>
-            <div className="p-5 space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+            <div className="p-5 space-y-5">
+              <div className="flex items-start gap-4">
+                <div className="h-9 w-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
                   <Building2 className="h-5 w-5" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-xs text-slate-400 font-medium">Departemen</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Departemen</p>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-slate-800">{profile?.department || "-"}</p>
-                    <Lock className="h-3 w-3 text-slate-300" />
+                    <p className="text-sm font-semibold text-slate-800 truncate">{profile?.department || "-"}</p>
+                    <Lock className="h-3 w-3 text-slate-300 shrink-0" />
                   </div>
                 </div>
               </div>
-              <div className="h-px bg-slate-50 w-full" />
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+
+              <div className="flex items-start gap-4">
+                <div className="h-9 w-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
                   <Briefcase className="h-5 w-5" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-xs text-slate-400 font-medium">Posisi / Jabatan</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Posisi / Jabatan</p>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-slate-800">{profile?.position || "-"}</p>
-                    <Lock className="h-3 w-3 text-slate-300" />
+                    <p className="text-sm font-semibold text-slate-800 truncate">{profile?.position || "-"}</p>
+                    <Lock className="h-3 w-3 text-slate-300 shrink-0" />
                   </div>
                 </div>
               </div>
-              <div className="h-px bg-slate-50 w-full" />
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+
+              <div className="flex items-start gap-4">
+                <div className="h-9 w-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
                   <Mail className="h-5 w-5" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-xs text-slate-400 font-medium">Email Kantor</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Email Kantor</p>
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-slate-800 truncate">{user?.email}</p>
-                    <Lock className="h-3 w-3 text-slate-300" />
+                    <Lock className="h-3 w-3 text-slate-300 shrink-0" />
                   </div>
                 </div>
               </div>
@@ -236,19 +248,17 @@ const ProfilKaryawan = () => {
           </div>
 
           {/* Security Actions */}
-          <div className="space-y-3">
-            <button onClick={() => navigate("/edit-password")} className="w-full bg-white active:bg-slate-50 border border-slate-200 text-slate-700 font-medium py-3.5 px-4 rounded-xl flex items-center justify-between transition-all">
-              <span className="flex items-center gap-3">
-                <Key className="h-4 w-4 text-purple-500" />
+          <div className="space-y-3 pb-6">
+            <button onClick={() => navigate("/edit-password")} className="w-full bg-white active:bg-slate-50 border border-slate-200 text-slate-700 font-medium py-3.5 px-4 rounded-xl flex items-center justify-between transition-all shadow-sm active:scale-[0.99]">
+              <span className="flex items-center gap-3 text-sm">
+                <div className="h-8 w-8 rounded-full bg-purple-50 flex items-center justify-center">
+                  <Key className="h-4 w-4 text-purple-600" />
+                </div>
                 Ubah Password
               </span>
               <ChevronRight className="h-4 w-4 text-slate-300" />
             </button>
           </div>
-
-          <p className="text-center text-xs text-slate-300 pb-4">
-            Versi Aplikasi 1.0.4 (Build 2202)
-          </p>
         </div>
 
         <MobileNavigation />
