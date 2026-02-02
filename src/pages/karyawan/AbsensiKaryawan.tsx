@@ -260,18 +260,18 @@ const AbsensiKaryawan = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1A5BA8] to-[#0D305A] text-white font-['Inter',sans-serif] flex flex-col overflow-x-hidden">
 
-      {/* Header - Non-sticky to maximize space and scrolling convenience */}
-      <header className="relative z-20 w-full px-6 py-6 lg:py-8 flex items-center justify-between">
+      {/* Header - Non-sticky, spacious, safe-area aware */}
+      <header className="relative z-20 w-full px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] flex items-center justify-between">
         <button
           onClick={() => navigate("/dashboard")}
-          className="group flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-all active:scale-95"
+          className="group flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-all active:scale-95"
         >
           <ArrowLeft className="h-5 w-5 text-white/90 group-hover:-translate-x-1 transition-transform" />
-          <span className="text-sm font-medium text-white/90 hidden sm:inline">Dashboard</span>
+          <span className="text-base font-medium text-white/90 hidden sm:inline">Dashboard</span>
         </button>
 
         {/* Location Badge */}
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10 shadow-lg">
+        <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 shadow-lg">
           <MapPin className="h-4 w-4 text-white/90" />
           <span className="text-sm font-medium text-white/90 max-w-[200px] truncate">
             {location || "Mencari lokasi..."}
@@ -279,9 +279,9 @@ const AbsensiKaryawan = () => {
         </div>
       </header>
 
-      {/* Main Content - Fluid Grid Layout */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-6 pb-12 lg:pb-24 flex flex-col justify-center">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
+      {/* Main Content - Fluid Grid Layout with more breathing room */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-6 lg:px-12 pb-12 lg:pb-32 flex flex-col justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-32 items-center">
 
           {/* Left Column: Clock & Status */}
           <div className="flex flex-col items-center justify-center text-center space-y-8 lg:space-y-12 animate-fade-in-up">

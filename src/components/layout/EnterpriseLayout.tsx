@@ -109,8 +109,8 @@ const EnterpriseLayout = ({
                     isCollapsed ? "w-[72px]" : "w-[260px]"
                 )}
             >
-                {/* Logo */}
-                <div className="flex items-center h-16 px-4 border-b border-slate-100 bg-white">
+                {/* Logo - Added Safe Area Support */}
+                <div className="flex items-center h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-4 border-b border-slate-100 bg-white">
                     <div className="flex items-center gap-3 min-w-0">
                         <div
                             className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-md bg-gradient-to-br from-blue-700 to-sky-500"
