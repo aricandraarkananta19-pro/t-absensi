@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import {
     ArrowLeft, FileText, Calendar as CalendarIcon, CheckCircle2, XCircle, Clock, Search, Users,
     Download, BarChart3, RefreshCw, FileSpreadsheet,
@@ -29,7 +29,7 @@ import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { format, startOfMonth, endOfMonth, isToday } from "date-fns";
+import { format, startOfMonth, endOfMonth, isToday, addMonths, subDays, subMonths, setDate, startOfDay, endOfDay } from "date-fns";
 import { id } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
 import { generateAttendancePeriod, DailyAttendanceStatus } from "@/lib/attendanceGenerator";
@@ -113,6 +113,7 @@ const LaporanKehadiran = () => {
     const isMobile = useIsMobile();
 
     // =============== STATE ===============
+    const [searchParams, setSearchParams] = useSearchParams();
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [employeeReports, setEmployeeReports] = useState<EmployeeReport[]>([]);
     const [departments, setDepartments] = useState<string[]>([]);
@@ -123,10 +124,14 @@ const LaporanKehadiran = () => {
     const [filterStatus, setFilterStatus] = useState("pending"); // For Leave Tab
     const [filterDepartment, setFilterDepartment] = useState("all");
 
-    // Date Range State
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: startOfMonth(new Date()),
-        to: endOfMonth(new Date())
+    // Date Range State - Initialize from URL or default
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+        const fromParam = searchParams.get("from");
+        const toParam = searchParams.get("to");
+        if (fromParam && toParam) {
+            return { from: new Date(fromParam), to: new Date(toParam) };
+        }
+        return undefined; // Will be set by effect
     });
 
     // Modals
@@ -136,6 +141,104 @@ const LaporanKehadiran = () => {
 
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<EmployeeReport | null>(null);
+
+    // ==========================================
+    // DATE RANGE LOGIC (PERSISTENT & AUTO)
+    // ==========================================
+
+    // 1. Handle URL Persistence when User selects Date manually
+    const handleDateRangeChange = (range: DateRange | undefined) => {
+        setDateRange(range);
+        if (range?.from) {
+            const newParams = new URLSearchParams(searchParams);
+            newParams.set("from", format(range.from, "yyyy-MM-dd"));
+            if (range.to) {
+                newParams.set("to", format(range.to, "yyyy-MM-dd"));
+            } else {
+                newParams.delete("to");
+            }
+            setSearchParams(newParams, { replace: true });
+        }
+    };
+
+    // Generate Available Periods (Last 12 Months)
+    const availablePeriods = useMemo(() => {
+        const periods = [];
+        const today = new Date();
+        const cutoffDay = settings?.attendanceStartDate ? parseInt(settings.attendanceStartDate.split('-')[2]) : 1;
+        const isStandard = cutoffDay === 1;
+
+        for (let i = 0; i < 12; i++) {
+            const date = subMonths(today, i);
+            const monthName = format(date, "MMMM yyyy", { locale: id });
+
+            let from: Date, to: Date;
+
+            if (isStandard) {
+                from = startOfDay(startOfMonth(date));
+                to = endOfDay(endOfMonth(date));
+            } else {
+                // Example: If Cutoff 26. 
+                // Period "January 2026" = Dec 26, 2025 - Jan 25, 2026
+                // So for current 'date' (e.g. Jan), we go back 1 month for start.
+
+                // Logic check: "January" period usually ends in January.
+                const endOfPeriod = setDate(date, cutoffDay - 1);
+                const startOfPeriod = setDate(subMonths(date, 1), cutoffDay);
+
+                from = startOfDay(startOfPeriod);
+                to = endOfDay(endOfPeriod);
+            }
+
+            periods.push({
+                label: monthName,
+                value: `${format(from, "yyyy-MM-dd")}_${format(to, "yyyy-MM-dd")}`,
+                from,
+                to
+            });
+        }
+        return periods;
+    }, [settings?.attendanceStartDate]);
+
+    const handlePeriodChange = (val: string) => {
+        if (val === "custom") return;
+        const [startStr, endStr] = val.split("_");
+        const newRange = { from: new Date(startStr), to: new Date(endStr) };
+        handleDateRangeChange(newRange);
+    };
+
+    // 2. Auto-Set Date Range on Load (if URL empty)
+    useEffect(() => {
+        // If dateRange is already set (from URL init), don't override unless strictly needed
+        if (dateRange?.from && dateRange?.to) return;
+
+        if (!settingsLoading && settings?.attendanceStartDate) {
+            const hasUrlParams = searchParams.get("from") && searchParams.get("to");
+
+            if (!hasUrlParams) {
+                // Logic: Start from Active Period, End = Start + 1 Month - 1 Day
+                const activeStart = new Date(settings.attendanceStartDate);
+
+                // Fallback validity check
+                if (activeStart.toString() === 'Invalid Date') return;
+
+                const activeEnd = subDays(addMonths(activeStart, 1), 1);
+
+                const newRange = { from: activeStart, to: activeEnd };
+                setDateRange(newRange);
+
+                // Persist
+                const newParams = new URLSearchParams(searchParams);
+                newParams.set("from", format(activeStart, "yyyy-MM-dd"));
+                newParams.set("to", format(activeEnd, "yyyy-MM-dd"));
+                setSearchParams(newParams, { replace: true });
+            }
+        } else if (!settingsLoading && !settings?.attendanceStartDate && !dateRange) {
+            // Fallback if no settings: Current Month
+            const now = new Date();
+            setDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
+        }
+    }, [settingsLoading, settings?.attendanceStartDate, searchParams, dateRange]);
 
     // Helper: Convert string to Title Case
     const toTitleCase = (str: string | null): string => {
@@ -158,9 +261,21 @@ const LaporanKehadiran = () => {
 
     // Fetch Leave Requests (For Leave Tab)
     const fetchLeaveRequests = async () => {
+        if (!dateRange?.from) return;
+
+        const startDateStr = dateRange.from.toISOString();
+        const endDateStr = (dateRange.to || dateRange.from).toISOString();
+
         const { data: karyawanRoles } = await supabase.from("user_roles").select("user_id").in("role", ABSENSI_WAJIB_ROLE);
         const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
-        const { data } = await supabase.from("leave_requests").select("*").order("created_at", { ascending: false });
+
+        // Filter: StartDate <= PeriodEnd AND EndDate >= PeriodStart (Overlap Logic)
+        const { data } = await supabase.from("leave_requests")
+            .select("*")
+            .lte("start_date", endDateStr)
+            .gte("end_date", startDateStr)
+            .order("created_at", { ascending: false });
+
         if (data) {
             const karyawanRequests = data.filter(req => karyawanUserIds.has(req.user_id));
             const requestsWithProfiles = await Promise.all(
@@ -215,15 +330,13 @@ const LaporanKehadiran = () => {
             const empLeaves = leaveDataWithUser?.filter(l => l.user_id === employee.user_id) || [];
 
             // Normalize Start Date
-            // Priority: System Attendance Start Date (Active Period) > Employee Join Date > Default
-            // User Request: Force all employees to be counted from the Active Period Start Date, even if they joined later.
+            // Use Employee Join Date or Created At. 
+            // Do NOT override with system start date for historical reports, as that would hide past data.
             const rawJoinDate = employee.join_date || employee.created_at;
             const joinDate = rawJoinDate ? new Date(rawJoinDate) : new Date('2000-01-01');
-            const systemStartDate = settings?.attendanceStartDate ? new Date(settings.attendanceStartDate) : null;
 
-            const effectiveStartDate = systemStartDate || joinDate;
-
-            const effectiveStartDateStr = effectiveStartDate.toISOString().split("T")[0];
+            // Pass joinDate as effective start for the generator to handle pre-employment days
+            const effectiveStartDateStr = joinDate.toISOString().split("T")[0];
 
             // GENERATE COMPLETE TIMELINE
             const timeline = generateAttendancePeriod(startDate, endDate, empRecords, empLeaves, effectiveStartDateStr);
@@ -284,25 +397,6 @@ const LaporanKehadiran = () => {
         setEmployeeReports(reports);
         setIsLoading(false);
     };
-
-    // Automate Date Range based on Active Period (User Request)
-    // "Automate the attendance details according to the specified active period even if it changes."
-    useEffect(() => {
-        if (settings?.attendanceStartDate) {
-            const activeStart = new Date(settings.attendanceStartDate);
-            // Check if current range is different to avoid unnecessary loops
-            setDateRange(prev => {
-                const currentStartCtx = prev?.from?.toISOString().split('T')[0];
-                if (currentStartCtx !== settings.attendanceStartDate) {
-                    return {
-                        from: activeStart,
-                        to: endOfMonth(new Date())
-                    };
-                }
-                return prev;
-            });
-        }
-    }, [settings?.attendanceStartDate]);
 
     // Initial Load & Subscriptions
     useEffect(() => {
@@ -410,6 +504,19 @@ const LaporanKehadiran = () => {
                         </div>
 
                         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hide w-full md:w-auto">
+                            {/* Period Selector */}
+                            <Select onValueChange={handlePeriodChange}>
+                                <SelectTrigger className="w-[140px] md:w-[160px] bg-white/10 border-white/20 text-white h-10 rounded-xl focus:ring-0 focus:ring-offset-0">
+                                    <SelectValue placeholder="Pilih Periode" />
+                                </SelectTrigger>
+                                <SelectContent align="end">
+                                    {availablePeriods.map((p) => (
+                                        <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                                    ))}
+                                    <SelectItem value="custom">Custom Tanggal</SelectItem>
+                                </SelectContent>
+                            </Select>
+
                             {/* Date Range Picker - Mobile Optimized */}
                             <Popover>
                                 <PopoverTrigger asChild>
@@ -430,7 +537,7 @@ const LaporanKehadiran = () => {
                                         mode="range"
                                         defaultMonth={dateRange?.from}
                                         selected={dateRange}
-                                        onSelect={setDateRange}
+                                        onSelect={handleDateRangeChange}
                                         numberOfMonths={isMobile ? 1 : 2}
                                     />
                                 </PopoverContent>
@@ -591,60 +698,115 @@ const LaporanKehadiran = () => {
                         {/* Simplified Leave Content to keep file shorter, reusing logic */}
                         {/* ... Existing Leave Tab Logic ... */}
                         {/* Note: I'm preserving the exact Leave Tab UI structure in the final render */}
-                        <div className="grid grid-cols-3 gap-4 mb-4">
-                            <Card className="bg-amber-50 border-amber-200"><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-amber-700">{leaveRequests.filter(r => r.status === 'pending').length}</div><div className="text-sm text-amber-600">Menunggu</div></CardContent></Card>
-                            <Card className="bg-emerald-50 border-emerald-200"><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-emerald-700">{leaveRequests.filter(r => r.status === 'approved').length}</div><div className="text-sm text-emerald-600">Disetujui</div></CardContent></Card>
-                            <Card className="bg-red-50 border-red-200"><CardContent className="p-4 text-center"><div className="text-2xl font-bold text-red-700">{leaveRequests.filter(r => r.status === 'rejected').length}</div><div className="text-sm text-red-600">Ditolak</div></CardContent></Card>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <Card
+                                className={cn("cursor-pointer transition-all hover:shadow-md border-amber-200 bg-amber-50 group", filterStatus === 'pending' && "ring-2 ring-amber-500")}
+                                onClick={() => setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending')}
+                            >
+                                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                                    <div className="text-3xl font-bold text-amber-700 group-hover:scale-105 transition-transform">{leaveRequests.filter(r => r.status === 'pending').length}</div>
+                                    <div className="text-sm font-medium text-amber-600 mt-1 flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Menunggu Persetujuan</div>
+                                </CardContent>
+                            </Card>
+                            <Card
+                                className={cn("cursor-pointer transition-all hover:shadow-md border-emerald-200 bg-emerald-50 group", filterStatus === 'approved' && "ring-2 ring-emerald-500")}
+                                onClick={() => setFilterStatus(filterStatus === 'approved' ? 'all' : 'approved')}
+                            >
+                                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                                    <div className="text-3xl font-bold text-emerald-700 group-hover:scale-105 transition-transform">{leaveRequests.filter(r => r.status === 'approved').length}</div>
+                                    <div className="text-sm font-medium text-emerald-600 mt-1 flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> Telah Disetujui</div>
+                                </CardContent>
+                            </Card>
+                            <Card
+                                className={cn("cursor-pointer transition-all hover:shadow-md border-red-200 bg-red-50 group", filterStatus === 'rejected' && "ring-2 ring-red-500")}
+                                onClick={() => setFilterStatus(filterStatus === 'rejected' ? 'all' : 'rejected')}
+                            >
+                                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                                    <div className="text-3xl font-bold text-red-700 group-hover:scale-105 transition-transform">{leaveRequests.filter(r => r.status === 'rejected').length}</div>
+                                    <div className="text-sm font-medium text-red-600 mt-1 flex items-center gap-1"><XCircle className="h-3.5 w-3.5" /> Ditolak</div>
+                                </CardContent>
+                            </Card>
                         </div>
-                        <Card>
-                            <CardHeader><CardTitle>Daftar Pengajuan Cuti</CardTitle></CardHeader>
-                            <CardContent>
-                                {isMobile ? (
-                                    <div className="divide-y divide-slate-100">
-                                        {leaveRequests.filter(req => (filterStatus === 'all' || req.status === filterStatus)).map(req => (
-                                            <div key={req.id} className="p-4 flex flex-col gap-3">
-                                                <div className="flex justify-between items-start">
-                                                    <div>
-                                                        <h4 className="font-semibold text-slate-900">{req.profile?.full_name}</h4>
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            <Badge variant="outline" className="text-[10px] h-5">{getLeaveTypeLabel(req.leave_type)}</Badge>
-                                                            <span className="text-xs text-slate-500">
-                                                                {format(new Date(req.start_date), 'd MMM')} - {format(new Date(req.end_date), 'd MMM')}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex flex-col items-end gap-2">
-                                                        {getStatusBadge(req.status)}
-                                                    </div>
-                                                </div>
-                                                {req.status === 'pending' && (
-                                                    <div className="flex gap-2 pt-2 mt-1 border-t border-slate-50">
-                                                        <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleApprove(req)}>
-                                                            <CheckCircle2 className="h-4 w-4 mr-2" /> Terima
-                                                        </Button>
-                                                        <Button size="sm" variant="outline" className="flex-1 text-red-600 border-red-200 hover:bg-red-50" onClick={() => { setSelectedRequest(req); setDialogOpen(true); }}>
-                                                            <XCircle className="h-4 w-4 mr-2" /> Tolak
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
+
+                        <Card className="border shadow-sm overflow-hidden">
+                            <CardHeader className="bg-white border-b py-4 px-6 flex flex-row items-center justify-between">
+                                <CardTitle className="text-base font-semibold text-slate-800 flex gap-2 items-center"><CalendarDays className="h-5 w-5 text-slate-500" /> Daftar Pengajuan Cuti</CardTitle>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => setFilterStatus('all')} className={cn("text-xs h-8", filterStatus === 'all' && "bg-slate-100")}>Semua</Button>
+                                    <Button variant="default" size="sm" onClick={handleExportMultiSheetExcel} className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 gap-2"><FileSpreadsheet className="h-3.5 w-3.5" /> Export Excel</Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                {leaveRequests.length === 0 ? (
+                                    <EmptyState title="Tidak Ada Pengajuan" description="Belum ada data pengajuan cuti pada periode ini." icon={CalendarDays} />
                                 ) : (
-                                    <Table>
-                                        <TableHeader><TableRow><TableHead>Nama</TableHead><TableHead>Jenis</TableHead><TableHead>Tanggal</TableHead><TableHead>Status</TableHead><TableHead>Aksi</TableHead></TableRow></TableHeader>
-                                        <TableBody>
-                                            {leaveRequests.filter(req => (filterStatus === 'all' || req.status === filterStatus)).map(req => (
-                                                <TableRow key={req.id}>
-                                                    <TableCell>{req.profile?.full_name}</TableCell>
-                                                    <TableCell>{getLeaveTypeLabel(req.leave_type)}</TableCell>
-                                                    <TableCell>{format(new Date(req.start_date), 'd MMM')} - {format(new Date(req.end_date), 'd MMM')}</TableCell>
-                                                    <TableCell>{getStatusBadge(req.status)}</TableCell>
-                                                    <TableCell>{req.status === 'pending' && <div className="flex gap-2"><Button size="sm" variant="ghost" className="text-emerald-600" onClick={() => handleApprove(req)}><CheckCircle2 className="h-4 w-4" /></Button><Button size="sm" variant="ghost" className="text-red-600" onClick={() => { setSelectedRequest(req); setDialogOpen(true); }}><XCircle className="h-4 w-4" /></Button></div>}</TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                    <>
+                                        {isMobile ? (
+                                            <div className="divide-y divide-slate-100">
+                                                {leaveRequests.filter(req => (filterStatus === 'all' || req.status === filterStatus)).length === 0 ? (
+                                                    <div className="p-8 text-center text-slate-500 text-sm">Tidak ada data dengan status ini.</div>
+                                                ) :
+                                                    leaveRequests.filter(req => (filterStatus === 'all' || req.status === filterStatus)).map(req => (
+                                                        <div key={req.id} className="p-4 flex flex-col gap-3 bg-white">
+                                                            <div className="flex justify-between items-start">
+                                                                <div>
+                                                                    <h4 className="font-semibold text-slate-900">{req.profile?.full_name}</h4>
+                                                                    <div className="flex items-center gap-2 mt-1">
+                                                                        <Badge variant="outline" className="text-[10px] h-5 bg-slate-50">{getLeaveTypeLabel(req.leave_type)}</Badge>
+                                                                        <span className="text-xs text-slate-500">
+                                                                            {format(new Date(req.start_date), 'd MMM')} - {format(new Date(req.end_date), 'd MMM yyyy')}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex flex-col items-end gap-2">
+                                                                    {getStatusBadge(req.status)}
+                                                                </div>
+                                                            </div>
+                                                            {req.status === 'pending' && (
+                                                                <div className="flex gap-2 pt-2 mt-1 border-t border-slate-50">
+                                                                    <Button size="sm" className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleApprove(req)}>
+                                                                        <CheckCircle2 className="h-4 w-4 mr-2" /> Terima
+                                                                    </Button>
+                                                                    <Button size="sm" variant="outline" className="flex-1 text-red-600 border-red-200 hover:bg-red-50" onClick={() => { setSelectedRequest(req); setDialogOpen(true); }}>
+                                                                        <XCircle className="h-4 w-4 mr-2" /> Tolak
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        ) : (
+                                            <Table>
+                                                <TableHeader><TableRow className="bg-slate-50/50"><TableHead>Nama Karyawan</TableHead><TableHead>Jenis Cuti</TableHead><TableHead>Periode Tanggal</TableHead><TableHead>Durasi</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Aksi</TableHead></TableRow></TableHeader>
+                                                <TableBody>
+                                                    {leaveRequests.filter(req => (filterStatus === 'all' || req.status === filterStatus)).length === 0 ? (
+                                                        <TableRow><TableCell colSpan={6} className="h-24 text-center text-slate-500">Tidak ada pengajuan dengan status ini.</TableCell></TableRow>
+                                                    ) :
+                                                        leaveRequests.filter(req => (filterStatus === 'all' || req.status === filterStatus)).map(req => (
+                                                            <TableRow key={req.id}>
+                                                                <TableCell className="font-medium">{req.profile?.full_name}</TableCell>
+                                                                <TableCell><Badge variant="outline" className="font-normal">{getLeaveTypeLabel(req.leave_type)}</Badge></TableCell>
+                                                                <TableCell>{format(new Date(req.start_date), 'd MMM yyyy')} - {format(new Date(req.end_date), 'd MMM yyyy')}</TableCell>
+                                                                <TableCell className="text-slate-500">
+                                                                    {Math.ceil((new Date(req.end_date).getTime() - new Date(req.start_date).getTime()) / (1000 * 3600 * 24)) + 1} Hari
+                                                                </TableCell>
+                                                                <TableCell>{getStatusBadge(req.status)}</TableCell>
+                                                                <TableCell className="text-right">
+                                                                    {req.status === 'pending' ? (
+                                                                        <div className="flex justify-end gap-2">
+                                                                            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 h-8" onClick={() => handleApprove(req)}><CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Terima</Button>
+                                                                            <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 h-8" onClick={() => { setSelectedRequest(req); setDialogOpen(true); }}><XCircle className="h-3.5 w-3.5 mr-1" /> Tolak</Button>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="text-xs text-slate-400 italic">Selesai</span>
+                                                                    )}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                </TableBody>
+                                            </Table>
+                                        )}
+                                    </>
                                 )}
                             </CardContent>
                         </Card>
