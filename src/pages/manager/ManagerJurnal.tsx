@@ -171,9 +171,12 @@ const ManagerJurnal = () => {
     };
 
     const filteredJournals = journals.filter(journal => {
+        const fullName = journal.profiles?.full_name || '';
+        const content = journal.content || '';
+
         const matchesSearch =
-            journal.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            journal.content.toLowerCase().includes(searchTerm.toLowerCase());
+            fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            content.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesStatus = filterStatus === 'all' || filterStatus === 'summary' || journal.verification_status === filterStatus;
 

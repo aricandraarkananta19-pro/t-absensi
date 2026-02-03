@@ -155,10 +155,14 @@ const JurnalKerja = () => {
         }
     };
 
-    const filteredJournals = journals.filter(journal =>
-        journal.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        journal.content.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredJournals = journals.filter(journal => {
+        const fullName = journal.profiles?.full_name || '';
+        const content = journal.content || '';
+        return (
+            fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            content.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    });
 
     return (
         <EnterpriseLayout
