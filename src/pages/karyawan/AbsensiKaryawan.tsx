@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { JournalEntryModal } from "@/components/journal/JournalEntryModal";
 
 
 interface AttendanceRecord {
@@ -175,6 +176,8 @@ const AbsensiKaryawan = () => {
     }
   };
 
+  const [showJournalModal, setShowJournalModal] = useState(false);
+
   const initiateClockOut = () => {
     if (!todayAttendance) return;
 
@@ -196,8 +199,19 @@ const AbsensiKaryawan = () => {
     setShowClockOutConfirm(true);
   };
 
-  const confirmClockOut = async () => {
+  const handleProceedToJournal = () => {
     setShowClockOutConfirm(false);
+    // If worked less than 5 minutes, likely a mistake/test, skip journal
+    if (workDurationHours < 0.08) {
+      confirmClockOut();
+      return;
+    }
+    setShowJournalModal(true);
+  };
+
+  const confirmClockOut = async (journalContent?: string) => {
+    setShowClockOutConfirm(false); // Ensure this is closed
+    setShowJournalModal(false);   // Ensure this is closed
     if (!user || !todayAttendance) return;
     setIsLoading(true);
 
@@ -217,6 +231,23 @@ const AbsensiKaryawan = () => {
         throw new Error(data.error || "Gagal melakukan clock out");
       }
 
+      // Save Journal if content provided
+      if (journalContent) {
+        const { error: journalError } = await supabase.from('work_journals' as any).insert({
+          user_id: user.id,
+          attendance_id: todayAttendance.id,
+          date: new Date().toISOString().split('T')[0],
+          content: journalContent,
+          duration: Math.round(workDurationHours * 60), // minutes
+          category: 'General'
+        });
+
+        if (journalError) {
+          console.error("Failed to save journal:", journalError);
+          toast({ variant: "destructive", title: "Journal Error", description: "Absensi tersimpan, tapi jurnal gagal disimpan." });
+        }
+      }
+
       toast({
         title: "Clock Out Berhasil",
         description: data.message || `Anda tercatat pulang. Total kerja: ${data.work_hours} jam`,
@@ -233,6 +264,12 @@ const AbsensiKaryawan = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const formatDurationHrsMins = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.floor((hours - h) * 60);
+    return `${h}h ${m}m`;
   };
 
   const formatTime = (date: Date) => {
@@ -464,47 +501,56 @@ const AbsensiKaryawan = () => {
       </main>
 
       {/* Navigation Links (Non-sticky Footer for convenience) */}
-      {isMobile && (
-        <div className="w-full pb-8 pt-4 px-6 flex justify-center gap-8 lg:hidden">
-          {/* Dialog for Safe Clock Out */}
-          <AlertDialog open={showClockOutConfirm} onOpenChange={setShowClockOutConfirm}>
-            <AlertDialogContent className="bg-white text-slate-900 border-slate-200">
-              <AlertDialogHeader>
-                <AlertDialogTitle className={isEarlyLeave ? "text-amber-600" : "text-slate-900"}>
-                  {isEarlyLeave ? "Konfirmasi Pulang Awal" : "Konfirmasi Clock Out"}
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-slate-600">
-                  {isEarlyLeave ? (
-                    <div className="space-y-2">
-                      <p>Waktu saat ini <b>belum menunjukkan jam pulang ({settings.clockOutStart})</b>.</p>
-                      <p>Apakah Anda yakin ingin mengakhiri shift sekarang?</p>
-                      {workDurationHours < 1 && (
-                        <div className="p-3 bg-red-50 text-red-700 rounded-lg text-xs font-medium border border-red-100 mt-2">
-                          ⚠️ Peringatan: Anda baru bekerja kurang dari 1 jam. Pastikan tidak salah tekan.
-                        </div>
-                      )}
+      {/* Confirmation Dialogs (Rendered Globally) */}
+      <AlertDialog open={showClockOutConfirm} onOpenChange={setShowClockOutConfirm}>
+        <AlertDialogContent className="bg-white text-slate-900 border-slate-200">
+          <AlertDialogHeader>
+            <AlertDialogTitle className={isEarlyLeave ? "text-amber-600" : "text-slate-900"}>
+              {isEarlyLeave ? "Konfirmasi Pulang Awal" : "Konfirmasi Clock Out"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-600">
+              {isEarlyLeave ? (
+                <div className="space-y-2">
+                  <p>Waktu saat ini <b>belum menunjukkan jam pulang ({settings.clockOutStart})</b>.</p>
+                  <p>Apakah Anda yakin ingin mengakhiri shift sekarang?</p>
+                  {workDurationHours < 1 && (
+                    <div className="p-3 bg-red-50 text-red-700 rounded-lg text-xs font-medium border border-red-100 mt-2">
+                      ⚠️ Peringatan: Anda baru bekerja kurang dari 1 jam. Pastikan tidak salah tekan.
                     </div>
-                  ) : (
-                    <p>Apakah Anda yakin ingin mengakhiri sesi kerja hari ini?</p>
                   )}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="border-slate-200 hover:bg-slate-50 text-slate-700">Batal</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={confirmClockOut}
-                  className={isEarlyLeave ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}
-                >
-                  Ya, Clock Out
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          {/* Simple footer links instead of sticky nav if preferred, or rely on dashboard back button. 
-                 Given the user asked for "No sticky content", I'll leave the sticky nav OUT for this page.
-                 The 'Back to Dashboard' prominent button deals with navigation. */}
-        </div>
-      )}
+                </div>
+              ) : (
+                <p>Apakah Anda yakin ingin mengakhiri sesi kerja hari ini?</p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-slate-200 hover:bg-slate-50 text-slate-700">Batal</AlertDialogCancel>
+
+            {/* Logic: If Early Leave OR Very Short Duration (< 1 hour), force direct clock out (skip journal for safety) 
+                OR we could allow journal. But plan says "if duration > 1h". 
+                Let's stick to the handleProceedToJournal logic which checks duration internally ?? 
+                Actually handleProceedToCheck handles it. But here we have visual buttons.
+                Let's just use handleProceedToJournal for the 'Yes' action in almost all cases, 
+                except maybe extreme early leave? No, let's keep it simple.
+            */}
+            <AlertDialogAction
+              onClick={handleProceedToJournal}
+              className={isEarlyLeave ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}
+            >
+              Ya, Clock Out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <JournalEntryModal
+        open={showJournalModal}
+        onOpenChange={setShowJournalModal}
+        duration={formatDurationHrsMins(workDurationHours)}
+        onSave={(content) => confirmClockOut(content)}
+        onSkip={() => confirmClockOut()}
+      />
 
     </div>
   );
