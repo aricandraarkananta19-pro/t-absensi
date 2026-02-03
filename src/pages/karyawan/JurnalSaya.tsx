@@ -147,7 +147,7 @@ export default function JurnalSaya() {
                             {!isMobile && "Tulis Jurnal"}
                         </Button>
                         {!isMobile && (
-                            <Button onClick={() => navigate('/karyawan/dashboard')} variant="outline" size="sm">
+                            <Button onClick={() => navigate('/dashboard')} variant="outline" size="sm">
                                 Kembali
                             </Button>
                         )}
