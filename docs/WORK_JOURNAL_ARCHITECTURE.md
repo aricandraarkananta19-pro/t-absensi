@@ -107,12 +107,29 @@ The journal entry moves through the following strict states:
 
 ---
 
-## 6. Current Status
+## 6. Automated Features
+
+### Auto Clock Out
+-   **Purpose**: Closes attendance sessions for employees who forget to clock out.
+-   **Mechanism**: Database Cron Job (`pg_cron`).
+-   **Schedule**: Runs daily at **23:30 (UTC/Server Time)**.
+-   **Logic**:
+    -   Targets `attendance` rows where `clock_out` is `NULL` AND `date` is Today.
+    -   Sets `clock_out` to **17:30** (5:30 PM) of that day.
+    -   Appends note: `[System]: Auto Clock-Out (Lupa Absensi)`.
+-   **Function**: `public.auto_clock_out_forgotten_entries()`.
+
+## 7. Performance & Optimization
+-   **Indexes**: Added on `user_id`, `date`, `department`, `verification_status`.
+-   **RLS**: Optimized to avoid heavy joins via snapshot columns.
+
+## 8. Current Status
 *   [x] **Database Schema**: Implemented.
 *   [x] **RLS Policies**: Secure and role-aware.
 *   [x] **Employee UI**: Create, Draft, Submit.
 *   [x] **Manager UI**: Real-time Feed, Review (Approve/Reject), Feedback.
 *   [x] **Admin UI**: Global Activity Feed.
 *   [x] **Navigation**: Integrated into system sidebars.
+*   [x] **Auto Clock Out**: SQL Function & Cron Job prepared.
 
 The module is currently **LIVE** in the development environment.

@@ -78,6 +78,12 @@ DROP POLICY IF EXISTS "Update Journals" ON public.work_journals;
 DROP POLICY IF EXISTS "Delete Journals" ON public.work_journals;
 DROP POLICY IF EXISTS "Users can view own journals" ON public.work_journals;
 
+-- Clear "Enhanced" policies to allow re-running this script
+DROP POLICY IF EXISTS "View Journals Enhanced" ON public.work_journals;
+DROP POLICY IF EXISTS "Update Journals Enhanced" ON public.work_journals;
+DROP POLICY IF EXISTS "Insert Journals Enhanced" ON public.work_journals;
+DROP POLICY IF EXISTS "Delete Journals Enhanced" ON public.work_journals;
+
 -- VIEW POLICY
 -- 1. Author can always see their own
 -- 2. Admin can see ALL
