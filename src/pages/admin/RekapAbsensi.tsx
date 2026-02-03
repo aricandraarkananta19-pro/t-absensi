@@ -434,25 +434,50 @@ const RekapAbsensi = () => {
     try {
       const user = (await supabase.auth.getUser()).data.user;
 
-      const { error } = await supabase
+      // Use count: 'exact' to verify deletion
+      const { error, count } = await supabase
         .from('attendance')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('id', recordToDelete.id);
 
       if (error) throw error;
 
+      // If count is 0, it means RLS blocked it or record didn't exist
+      if (count === 0) {
+        throw new Error("Gagal menghapus. Anda mungkin tidak memiliki izin atau data sudah terhapus.");
+      }
+
       // Audit Log
-      await supabase.from("audit_logs").insert({
-        user_id: user?.id,
-        action: "ADMIN_DELETE_ATTENDANCE",
-        target_table: "attendance",
-        target_id: recordToDelete.id,
-        description: `Admin deleted attendance record for ${recordToDelete.name} on ${recordToDelete.clock_in}`
-      });
+      if (user) {
+        await supabase.from("audit_logs").insert({
+          user_id: user.id,
+          action: "ADMIN_DELETE_ATTENDANCE",
+          target_table: "attendance",
+          target_id: recordToDelete.id,
+          description: `Admin deleted attendance record for ${recordToDelete.name} on ${recordToDelete.clock_in}`
+        });
+      }
 
       toast({ title: "Berhasil Dihapus", description: "Data absensi telah di-reset (dihapus)." });
+
+      // Optimistic Update: Remove from local state immediately
+      setDailyData(prev => prev.map(item => {
+        if (item.id === recordToDelete.id) {
+          // Return 'reset' state
+          return {
+            ...item,
+            id: `virt-${item.user_id}`, // Convert back to virtual ID
+            clock_in: null,
+            clock_out: null,
+            status: 'absent', // or 'pending' depending on date, default to absent for safety
+            notes: null
+          };
+        }
+        return item;
+      }));
+
       setIsDeleteDialogOpen(false);
-      fetchAttendance();
+      fetchAttendance(); // Re-fetch to be sure
     } catch (e: any) {
       toast({ variant: "destructive", title: "Gagal Menghapus", description: e.message });
     } finally {
