@@ -342,243 +342,284 @@ const KaryawanDashboardNew = () => {
     // ==========================================
     // DESKTOP VIEW - Clean Light Theme (Unchanged logic, just ensure existing consistency)
     // ==========================================
+    // ==========================================
+    // DESKTOP VIEW - Enterprise & Work-Centric
+    // ==========================================
+
+    // Journal Logic
+    const [journalContent, setJournalContent] = useState("");
+    const [isSavingJournal, setIsSavingJournal] = useState(false);
+    const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+    const handleSaveJournal = async (isDraft: boolean) => {
+        if (!journalContent.trim()) {
+            toast({ variant: "destructive", title: "Gagal", description: "Tulis aktivitas Anda terlebih dahulu." });
+            return;
+        }
+
+        setIsSavingJournal(true);
+        try {
+            const status = isDraft ? 'draft' : 'submitted';
+
+            const { error } = await supabase
+                .from('work_journals' as any)
+                .insert({
+                    user_id: user?.id,
+                    content: journalContent,
+                    date: new Date().toISOString().split('T')[0],
+                    duration: 0,
+                    status: 'completed',
+                    verification_status: status
+                });
+
+            if (error) throw error;
+
+            toast({
+                title: isDraft ? "Draft Disimpan" : "Laporan Terkirim",
+                description: isDraft
+                    ? "Tersimpan di draft. Belum terlihat oleh manajer."
+                    : "Laporan kerja Anda telah dikirim ke manajer.",
+            });
+
+            setJournalContent("");
+            setLastSaved(new Date());
+
+            // Trigger refresh logic if needed (e.g. invalidate queries)
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Error", description: error.message });
+        } finally {
+            setIsSavingJournal(false);
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50 font-['Inter',system-ui,sans-serif]">
-            {/* Header */}
-            <header className="bg-white border-b border-slate-200 shadow-sm">
-                <div className="max-w-6xl mx-auto px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div
-                                className="p-2 rounded-xl shadow-md"
-                                style={{
-                                    background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
-                                }}
-                            >
-                                <img src={logoImage} alt="Logo" className="h-8 w-auto" />
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <h1 className="text-lg font-bold text-slate-800">Portal Karyawan</h1>
-                                    <Badge
-                                        className="border-0 text-xs font-medium"
-                                        style={{ backgroundColor: `${BRAND_COLORS.blue}15`, color: BRAND_COLORS.blue }}
-                                    >
-                                        Karyawan
-                                    </Badge>
-                                </div>
-                                <p className="text-sm text-slate-500">Talenta Traincom Indonesia</p>
-                            </div>
+        <div className="min-h-screen bg-slate-50 font-['Inter',system-ui,sans-serif] pb-12">
+            {/* Enterprise Header */}
+            <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs tracking-wider shadow-sm">
+                            TTI
                         </div>
-                        <div className="flex items-center gap-4">
-                            <div className="text-right hidden sm:block">
-                                <p className="text-sm font-medium text-slate-800">
-                                    {user?.user_metadata?.full_name || "Karyawan"}
-                                </p>
-                                <p className="text-xs text-slate-500">{user?.email}</p>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleLogout}
-                                className="gap-2 border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
-                            >
-                                <LogOut className="h-4 w-4" />
-                                <span className="hidden sm:inline">Logout</span>
-                            </Button>
+                        <div className="h-6 w-px bg-slate-200 mx-1" />
+                        <h1 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Workspace</h1>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        <div className="text-right hidden sm:block">
+                            <p className="text-sm font-bold text-slate-800 leading-none">
+                                {user?.user_metadata?.full_name || "Karyawan"}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">{user?.email}</p>
                         </div>
+                        <div className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center">
+                            <User className="w-4 h-4 text-slate-500" />
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleLogout}
+                            className="text-slate-400 hover:text-red-600 hover:bg-red-50"
+                        >
+                            <LogOut className="w-4 h-4" />
+                        </Button>
                     </div>
                 </div>
             </header>
 
-            {/* Main Content */}
-            <main className="max-w-6xl mx-auto px-6 py-8">
-                {/* Welcome Section */}
-                <div className="mb-8">
-                    <h2 className="text-2xl font-bold text-slate-800">
-                        {greeting}, {user?.user_metadata?.full_name?.split(" ")[0] || "Karyawan"}! 👋
-                    </h2>
-                    <p className="text-slate-500">{formatDate(currentTime)}</p>
-                </div>
-
-                {/* Quick Action CardDesktop */}
-                <Card className={cn(
-                    "mb-8 border-0 shadow-md overflow-hidden bg-white"
-                )}>
-                    <div
-                        className="h-1"
-                        style={{
-                            background: attendanceStatus.status === "done"
-                                ? `linear-gradient(90deg, ${BRAND_COLORS.green} 0%, #8BC34A 100%)`
-                                : attendanceStatus.status === "pending"
-                                    ? "linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)"
-                                    : `linear-gradient(90deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
-                        }}
-                    />
-                    <CardContent className="py-6">
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <div className="flex items-center gap-4">
-                                <div
-                                    className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm"
-                                    style={{
-                                        backgroundColor: attendanceStatus.status === "done"
-                                            ? `${BRAND_COLORS.green}15`
-                                            : attendanceStatus.status === "pending"
-                                                ? "#F59E0B15"
-                                                : `${BRAND_COLORS.blue}15`
-                                    }}
-                                >
-                                    <StatusIcon
-                                        className="h-8 w-8"
-                                        style={{
-                                            color: attendanceStatus.status === "done"
-                                                ? BRAND_COLORS.green
-                                                : attendanceStatus.status === "pending"
-                                                    ? "#F59E0B"
-                                                    : BRAND_COLORS.blue
-                                        }}
-                                    />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-semibold text-slate-800">Absensi Hari Ini</h3>
-                                    <p className="text-slate-500">{attendanceStatus.text}</p>
-                                    <p className="text-xs text-slate-400 mt-1 bg-slate-50 inline-block px-2 py-0.5 rounded">
-                                        Shift: {settings.clockInStart} - {settings.clockOutEnd}
-                                    </p>
-                                </div>
-                            </div>
-                            <Button
-                                size="lg"
-                                className="gap-2 shadow-md transition-all hover:shadow-lg text-white"
-                                style={{
-                                    background: attendanceStatus.status === "done"
-                                        ? "#64748B"
-                                        : attendanceStatus.status === "pending"
-                                            ? "linear-gradient(135deg, #EF4444 0%, #F87171 100%)"
-                                            : `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
-                                }}
-                                onClick={() => navigate("/karyawan/absensi")}
-                            >
-                                <Clock className="h-5 w-5" />
-                                {attendanceStatus.buttonText}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Stats Cards Desktop */}
-                <div className="grid gap-4 sm:grid-cols-3 mb-8">
-                    <Card className="border-slate-200 shadow-sm bg-white hover:shadow-md transition-shadow">
-                        <CardContent className="py-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-slate-500 mb-1">Total Hadir</p>
-                                    <p className="text-3xl font-bold" style={{ color: BRAND_COLORS.green }}>{monthStats.present}</p>
-                                    <p className="text-xs text-slate-400 mt-1">Termasuk Terlambat</p>
-                                </div>
-                                <div
-                                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                                    style={{ backgroundColor: `${BRAND_COLORS.green}15` }}
-                                >
-                                    <CheckCircle2 className="h-6 w-6" style={{ color: BRAND_COLORS.green }} />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-slate-200 shadow-sm bg-white hover:shadow-md transition-shadow">
-                        <CardContent className="py-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-slate-500 mb-1">Terlambat</p>
-                                    <p className="text-3xl font-bold text-amber-600">{monthStats.late}</p>
-                                    <p className="text-xs text-slate-400 mt-1">hari bulan ini</p>
-                                </div>
-                                <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
-                                    <Timer className="h-6 w-6 text-amber-600" />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-slate-200 shadow-sm bg-white hover:shadow-md transition-shadow">
-                        <CardContent className="py-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-slate-500 mb-1">Sisa Cuti</p>
-                                    <p className="text-3xl font-bold" style={{ color: BRAND_COLORS.blue }}>{remainingLeave}</p>
-                                    <p className="text-xs text-slate-400 mt-1">dari {settings.maxLeaveDays} hari</p>
-                                </div>
-                                <div
-                                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                                    style={{ backgroundColor: `${BRAND_COLORS.blue}15` }}
-                                >
-                                    <Calendar className="h-6 w-6" style={{ color: BRAND_COLORS.blue }} />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Work Insights Widget */}
-                <div className="mb-8">
-                    <WorkInsightWidget userId={user?.id} />
-                </div>
-
-                {/* Menu Grid Desktop */}
-                <h3 className="text-lg font-semibold text-slate-800 mb-4">Menu</h3>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {[
-                        { title: "Absensi", desc: "Clock-in / Clock-out", icon: Clock, href: "/karyawan/absensi", color: BRAND_COLORS.blue },
-                        { title: "Riwayat", desc: "Rekap kehadiran", icon: History, href: "/karyawan/riwayat", color: BRAND_COLORS.green },
-                        { title: "Jurnal", desc: "Laporan aktivitas", icon: BookOpen, href: "/karyawan/jurnal", color: "#F59E0B" },
-                        { title: "Cuti", desc: "Ajukan izin/cuti", icon: Calendar, href: "/karyawan/cuti", color: BRAND_COLORS.lightBlue },
-                        { title: "Profil", desc: "Data pribadi", icon: User, href: "/karyawan/profil", color: "#8B5CF6" },
-                    ].map((item) => (
-                        <Link key={item.title} to={item.href}>
-                            <Card className="h-full border-slate-200 shadow-sm bg-white hover:shadow-md hover:border-slate-300 transition-all group">
-                                <CardHeader className="pb-3">
-                                    <div
-                                        className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-all group-hover:shadow-md"
-                                        style={{ backgroundColor: `${item.color}15` }}
-                                    >
-                                        <item.icon className="h-6 w-6" style={{ color: item.color }} />
+            <main className="max-w-7xl mx-auto px-6 py-8">
+                <div className="grid grid-cols-12 gap-8">
+                    {/* LEFT COLUMN: IDENTITIY & QUICK ACTIONS (3 Cols) */}
+                    <div className="col-span-12 lg:col-span-3 space-y-6">
+                        {/* Profile Summary */}
+                        <Card className="border-0 shadow-sm bg-white overflow-hidden">
+                            <div className="h-20 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
+                            <div className="px-5 pb-5 -mt-10">
+                                <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-md mb-3">
+                                    <div className="w-full h-full rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
+                                        <User className="w-8 h-8" />
                                     </div>
-                                    <CardTitle className="flex items-center justify-between text-base text-slate-800">
-                                        {item.title}
-                                        <ChevronRight className="h-5 w-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
-                                    </CardTitle>
-                                    <CardDescription className="text-sm">{item.desc}</CardDescription>
-                                </CardHeader>
-                            </Card>
-                        </Link>
-                    ))}
-                    {/* Change Password */}
-                    <Link to="/edit-password">
-                        <Card className="h-full border-slate-200 shadow-sm bg-white hover:shadow-md hover:border-slate-300 transition-all group">
-                            <CardHeader className="pb-3">
-                                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 bg-slate-100 group-hover:bg-slate-200 transition-colors">
-                                    <Key className="h-6 w-6 text-slate-600" />
                                 </div>
-                                <CardTitle className="flex items-center justify-between text-base text-slate-800">
-                                    Ubah Password
-                                    <ChevronRight className="h-5 w-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
-                                </CardTitle>
-                                <CardDescription className="text-sm">Ganti password akun</CardDescription>
-                            </CardHeader>
+                                <h2 className="text-lg font-bold text-slate-900 leading-tight">
+                                    {greeting},<br />
+                                    {user?.user_metadata?.full_name?.split(" ")[0]}
+                                </h2>
+                                <div className="flex items-center gap-2 mt-2 text-xs text-slate-500 font-medium">
+                                    <Calendar className="w-3.5 h-3.5" />
+                                    {formatDate(currentTime)}
+                                </div>
+                            </div>
                         </Card>
-                    </Link>
+
+                        {/* Attendance Status (Compact) */}
+                        <Card className="border-slate-200 shadow-sm">
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                                    <Clock className="w-4 h-4" /> Status Kehadiran
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            "w-3 h-3 rounded-full animate-pulse",
+                                            attendanceStatus.status === 'pending' ? "bg-green-500" :
+                                                attendanceStatus.status === 'done' ? "bg-slate-400" : "bg-amber-500"
+                                        )} />
+                                        <span className="text-sm font-medium text-slate-700">
+                                            {attendanceStatus.status === 'pending' ? "Online - Bekerja" :
+                                                attendanceStatus.status === 'done' ? "Offline" : "Belum Hadir"}
+                                        </span>
+                                    </div>
+                                    <Button
+                                        className={cn(
+                                            "w-full font-medium shadow-sm transition-all",
+                                            attendanceStatus.color === 'blue' && "bg-blue-600 hover:bg-blue-700",
+                                            attendanceStatus.color === 'green' && "bg-emerald-600 hover:bg-emerald-700",
+                                            attendanceStatus.color === 'red' && "bg-rose-600 hover:bg-rose-700"
+                                        )}
+                                        onClick={() => navigate("/karyawan/absensi")}
+                                    >
+                                        {attendanceStatus.buttonText}
+                                    </Button>
+                                    <div className="text-center">
+                                        <p className="text-xs text-slate-400">
+                                            Shift: {settings.clockInStart} - {settings.clockOutEnd}
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Navigation Shortcuts */}
+                        <div className="space-y-2">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Menu</p>
+                            {[
+                                { label: "Riwayat Absensi", icon: History, href: "/karyawan/riwayat" },
+                                { label: "Jurnal & Laporan", icon: FileText, href: "/karyawan/jurnal" },
+                                { label: "Pengajuan Cuti", icon: Calendar, href: "/karyawan/cuti" },
+                                { label: "Ubah Password", icon: Key, href: "/edit-password" },
+                            ].map((item) => (
+                                <Link key={item.href} to={item.href}>
+                                    <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white hover:shadow-sm transition-all text-slate-600 hover:text-blue-600 group text-left">
+                                        <item.icon className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
+                                        <span className="text-sm font-medium">{item.label}</span>
+                                    </button>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: WORKSPACE (9 Cols) */}
+                    <div className="col-span-12 lg:col-span-9 space-y-8">
+                        {/* Stats Overview */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {[
+                                { label: "Hadir Bulan Ini", val: monthStats.present, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
+                                { label: "Terlambat", val: monthStats.late, icon: Timer, color: "text-amber-600", bg: "bg-amber-50" },
+                                { label: "Cuti Tersedia", val: remainingLeave, icon: FileText, color: "text-blue-600", bg: "bg-blue-50" },
+                            ].map((stat, idx) => (
+                                <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{stat.label}</p>
+                                        <p className={`text-2xl font-bold mt-1 ${stat.color}`}>{stat.val}</p>
+                                    </div>
+                                    <div className={`p-3 rounded-lg ${stat.bg}`}>
+                                        <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* MAIN WORK JOURNAL INPUT */}
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-blue-600" />
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-blue-50 rounded-lg">
+                                    <BookOpen className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-800">Apa yang Anda kerjakan hari ini?</h3>
+                                    <p className="text-sm text-slate-500">Catat aktivitas kerja Anda sekarang. Jangan menunggu pulang.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <textarea
+                                    className="w-full min-h-[120px] p-4 text-base bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none outline-none placeholder:text-slate-400"
+                                    placeholder="Contoh: Menyelesaikan desain UI untuk halaman dashboard, Meeting dengan tim marketing..."
+                                    value={journalContent}
+                                    onChange={(e) => setJournalContent(e.target.value)}
+                                />
+
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                                        <InfoIcon className="w-3.5 h-3.5" />
+                                        <span>Terhubung langsung ke Manager & Admin</span>
+                                        {lastSaved && (
+                                            <span className="text-emerald-600 font-medium ml-2 animate-pulse">
+                                                • Disimpan {lastSaved.toLocaleTimeString()}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => handleSaveJournal(true)}
+                                            disabled={!journalContent || isSavingJournal}
+                                            className="text-slate-600 min-w-[100px]"
+                                        >
+                                            Simpan Draft
+                                        </Button>
+                                        <Button
+                                            onClick={() => handleSaveJournal(false)}
+                                            disabled={!journalContent || isSavingJournal}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white min-w-[120px] shadow-sm"
+                                        >
+                                            {isSavingJournal ? "Mengirim..." : "Kirim Laporan"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Recent Activity Feed */}
+                        <div>
+                            <div className="flex items-center justify-between mb-4 px-1">
+                                <h3 className="text-base font-bold text-slate-800">Aktivitas Terkini</h3>
+                                <Link to="/karyawan/jurnal" className="text-sm font-medium text-blue-600 hover:underline">
+                                    Lihat Semua
+                                </Link>
+                            </div>
+                            <WorkInsightWidget userId={user?.id} />
+                        </div>
+
+                    </div>
                 </div>
             </main>
-
-            {/* Footer */}
-            <footer className="border-t border-slate-200 bg-white mt-12">
-                <div className="max-w-6xl mx-auto px-6 py-4">
-                    <p className="text-center text-sm text-slate-500">
-                        © 2025 Talenta Traincom Indonesia. All rights reserved.
-                    </p>
-                </div>
-            </footer>
         </div>
     );
 };
+
+function InfoIcon(props: any) {
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4" />
+            <path d="M12 8h.01" />
+        </svg>
+    )
+}
 
 export default KaryawanDashboardNew;
