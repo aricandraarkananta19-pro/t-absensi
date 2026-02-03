@@ -115,11 +115,11 @@ const ManagerJurnal = () => {
         setIsReviewOpen(true);
     };
 
-    const handleSubmitReview = async (status: 'approved' | 'rejected' | 'reviewed') => {
+    const handleSubmitReview = async (status: 'approved' | 'need_revision') => {
         if (!selectedJournal) return;
 
-        // Enforce mandatory notes for Revision (Rejected)
-        if (status === 'rejected' && !reviewNote.trim()) {
+        // Enforce mandatory notes for Revision
+        if (status === 'need_revision' && !reviewNote.trim()) {
             toast({
                 variant: "destructive",
                 title: "Gagal Menyimpan",
@@ -173,13 +173,14 @@ const ManagerJurnal = () => {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'approved':
-                return <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">Disetujui</Badge>;
-            case 'rejected':
-                return <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">Ditolak</Badge>;
-            case 'reviewed':
-                return <Badge className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100">Direview</Badge>;
+                return <Badge className="bg-green-50 text-green-700 border-green-200">Disetujui</Badge>;
+            case 'need_revision':
+            case 'rejected': // legacy
+                return <Badge className="bg-orange-50 text-orange-700 border-orange-200">Perlu Revisi</Badge>;
+            case 'submitted':
+                return <Badge className="bg-blue-50 text-blue-700 border-blue-200">Menunggu</Badge>;
             default:
-                return <Badge variant="outline" className="text-slate-500 border-slate-200">Menunggu</Badge>;
+                return <Badge variant="outline" className="text-slate-400">{status}</Badge>;
         }
     };
 
@@ -625,10 +626,10 @@ const ManagerJurnal = () => {
                         </Button>
                         <div className="flex gap-2 w-full sm:w-auto">
                             <Button
-                                onClick={() => handleSubmitReview('rejected')}
+                                onClick={() => handleSubmitReview('need_revision')}
                                 disabled={isSubmitting}
-                                variant="destructive"
-                                className="flex-1 sm:flex-none"
+                                variant="outline"
+                                className="flex-1 sm:flex-none border-orange-300 text-orange-600 hover:bg-orange-50"
                             >
                                 Minta Revisi
                             </Button>

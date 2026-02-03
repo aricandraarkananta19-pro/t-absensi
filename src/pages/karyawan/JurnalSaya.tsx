@@ -175,16 +175,15 @@ export default function JurnalSaya() {
         switch (status) {
             case 'approved':
                 return <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 uppercase text-[10px]">Disetujui</Badge>;
-            case 'reviewed':
-                return <Badge className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 uppercase text-[10px]">Direview</Badge>;
-            case 'replied':
-                return <Badge className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 uppercase text-[10px]">Dibalas Manager</Badge>;
-            case 'rejected':
-                return <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 uppercase text-[10px]">Perlu Revisi</Badge>;
+            case 'need_revision':
+            case 'rejected': // legacy support
+                return <Badge className="bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 uppercase text-[10px]">Perlu Revisi</Badge>;
             case 'draft':
                 return <Badge variant="outline" className="text-slate-500 border-slate-300 uppercase text-[10px]">Draft</Badge>;
-            default: // submitted
-                return <Badge className="bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100 uppercase text-[10px]">Terkirim</Badge>;
+            case 'submitted':
+                return <Badge className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 uppercase text-[10px]">Menunggu</Badge>;
+            default:
+                return <Badge variant="outline" className="text-slate-400 border-slate-200 uppercase text-[10px]">{status}</Badge>;
         }
     };
 
@@ -250,25 +249,29 @@ export default function JurnalSaya() {
                     </Card>
                 </div>
 
-                {/* Filters */}
-                <div className="flex items-center justify-between gap-4 overflow-x-auto pb-2 md:pb-0">
-                    <div className="flex gap-2">
-                        {['all', 'submitted', 'approved', 'rejected', 'draft'].map((status) => (
-                            <button
-                                key={status}
-                                onClick={() => setFilterStatus(status)}
-                                className={`px-4 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap ${filterStatus === status
-                                    ? "bg-slate-800 text-white shadow-md"
-                                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-                                    }`}
-                            >
-                                {status === 'all' ? 'Semua' :
-                                    status === 'submitted' ? 'Menunggu' :
-                                        status === 'approved' ? 'Disetujui' :
-                                            status === 'rejected' ? 'Perlu Revisi' : 'Draft'}
-                            </button>
-                        ))}
-                    </div>
+                {/* Filter Tabs */}
+                <div className="flex items-center gap-1 overflow-x-auto pb-2 md:pb-0 border-b border-slate-200">
+                    {[
+                        { key: 'all', label: 'Semua' },
+                        { key: 'submitted', label: 'Menunggu Approval' },
+                        { key: 'need_revision', label: 'Perlu Revisi' },
+                        { key: 'approved', label: 'Disetujui' },
+                        { key: 'draft', label: 'Draft' }
+                    ].map((tab) => (
+                        <button
+                            key={tab.key}
+                            onClick={() => setFilterStatus(tab.key)}
+                            className={`px-4 py-2.5 text-xs font-medium transition-all whitespace-nowrap relative ${filterStatus === tab.key
+                                ? "text-blue-600"
+                                : "text-slate-500 hover:text-slate-700"
+                                }`}
+                        >
+                            {tab.label}
+                            {filterStatus === tab.key && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
+                            )}
+                        </button>
+                    ))}
                 </div>
 
                 {/* Content List */}
@@ -323,8 +326,8 @@ export default function JurnalSaya() {
                                                         )}
                                                     </div>
 
-                                                    {/* Actions: ONLY visible for Draft or Rejected (Needs Revision) */}
-                                                    {(journal.verification_status === 'draft' || journal.verification_status === 'rejected') && (
+                                                    {/* Actions: Edit for Draft/Need_Revision, Delete for Draft/Submitted */}
+                                                    {(journal.verification_status === 'draft' || journal.verification_status === 'need_revision' || journal.verification_status === 'rejected' || journal.verification_status === 'submitted') && (
                                                         <div className="flex gap-1">
                                                             <Button
                                                                 variant="ghost"
@@ -355,8 +358,8 @@ export default function JurnalSaya() {
                                                 {/* Manager Feedback Section (Highlighted for Revisions) */}
                                                 {journal.manager_notes && (
                                                     <div className={`mt-4 p-3 rounded-lg text-sm border ${journal.verification_status === 'rejected'
-                                                            ? "bg-red-50 border-red-100"
-                                                            : "bg-blue-50/50 border-blue-100"
+                                                        ? "bg-red-50 border-red-100"
+                                                        : "bg-blue-50/50 border-blue-100"
                                                         }`}>
                                                         <p className={`text-xs font-semibold mb-1 ${journal.verification_status === 'rejected' ? "text-red-700" : "text-blue-700"
                                                             }`}>

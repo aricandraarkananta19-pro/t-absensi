@@ -144,14 +144,15 @@ const JurnalKerja = () => {
         switch (currentStatus) {
             case 'approved':
                 return <Badge className="bg-green-50 text-green-700 border-green-200">Disetujui</Badge>;
-            case 'reviewed':
-                return <Badge className="bg-blue-50 text-blue-700 border-blue-200">Direview</Badge>;
-            case 'rejected':
-                return <Badge className="bg-red-50 text-red-700 border-red-200">Ditolak</Badge>;
+            case 'need_revision':
+            case 'rejected': // legacy support
+                return <Badge className="bg-orange-50 text-orange-700 border-orange-200">Perlu Revisi</Badge>;
+            case 'submitted':
+                return <Badge className="bg-blue-50 text-blue-700 border-blue-200">Menunggu</Badge>;
             case 'draft':
-                return <Badge variant="outline" className="text-slate-500 border-slate-300">Draft</Badge>;
+                return <Badge variant="outline" className="text-slate-400 border-slate-300">Draft</Badge>;
             default:
-                return <Badge variant="outline" className="text-slate-500 border-slate-200">Menunggu</Badge>;
+                return <Badge variant="outline" className="text-slate-400">{currentStatus}</Badge>;
         }
     };
 

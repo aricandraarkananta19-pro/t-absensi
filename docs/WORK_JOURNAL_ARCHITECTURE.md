@@ -1,135 +1,214 @@
-# Work System (Work Journal) Module - Architecture & Feasibility Analysis
-
-## 1. Executive Summary
-The **Work Journal (Laporan Kerja)** module has been successfully integrated into the **T-Absensi** ecosystem as a core feature. It transforms the system from a tracking tool into a performance management platform.
-
-The system now seamlessly links **Attendance** (presence) with **Journals** (productivity), offering real-time visibility for Managers and Admins.
+# Integrated Work Journal System - Architecture Document
+**Version 2.0** | Last Updated: 2026-02-03
 
 ---
 
-## 2. Architecture & Implementation
-**Approach: Integrated Modular Monolith**
+## 1. Overview
 
-The module is built directly within the existing Supabase + React infrastructure, ensuring tight integration and security.
+The Integrated Work Journal module enables employees to document daily work activities with a built-in validation, correction, and approval workflow. Journals flow automatically to Managers for review and Admins for audit & export.
 
-### Key Components
--   **Database**: Supabase PostgreSQL (`work_journals` table).
--   **Role-Based Access Control (RLS)**:
-    -   **Employees**: View/Update OWN journals only.
-    -   **Managers**: View/Update ALL team journals (except Drafts). Review, Approve, Reject flow.
-    -   **Admins**: Global visibility for audits and reporting.
--   **Real-time**: Supabase Realtime subscriptions ensure dashboards update instantly upon submission.
+### Key Design Goals
+- **Single Source of Truth**: All journals live in `public.work_journals` with denormalized relationship data for fast querying.
+- **Real-Time Visibility**: Managers and Admins see submitted journals instantly via Supabase Realtime channels.
+- **Auditable**: Every status change is logged in `journal_activity_log`.
+- **Role-Based Access**: RLS policies enforce strict visibility and action permissions.
 
 ---
 
-## 3. Database Schema (Final Implementation)
+## 2. Roles & Permissions
 
-The schema relies on `work_journals` joined with `auth.users` through `public.profiles`.
-
-### `work_journals`
-### Database Schema
-**Table**: `work_journals`
-
-| Column | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | uuid | gen_random_uuid() | Primary Key |
-| `user_id` | uuid | - | FK to `auth.users`, identifying the author |
-| `department` | text | - | **Snapshot** of author's department at time of submission |
-| `manager_id` | uuid | - | FK to `profiles`, auto-assigned based on Dept Manager |
-| `date` | date | now() | Date of the journal entry |
-| `content` | text | - | The actual journal text/report |
-| `duration` | int | 0 | Minutes spent (0 for manual entries) |
-| `verification_status` | text | 'submitted' | `draft`, `submitted`, `reviewed`, `approved`, `rejected` |
-| `submitted_at` | timestamptz | - | Timestamp when status changed to 'submitted' |
-| `manager_notes` | text | - | Feedback provided by managers during review |
-| `created_at` | timestamptz | now() | Timestamp of creation |
-
-### Automation & Security
-1.  **Auto-Assignment Trigger**:
-    -   On `INSERT/UPDATE`: Fetches Author's `department` from Profiles.
-    -   Sets `manager_id` by finding a user with role 'manager' in that department.
-    -   Sets `submitted_at = NOW()` when status becomes `submitted`.
-2.  **Row Level Security (RLS)**:
-    -   **Admin**: View `true` (All).
-    -   **Manager**: View if `manager_id = auth.uid()` OR `department = <Manager's Dept>`.
-    -   **Employee**: View if `user_id = auth.uid()`.
+| Role | View | Create | Edit | Delete | Approve/Revision |
+|:-----|:-----|:-------|:-----|:-------|:-----------------|
+| **EMPLOYEE** | Own journals (all statuses) | ✅ | Draft, Need_Revision | Draft, Submitted | ❌ |
+| **MANAGER** | Team journals (non-draft) | ❌ | ❌ | ❌ | ✅ |
+| **ADMIN** | All journals (non-draft) | ❌ | ❌ | ✅ (cleanup) | ❌ |
 
 ---
 
-## 4. Workflow & Rules
+## 3. Status Flow (State Machine)
 
-### Status Lifecycle
-The journal entry moves through the following strict states:
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│   ┌─────────┐   submit    ┌───────────┐   approve   ┌────────┐  │
+│   │  DRAFT  │ ──────────► │ SUBMITTED │ ──────────► │APPROVED│  │
+│   └─────────┘             └───────────┘             └────────┘  │
+│        │                        │                               │
+│        │ (delete)               │ need_revision                 │
+│        ▼                        ▼                               │
+│   [DELETED]              ┌──────────────┐                       │
+│                          │NEED_REVISION │◄─── (edit & resubmit) │
+│                          └──────────────┘                       │
+│                                 │                               │
+│                                 │ resubmit                      │
+│                                 ▼                               │
+│                          ┌───────────┐                          │
+│                          │ SUBMITTED │                          │
+│                          └───────────┘                          │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-1.  **Draft (`draft`)**:
-    -   Created by Employee.
-    -   Visible **ONLY** to Employee.
-    -   **Editable**: YES.
-    -   **Deletable**: YES.
+### Status Definitions
 
-2.  **Sent/Pending (`submitted`)**:
-    -   Employee submits Draft.
-    -   Visible to Manager & Admin.
-    -   **Editable**: NO (Locked).
-    -   **Deletable**: NO.
-
-3.  **Needs Revision (`rejected`)**:
-    -   Manager requests changes.
-    -   **Manager Notes**: STRICTLY REQUIRED.
-    -   Status indicates "Perlu Revisi".
-    -   **Editable**: YES (Employee updates and re-submits).
-    -   **Deletable**: NO.
-
-4.  **Verified (`approved`)**:
-    -   Manager approves the entry.
-    -   Final state.
-    -   Badge: "Disetujui".
-    -   **Editable**: NO.
-    -   **Deletable**: NO.
-
-### Implementation Rules
--   **Delete Constraint**: Delete button is conditionally rendered only when `status === 'draft'`.
--   **Edit Constraint**: Edit button is conditionally rendered only when `status === 'draft'` OR `status === 'rejected'`.
--   **Revision Loop**:
-    -   Manager clicks "Revisi" -> Modal opens -> Notes input is Mandatory.
-    -   Employee sees "Revisi" badge and Manager Notes on dashboard.
-    -   Employee edits content -> Clicks "Kirim Ulang" -> Status changes back to `submitted`.
--   **Audit**: Manager notes are preserved until overwritten or resolved (implementation choice).
+| Status | Badge Color | Description |
+|:-------|:------------|:------------|
+| `draft` | Grey | Saved but not sent. Only author can see. |
+| `submitted` | Blue | Sent to Manager. Awaiting approval. |
+| `need_revision` | Orange | Manager requested changes. Notes required. |
+| `approved` | Green | Manager verified. Final state. Read-only. |
 
 ---
 
-## 5. Future Roadmap (AI Integration)
+## 4. Database Schema
 
-### Phase 3: AI Augmentation (Next)
-*   **Writer Assistant**: "Help me write this professionally".
-*   **Work Summarization**: Auto-generate weekly summaries from daily headers.
-*   **Anomaly Detection**: Flag mismatches between attendance hours and journal output.
+### `public.work_journals`
+
+| Column | Type | Description |
+|:-------|:-----|:------------|
+| `id` | UUID | Primary Key |
+| `user_id` | UUID | Author (FK to auth.users) |
+| `department` | TEXT | Snapshot of author's department |
+| `manager_id` | UUID | Auto-assigned manager (FK to profiles) |
+| `date` | DATE | Entry date |
+| `content` | TEXT | Journal content |
+| `duration` | INT | Time spent in minutes |
+| `verification_status` | TEXT | `draft`, `submitted`, `need_revision`, `approved` |
+| `manager_notes` | TEXT | Feedback from manager (required for revision) |
+| `submitted_at` | TIMESTAMPTZ | When status changed to submitted |
+| `approved_at` | TIMESTAMPTZ | When approved |
+| `approved_by` | UUID | Manager who approved |
+| `created_at` | TIMESTAMPTZ | Record creation time |
+| `updated_at` | TIMESTAMPTZ | Last modification time |
+
+### `public.journal_activity_log`
+
+| Column | Type | Description |
+|:-------|:-----|:------------|
+| `id` | UUID | Primary Key |
+| `journal_id` | UUID | FK to work_journals |
+| `action` | TEXT | 'created', 'submitted', 'approved', 'revision_requested', 'edited' |
+| `performed_by` | UUID | Who performed the action |
+| `previous_status` | TEXT | Status before change |
+| `new_status` | TEXT | Status after change |
+| `notes` | TEXT | Attached notes (e.g., revision reason) |
+| `created_at` | TIMESTAMPTZ | When action occurred |
 
 ---
 
-## 6. Automated Features
+## 5. Row-Level Security (RLS)
 
-### Auto Clock Out
--   **Purpose**: Closes attendance sessions for employees who forget to clock out.
--   **Mechanism**: Database Cron Job (`pg_cron`).
--   **Schedule**: Runs daily at **23:30 (UTC/Server Time)**.
--   **Logic**:
-    -   Targets `attendance` rows where `clock_out` is `NULL` AND `date` is Today.
-    -   Sets `clock_out` to **17:30** (5:30 PM) of that day.
-    -   Appends note: `[System]: Auto Clock-Out (Lupa Absensi)`.
--   **Function**: `public.auto_clock_out_forgotten_entries()`.
+### SELECT Policy: `journal_select_policy`
+```sql
+user_id = auth.uid()  -- Author sees own
+OR (has_role('admin') AND status != 'draft')  -- Admin sees all except drafts
+OR (has_role('manager') AND status != 'draft' AND (manager_id = auth.uid() OR same_department))
+```
 
-## 7. Performance & Optimization
--   **Indexes**: Added on `user_id`, `date`, `department`, `verification_status`.
--   **RLS**: Optimized to avoid heavy joins via snapshot columns.
+### INSERT Policy: `journal_insert_policy`
+```sql
+user_id = auth.uid()  -- Only create for yourself
+```
 
-## 8. Current Status
-*   [x] **Database Schema**: Implemented.
-*   [x] **RLS Policies**: Secure and role-aware.
-*   [x] **Employee UI**: Create, Draft, Submit.
-*   [x] **Manager UI**: Real-time Feed, Review (Approve/Reject), Feedback.
-*   [x] **Admin UI**: Global Activity Feed.
-*   [x] **Navigation**: Integrated into system sidebars.
-*   [x] **Auto Clock Out**: SQL Function & Cron Job prepared.
+### UPDATE Policy: `journal_update_policy`
+```sql
+(user_id = auth.uid() AND status IN ('draft', 'need_revision'))  -- Author edits
+OR has_role('admin')
+OR has_role('manager')  -- Manager updates status/notes
+```
 
-The module is currently **LIVE** in the development environment.
+### DELETE Policy: `journal_delete_policy`
+```sql
+(user_id = auth.uid() AND status IN ('draft', 'submitted'))  -- Author deletes
+OR has_role('admin')  -- Admin cleanup
+```
+
+---
+
+## 6. Automation (Triggers)
+
+### On INSERT/UPDATE: `handle_journal_meta_updates`
+- Fetches author's department from `profiles` and snapshots to `department`.
+- Finds a manager in the same department and assigns to `manager_id`.
+- Sets `submitted_at` when status becomes `submitted`.
+- Sets `approved_at` and `approved_by` when status becomes `approved`.
+
+### On STATUS CHANGE: `log_journal_status_change`
+- Inserts a record into `journal_activity_log` with:
+  - Action type (submitted, approved, revision_requested)
+  - Previous and new status
+  - Performer ID
+  - Manager notes (if any)
+
+---
+
+## 7. Frontend UX Requirements
+
+### Status Badge Colors
+- **Draft**: `bg-slate-50 text-slate-500` (Grey outline)
+- **Submitted**: `bg-blue-50 text-blue-700` (Blue)
+- **Need Revision**: `bg-orange-50 text-orange-700` (Orange)
+- **Approved**: `bg-green-50 text-green-700` (Green)
+
+### Tab Filters (All Views)
+1. **Semua** (All)
+2. **Menunggu Approval** (Submitted)
+3. **Perlu Revisi** (Need Revision)
+4. **Disetujui** (Approved)
+5. **Draft** (Employee only)
+
+### Empty State
+If no journals match the filter, display:
+> "Tidak ada entri jurnal untuk filter ini."
+
+### Real-Time Updates
+All views subscribe to `postgres_changes` on `work_journals` to refresh automatically.
+
+---
+
+## 8. Data Flow Summary
+
+### Employee Submits Journal
+1. Employee writes content and clicks "Kirim".
+2. `verification_status` → `submitted`, `submitted_at` → NOW().
+3. Trigger assigns `department` and `manager_id`.
+4. Activity log records action.
+5. Manager dashboard updates via Realtime.
+
+### Manager Requests Revision
+1. Manager views pending journal and clicks "Minta Revisi".
+2. Modal enforces mandatory notes.
+3. `verification_status` → `need_revision`, `manager_notes` → [input].
+4. Activity log records action.
+5. Employee dashboard shows orange badge and notes.
+
+### Manager Approves
+1. Manager clicks "Setujui".
+2. `verification_status` → `approved`, `approved_at` → NOW(), `approved_by` → manager.uid.
+3. Activity log records action.
+4. Journal locked (read-only).
+
+---
+
+## 9. Current Status
+
+- [x] Database Schema (Enhanced)
+- [x] Activity Logging
+- [x] Auto-Assignment Trigger
+- [x] RLS Policies (Optimized)
+- [x] Employee UI (Create, Edit, Delete, Filter)
+- [x] Manager UI (Review, Approve, Revision)
+- [x] Admin UI (Global Read, Export Ready)
+- [x] Status Color Standardization
+- [x] Tab-Based Filtering
+
+---
+
+## 10. Migration Files
+
+| File | Purpose |
+|:-----|:--------|
+| `20260203_create_work_journals_table.sql` | Initial table creation |
+| `20260204_journal_improvements.sql` | Schema enhancements & backfill |
+| `20260204_integrated_journal_system.sql` | Complete system with activity log |
+
+**To apply**: Run `20260204_integrated_journal_system.sql` in Supabase SQL Editor.
