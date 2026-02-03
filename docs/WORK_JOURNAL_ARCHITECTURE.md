@@ -48,23 +48,45 @@ The schema relies on `work_journals` joined with `auth.users` through `public.pr
 
 ---
 
-## 4. Workflow Stages
+## 4. Workflow & Rules
 
-1.  **Drafting (`draft`)**:
-    *   Employee writes journal.
-    *   Visible **ONLY** to Employee.
-    *   Can be saved and edited multiple times.
+### Status Lifecycle
+The journal entry moves through the following strict states:
 
-2.  **Submission (`submitted`)**:
-    *   Employee clicks "Kirim".
-    *   Status changes to `submitted`.
-    *   **Instantly visible** on Manager & Admin dashboards.
-    *   Badge: "Menunggu" (Pending).
+1.  **Draft (`draft`)**:
+    -   Created by Employee.
+    -   Visible **ONLY** to Employee.
+    -   **Editable**: YES.
+    -   **Deletable**: YES.
 
-3.  **Review (`approved` / `rejected`)**:
-    *   Manager reviews the content.
-    *   **Approve**: Status -> `approved`. Badge: "Disetujui".
-    *   **Reject/Revise**: Status -> `rejected`. Badge: "Revisi". Manager adds notes explaining what needs fixing.
+2.  **Sent/Pending (`submitted`)**:
+    -   Employee submits Draft.
+    -   Visible to Manager & Admin.
+    -   **Editable**: NO (Locked).
+    -   **Deletable**: NO.
+
+3.  **Needs Revision (`rejected`)**:
+    -   Manager requests changes.
+    -   **Manager Notes**: STRICTLY REQUIRED.
+    -   Status indicates "Perlu Revisi".
+    -   **Editable**: YES (Employee updates and re-submits).
+    -   **Deletable**: NO.
+
+4.  **Verified (`approved`)**:
+    -   Manager approves the entry.
+    -   Final state.
+    -   Badge: "Disetujui".
+    -   **Editable**: NO.
+    -   **Deletable**: NO.
+
+### Implementation Rules
+-   **Delete Constraint**: Delete button is conditionally rendered only when `status === 'draft'`.
+-   **Edit Constraint**: Edit button is conditionally rendered only when `status === 'draft'` OR `status === 'rejected'`.
+-   **Revision Loop**:
+    -   Manager clicks "Revisi" -> Modal opens -> Notes input is Mandatory.
+    -   Employee sees "Revisi" badge and Manager Notes on dashboard.
+    -   Employee edits content -> Clicks "Kirim Ulang" -> Status changes back to `submitted`.
+-   **Audit**: Manager notes are preserved until overwritten or resolved (implementation choice).
 
 ---
 

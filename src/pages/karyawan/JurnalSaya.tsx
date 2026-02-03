@@ -50,6 +50,9 @@ export default function JurnalSaya() {
     const [newJournalContent, setNewJournalContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Edit Mode State
+    const [editingJournal, setEditingJournal] = useState<JournalEntry | null>(null);
+
     useEffect(() => {
         if (user) fetchJournals();
     }, [user]);
@@ -109,6 +112,65 @@ export default function JurnalSaya() {
         }
     };
 
+    const handleUpdateJournal = async (isDraft: boolean = false) => {
+        if (!editingJournal || !newJournalContent.trim()) return;
+        setIsSubmitting(true);
+        try {
+            // Logic: If 'rejected', changing it to 'submitted' sends it back for review.
+            // If 'draft', it stays draft or becomes submitted.
+            const status = isDraft ? 'draft' : 'submitted';
+
+            const { error } = await supabase
+                .from('work_journals' as any)
+                .update({
+                    content: newJournalContent,
+                    verification_status: status,
+                    // Clear manager notes if re-submitting so it looks fresh? 
+                    // Or keep them for history? Usually better to keep context but maybe flagged as resolved.
+                    // For this simple ver, let's keep notes until manager overwrites them or UI hides them.
+                })
+                .eq('id', editingJournal.id);
+
+            if (error) throw error;
+
+            toast({
+                title: "Jurnal Diperbarui",
+                description: isDraft ? "Perubahan disimpan sebagai draft." : "Jurnal dikirm ulang untuk review."
+            });
+
+            setNewJournalContent("");
+            setEditingJournal(null);
+            setIsAddOpen(false);
+            fetchJournals();
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Gagal Update", description: error.message });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteJournal = async (id: string) => {
+        if (!confirm("Apakah Anda yakin ingin menghapus jurnal ini?")) return;
+        try {
+            const { error } = await supabase
+                .from('work_journals' as any)
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            toast({ title: "Terhapus", description: "Jurnal berhasil dihapus." });
+            fetchJournals();
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Gagal Hapus", description: error.message });
+        }
+    };
+
+    const openEditModal = (journal: JournalEntry) => {
+        setEditingJournal(journal);
+        setNewJournalContent(journal.content);
+        setIsAddOpen(true);
+    };
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'approved':
@@ -118,7 +180,7 @@ export default function JurnalSaya() {
             case 'replied':
                 return <Badge className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 uppercase text-[10px]">Dibalas Manager</Badge>;
             case 'rejected':
-                return <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 uppercase text-[10px]">Revisi</Badge>;
+                return <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 uppercase text-[10px]">Perlu Revisi</Badge>;
             case 'draft':
                 return <Badge variant="outline" className="text-slate-500 border-slate-300 uppercase text-[10px]">Draft</Badge>;
             default: // submitted
@@ -142,7 +204,7 @@ export default function JurnalSaya() {
                         <p className="text-xs text-slate-500 mt-1">Rekap harian aktivitas kerja Anda</p>
                     </div>
                     <div className="flex gap-2">
-                        <Button onClick={() => setIsAddOpen(true)} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                        <Button onClick={() => { setEditingJournal(null); setNewJournalContent(""); setIsAddOpen(true); }} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
                             <Plus className="w-4 h-4" />
                             {!isMobile && "Tulis Jurnal"}
                         </Button>
@@ -191,7 +253,7 @@ export default function JurnalSaya() {
                 {/* Filters */}
                 <div className="flex items-center justify-between gap-4 overflow-x-auto pb-2 md:pb-0">
                     <div className="flex gap-2">
-                        {['all', 'submitted', 'approved'].map((status) => (
+                        {['all', 'submitted', 'approved', 'rejected', 'draft'].map((status) => (
                             <button
                                 key={status}
                                 onClick={() => setFilterStatus(status)}
@@ -200,7 +262,10 @@ export default function JurnalSaya() {
                                     : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                                     }`}
                             >
-                                {status === 'all' ? 'Semua' : status === 'submitted' ? 'Menunggu' : 'Disetujui'}
+                                {status === 'all' ? 'Semua' :
+                                    status === 'submitted' ? 'Menunggu' :
+                                        status === 'approved' ? 'Disetujui' :
+                                            status === 'rejected' ? 'Perlu Revisi' : 'Draft'}
                             </button>
                         ))}
                     </div>
@@ -220,7 +285,7 @@ export default function JurnalSaya() {
                         <p className="text-slate-500 max-w-xs mx-auto mt-2 text-sm mb-4">
                             Dokumentasikan pekerjaan Anda hari ini.
                         </p>
-                        <Button onClick={() => setIsAddOpen(true)} variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
+                        <Button onClick={() => { setEditingJournal(null); setNewJournalContent(""); setIsAddOpen(true); }} variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
                             Tulis Jurnal Pertama
                         </Button>
                     </div>
@@ -246,27 +311,40 @@ export default function JurnalSaya() {
                                             </div>
 
                                             {/* Content */}
-                                            <div className="flex-1 p-4 md:p-5">
+                                            <div className="flex-1 p-4 md:p-5 relative">
                                                 <div className="flex items-start justify-between mb-3">
                                                     <div className="flex items-center gap-2">
                                                         {getStatusBadge(journal.verification_status)}
-                                                        {/* If duration is 0 (manual entry), don't show duration chip or show 'Manual' */}
-                                                        {journal.duration > 0 ? (
+                                                        {journal.duration > 0 && (
                                                             <span className="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md">
                                                                 <Clock className="w-3 h-3" />
                                                                 {Math.floor(journal.duration / 60)}h {journal.duration % 60}m
                                                             </span>
-                                                        ) : (
-                                                            <span className="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md">
-                                                                <BookOpen className="w-3 h-3" /> Manual
-                                                            </span>
                                                         )}
                                                     </div>
-                                                    {/* Manager Notes Badge */}
-                                                    {journal.manager_notes && (
-                                                        <Badge variant="outline" className="text-[10px] border-blue-200 text-blue-600 bg-blue-50">
-                                                            1 Catatan Mgr
-                                                        </Badge>
+
+                                                    {/* Actions: ONLY visible for Draft or Rejected (Needs Revision) */}
+                                                    {(journal.verification_status === 'draft' || journal.verification_status === 'rejected') && (
+                                                        <div className="flex gap-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-7 px-2 text-slate-500 hover:text-blue-600"
+                                                                onClick={() => openEditModal(journal)}
+                                                            >
+                                                                Edit
+                                                            </Button>
+                                                            {journal.verification_status === 'draft' && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-7 px-2 text-slate-500 hover:text-red-600"
+                                                                    onClick={() => handleDeleteJournal(journal.id)}
+                                                                >
+                                                                    Hapus
+                                                                </Button>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </div>
 
@@ -274,10 +352,16 @@ export default function JurnalSaya() {
                                                     {journal.content}
                                                 </p>
 
-                                                {/* Manager Feedback Section */}
+                                                {/* Manager Feedback Section (Highlighted for Revisions) */}
                                                 {journal.manager_notes && (
-                                                    <div className="mt-4 p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-sm">
-                                                        <p className="text-xs font-semibold text-blue-700 mb-1">Catatan Manager:</p>
+                                                    <div className={`mt-4 p-3 rounded-lg text-sm border ${journal.verification_status === 'rejected'
+                                                            ? "bg-red-50 border-red-100"
+                                                            : "bg-blue-50/50 border-blue-100"
+                                                        }`}>
+                                                        <p className={`text-xs font-semibold mb-1 ${journal.verification_status === 'rejected' ? "text-red-700" : "text-blue-700"
+                                                            }`}>
+                                                            {journal.verification_status === 'rejected' ? "Perlu Revisi (Catatan Manager):" : "Catatan Manager:"}
+                                                        </p>
                                                         <p className="text-slate-600">{journal.manager_notes}</p>
                                                     </div>
                                                 )}
@@ -290,13 +374,15 @@ export default function JurnalSaya() {
                 )}
             </div>
 
-            {/* Add Journal Modal */}
+            {/* Add/Edit Journal Modal */}
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Tulis Jurnal Aktivitas</DialogTitle>
+                        <DialogTitle>{editingJournal ? "Edit Jurnal Aktivitas" : "Tulis Jurnal Aktivitas"}</DialogTitle>
                         <DialogDescription>
-                            Catat pekerjaan yang Anda selesaikan hari ini.
+                            {editingJournal
+                                ? "Perbarui laporan aktivitas Anda."
+                                : "Catat pekerjaan yang Anda selesaikan hari ini."}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-2">
@@ -313,9 +399,23 @@ export default function JurnalSaya() {
                     <DialogFooter className="gap-2 sm:gap-0">
                         <div className="flex gap-2 w-full justify-end">
                             <Button variant="ghost" onClick={() => setIsAddOpen(false)} disabled={isSubmitting}>Batal</Button>
-                            <Button variant="outline" onClick={() => handleCreateJournal(true)} disabled={isSubmitting}>Simpan Draft</Button>
-                            <Button onClick={() => handleCreateJournal(false)} disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700">
-                                {isSubmitting ? "Mengirim..." : "Kirim Jurnal"}
+
+                            {/* Save Draft Button */}
+                            <Button
+                                variant="outline"
+                                onClick={() => editingJournal ? handleUpdateJournal(true) : handleCreateJournal(true)}
+                                disabled={isSubmitting}
+                            >
+                                Simpan Draft
+                            </Button>
+
+                            {/* Submit Button */}
+                            <Button
+                                onClick={() => editingJournal ? handleUpdateJournal(false) : handleCreateJournal(false)}
+                                disabled={isSubmitting}
+                                className="bg-blue-600 hover:bg-blue-700"
+                            >
+                                {isSubmitting ? "Mengirim..." : (editingJournal ? "Kirim Ulang" : "Kirim Jurnal")}
                             </Button>
                         </div>
                     </DialogFooter>

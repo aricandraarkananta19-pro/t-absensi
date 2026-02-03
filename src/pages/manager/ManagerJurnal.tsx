@@ -117,6 +117,17 @@ const ManagerJurnal = () => {
 
     const handleSubmitReview = async (status: 'approved' | 'rejected' | 'reviewed') => {
         if (!selectedJournal) return;
+
+        // Enforce mandatory notes for Revision (Rejected)
+        if (status === 'rejected' && !reviewNote.trim()) {
+            toast({
+                variant: "destructive",
+                title: "Gagal Menyimpan",
+                description: "Catatan wajib diisi jika meminta revisi."
+            });
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             const { error } = await supabase
@@ -130,8 +141,10 @@ const ManagerJurnal = () => {
             if (error) throw error;
 
             toast({
-                title: status === 'approved' ? "Jurnal Disetujui" : "Jurnal Direview",
-                description: "Status jurnal telah diperbarui.",
+                title: status === 'approved' ? "Jurnal Disetujui" : "Permintaan Revisi Terkirim",
+                description: status === 'approved'
+                    ? "Status jurnal telah diperbarui menjadi Disetujui."
+                    : "Karyawan akan menerima notifikasi untuk merevisi jurnal.",
             });
 
             // Optimistic update
@@ -235,11 +248,8 @@ const ManagerJurnal = () => {
 
     const weeklyStats = getWeeklyStats();
 
-    // Stats for Top Cards (Always Global/All Time for now or switch to selected week?)
-    // Let's keep top cards as "Pending Actions" focus, and Summary Tab as "Analytical" focus.
     const pendingCount = journals.filter(j => j.verification_status === 'submitted').length;
     const approvedCountGlobal = journals.filter(j => j.verification_status === 'approved').length;
-
 
     const menuSections = [
         {
@@ -595,9 +605,12 @@ const ManagerJurnal = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">Catatan Manager (Opsional)</label>
+                                <label className="text-sm font-medium text-slate-700">
+                                    Catatan Manager
+                                    <span className="text-slate-400 font-normal ml-1">(Wajib untuk Revisi)</span>
+                                </label>
                                 <Textarea
-                                    placeholder="Tulis pesan untuk karyawan..."
+                                    placeholder="Tulis alasan revisi atau pesan..."
                                     value={reviewNote}
                                     onChange={(e) => setReviewNote(e.target.value)}
                                     className="resize-none"
@@ -617,7 +630,7 @@ const ManagerJurnal = () => {
                                 variant="destructive"
                                 className="flex-1 sm:flex-none"
                             >
-                                Revisi
+                                Minta Revisi
                             </Button>
                             <Button
                                 onClick={() => handleSubmitReview('approved')}
