@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import MobileNavigation from "@/components/MobileNavigation";
+import { WorkInsightWidget } from "@/components/journal/WorkInsightWidget";
 import { cn } from "@/lib/utils";
 
 // Talenta Brand Colors
@@ -299,6 +300,11 @@ const KaryawanDashboardNew = () => {
                         </div>
                     </div>
 
+                    {/* Work Insights (Mobile) */}
+                    <div className="pt-2">
+                        <WorkInsightWidget userId={user?.id} />
+                    </div>
+
                     {/* Quick Menu List (Vertical Cards as requested) */}
                     <div>
                         <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 ml-1">Shortcut</h3>
@@ -509,6 +515,11 @@ const KaryawanDashboardNew = () => {
                             </div>
                         </CardContent>
                     </Card>
+                </div>
+
+                {/* Work Insights Widget */}
+                <div className="mb-8">
+                    <WorkInsightWidget userId={user?.id} />
                 </div>
 
                 {/* Menu Grid Desktop */}
