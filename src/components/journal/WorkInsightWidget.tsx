@@ -75,7 +75,7 @@ export function WorkInsightWidget({ userId }: WorkInsightProps) {
                             <CardDescription className="text-xs">Jurnal aktivitas harian</CardDescription>
                         </div>
                     </div>
-                    <Button variant="ghost" size="sm" className="text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50" onClick={() => navigate('/karyawan/journal')}>
+                    <Button variant="ghost" size="sm" className="text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50" onClick={() => navigate('/karyawan/jurnal')}>
                         See All <ChevronRight className="w-3 h-3 ml-1" />
                     </Button>
                 </div>
@@ -93,10 +93,12 @@ export function WorkInsightWidget({ userId }: WorkInsightProps) {
                 ) : (
                     <div className="space-y-3">
                         {recentJournals.map((journal) => (
-                            <div key={journal.id} className="group flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 cursor-pointer">
+                            <div key={journal.id} className="group flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 cursor-pointer" onClick={() => navigate('/karyawan/jurnal')}>
                                 <div className="mt-1">
-                                    {journal.status === 'completed' ? (
+                                    {journal.verification_status === 'approved' ? (
                                         <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                    ) : journal.verification_status === 'reviewed' ? (
+                                        <CheckCircle2 className="h-4 w-4 text-blue-500" />
                                     ) : (
                                         <AlertCircle className="h-4 w-4 text-amber-500" />
                                     )}

@@ -13,6 +13,7 @@ import Auth from "./pages/Auth";
 import EditPasswordKaryawan from "./pages/EditPasswordKaryawan";
 import AbsensiKaryawan from "./pages/karyawan/AbsensiKaryawan";
 import RiwayatAbsensi from "./pages/karyawan/RiwayatAbsensi";
+import JurnalSaya from "./pages/karyawan/JurnalSaya";
 import ProfilKaryawan from "./pages/karyawan/ProfilKaryawan";
 import PengajuanCuti from "./pages/karyawan/PengajuanCuti";
 import KelolaKaryawan from "./pages/admin/KelolaKaryawan";
@@ -90,6 +91,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <RiwayatAbsensi />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/karyawan/jurnal"
+              element={
+                <ProtectedRoute>
+                  <JurnalSaya />
                 </ProtectedRoute>
               }
             />

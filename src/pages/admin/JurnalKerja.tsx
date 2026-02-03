@@ -22,6 +22,8 @@ interface JournalEntry {
     duration: number;
     user_id: string;
     status: string;
+    manager_notes?: string;
+    verification_status?: string;
     profiles: {
         full_name: string;
         avatar_url: string | null;
@@ -241,9 +243,21 @@ const JurnalKerja = () => {
                                         {/* Right: Content */}
                                         <div className="p-4 md:p-6 flex-1">
                                             <div className="flex items-start justify-between mb-3">
-                                                <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-100 uppercase tracking-wide text-[10px]">
-                                                    Weekly Update
-                                                </Badge>
+                                                <div className="flex items-center gap-2">
+                                                    {journal.status === 'approved' && (
+                                                        <Badge className="bg-green-50 text-green-700 border-green-200">Disetujui</Badge>
+                                                    )}
+                                                    {journal.status === 'reviewed' && (
+                                                        <Badge className="bg-blue-50 text-blue-700 border-blue-200">Direview</Badge>
+                                                    )}
+                                                    {journal.status === 'rejected' && (
+                                                        <Badge className="bg-red-50 text-red-700 border-red-200">Ditolak</Badge>
+                                                    )}
+                                                    {(!journal.status || journal.status === 'submitted') && (
+                                                        <Badge variant="outline" className="text-slate-500 border-slate-200">Menunggu</Badge>
+                                                    )}
+                                                </div>
+
                                                 <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
                                                     <Clock className="w-3 h-3" />
                                                     {Math.floor(journal.duration / 60)}h {journal.duration % 60}m
@@ -253,6 +267,15 @@ const JurnalKerja = () => {
                                             <p className="text-slate-700 leading-relaxed text-sm whitespace-pre-wrap">
                                                 {journal.content}
                                             </p>
+
+                                            {/* Manager Notes */}
+                                            {/* @ts-ignore - Notes might be missing in type def but present in DB/Cast */}
+                                            {journal.manager_notes && (
+                                                <div className="mt-4 p-3 bg-yellow-50/50 border border-yellow-100 rounded-lg text-sm">
+                                                    <p className="text-xs font-semibold text-yellow-700 mb-1">Catatan Manager:</p>
+                                                    <p className="text-slate-600">{journal.manager_notes}</p>
+                                                </div>
+                                            )}
 
                                             {/* AI Insight Placeholder */}
                                             {/* <div className="mt-4 p-3 bg-gradient-to-r from-slate-50 to-white border border-slate-100 rounded-lg flex gap-3">
