@@ -59,6 +59,25 @@ const ManagerJurnal = () => {
 
     useEffect(() => {
         fetchJournals();
+
+        const channel = supabase
+            .channel('manager-journal-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'work_journals'
+                },
+                () => {
+                    fetchJournals();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const fetchJournals = async () => {

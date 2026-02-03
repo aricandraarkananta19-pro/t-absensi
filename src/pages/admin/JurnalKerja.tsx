@@ -50,7 +50,7 @@ const JurnalKerja = () => {
                 { icon: LayoutDashboard, title: "Dashboard", href: "/dashboard" },
                 { icon: Users, title: "Kelola Karyawan", href: "/admin/karyawan" },
                 { icon: Clock, title: "Rekap Absensi", href: "/admin/absensi" },
-                { icon: BookOpen, title: "Jurnal Kerja", href: "/admin/jurnal" }, // New Item
+                { icon: BookOpen, title: "Jurnal Kerja", href: "/admin/jurnal" },
                 { icon: BarChart3, title: "Laporan", href: "/admin/laporan" },
             ],
         },
@@ -68,12 +68,31 @@ const JurnalKerja = () => {
 
     useEffect(() => {
         fetchJournals();
+
+        // Real-time updates
+        const channel = supabase
+            .channel('admin-journal-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'work_journals'
+                },
+                () => {
+                    fetchJournals();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const fetchJournals = async () => {
         setIsLoading(true);
         try {
-            // Fetch Journals with Profiles
             const { data, error } = await supabase
                 .from('work_journals' as any)
                 .select(`
@@ -90,7 +109,6 @@ const JurnalKerja = () => {
             if (error) throw error;
 
             if (data) {
-                // Cast to any/unknown to bypass complex joined type checking issue in this scaffold
                 const typedData = data as unknown as JournalEntry[];
                 setJournals(typedData);
                 calculateStats(typedData);
@@ -112,12 +130,29 @@ const JurnalKerja = () => {
         setStats({
             totalToday: todayJournals.length,
             avgDuration: avgDuration,
-            participationRate: 0 // Need total employees for this, skipping for now or fetching separately
+            participationRate: 0
         });
     };
 
     const getInitials = (name: string) => {
         return name.split(" ").map(n => n.charAt(0)).slice(0, 2).join("").toUpperCase();
+    };
+
+    const getStatusBadge = (status: string | undefined, verification_status: string | undefined) => {
+        const currentStatus = verification_status || status || 'submitted';
+
+        switch (currentStatus) {
+            case 'approved':
+                return <Badge className="bg-green-50 text-green-700 border-green-200">Disetujui</Badge>;
+            case 'reviewed':
+                return <Badge className="bg-blue-50 text-blue-700 border-blue-200">Direview</Badge>;
+            case 'rejected':
+                return <Badge className="bg-red-50 text-red-700 border-red-200">Ditolak</Badge>;
+            case 'draft':
+                return <Badge variant="outline" className="text-slate-500 border-slate-300">Draft</Badge>;
+            default:
+                return <Badge variant="outline" className="text-slate-500 border-slate-200">Menunggu</Badge>;
+        }
     };
 
     const filteredJournals = journals.filter(journal =>
@@ -247,18 +282,7 @@ const JurnalKerja = () => {
                                         <div className="p-4 md:p-6 flex-1">
                                             <div className="flex items-start justify-between mb-3">
                                                 <div className="flex items-center gap-2">
-                                                    {journal.status === 'approved' && (
-                                                        <Badge className="bg-green-50 text-green-700 border-green-200">Disetujui</Badge>
-                                                    )}
-                                                    {journal.status === 'reviewed' && (
-                                                        <Badge className="bg-blue-50 text-blue-700 border-blue-200">Direview</Badge>
-                                                    )}
-                                                    {journal.status === 'rejected' && (
-                                                        <Badge className="bg-red-50 text-red-700 border-red-200">Ditolak</Badge>
-                                                    )}
-                                                    {(!journal.status || journal.status === 'submitted') && (
-                                                        <Badge variant="outline" className="text-slate-500 border-slate-200">Menunggu</Badge>
-                                                    )}
+                                                    {getStatusBadge(journal.status, journal.verification_status)}
                                                 </div>
 
                                                 <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
@@ -272,21 +296,12 @@ const JurnalKerja = () => {
                                             </p>
 
                                             {/* Manager Notes */}
-                                            {/* @ts-ignore - Notes might be missing in type def but present in DB/Cast */}
                                             {journal.manager_notes && (
                                                 <div className="mt-4 p-3 bg-yellow-50/50 border border-yellow-100 rounded-lg text-sm">
                                                     <p className="text-xs font-semibold text-yellow-700 mb-1">Catatan Manager:</p>
                                                     <p className="text-slate-600">{journal.manager_notes}</p>
                                                 </div>
                                             )}
-
-                                            {/* AI Insight Placeholder */}
-                                            {/* <div className="mt-4 p-3 bg-gradient-to-r from-slate-50 to-white border border-slate-100 rounded-lg flex gap-3">
-                                                <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                                                <p className="text-xs text-slate-500">
-                                                    <span className="font-medium text-indigo-900">AI Insight:</span> Fokus pada pengembangan fitur baru. Produktivitas tinggi.
-                                                </p>
-                                            </div> */}
                                         </div>
                                     </div>
                                 </CardContent>

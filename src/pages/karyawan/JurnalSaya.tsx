@@ -72,26 +72,33 @@ export default function JurnalSaya() {
         }
     };
 
-    const handleCreateJournal = async () => {
+    const handleCreateJournal = async (isDraft: boolean = false) => {
         if (!newJournalContent.trim()) {
             toast({ variant: "destructive", title: "Gagal", description: "Konten jurnal tidak boleh kosong" });
             return;
         }
         setIsSubmitting(true);
         try {
+            const status = isDraft ? 'draft' : 'submitted';
+
             const { error } = await supabase
                 .from('work_journals' as any)
                 .insert({
                     user_id: user?.id,
                     content: newJournalContent,
                     date: new Date().toISOString().split('T')[0],
-                    duration: 0, // Default 0 for manual entries not tied to clock out
-                    status: 'completed'
+                    duration: 0,
+                    status: 'completed',
+                    verification_status: status
                 });
 
             if (error) throw error;
 
-            toast({ title: "Berhasil", description: "Jurnal berhasil ditambahkan" });
+            toast({
+                title: isDraft ? "Draft Disimpan" : "Jurnal Terkirim",
+                description: isDraft ? "Jurnal disimpan sebagai draft." : "Menunggu review manager."
+            });
+
             setNewJournalContent("");
             setIsAddOpen(false);
             fetchJournals();
@@ -108,8 +115,14 @@ export default function JurnalSaya() {
                 return <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 uppercase text-[10px]">Disetujui</Badge>;
             case 'reviewed':
                 return <Badge className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 uppercase text-[10px]">Direview</Badge>;
+            case 'replied':
+                return <Badge className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 uppercase text-[10px]">Dibalas Manager</Badge>;
+            case 'rejected':
+                return <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 uppercase text-[10px]">Revisi</Badge>;
+            case 'draft':
+                return <Badge variant="outline" className="text-slate-500 border-slate-300 uppercase text-[10px]">Draft</Badge>;
             default: // submitted
-                return <Badge className="bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 uppercase text-[10px]">Terkirim</Badge>;
+                return <Badge className="bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100 uppercase text-[10px]">Terkirim</Badge>;
         }
     };
 
@@ -297,11 +310,14 @@ export default function JurnalSaya() {
                             />
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsAddOpen(false)} disabled={isSubmitting}>Batal</Button>
-                        <Button onClick={handleCreateJournal} disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700">
-                            {isSubmitting ? "Menyimpan..." : "Simpan Jurnal"}
-                        </Button>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <div className="flex gap-2 w-full justify-end">
+                            <Button variant="ghost" onClick={() => setIsAddOpen(false)} disabled={isSubmitting}>Batal</Button>
+                            <Button variant="outline" onClick={() => handleCreateJournal(true)} disabled={isSubmitting}>Simpan Draft</Button>
+                            <Button onClick={() => handleCreateJournal(false)} disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700">
+                                {isSubmitting ? "Mengirim..." : "Kirim Jurnal"}
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
