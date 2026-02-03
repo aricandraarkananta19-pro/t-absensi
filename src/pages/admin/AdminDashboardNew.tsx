@@ -146,6 +146,7 @@ const AdminDashboardNew = () => {
                 { icon: LayoutDashboard, title: "Dashboard", href: "/dashboard" },
                 { icon: Users, title: "Kelola Karyawan", href: "/admin/karyawan" },
                 { icon: Clock, title: "Rekap Absensi", href: "/admin/absensi" },
+                { icon: Briefcase, title: "Jurnal Kerja", href: "/admin/jurnal" },
                 { icon: BarChart3, title: "Laporan", href: "/admin/laporan" },
             ],
         },

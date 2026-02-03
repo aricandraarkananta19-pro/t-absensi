@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     Users, Clock, LogOut, LayoutDashboard, BarChart3, Calendar, Building2,
     FileCheck, TrendingUp, TrendingDown, UserCheck, UserX, AlertCircle,
-    ChevronRight, MoreVertical, Download, Eye, Activity, Timer, CalendarClock
+    ChevronRight, MoreVertical, Download, Eye, Activity, Timer, CalendarClock, BookOpen
 } from "lucide-react";
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -110,6 +110,7 @@ const ManagerDashboardNew = () => {
             items: [
                 { icon: LayoutDashboard, title: "Dashboard", href: "/manager" },
                 { icon: Clock, title: "Rekap Absensi", href: "/manager/absensi" },
+                { icon: BookOpen, title: "Jurnal Tim", href: "/manager/jurnal" },
                 { icon: BarChart3, title: "Laporan", href: "/manager/laporan" },
                 { icon: FileCheck, title: "Kelola Cuti", href: "/manager/cuti", badge: stats.pendingLeave },
             ],

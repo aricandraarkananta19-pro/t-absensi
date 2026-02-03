@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     Clock, Key, User, FileText, ChevronRight, LogOut, Calendar,
     CheckCircle2, LogIn, MapPin, History, LayoutDashboard, TrendingUp,
-    Timer, Target, Award, Bell
+    Timer, Target, Award, Bell, BookOpen
 } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -312,6 +312,7 @@ const KaryawanDashboardNew = () => {
                             {[
                                 { title: "Riwayat Absensi", subtitle: "Lihat detail kehadiran bulanan", icon: History, color: "bg-purple-100 text-purple-600", href: "/karyawan/riwayat" },
                                 { title: "Ajukan Cuti", subtitle: "Form permohonan izin/cuti", icon: Calendar, color: "bg-rose-100 text-rose-600", href: "/karyawan/cuti" },
+                                { title: "Jurnal Kerja", subtitle: "Tulis laporan aktivitas", icon: BookOpen, color: "bg-blue-100 text-blue-600", href: "/karyawan/jurnal" },
                                 { title: "Laporan", subtitle: "Unduh rekap kehadiran", icon: FileText, color: "bg-emerald-100 text-emerald-600", href: "/karyawan/laporan" },
                             ].map((item) => (
                                 <div
@@ -528,6 +529,7 @@ const KaryawanDashboardNew = () => {
                     {[
                         { title: "Absensi", desc: "Clock-in / Clock-out", icon: Clock, href: "/karyawan/absensi", color: BRAND_COLORS.blue },
                         { title: "Riwayat", desc: "Rekap kehadiran", icon: History, href: "/karyawan/riwayat", color: BRAND_COLORS.green },
+                        { title: "Jurnal", desc: "Laporan aktivitas", icon: BookOpen, href: "/karyawan/jurnal", color: "#F59E0B" },
                         { title: "Cuti", desc: "Ajukan izin/cuti", icon: Calendar, href: "/karyawan/cuti", color: BRAND_COLORS.lightBlue },
                         { title: "Profil", desc: "Data pribadi", icon: User, href: "/karyawan/profil", color: "#8B5CF6" },
                     ].map((item) => (
