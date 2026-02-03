@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import {
     BookOpen, Calendar, Clock, CheckCircle2, AlertCircle,
-    Filter, Search, ChevronLeft, ChevronRight, MoreHorizontal, Plus, PenClassName
+    Filter, Search, ChevronLeft, ChevronRight, MoreHorizontal, Plus
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -184,8 +184,8 @@ export default function JurnalSaya() {
                                 key={status}
                                 onClick={() => setFilterStatus(status)}
                                 className={`px-4 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap ${filterStatus === status
-                                        ? "bg-slate-800 text-white shadow-md"
-                                        : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                                    ? "bg-slate-800 text-white shadow-md"
+                                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                                     }`}
                             >
                                 {status === 'all' ? 'Semua' : status === 'submitted' ? 'Menunggu' : 'Disetujui'}
