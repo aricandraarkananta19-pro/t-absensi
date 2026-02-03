@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
     LayoutDashboard, Clock, BarChart3, FileCheck, BookOpen, Search,
     Calendar as CalendarIcon, Clock as ClockIcon, CheckCircle2, XCircle,
-    MessageSquare, AlertCircle, Filter, MoreHorizontal
+    MessageSquare, AlertCircle, Filter, MoreHorizontal, TrendingUp, Users, CheckSquare
 } from "lucide-react";
 import {
     Dialog,
@@ -22,9 +22,10 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, isWithinInterval, subWeeks } from "date-fns";
 import { id } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
 interface JournalEntry {
     id: string;
@@ -48,6 +49,7 @@ const ManagerJurnal = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
+    const [selectedWeek, setSelectedWeek] = useState(new Date());
 
     // Review Modal State
     const [selectedJournal, setSelectedJournal] = useState<JournalEntry | null>(null);
@@ -154,10 +156,68 @@ const ManagerJurnal = () => {
             journal.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             journal.content.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const matchesStatus = filterStatus === 'all' || journal.verification_status === filterStatus;
+        const matchesStatus = filterStatus === 'all' || filterStatus === 'summary' || journal.verification_status === filterStatus;
 
         return matchesSearch && matchesStatus;
     });
+
+    // Weekly Analytics Logic
+    const getWeeklyStats = () => {
+        const start = startOfWeek(selectedWeek, { weekStartsOn: 1 });
+        const end = endOfWeek(selectedWeek, { weekStartsOn: 1 });
+
+        const weeklyJournals = journals.filter(j =>
+            isWithinInterval(new Date(j.date), { start, end })
+        );
+
+        const uniqueUsers = new Set(weeklyJournals.map(j => j.user_id));
+        const approvedCount = weeklyJournals.filter(j => j.verification_status === 'approved').length;
+
+        // Activity per Day for Chart
+        const dailyActivity = [0, 1, 2, 3, 4, 5, 6].map(offset => {
+            const date = new Date(start);
+            date.setDate(start.getDate() + offset);
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const count = weeklyJournals.filter(j => j.date === dateStr).length;
+            return {
+                day: format(date, 'EEE', { locale: id }),
+                entries: count
+            };
+        });
+
+        // Top 3 Contributors
+        const userCounts: Record<string, { count: number, name: string, avatar: string | null }> = {};
+        weeklyJournals.forEach(j => {
+            if (!userCounts[j.user_id]) {
+                userCounts[j.user_id] = {
+                    count: 0,
+                    name: j.profiles?.full_name || 'Unknown',
+                    avatar: j.profiles?.avatar_url || null
+                };
+            }
+            userCounts[j.user_id].count += 1;
+        });
+
+        const sortedContributors = Object.values(userCounts)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
+
+        return {
+            total: weeklyJournals.length,
+            activeUsers: uniqueUsers.size,
+            approvalRate: weeklyJournals.length > 0 ? Math.round((approvedCount / weeklyJournals.length) * 100) : 0,
+            dailyActivity,
+            sortedContributors
+        };
+    };
+
+    const weeklyStats = getWeeklyStats();
+
+    // Stats for Top Cards (Always Global/All Time for now or switch to selected week?)
+    // Let's keep top cards as "Pending Actions" focus, and Summary Tab as "Analytical" focus.
+    const pendingCount = journals.filter(j => j.verification_status === 'submitted').length;
+    const approvedCountGlobal = journals.filter(j => j.verification_status === 'approved').length;
+
 
     const menuSections = [
         {
@@ -172,12 +232,6 @@ const ManagerJurnal = () => {
         },
     ];
 
-    const stats = {
-        total: journals.length,
-        pending: journals.filter(j => j.verification_status === 'submitted').length,
-        approved: journals.filter(j => j.verification_status === 'approved').length
-    };
-
     return (
         <EnterpriseLayout
             title="Jurnal Tim"
@@ -187,13 +241,13 @@ const ManagerJurnal = () => {
             showRefresh={true}
             onRefresh={fetchJournals}
         >
-            {/* Stats Cards */}
+            {/* Stats Cards (Operational Focus) */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <Card className="bg-white shadow-sm border-slate-200">
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
                             <p className="text-sm text-slate-500 font-medium">Total Entri</p>
-                            <p className="text-2xl font-bold text-slate-800">{stats.total}</p>
+                            <p className="text-2xl font-bold text-slate-800">{journals.length}</p>
                         </div>
                         <div className="p-3 bg-slate-50 rounded-lg">
                             <BookOpen className="w-5 h-5 text-slate-600" />
@@ -204,7 +258,7 @@ const ManagerJurnal = () => {
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
                             <p className="text-sm text-slate-500 font-medium">Perlu Review</p>
-                            <p className="text-2xl font-bold text-amber-600">{stats.pending}</p>
+                            <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
                         </div>
                         <div className="p-3 bg-amber-50 rounded-lg">
                             <AlertCircle className="w-5 h-5 text-amber-600" />
@@ -215,7 +269,7 @@ const ManagerJurnal = () => {
                     <CardContent className="p-4 flex items-center justify-between">
                         <div>
                             <p className="text-sm text-slate-500 font-medium">Disetujui</p>
-                            <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+                            <p className="text-2xl font-bold text-green-600">{approvedCountGlobal}</p>
                         </div>
                         <div className="p-3 bg-green-50 rounded-lg">
                             <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -250,16 +304,133 @@ const ManagerJurnal = () => {
 
             {filterStatus === 'summary' ? (
                 <div className="space-y-6">
-                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 text-center">
-                        <BarChart3 className="w-12 h-12 text-blue-200 mx-auto mb-3" />
-                        <h3 className="text-lg font-semibold text-blue-900">Weekly Insight</h3>
-                        <p className="text-blue-600/80 max-w-sm mx-auto mt-1 mb-4">
-                            Fitur analitik mingguan sedang disiapkan. Anda akan dapat melihat tren produktivitas tim di sini.
-                        </p>
-                        <Button variant="outline" className="border-blue-200 text-blue-600 bg-white" onClick={() => setFilterStatus('all')}>
-                            Kembali ke Daftar Entri
-                        </Button>
+                    {/* Weekly Analytics Header */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <h3 className="text-lg font-bold text-slate-800">
+                            Ringkasan Mingguan: {format(startOfWeek(selectedWeek, { weekStartsOn: 1 }), "d MMM", { locale: id })} - {format(endOfWeek(selectedWeek, { weekStartsOn: 1 }), "d MMM yyyy", { locale: id })}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setSelectedWeek(d => subWeeks(d, 1))}>
+                                Minggu Lalu
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setSelectedWeek(new Date())}>
+                                Minggu Ini
+                            </Button>
+                        </div>
                     </div>
+
+                    {/* Analytics Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Column 1: Insight Stats */}
+                        <div className="space-y-4">
+                            <Card className="bg-blue-50/50 border-blue-100 shadow-sm">
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 bg-blue-100 rounded-lg">
+                                            <TrendingUp className="w-4 h-4 text-blue-700" />
+                                        </div>
+                                        <p className="text-sm font-medium text-blue-900">Total Jurnal</p>
+                                    </div>
+                                    <p className="text-2xl font-bold text-blue-900">{weeklyStats.total}</p>
+                                    <p className="text-xs text-blue-700 mt-1">Minggu ini</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-indigo-50/50 border-indigo-100 shadow-sm">
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 bg-indigo-100 rounded-lg">
+                                            <Users className="w-4 h-4 text-indigo-700" />
+                                        </div>
+                                        <p className="text-sm font-medium text-indigo-900">Karyawan Aktif</p>
+                                    </div>
+                                    <p className="text-2xl font-bold text-indigo-900">{weeklyStats.activeUsers}</p>
+                                    <p className="text-xs text-indigo-700 mt-1">Mengisi jurnal</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-emerald-50/50 border-emerald-100 shadow-sm">
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 bg-emerald-100 rounded-lg">
+                                            <CheckSquare className="w-4 h-4 text-emerald-700" />
+                                        </div>
+                                        <p className="text-sm font-medium text-emerald-900">Approval Rate</p>
+                                    </div>
+                                    <p className="text-2xl font-bold text-emerald-900">{weeklyStats.approvalRate}%</p>
+                                    <p className="text-xs text-emerald-700 mt-1">Telah direview</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Column 2: Weekly Activity Chart */}
+                        <Card className="md:col-span-2 shadow-sm border-slate-200">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-base">Aktivitas Harian</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="h-[250px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={weeklyStats.dailyActivity}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                            <XAxis
+                                                dataKey="day"
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fill: '#64748b', fontSize: 12 }}
+                                                dy={10}
+                                            />
+                                            <YAxis
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fill: '#64748b', fontSize: 12 }}
+                                            />
+                                            <RechartsTooltip
+                                                cursor={{ fill: '#f8fafc' }}
+                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                            />
+                                            <Bar
+                                                dataKey="entries"
+                                                fill="#4f46e5"
+                                                radius={[4, 4, 0, 0]}
+                                                barSize={32}
+                                            />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Leaderboard / Contributor List */}
+                    <Card className="shadow-sm border-slate-200">
+                        <CardHeader>
+                            <CardTitle className="text-base">Top Kontributor Mingguan</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {weeklyStats.sortedContributors.map((contributor, index) => (
+                                    <div key={index} className="flex items-center justify-between border-b border-slate-50 last:border-0 pb-3 last:pb-0">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500">
+                                                {index + 1}
+                                            </div>
+                                            <Avatar className="h-10 w-10 border border-slate-100">
+                                                <AvatarImage src={contributor.avatar || ""} />
+                                                <AvatarFallback className="bg-blue-50 text-blue-600 font-semibold">{getInitials(contributor.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-800">{contributor.name}</p>
+                                                <p className="text-xs text-slate-500">{contributor.count} jurnal minggu ini</p>
+                                            </div>
+                                        </div>
+                                        <Badge variant="secondary" className="bg-slate-100 text-slate-600">Active</Badge>
+                                    </div>
+                                ))}
+                                {weeklyStats.sortedContributors.length === 0 && (
+                                    <p className="text-center text-sm text-slate-500 py-4">Belum ada data kontributor minggu ini.</p>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             ) : (
                 <>
@@ -306,83 +477,84 @@ const ManagerJurnal = () => {
             )}
 
             {/* List */}
-            {isLoading ? (
-                <div className="text-center py-12">
-                    <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-slate-500">Memuat data...</p>
-                </div>
-            ) : filteredJournals.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
-                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Filter className="w-6 h-6 text-slate-300" />
+            {filterStatus !== 'summary' && (
+                isLoading ? (
+                    <div className="text-center py-12">
+                        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p className="text-slate-500">Memuat data...</p>
                     </div>
-                    <h3 className="text-lg font-semibold text-slate-800">Tidak ada data</h3>
-                    <p className="text-slate-500">Sesuaikan filter atau tunggu update terbaru.</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {filteredJournals.map((journal) => (
-                        <div key={journal.id} className="group relative bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-all">
-                            <div className="absolute top-4 right-4">
-                                {journal.verification_status === 'submitted' && (
-                                    <Button size="sm" onClick={() => handleOpenReview(journal)} className="bg-blue-600 text-white hover:bg-blue-700 shadow-sm h-8 text-xs">
-                                        Review
-                                    </Button>
-                                )}
-                                {journal.verification_status !== 'submitted' && (
-                                    <div className="flex items-center gap-2">
-                                        {getStatusBadge(journal.verification_status)}
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={() => handleOpenReview(journal)}>
-                                            <MoreHorizontal className="w-4 h-4" />
+                ) : filteredJournals.length === 0 ? (
+                    <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Filter className="w-6 h-6 text-slate-300" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-800">Tidak ada data</h3>
+                        <p className="text-slate-500">Sesuaikan filter atau tunggu update terbaru.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {filteredJournals.map((journal) => (
+                            <div key={journal.id} className="group relative bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-all">
+                                <div className="absolute top-4 right-4">
+                                    {journal.verification_status === 'submitted' && (
+                                        <Button size="sm" onClick={() => handleOpenReview(journal)} className="bg-blue-600 text-white hover:bg-blue-700 shadow-sm h-8 text-xs">
+                                            Review
                                         </Button>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                    {journal.verification_status !== 'submitted' && (
+                                        <div className="flex items-center gap-2">
+                                            {getStatusBadge(journal.verification_status)}
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={() => handleOpenReview(journal)}>
+                                                <MoreHorizontal className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
 
-                            <div className="flex gap-4">
-                                <Avatar className="h-10 w-10 border border-slate-100">
-                                    <AvatarImage src={journal.profiles?.avatar_url || ""} />
-                                    <AvatarFallback className="bg-blue-50 text-blue-600 font-semibold">{getInitials(journal.profiles?.full_name || "")}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 pr-24">
-                                    <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3 mb-2">
-                                        <h4 className="text-sm font-bold text-slate-800">{journal.profiles?.full_name}</h4>
-                                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                                            <span>{journal.profiles?.position || "Staff"}</span>
-                                            <span>•</span>
-                                            <span className="flex items-center gap-1">
-                                                <CalendarIcon className="w-3 h-3" />
-                                                {format(new Date(journal.date), "d MMM yyyy", { locale: id })}
+                                <div className="flex gap-4">
+                                    <Avatar className="h-10 w-10 border border-slate-100">
+                                        <AvatarImage src={journal.profiles?.avatar_url || ""} />
+                                        <AvatarFallback className="bg-blue-50 text-blue-600 font-semibold">{getInitials(journal.profiles?.full_name || "")}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 pr-24">
+                                        <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3 mb-2">
+                                            <h4 className="text-sm font-bold text-slate-800">{journal.profiles?.full_name}</h4>
+                                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                                                <span>{journal.profiles?.position || "Staff"}</span>
+                                                <span>•</span>
+                                                <span className="flex items-center gap-1">
+                                                    <CalendarIcon className="w-3 h-3" />
+                                                    {format(new Date(journal.date), "d MMM yyyy", { locale: id })}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                            {journal.content}
+                                        </div>
+
+                                        {(journal.manager_notes) && (
+                                            <div className="mt-3 flex items-start gap-2 bg-yellow-50/50 p-2.5 rounded-lg border border-yellow-100">
+                                                <MessageSquare className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
+                                                <div>
+                                                    <p className="text-xs font-semibold text-yellow-700">Catatan:</p>
+                                                    <p className="text-xs text-slate-600">{journal.manager_notes}</p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="mt-3 flex items-center gap-4 text-xs text-slate-400">
+                                            <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded">
+                                                <ClockIcon className="w-3 h-3" />
+                                                {Math.floor(journal.duration / 60)}j {journal.duration % 60}m
                                             </span>
                                         </div>
                                     </div>
-
-                                    <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                                        {journal.content}
-                                    </div>
-
-                                    {(journal.manager_notes) && (
-                                        <div className="mt-3 flex items-start gap-2 bg-yellow-50/50 p-2.5 rounded-lg border border-yellow-100">
-                                            <MessageSquare className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
-                                            <div>
-                                                <p className="text-xs font-semibold text-yellow-700">Catatan:</p>
-                                                <p className="text-xs text-slate-600">{journal.manager_notes}</p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="mt-3 flex items-center gap-4 text-xs text-slate-400">
-                                        <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded">
-                                            <ClockIcon className="w-3 h-3" />
-                                            {Math.floor(journal.duration / 60)}j {journal.duration % 60}m
-                                        </span>
-                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+                        ))}
+                    </div>
+                ))}
 
             {/* Review Modal */}
             <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
@@ -417,14 +589,6 @@ const ManagerJurnal = () => {
                             Batal
                         </Button>
                         <div className="flex gap-2 w-full sm:w-auto">
-                            {/* <Button 
-                                variant="destructive" 
-                                onClick={() => handleSubmitReview('rejected')} 
-                                disabled={isSubmitting}
-                                className="flex-1 sm:flex-none"
-                            >
-                                Tolak
-                            </Button> */}
                             <Button
                                 onClick={() => handleSubmitReview('approved')}
                                 disabled={isSubmitting}
