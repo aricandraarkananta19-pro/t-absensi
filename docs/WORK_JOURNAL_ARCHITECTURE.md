@@ -1,125 +1,88 @@
 # Work System (Work Journal) Module - Architecture & Feasibility Analysis
 
 ## 1. Executive Summary
-Integrating a **Work Journal (Laporan Kerja)** module into the existing **T-Absensi** ecosystem is not only **feasible** but highly recommended. The current technology stack (Supabase + React/Vite) is perfectly suited for this expansion without the need for a separate microservice.
+The **Work Journal (Laporan Kerja)** module has been successfully integrated into the **T-Absensi** ecosystem as a core feature. It transforms the system from a tracking tool into a performance management platform.
 
-The synergy between **Attendance** (When you work) and **Journal** (What you do) provides the highest value when they are tightly coupled.
-
----
-
-## 2. Architecture Recommendation
-**Recommendation: Integrated Modular Monolith**
-
-We should build this as a logically separate module *within* the current application and database, rather than a completely separate system.
-
-### Why integrated?
-1.  **Context Aware**: When an employee Clocks Out, the system can immediately prompt: *"You were here for 8 hours. What did you work on?"*
-2.  **Shared Authentication**: No need to sync users or deal with complex SSO. `auth.users` remains the single source of truth.
-3.  **Data Integrity**: You can easily query "Show me employees who were present but have no journal entry" using standard SQL Joins.
-4.  **Cost Efficiency**: Leveraging the existing Supabase instance avoids doubling infrastructure costs.
-
-### High-Level Tech Stack
--   **Database**: Supabase PostgreSQL (New tables linked to `public.attendance`).
--   **Backend**: Supabase Edge Functions (for AI processing and Reports).
--   **Frontend**: New Route `/work-journal` and Components in existing React App.
--   **AI**: OpenAI API or Gemini API connected via Edge Functions.
+The system now seamlessly links **Attendance** (presence) with **Journals** (productivity), offering real-time visibility for Managers and Admins.
 
 ---
 
-## 3. Database Schema Design (Proposed)
+## 2. Architecture & Implementation
+**Approach: Integrated Modular Monolith**
 
-We need to add the following tables to the existing `public` schema:
+The module is built directly within the existing Supabase + React infrastructure, ensuring tight integration and security.
 
-### `projects` (Optional, for categorization)
-| Column | Type | Description |
-| :--- | :--- | :--- |
-| `id` | uuid | PK |
-| `name` | text | Project name (e.g. "Website Redesign") |
-| `status` | text | active/archived |
+### Key Components
+-   **Database**: Supabase PostgreSQL (`work_journals` table).
+-   **Role-Based Access Control (RLS)**:
+    -   **Employees**: View/Update OWN journals only.
+    -   **Managers**: View/Update ALL team journals (except Drafts). Review, Approve, Reject flow.
+    -   **Admins**: Global visibility for audits and reporting.
+-   **Real-time**: Supabase Realtime subscriptions ensure dashboards update instantly upon submission.
+
+---
+
+## 3. Database Schema (Final Implementation)
+
+The schema relies on `work_journals` joined with `auth.users` through `public.profiles`.
 
 ### `work_journals`
-| Column | Type | Description |
-| :--- | :--- | :--- |
-| `id` | uuid | PK |
-| `user_id` | uuid | FK to `auth.users` |
-| `attendance_id` | uuid | FK to `public.attendance` (Optional linkage) |
-| `date` | date | The work date |
-| `content` | text | Rich text description of work |
-| `category` | text | e.g., "Dev", "Meeting", "Support" |
-| `duration` | int | Minutes spent |
-| `progress` | int | 0-100% |
-| `status` | text | 'planned', 'in_progress', 'completed' |
-| `ai_feedback` | jsonb | Stores AI suggestions/rating |
+| Column | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | uuid | gen_random_uuid() | Primary Key |
+| `user_id` | uuid | - | FK to `auth.users`, identifying the author |
+| `date` | date | now() | Date of the journal entry |
+| `content` | text | - | The actual journal text/report |
+| `duration` | int | 0 | Minutes spent (0 for manual entries) |
+| `status` | text | 'completed' | General status of the entry task |
+| `verification_status` | text | 'submitted' | **Workflow Status**: `draft`, `submitted`, `reviewed`, `approved`, `rejected` |
+| `manager_notes` | text | - | Feedback provided by managers during review |
+| `created_at` | timestamptz | now() | Timestamp of creation |
 
-### `work_summaries` (AI Generated)
-| Column | Type | Description |
-| :--- | :--- | :--- |
-| `id` | uuid | PK |
-| `user_id` | uuid | FK |
-| `period_start` | date | Start of week/month |
-| `period_end` | date | End of week/month |
-| `summary` | text | AI generated text |
-| `productivity_score` | int | AI estimation (0-100) |
-| `anomalies` | text | "High hours, low output flagged" |
+### Visibility Logic (RLS Policies)
+1.  **View Policy**:
+    *   `user_id = auth.uid()` (Employee sees own).
+    *   OR `role IN ('manager', 'admin')` (Managers see all).
+2.  **Update Policy**:
+    *   Same as view; Managers can write to `manager_notes` and `verification_status`.
 
 ---
 
-## 4. AI Assistant Integration Strategy
+## 4. Workflow Stages
 
-The AI features should be implemented as **Supabase Edge Functions**. We should not run AI logic on the client (browser) for security and consistency.
+1.  **Drafting (`draft`)**:
+    *   Employee writes journal.
+    *   Visible **ONLY** to Employee.
+    *   Can be saved and edited multiple times.
 
-### Feature A: Journal Auto-Refinement
-*   **Trigger**: User types a rough draft (e.g., "fixed login bug").
-*   **Action**: User clicks "Enhance with AI".
-*   **Backend**: Sends text to LLM -> Returns: "Investigated and resolved a critical authentication issue preventing user login..."
-*   **UX**: The system replaces the text or offers a suggestion.
+2.  **Submission (`submitted`)**:
+    *   Employee clicks "Kirim".
+    *   Status changes to `submitted`.
+    *   **Instantly visible** on Manager & Admin dashboards.
+    *   Badge: "Menunggu" (Pending).
 
-### Feature B: Manager Insights (The "Anomaly Detector")
-*   **Trigger**: Scheduled Cron Job (Weekly).
-*   **Logic**:
-    1.  Fetch `attendance.work_hours` total.
-    2.  Fetch `work_journals` entries.
-    3.  Feed both to LLM context: *"Employee X worked 40 hours. Journals say: 'Meeting 2h'. Identify discrepancy."*
-    4.  **Result**: Save to `work_summaries` table.
-
----
-
-## 5. Risk Analysis
-
-| Risk Category | Risk Description | Mitigation Strategy |
-| :--- | :--- | :--- |
-| **UX Friction** | Employees hate filling forms; adoption will be low. | **Make it frictionless**. Use Voice-to-Text. Pre-fill data if integrating with Git/Jira later. Trigger it right after Clock-Out. |
-| **Privacy** | AI "Productivity Scoring" can feel dystopian/spying. | **Transparency**. Label AI clearly as an "Assistant" or "Coach", not a "Judge". Allow employees to see their own scores first before managers. |
-| **Scalability** | Journal text data grows rapidly. | Text is cheap to store. Supabase handles millions of rows easily. Indexing on `date` and `user_id` is sufficient. |
-| **Cost** | High usage of LLM APIs tokens. | Use cheaper models (e.g., GPT-4o-mini or Gemini Flash) for routine summaries. Only use heavy models for complex monthly reports. |
+3.  **Review (`approved` / `rejected`)**:
+    *   Manager reviews the content.
+    *   **Approve**: Status -> `approved`. Badge: "Disetujui".
+    *   **Reject/Revise**: Status -> `rejected`. Badge: "Revisi". Manager adds notes explaining what needs fixing.
 
 ---
 
-## 6. Implementation Stages (Roadmap)
+## 5. Future Roadmap (AI Integration)
 
-### Phase 1: The Foundation (Current T-Absensi)
-*   [x] Database Users & Auth
-*   [x] Attendance Tracking (Clock In/Out)
-
-### Phase 2: Manual Journaling (MVP)
-*   [ ] Create `work_journals` table.
-*   [ ] Create UI: "Input Activity" (Tag Project, Description, Hours).
-*   [ ] Link Journal to Attendance: "You worked 8 hours, you have logged 6 hours of activity. 2 hours missing."
-*   [ ] Basic Manager View: List of journals per employee.
-
-### Phase 3: AI Integration
-*   [ ] **Writer Assistant**: "Help me write this professionaly".
-*   [ ] **Audio Journal**: Record voice message -> Whisper API -> Text Journal.
-*   [ ] **Daily Recap**: AI summarizing the day's entries.
-
-### Phase 4: Manager Intelligence
-*   [ ] **Weekly Report Generation**: Auto-email PDF of team activities.
-*   [ ] **Productivity Dashboard**: Charts combining attendance vs. output.
-*   [ ] **Anomaly Alerts**: Push notification for meaningful discrepancies.
+### Phase 3: AI Augmentation (Next)
+*   **Writer Assistant**: "Help me write this professionally".
+*   **Work Summarization**: Auto-generate weekly summaries from daily headers.
+*   **Anomaly Detection**: Flag mismatches between attendance hours and journal output.
 
 ---
 
-## 7. Conclusion
-Integrating this into T-Absensi is the **correct strategic move**. It transforms the app from a simple "Time Tracker" (Administrative) into a "Performance Management System" (Strategic).
+## 6. Current Status
+*   [x] **Database Schema**: Implemented.
+*   [x] **RLS Policies**: Secure and role-aware.
+*   [x] **Employee UI**: Create, Draft, Submit.
+*   [x] **Manager UI**: Real-time Feed, Review (Approve/Reject), Feedback.
+*   [x] **Admin UI**: Global Activity Feed.
+*   [x] **Navigation**: Integrated into system sidebars.
 
-**Next Step**: Should we proceed with **Phase 2 (Database Schema & Basic UI)**?
+The module is currently **LIVE** in the development environment.

@@ -612,6 +612,14 @@ const ManagerJurnal = () => {
                         </Button>
                         <div className="flex gap-2 w-full sm:w-auto">
                             <Button
+                                onClick={() => handleSubmitReview('rejected')}
+                                disabled={isSubmitting}
+                                variant="destructive"
+                                className="flex-1 sm:flex-none"
+                            >
+                                Revisi
+                            </Button>
+                            <Button
                                 onClick={() => handleSubmitReview('approved')}
                                 disabled={isSubmitting}
                                 className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"

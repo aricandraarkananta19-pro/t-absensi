@@ -45,6 +45,9 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 -- Drop restricting policies if any (be careful not to break existing logic, but Ensure Visibility is key)
 -- Assuming standard policies exist. We add a broad "View All Profiles" for Admins/Managers.
 
+DROP POLICY IF EXISTS "Admins and Managers can view all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Authenticated users can view basic profiles" ON public.profiles;
+
 CREATE POLICY "Admins and Managers can view all profiles" ON public.profiles
 FOR SELECT TO authenticated
 USING (
