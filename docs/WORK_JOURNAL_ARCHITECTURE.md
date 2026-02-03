@@ -27,24 +27,32 @@ The module is built directly within the existing Supabase + React infrastructure
 The schema relies on `work_journals` joined with `auth.users` through `public.profiles`.
 
 ### `work_journals`
+### Database Schema
+**Table**: `work_journals`
+
 | Column | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `id` | uuid | gen_random_uuid() | Primary Key |
 | `user_id` | uuid | - | FK to `auth.users`, identifying the author |
+| `department` | text | - | **Snapshot** of author's department at time of submission |
+| `manager_id` | uuid | - | FK to `profiles`, auto-assigned based on Dept Manager |
 | `date` | date | now() | Date of the journal entry |
 | `content` | text | - | The actual journal text/report |
 | `duration` | int | 0 | Minutes spent (0 for manual entries) |
-| `status` | text | 'completed' | General status of the entry task |
-| `verification_status` | text | 'submitted' | **Workflow Status**: `draft`, `submitted`, `reviewed`, `approved`, `rejected` |
+| `verification_status` | text | 'submitted' | `draft`, `submitted`, `reviewed`, `approved`, `rejected` |
+| `submitted_at` | timestamptz | - | Timestamp when status changed to 'submitted' |
 | `manager_notes` | text | - | Feedback provided by managers during review |
 | `created_at` | timestamptz | now() | Timestamp of creation |
 
-### Visibility Logic (RLS Policies)
-1.  **View Policy**:
-    *   `user_id = auth.uid()` (Employee sees own).
-    *   OR `role IN ('manager', 'admin')` (Managers see all).
-2.  **Update Policy**:
-    *   Same as view; Managers can write to `manager_notes` and `verification_status`.
+### Automation & Security
+1.  **Auto-Assignment Trigger**:
+    -   On `INSERT/UPDATE`: Fetches Author's `department` from Profiles.
+    -   Sets `manager_id` by finding a user with role 'manager' in that department.
+    -   Sets `submitted_at = NOW()` when status becomes `submitted`.
+2.  **Row Level Security (RLS)**:
+    -   **Admin**: View `true` (All).
+    -   **Manager**: View if `manager_id = auth.uid()` OR `department = <Manager's Dept>`.
+    -   **Employee**: View if `user_id = auth.uid()`.
 
 ---
 
