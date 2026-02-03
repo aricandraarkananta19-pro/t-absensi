@@ -86,8 +86,7 @@ export default function JurnalSaya() {
                     content: newJournalContent,
                     date: new Date().toISOString().split('T')[0],
                     duration: 0, // Default 0 for manual entries not tied to clock out
-                    status: 'completed',
-                    verification_status: 'submitted'
+                    status: 'completed'
                 });
 
             if (error) throw error;
