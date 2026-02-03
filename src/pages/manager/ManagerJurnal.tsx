@@ -224,45 +224,86 @@ const ManagerJurnal = () => {
                 </Card>
             </div>
 
-            {/* Filters */}
-            <div className="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div className="relative flex-1 w-full md:max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                        type="text"
-                        placeholder="Cari nama atau isi jurnal..."
-                        className="pl-9 bg-slate-50 border-slate-200"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-                <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-                    <Button
-                        variant={filterStatus === 'all' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setFilterStatus('all')}
-                        className={filterStatus === 'all' ? "bg-slate-800 hover:bg-slate-700" : "text-slate-600"}
-                    >
-                        Semua
-                    </Button>
-                    <Button
-                        variant={filterStatus === 'submitted' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setFilterStatus('submitted')}
-                        className={filterStatus === 'submitted' ? "bg-amber-600 hover:bg-amber-700 border-amber-600" : "text-slate-600"}
-                    >
-                        Menunggu
-                    </Button>
-                    <Button
-                        variant={filterStatus === 'approved' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setFilterStatus('approved')}
-                        className={filterStatus === 'approved' ? "bg-green-600 hover:bg-green-700 border-green-600" : "text-slate-600"}
-                    >
-                        Disetujui
-                    </Button>
-                </div>
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-4 border-b border-slate-200 mb-6">
+                <button
+                    onClick={() => setFilterStatus('all')} // Reset to list view
+                    className={`pb-3 text-sm font-medium transition-colors relative ${filterStatus !== 'summary' ? "text-blue-600" : "text-slate-500 hover:text-slate-700"
+                        }`}
+                >
+                    Entri Jurnal
+                    {filterStatus !== 'summary' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
+                    )}
+                </button>
+                <button
+                    onClick={() => setFilterStatus('summary')}
+                    className={`pb-3 text-sm font-medium transition-colors relative ${filterStatus === 'summary' ? "text-blue-600" : "text-slate-500 hover:text-slate-700"
+                        }`}
+                >
+                    Rekap & Insight
+                    {filterStatus === 'summary' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
+                    )}
+                </button>
             </div>
+
+            {filterStatus === 'summary' ? (
+                <div className="space-y-6">
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 text-center">
+                        <BarChart3 className="w-12 h-12 text-blue-200 mx-auto mb-3" />
+                        <h3 className="text-lg font-semibold text-blue-900">Weekly Insight</h3>
+                        <p className="text-blue-600/80 max-w-sm mx-auto mt-1 mb-4">
+                            Fitur analitik mingguan sedang disiapkan. Anda akan dapat melihat tren produktivitas tim di sini.
+                        </p>
+                        <Button variant="outline" className="border-blue-200 text-blue-600 bg-white" onClick={() => setFilterStatus('all')}>
+                            Kembali ke Daftar Entri
+                        </Button>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    {/* Filters */}
+                    <div className="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div className="relative flex-1 w-full md:max-w-md">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Input
+                                type="text"
+                                placeholder="Cari nama atau isi jurnal..."
+                                className="pl-9 bg-slate-50 border-slate-200"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+                            <Button
+                                variant={filterStatus === 'all' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setFilterStatus('all')}
+                                className={filterStatus === 'all' ? "bg-slate-800 hover:bg-slate-700" : "text-slate-600"}
+                            >
+                                Semua
+                            </Button>
+                            <Button
+                                variant={filterStatus === 'submitted' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setFilterStatus('submitted')}
+                                className={filterStatus === 'submitted' ? "bg-amber-600 hover:bg-amber-700 border-amber-600" : "text-slate-600"}
+                            >
+                                Menunggu
+                            </Button>
+                            <Button
+                                variant={filterStatus === 'approved' ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => setFilterStatus('approved')}
+                                className={filterStatus === 'approved' ? "bg-green-600 hover:bg-green-700 border-green-600" : "text-slate-600"}
+                            >
+                                Disetujui
+                            </Button>
+                        </div>
+                    </div>
+                </>
+            )}
 
             {/* List */}
             {isLoading ? (

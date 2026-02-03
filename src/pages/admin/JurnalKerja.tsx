@@ -192,6 +192,9 @@ const JurnalKerja = () => {
                     <Button variant="outline" className="gap-2 border-slate-200 text-slate-600">
                         <CalendarIcon className="w-4 h-4" /> Tanggal
                     </Button>
+                    <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white">
+                        <Database className="w-4 h-4" /> Export Data
+                    </Button>
                 </div>
             </div>
 
