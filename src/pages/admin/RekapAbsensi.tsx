@@ -4,7 +4,7 @@ import {
   ArrowLeft, Clock, Search, Calendar as CalendarIcon, Users, CheckCircle2,
   XCircle, AlertCircle, Download, FileSpreadsheet, FileText,
   LayoutDashboard, BarChart3, Building2, Key, Settings, Shield, Database,
-  ChevronLeft, ChevronRight, LogIn, LogOut
+  ChevronLeft, ChevronRight, LogIn, LogOut, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -79,6 +90,10 @@ const RekapAbsensi = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Delete State
+  const [recordToDelete, setRecordToDelete] = useState<any | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // View Modes: Daily, Monthly, Range
   const [viewMode, setViewMode] = useState<"daily" | "monthly" | "range">("daily");
@@ -403,6 +418,48 @@ const RekapAbsensi = () => {
     }
   };
 
+  // DELETE LOGIC
+  const openDelete = (record: any) => {
+    if (!record.id || record.id.toString().startsWith('virt')) {
+      toast({ variant: "destructive", title: "Tidak ada data", description: "Belum ada data absensi untuk dihapus." });
+      return;
+    }
+    setRecordToDelete(record);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!recordToDelete) return;
+    setIsLoading(true);
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+
+      const { error } = await supabase
+        .from('attendance')
+        .delete()
+        .eq('id', recordToDelete.id);
+
+      if (error) throw error;
+
+      // Audit Log
+      await supabase.from("audit_logs").insert({
+        user_id: user?.id,
+        action: "ADMIN_DELETE_ATTENDANCE",
+        target_table: "attendance",
+        target_id: recordToDelete.id,
+        description: `Admin deleted attendance record for ${recordToDelete.name} on ${recordToDelete.clock_in}`
+      });
+
+      toast({ title: "Berhasil Dihapus", description: "Data absensi telah di-reset (dihapus)." });
+      setIsDeleteDialogOpen(false);
+      fetchAttendance();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Gagal Menghapus", description: e.message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // EXPORT
   const handleExport = (type: 'csv' | 'excel' | 'pdf') => {
     if (viewMode === 'monthly' || viewMode === 'range') {
@@ -561,6 +618,27 @@ const RekapAbsensi = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-600">Hapus Data Absensi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Anda akan menghapus data kehadiran untuk <b>{recordToDelete?.name}</b>.
+              <br /><br />
+              Tindakan ini akan <b>me-reset</b> status karyawan menjadi "Belum Hadir" untuk hari tersebut.
+              Data yang dihapus tidak dapat dikembalikan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white">
+              Ya, Hapus Permanen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="space-y-4 md:space-y-6">
         {/* Controls */}
@@ -740,9 +818,14 @@ const RekapAbsensi = () => {
                       <TableCell>{calculateDuration((item as any).clock_in, (item as any).clock_out)}</TableCell>
                       <TableCell>{getStatusBadge((item as any).status)}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => openEdit(item)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => openEdit(item)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => openDelete(item)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </>
                   ) : (
