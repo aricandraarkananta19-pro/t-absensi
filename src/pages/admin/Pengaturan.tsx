@@ -4,7 +4,7 @@ import {
   ArrowLeft, Building2, Clock, MapPin, CalendarDays,
   ShieldAlert, Save, RotateCcw, Download, Trash2,
   ChevronRight, Settings, Smartphone, Bell, Database,
-  FileText, Briefcase, Info
+  FileText, Briefcase, Info, Play
 } from "lucide-react";
 import { useSystemSettings, SystemSettings } from "@/hooks/useSystemSettings";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -279,6 +279,32 @@ const Pengaturan = () => {
     }
   };
 
+  const handleRunAutoClockOut = async () => {
+    setIsSaving(true);
+    toast({ title: "Memproses...", description: "Sedang menjalankan Auto Clock-Out..." });
+    try {
+      const { data, error } = await supabase.functions.invoke('auto-clock-out');
+      if (error) throw error;
+
+      if (data && !data.success) {
+        throw new Error(data.error || "Unknown error");
+      }
+
+      toast({
+        title: "Berhasil",
+        description: data.message || `Proses selesai. ${data.processed || 0} karyawan diproses.`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Gagal",
+        description: error.message || "Gagal menjalankan fungsi.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // ==========================================
   // RENDER SECTIONS
   // ==========================================
@@ -429,6 +455,19 @@ const Pengaturan = () => {
                 value={formData.autoClockOutTime}
                 onChange={(e) => handleChange("autoClockOutTime", e.target.value)}
               />
+              <div className="pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRunAutoClockOut}
+                  disabled={isSaving}
+                  className="text-xs h-8"
+                >
+                  <Play className="w-3 h-3 mr-2" />
+                  Jalankan Sekarang (Test)
+                </Button>
+              </div>
             </div>
           )}
           {/* Save Button - Bottom Right */}
