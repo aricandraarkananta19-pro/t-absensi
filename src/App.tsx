@@ -26,6 +26,7 @@ import ManagerDashboard from "./pages/manager/ManagerDashboardNew";
 import ManagerRekapAbsensi from "./pages/manager/ManagerRekapAbsensi";
 import ManagerLaporan from "./pages/manager/ManagerLaporan";
 import ManagerCuti from "./pages/manager/ManagerCuti";
+import ManagerJurnal from "./pages/manager/ManagerJurnal";
 import Dokumentasi from "./pages/admin/Dokumentasi";
 import JurnalKerja from "./pages/admin/JurnalKerja";
 import ExportDatabase from "./pages/admin/ExportDatabase";
@@ -122,6 +123,14 @@ const App = () => (
               element={
                 <ManagerRoute>
                   <ManagerRekapAbsensi />
+                </ManagerRoute>
+              }
+            />
+            <Route
+              path="/manager/jurnal"
+              element={
+                <ManagerRoute>
+                  <ManagerJurnal />
                 </ManagerRoute>
               }
             />
