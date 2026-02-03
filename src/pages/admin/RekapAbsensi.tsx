@@ -14,6 +14,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pencil } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToCSV } from "@/lib/exportUtils";
@@ -54,6 +66,16 @@ const RekapAbsensi = () => {
 
   const [dailyData, setDailyData] = useState<any[]>([]);
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats[]>([]);
+
+  // Edit State
+  const [editingRecord, setEditingRecord] = useState<any | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    clock_in: "",
+    clock_out: "",
+    status: "",
+    notes: ""
+  });
 
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -318,6 +340,69 @@ const RekapAbsensi = () => {
     absent: monthlyStats.reduce((acc, curr) => acc + curr.absent, 0),
   };
 
+  // EDIT LOGIC
+  const openEdit = (record: any) => {
+    if (!record.id || record.id.toString().startsWith('virt')) {
+      toast({ variant: "destructive", title: "Tidak ada data", description: "Karyawan ini belum absen, tidak bisa diedit." });
+      return;
+    }
+    setEditingRecord(record);
+    setEditForm({
+      clock_in: record.clock_in ? new Date(record.clock_in).toISOString().slice(0, 16) : "",
+      clock_out: record.clock_out ? new Date(record.clock_out).toISOString().slice(0, 16) : "",
+      status: record.status || "present",
+      notes: record.notes || ""
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!editingRecord) return;
+    setIsLoading(true);
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+
+      const updateData: any = {
+        clock_in: editForm.clock_in ? new Date(editForm.clock_in).toISOString() : null,
+        clock_out: editForm.clock_out ? new Date(editForm.clock_out).toISOString() : null,
+        status: editForm.status,
+        notes: editForm.notes
+      };
+
+      // Calculate Duration/Work Hours if both exist
+      if (updateData.clock_in && updateData.clock_out) {
+        const diff = new Date(updateData.clock_out).getTime() - new Date(updateData.clock_in).getTime();
+        updateData.work_hours = parseFloat((diff / (1000 * 60 * 60)).toFixed(2));
+      } else {
+        updateData.work_hours = 0;
+      }
+
+      const { error } = await supabase
+        .from('attendance')
+        .update(updateData)
+        .eq('id', editingRecord.id);
+
+      if (error) throw error;
+
+      // Manual Audit Log (since we are admin)
+      await supabase.from("audit_logs").insert({
+        user_id: user?.id,
+        action: "ADMIN_UPDATE_ATTENDANCE",
+        target_table: "attendance",
+        target_id: editingRecord.id,
+        description: `Admin edited attendance for ${editingRecord.name}. Status: ${updateData.status}`
+      });
+
+      toast({ title: "Berhasil Update", description: "Data absensi diperbarui." });
+      setIsEditOpen(false);
+      fetchAttendance();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Gagal Update", description: e.message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // EXPORT
   const handleExport = (type: 'csv' | 'excel' | 'pdf') => {
     if (viewMode === 'monthly' || viewMode === 'range') {
@@ -413,6 +498,70 @@ const RekapAbsensi = () => {
       showRefresh={true}
       onRefresh={fetchAttendance}
     >
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Data Absensi</DialogTitle>
+            <DialogDescription>
+              Ubah data kehadiran untuk {editingRecord?.name}.
+              Kosongkan Jam Keluar untuk mereset status "Belum Pulang".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Jam Masuk</Label>
+              <Input
+                type="datetime-local"
+                className="col-span-3"
+                value={editForm.clock_in}
+                onChange={e => setEditForm({ ...editForm, clock_in: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Jam Keluar</Label>
+              <div className="col-span-3">
+                <Input
+                  type="datetime-local"
+                  className="w-full mb-1"
+                  value={editForm.clock_out}
+                  onChange={e => setEditForm({ ...editForm, clock_out: e.target.value })}
+                />
+                <p className="text-[10px] text-slate-500">*Kosongkan untuk mengembalikan status "Sedang Bekerja"</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Status</Label>
+              <div className="col-span-3">
+                <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="present">Hadir (Present)</SelectItem>
+                    <SelectItem value="late">Terlambat (Late)</SelectItem>
+                    <SelectItem value="early_leave">Pulang Awal</SelectItem>
+                    <SelectItem value="absent">Alpha / Mangkir</SelectItem>
+                    <SelectItem value="permission">Izin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Catatan</Label>
+              <Textarea
+                className="col-span-3"
+                value={editForm.notes}
+                onChange={e => setEditForm({ ...editForm, notes: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
+            <Button onClick={handleUpdate}>Simpan Perubahan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="space-y-4 md:space-y-6">
         {/* Controls */}
         <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
@@ -553,6 +702,7 @@ const RekapAbsensi = () => {
                     <TableHead>Jam Keluar</TableHead>
                     <TableHead>Durasi</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="w-[50px]">Aksi</TableHead>
                   </>
                 ) : (
                   <>
@@ -589,6 +739,11 @@ const RekapAbsensi = () => {
                       </TableCell>
                       <TableCell>{calculateDuration((item as any).clock_in, (item as any).clock_out)}</TableCell>
                       <TableCell>{getStatusBadge((item as any).status)}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => openEdit(item)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
                     </>
                   ) : (
                     <>

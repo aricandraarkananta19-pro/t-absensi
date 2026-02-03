@@ -13,6 +13,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import MobileNavigation from "@/components/MobileNavigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 interface AttendanceRecord {
   id: string;
@@ -33,6 +44,11 @@ const AbsensiKaryawan = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [location, setLocation] = useState<string | null>(null);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Safe Clock Out State
+  const [showClockOutConfirm, setShowClockOutConfirm] = useState(false);
+  const [isEarlyLeave, setIsEarlyLeave] = useState(false);
+  const [workDurationHours, setWorkDurationHours] = useState(0);
 
   // Update current time every second
   useEffect(() => {
@@ -159,7 +175,29 @@ const AbsensiKaryawan = () => {
     }
   };
 
-  const handleClockOut = async () => {
+  const initiateClockOut = () => {
+    if (!todayAttendance) return;
+
+    // Check for Early Leave
+    // Assuming settings.clockOutStart is "17:00"
+    const [targetHour, targetMinute] = settings.clockOutStart.split(':').map(Number);
+    const now = new Date();
+    const targetTime = new Date();
+    targetTime.setHours(targetHour, targetMinute, 0, 0);
+
+    const isEarly = now < targetTime;
+    setIsEarlyLeave(isEarly);
+
+    // Calculate duration for context
+    const clockInTime = new Date(todayAttendance.clock_in);
+    const durationMs = now.getTime() - clockInTime.getTime();
+    setWorkDurationHours(durationMs / (1000 * 60 * 60));
+
+    setShowClockOutConfirm(true);
+  };
+
+  const confirmClockOut = async () => {
+    setShowClockOutConfirm(false);
     if (!user || !todayAttendance) return;
     setIsLoading(true);
 
@@ -383,7 +421,7 @@ const AbsensiKaryawan = () => {
                 </button>
               ) : !todayAttendance.clock_out ? (
                 <button
-                  onClick={handleClockOut}
+                  onClick={initiateClockOut}
                   disabled={isLoading}
                   className="w-full h-20 sm:h-24 rounded-3xl bg-red-600 hover:bg-red-500 active:scale-[0.98] transition-all flex items-center justify-between px-8 shadow-lg shadow-red-900/50 group"
                 >
@@ -428,6 +466,40 @@ const AbsensiKaryawan = () => {
       {/* Navigation Links (Non-sticky Footer for convenience) */}
       {isMobile && (
         <div className="w-full pb-8 pt-4 px-6 flex justify-center gap-8 lg:hidden">
+          {/* Dialog for Safe Clock Out */}
+          <AlertDialog open={showClockOutConfirm} onOpenChange={setShowClockOutConfirm}>
+            <AlertDialogContent className="bg-white text-slate-900 border-slate-200">
+              <AlertDialogHeader>
+                <AlertDialogTitle className={isEarlyLeave ? "text-amber-600" : "text-slate-900"}>
+                  {isEarlyLeave ? "Konfirmasi Pulang Awal" : "Konfirmasi Clock Out"}
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-slate-600">
+                  {isEarlyLeave ? (
+                    <div className="space-y-2">
+                      <p>Waktu saat ini <b>belum menunjukkan jam pulang ({settings.clockOutStart})</b>.</p>
+                      <p>Apakah Anda yakin ingin mengakhiri shift sekarang?</p>
+                      {workDurationHours < 1 && (
+                        <div className="p-3 bg-red-50 text-red-700 rounded-lg text-xs font-medium border border-red-100 mt-2">
+                          ⚠️ Peringatan: Anda baru bekerja kurang dari 1 jam. Pastikan tidak salah tekan.
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p>Apakah Anda yakin ingin mengakhiri sesi kerja hari ini?</p>
+                  )}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="border-slate-200 hover:bg-slate-50 text-slate-700">Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmClockOut}
+                  className={isEarlyLeave ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}
+                >
+                  Ya, Clock Out
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           {/* Simple footer links instead of sticky nav if preferred, or rely on dashboard back button. 
                  Given the user asked for "No sticky content", I'll leave the sticky nav OUT for this page.
                  The 'Back to Dashboard' prominent button deals with navigation. */}
