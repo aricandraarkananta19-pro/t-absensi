@@ -376,11 +376,15 @@
   /* ===== MOBILE CONTAINER - CRITICAL ===== */
   .ios-mobile-container {
     min-height: 100vh;
+    min-height: 100svh;
+    /* Fallback for older browsers */
     min-height: 100dvh;
     padding-top: var(--ios-safe-top);
     /* Bottom padding: nav height (68px) + safe area + extra 16px breathing room */
     padding-bottom: calc(var(--ios-bottom-nav-height) + var(--ios-safe-bottom) + 16px);
     background: linear-gradient(180deg, hsl(var(--ios-gray-bg)) 0%, hsl(220 14% 94%) 100%);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* ===== HEADER - SLIM 56px ===== */

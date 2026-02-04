@@ -43,10 +43,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<AppRole | null>(null);
-  const [roleLoading, setRoleLoading] = useState(false);
 
   const fetchUserRole = async (userId: string) => {
-    setRoleLoading(true);
     try {
       const { data, error } = await supabase
         .from("user_roles")
@@ -57,71 +55,73 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (!error && data) {
         setRole(data.role as AppRole);
       } else {
-        setRole(null); // No role found -> Pending/Unauthorized
+        setRole(null);
       }
     } catch (err) {
       console.error("Error fetching role:", err);
-      setRole(null); // Error -> Pending/Unauthorized
-    } finally {
-      setRoleLoading(false);
+      setRole(null);
     }
   };
 
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
-        if (!mounted) return;
-
-        console.log("Auth state change:", event, currentSession?.user?.email);
-
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-
-        if (currentSession?.user) {
-          // Defer Supabase call with setTimeout to prevent deadlock
-          setTimeout(() => {
-            if (mounted) {
-              fetchUserRole(currentSession.user.id);
-            }
-          }, 0);
-        } else {
-          setRole(null);
-        }
-
-        setLoading(false);
-      }
-    );
-
-    // THEN check for existing session
-    const initSession = async () => {
+    const initializeAuth = async () => {
       try {
-        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        // 1. Get initial session
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
 
-        if (!mounted) return;
-
-        setSession(existingSession);
-        setUser(existingSession?.user ?? null);
-
-        if (existingSession?.user) {
-          await fetchUserRole(existingSession.user.id);
+        if (initialSession?.user) {
+          setSession(initialSession);
+          setUser(initialSession.user);
+          // 2. Fetch role synchronously regarding loading state
+          await fetchUserRole(initialSession.user.id);
         }
-      } catch (err) {
-        console.error("Error getting session:", err);
+      } catch (error) {
+        console.error("Auth init error:", error);
       } finally {
         if (mounted) {
           setLoading(false);
         }
       }
+
+      // 3. Listen for changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, currentSession) => {
+          if (!mounted) return;
+
+          console.log("Auth change:", event);
+
+          // If SIGNED_IN or TOKEN_REFRESHED, update state
+          if (currentSession?.user) {
+            setSession(currentSession);
+            setUser(currentSession.user);
+
+            // Only fetch role if we don't have it or user changed
+            if (currentSession.user.id !== user?.id) {
+              // We might want to set loading true here if it's a critical change
+              // But usually for "TOKEN_REFRESHED" we don't want to block UI
+              if (event === 'SIGNED_IN') {
+                // If it's a sign in event, we should fetch role
+                await fetchUserRole(currentSession.user.id);
+              }
+            }
+          } else if (event === 'SIGNED_OUT') {
+            setSession(null);
+            setUser(null);
+            setRole(null);
+          }
+        }
+      );
+
+      return subscription;
     };
 
-    initSession();
+    const subscriptionPromise = initializeAuth();
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      subscriptionPromise.then(sub => sub?.unsubscribe());
     };
   }, []);
 

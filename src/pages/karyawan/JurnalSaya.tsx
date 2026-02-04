@@ -270,36 +270,47 @@ export default function JurnalSaya() {
 
     // Tablet/Desktop Split View helpers
 
+    // Check for large screen (Desktop) where side-panel is visible
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+        const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024); // lg breakpoint
+        checkDesktop();
+        window.addEventListener('resize', checkDesktop);
+        return () => window.removeEventListener('resize', checkDesktop);
+    }, []);
+
     // Tablet/Desktop Split View helpers
     const handleJournalSelect = (journal: JournalCardData) => {
-        if (isMobile) {
+        // Use Modal for Mobile (<640) AND Tablet (<1024)
+        // Only use Side Panel for Desktop (>=1024)
+        if (!isDesktop) {
             openEditModal(journal);
         } else {
             setEditingJournal(journal);
-            // Scroll to form on tablet if needed, or just set it
         }
     };
 
     const handleCreateNew = () => {
-        if (isMobile) {
+        if (!isDesktop) {
             openCreateModal();
         } else {
-            setEditingJournal(null); // Clears form for new entry
+            setEditingJournal(null); // Clears form for new entry, side panel shows "New" state implicitly or keeps old? 
+            // Actually side panel needs to know we want to create new.
+            // The current side panel logic shows "New" if editingJournal is null.
+            // But we might want to ensure it grabs focus or scrolls.
+            // Ideally we need a state 'isCreating'. 
+            // But for now, setting editingJournal(null) allows the form to render empty.
+            // We should just ensure form is visible.
         }
     };
 
     const handleRequestEdit = (date: string) => {
-        // Find journal by date
         const journal = journals.find(j => j.date === date);
         if (journal) {
-            // Check if we can edit it? Rules say "Edit: Allowed for Draft/Correction". 
-            // If it's already approved/submitted, we might just view it.
-            // But for now, we try to open it. OpenEditModal will setEditingJournal.
-            if (isMobile) {
-                // If mobile, close current modal (if strictly one at a time) or just switch
-                // The Modal is controlled by isFormOpen.
+            if (!isDesktop) {
                 setEditingJournal(journal);
-                // setIsFormOpen(true) is already true if we are in the form, but let's ensure.
+                setIsFormOpen(true);
             } else {
                 setEditingJournal(journal);
             }
@@ -367,8 +378,12 @@ export default function JurnalSaya() {
                     <div className="lg:col-span-7 space-y-6">
 
                         {/* Stats Row - Responsive: Scroll on mobile, Grid on desktop */}
+                        {/* FIX: Use grid-cols-2 for Tablet (< lg), grid-cols-4 for Desktop (lg) */}
                         <div className={`
-                            ${isMobile ? 'flex overflow-x-auto pb-4 gap-3 no-scrollbar -mx-4 px-4 snap-x' : 'grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4'}
+                            ${isMobile
+                                ? 'flex overflow-x-auto pb-4 gap-3 no-scrollbar -mx-4 px-4 snap-x'
+                                : 'grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4'
+                            }
                         `}>
                             {/* Card 1: Total */}
                             <Card className={`
