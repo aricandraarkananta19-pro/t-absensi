@@ -113,21 +113,26 @@ export function JournalForm({
         if (isSubmitting || !content.trim()) return;
 
         const timer = setTimeout(() => {
-            // Only auto-save as DRAFT
-            onSave({
-                content: content.trim(),
-                work_result: workResult,
-                obstacles: obstacles.trim() || undefined,
-                mood,
-                date: format(date, 'yyyy-MM-dd')
-            }, true, true); // isDraft=true, isSilent=true
+            // Only auto-save as DRAFT if valid length
+            if (content.length >= 10) {
+                onSave({
+                    content: content.trim(),
+                    work_result: workResult,
+                    obstacles: obstacles.trim() || undefined,
+                    mood,
+                    date: format(date, 'yyyy-MM-dd')
+                }, true, true); // isDraft=true, isSilent=true
+            }
         }, 10000); // 10 seconds
 
         return () => clearTimeout(timer);
     }, [content, workResult, obstacles, mood, date]);
 
+    const MIN_CHARS = 10;
+    const isValidLength = content.trim().length >= MIN_CHARS;
+
     const handleSubmit = async (isDraft: boolean) => {
-        if (!content.trim()) return;
+        if (!isValidLength) return;
 
         setIsSubmitting(true);
         try {
@@ -146,47 +151,50 @@ export function JournalForm({
     };
 
     return (
-        <div className="flex flex-col h-full relative">
+        <div className="flex flex-col h-full w-full relative bg-white">
             {/* Scrollable Content Area */}
-            <div className={`flex-1 overflow-y-auto px-1 ${isMobile ? 'pb-32' : 'pb-4'} space-y-6 no-scrollbar`}>
+            <div className="flex-1 overflow-y-auto w-full px-1 space-y-5 no-scrollbar pb-4">
 
                 {/* Manager Notes Alert (Top Priority) */}
                 {isRevision && managerNotes && (
-                    <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl animate-in fade-in slide-in-from-top-2 flex gap-3 items-start">
+                    <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl animate-in fade-in slide-in-from-top-2 flex gap-3 items-start mx-1 mt-1">
                         <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
                         <div>
                             <p className="text-sm font-bold text-orange-800">Perlu Revisi</p>
-                            <p className="text-xs text-orange-700 mt-1 leading-relaxed">{managerNotes}</p>
+                            <p className="text-xs text-orange-700 mt-0.5 leading-relaxed">{managerNotes}</p>
                         </div>
                     </div>
                 )}
 
                 {/* Date Selection & Conflict Handling */}
-                <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700">
-                        Tanggal Jurnal
+                <div className="space-y-3 px-1">
+                    <Label className="text-slate-500 font-medium text-xs uppercase tracking-wider block">
+                        📅 Tanggal Jurnal
                     </Label>
 
-                    {/* Conflict Alert - Lightweight Info Banner */}
+                    {/* Conflict Alert - Ultra Compact Decision Card */}
                     {isDateConflict ? (
-                        <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg animate-in fade-in zoom-in-95 duration-200">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                <div className="flex items-center gap-3">
+                        <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div className="flex items-center gap-3 w-full sm:w-auto">
                                     <div className="bg-white p-1.5 rounded-full shadow-sm shrink-0">
-                                        <AlertCircle className="w-4 h-4 text-blue-600" />
+                                        <AlertCircle className="w-5 h-5 text-blue-600" />
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-sm font-medium text-slate-800">
-                                            Jurnal tanggal <strong>{format(date, "d MMMM yyyy", { locale: id })}</strong> sudah ada.
+                                        <p className="text-sm font-bold text-slate-800 truncate">
+                                            Jurnal tanggal ini sudah ada
+                                        </p>
+                                        <p className="text-xs text-slate-500 truncate">
+                                            {format(date, "d MMMM yyyy", { locale: id })}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                <div className="flex gap-2 w-full sm:w-auto">
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() => setIsDateDrawerOpen(true)}
-                                        className="flex-1 sm:flex-none h-8 text-xs border-blue-200 text-blue-700 hover:bg-blue-100"
+                                        className="flex-1 sm:flex-none h-9 text-xs border-blue-200 text-blue-700 hover:bg-blue-100"
                                     >
                                         Ganti Tanggal
                                     </Button>
@@ -194,7 +202,7 @@ export function JournalForm({
                                         <Button
                                             size="sm"
                                             onClick={() => props.onRequestEdit?.(format(date, 'yyyy-MM-dd'))}
-                                            className="flex-1 sm:flex-none h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                                            className="flex-1 sm:flex-none h-9 text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                                         >
                                             Edit Jurnal Ini
                                         </Button>
@@ -213,7 +221,7 @@ export function JournalForm({
                                         onClick={() => setIsDateDrawerOpen(true)}
                                         disabled={props.isDateLocked}
                                         className={cn(
-                                            "w-full justify-start text-left font-medium text-base text-slate-700 h-12 rounded-xl border-slate-200 bg-white shadow-sm hover:bg-slate-50",
+                                            "w-full justify-start text-left font-semibold text-slate-700 h-12 rounded-xl border-slate-200 bg-white shadow-sm hover:bg-slate-50",
                                             !date && "text-muted-foreground",
                                             props.isDateLocked && "opacity-75 cursor-not-allowed bg-slate-100 text-slate-500"
                                         )}
@@ -281,7 +289,7 @@ export function JournalForm({
                 </div>
 
                 {/* Main Content Field */}
-                <div className="space-y-2">
+                <div className="space-y-2 px-1">
                     <Label htmlFor="content" className="text-sm font-semibold text-slate-700 flex items-center justify-between">
                         <span>Apa yang Anda kerjakan hari ini? <span className="text-red-500">*</span></span>
                     </Label>
@@ -298,13 +306,19 @@ export function JournalForm({
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                     />
-                    <p className="text-[11px] text-slate-400 text-right">Min. 10 karakter</p>
+                    <div className="flex justify-between items-center">
+                        <p className={cn(
+                            "text-[11px] transition-colors",
+                            content.length > 0 && !isValidLength ? "text-red-500 font-medium" : "text-slate-400"
+                        )}>
+                            Min. {MIN_CHARS} karakter {content.length > 0 && `(${content.length}/${MIN_CHARS})`}
+                        </p>
+                    </div>
                 </div>
 
                 {/* Work Result Selection */}
-                <div className="space-y-2">
+                <div className="space-y-2 px-1">
                     <Label className="text-sm font-semibold text-slate-700">Hasil Pekerjaan</Label>
-
                     {isMobile ? (
                         <>
                             <button
@@ -386,7 +400,7 @@ export function JournalForm({
                 </div>
 
                 {/* Obstacles / Notes Field */}
-                <div className="space-y-2">
+                <div className="space-y-2 px-1">
                     <Label htmlFor="obstacles" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                         Kendala / Catatan
                         <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Opsional</span>
@@ -405,7 +419,7 @@ export function JournalForm({
                 </div>
 
                 {/* Mood Selector */}
-                <div className="space-y-3 pb-2">
+                <div className="space-y-3 pb-2 px-1">
                     <Label className="text-sm font-semibold text-slate-700">Work Mood</Label>
                     <div className="flex gap-3">
                         {MOOD_OPTIONS.map((option) => (
@@ -437,7 +451,7 @@ export function JournalForm({
                 </div>
 
                 {/* Info Text */}
-                <div className="flex items-start gap-2 p-3 bg-slate-50 rounded-lg text-xs text-slate-500 leading-relaxed border border-slate-100 mb-2">
+                <div className="flex items-start gap-2 p-3 bg-slate-50 rounded-lg text-xs text-slate-500 leading-relaxed border border-slate-100 mx-1">
                     <Sparkles className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                     <p>
                         Simpan sebagai <strong>Draft</strong> jika belum selesai. Manager akan menerima notifikasi setelah Anda klik <strong>Kirim Laporan</strong>.
@@ -447,8 +461,9 @@ export function JournalForm({
 
             {/* Bottom Action Bar */}
             <div className={cn(
-                "border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-3 bg-white mt-auto shrink-0 z-20 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] transition-all",
-                isMobile ? "fixed bottom-0 left-0 right-0 p-4 pb-8" : "relative pt-4 pb-0"
+                "border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-3 bg-white mt-auto shrink-0 z-20 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] p-4 w-full",
+                // Mobile Safe Area padding adjustment
+                isMobile ? "pb-8" : "pb-4"
             )}>
                 <Button
                     variant="ghost"
@@ -464,7 +479,7 @@ export function JournalForm({
                         <Button
                             variant="outline"
                             onClick={() => handleSubmit(true)}
-                            disabled={isSubmitting || !content.trim() || isDateConflict}
+                            disabled={isSubmitting || !isValidLength || isDateConflict}
                             className="gap-2 border-slate-300 h-11 text-slate-700 font-medium flex-1 sm:flex-none hover:bg-slate-50"
                         >
                             <Save className="w-4 h-4" />
@@ -474,7 +489,7 @@ export function JournalForm({
 
                     <Button
                         onClick={() => handleSubmit(false)}
-                        disabled={isSubmitting || !content.trim() || isDateConflict}
+                        disabled={isSubmitting || !isValidLength || isDateConflict}
                         className={cn(
                             "gap-2 text-white h-11 text-sm font-bold shadow-md transition-all flex-1 sm:flex-none sm:min-w-[140px]",
                             isDateConflict
