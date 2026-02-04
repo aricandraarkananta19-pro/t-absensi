@@ -64,7 +64,7 @@ export default function JurnalSaya() {
                     filter: `user_id=eq.${user?.id}`
                 },
                 () => {
-                    fetchJournals();
+                    fetchJournals(true);
                 }
             )
             .subscribe();
@@ -74,8 +74,8 @@ export default function JurnalSaya() {
         };
     }, [user]);
 
-    const fetchJournals = async () => {
-        setIsLoading(true);
+    const fetchJournals = async (isBackground = false) => {
+        if (!isBackground) setIsLoading(true);
         try {
             const { data, error } = await supabase
                 .from('work_journals' as any)
@@ -87,19 +87,21 @@ export default function JurnalSaya() {
             if (data) setJournals(data as unknown as JournalCardData[]);
         } catch (error) {
             console.error("Error fetching journals:", error);
-            toast({
-                variant: "destructive",
-                title: "Gagal memuat jurnal",
-                description: "Silakan coba lagi."
-            });
+            if (!isBackground) {
+                toast({
+                    variant: "destructive",
+                    title: "Gagal memuat jurnal",
+                    description: "Silakan coba lagi."
+                });
+            }
         } finally {
-            setIsLoading(false);
+            if (!isBackground) setIsLoading(false);
         }
     };
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
-        await fetchJournals();
+        await fetchJournals(false);
         setIsRefreshing(false);
         toast({ title: "Data diperbarui", description: "Jurnal berhasil dimuat ulang." });
     };
@@ -109,9 +111,15 @@ export default function JurnalSaya() {
         if (!isSilent) setIsSubmitting(true);
         try {
             const status = isDraft ? 'draft' : 'submitted';
-            let savedData = null;
+            let savedData: JournalCardData | null = null;
+            let actionType: 'create' | 'update' = 'create';
+
+            // Optimistic Update / State Prep
+            // We'll update the list immediately after a successful DB call
+            // instead of waiting for a fetch.
 
             if (editingJournal) {
+                actionType = 'update';
                 // UPDATE existing journal
                 const { data: updated, error } = await supabase
                     .from('work_journals' as any)
@@ -120,7 +128,7 @@ export default function JurnalSaya() {
                         work_result: data.work_result,
                         obstacles: data.obstacles,
                         mood: data.mood,
-                        date: data.date, // Add date update
+                        date: data.date,
                         verification_status: status,
                         updated_at: new Date().toISOString()
                     })
@@ -129,7 +137,7 @@ export default function JurnalSaya() {
                     .single();
 
                 if (error) throw error;
-                savedData = updated;
+                savedData = updated as unknown as JournalCardData;
 
                 if (!isSilent) {
                     toast({
@@ -151,7 +159,7 @@ export default function JurnalSaya() {
                         work_result: data.work_result,
                         obstacles: data.obstacles,
                         mood: data.mood,
-                        date: data.date, // Use selected date
+                        date: data.date,
                         duration: 0,
                         status: 'completed',
                         verification_status: status
@@ -160,7 +168,8 @@ export default function JurnalSaya() {
                     .single();
 
                 if (error) throw error;
-                savedData = inserted;
+                savedData = inserted as unknown as JournalCardData;
+                actionType = 'create';
 
                 if (!isSilent) {
                     toast({
@@ -172,17 +181,37 @@ export default function JurnalSaya() {
                 }
             }
 
+            // --- IMMEDIATE STATE UPDATE (Fixes "Disappearing" issue) ---
+            if (savedData) {
+                setJournals(prev => {
+                    const newList = [...prev];
+                    if (actionType === 'update') {
+                        const index = newList.findIndex(j => j.id === savedData!.id);
+                        if (index !== -1) newList[index] = savedData!;
+                    } else {
+                        // Add new to top + sort by date desc
+                        newList.unshift(savedData!);
+                        newList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                    }
+                    return newList;
+                });
+
+                // Auto-switch filter if the new item is hidden
+                if (filterStatus !== 'all' && filterStatus !== savedData.verification_status) {
+                    setFilterStatus('all');
+                }
+            }
+            // -----------------------------------------------------------
+
             if (!isSilent) {
                 setIsFormOpen(false);
                 setEditingJournal(null);
             } else {
-                // If auto-save (silent), update the editingJournal so next save is an Update
                 if (savedData) {
-                    setEditingJournal(savedData as unknown as JournalCardData);
+                    setEditingJournal(savedData);
                 }
             }
 
-            fetchJournals();
             return savedData;
         } catch (error: any) {
             console.error("Save error:", error);
@@ -534,57 +563,57 @@ export default function JurnalSaya() {
                     </div>
 
                     {/* RIGHT COLUMN: Form/Details (Tablet/Desktop Only) */}
-                    <div className="hidden lg:block lg:col-span-5">
-                        <div className="sticky top-24">
-                            <Card className="border-slate-200 shadow-lg overflow-hidden flex flex-col max-h-[calc(100vh-120px)]">
-                                <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                                    <div className="flex flex-col gap-1">
-                                        <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
-                                            {editingJournal
-                                                ? (editingJournal.verification_status === 'need_revision' ? '✏️ Revisi Jurnal' : '📝 Detail Jurnal')
-                                                : (
-                                                    <span className="flex items-center gap-2">
-                                                        <BookOpen className="w-5 h-5 text-blue-600" />
-                                                        Apa yang Anda kerjakan hari ini?
-                                                    </span>
-                                                )
-                                            }
-                                        </h3>
-                                        {!editingJournal && (
-                                            <p className="text-xs text-slate-500 font-medium ml-7">
-                                                Catat aktivitas kerja Anda sekarang. Jangan menunggu pulang.
-                                            </p>
-                                        )}
-                                    </div>
-                                    {editingJournal && (
-                                        <Button variant="ghost" size="sm" onClick={() => setEditingJournal(null)} className="h-8 text-xs text-slate-500">
-                                            Buat Baru
-                                        </Button>
+                    {/* RIGHT COLUMN: Form/Details (Tablet/Desktop Only) */}
+                    <div className="hidden lg:block lg:col-span-5 h-[calc(100vh-100px)] sticky top-24">
+                        <Card className="h-full border-slate-200 shadow-lg flex flex-col bg-white overflow-hidden">
+                            {/* Fixed Header */}
+                            <div className="shrink-0 p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center z-10">
+                                <div className="flex flex-col gap-1">
+                                    <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
+                                        {editingJournal
+                                            ? (editingJournal.verification_status === 'need_revision' ? '✏️ Revisi Jurnal' : '📝 Detail Jurnal')
+                                            : (
+                                                <span className="flex items-center gap-2">
+                                                    <BookOpen className="w-5 h-5 text-blue-600" />
+                                                    Apa yang Anda kerjakan hari ini?
+                                                </span>
+                                            )
+                                        }
+                                    </h3>
+                                    {!editingJournal && (
+                                        <p className="text-xs text-slate-500 font-medium ml-7">
+                                            Catat aktivitas kerja Anda sekarang.
+                                        </p>
                                     )}
                                 </div>
-                                <div className="p-0 flex-1 overflow-hidden">
-                                    <div className="h-full px-6 py-4 flex flex-col">
-                                        <JournalForm
-                                            initialData={editingJournal ? {
-                                                content: editingJournal.content,
-                                                work_result: editingJournal.work_result,
-                                                obstacles: editingJournal.obstacles,
-                                                mood: editingJournal.mood,
-                                                date: editingJournal.date
-                                            } : undefined}
-                                            isEditing={!!editingJournal}
-                                            isRevision={editingJournal?.verification_status === 'need_revision'}
-                                            managerNotes={editingJournal?.manager_notes}
-                                            onSave={handleSaveJournal}
-                                            onCancel={() => setEditingJournal(null)}
-                                            isSubmitting={isSubmitting}
-                                            existingDates={existingDates}
-                                            onRequestEdit={handleRequestEdit}
-                                        />
-                                    </div>
-                                </div>
-                            </Card>
-                        </div>
+                                {editingJournal && (
+                                    <Button variant="ghost" size="sm" onClick={() => setEditingJournal(null)} className="h-8 text-xs text-slate-500">
+                                        Buat Baru
+                                    </Button>
+                                )}
+                            </div>
+
+                            {/* Scrollable Content Container */}
+                            <div className="flex-1 min-h-0 relative">
+                                <JournalForm
+                                    initialData={editingJournal ? {
+                                        content: editingJournal.content,
+                                        work_result: editingJournal.work_result,
+                                        obstacles: editingJournal.obstacles,
+                                        mood: editingJournal.mood,
+                                        date: editingJournal.date
+                                    } : undefined}
+                                    isEditing={!!editingJournal}
+                                    isRevision={editingJournal?.verification_status === 'need_revision'}
+                                    managerNotes={editingJournal?.manager_notes}
+                                    onSave={handleSaveJournal}
+                                    onCancel={() => setEditingJournal(null)}
+                                    isSubmitting={isSubmitting}
+                                    existingDates={existingDates}
+                                    onRequestEdit={handleRequestEdit}
+                                />
+                            </div>
+                        </Card>
                     </div>
                 </div>
             </div>
