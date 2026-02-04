@@ -104,7 +104,7 @@ export function JournalFormModal({
                         }
                     </DrawerDescription>
                 </DrawerHeader>
-                <div className="px-4 flex-1 overflow-hidden h-full pb-0 bg-white">
+                <div className="px-4 flex-1 min-h-0 h-full pb-0 bg-white">
                     <JournalForm
                         initialData={initialData}
                         isEditing={isEditing}

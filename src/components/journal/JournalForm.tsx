@@ -151,9 +151,9 @@ export function JournalForm({
     };
 
     return (
-        <div className="flex flex-col h-full w-full relative bg-white">
+        <div className="flex flex-col h-full w-full relative bg-white overflow-hidden">
             {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto w-full px-1 space-y-5 no-scrollbar pb-4">
+            <div className="flex-1 min-h-0 overflow-y-auto w-full px-1 space-y-5 pb-4">
 
                 {/* Manager Notes Alert (Top Priority) */}
                 {isRevision && managerNotes && (
