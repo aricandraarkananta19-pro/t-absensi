@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileEdit, Send, Eye, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
 import { JournalCardData } from "./JournalCard";
@@ -43,7 +44,7 @@ export function JournalSummaryView({ journal, onAction }: JournalSummaryViewProp
                     ctaText: "Lihat Detail",
                     ctaIcon: Eye,
                     ctaVariant: "outline" as const,
-                    statusLabel: "Menunggu Review",
+                    statusLabel: "Terkirim",
                     statusColor: "text-blue-600 bg-blue-100"
                 };
             case 'approved':
