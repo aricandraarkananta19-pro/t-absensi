@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import {
     BookOpen, Calendar, Clock, CheckCircle2, AlertCircle,
-    Filter, Search, ChevronLeft, ChevronRight, MoreHorizontal, Plus
+    Plus, FileEdit, Send, Eye, RefreshCw, Filter
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,47 +13,65 @@ import { id } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import MobileNavigation from "@/components/MobileNavigation";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 
-// Brand Colors from Design System
-const BRAND_COLORS = {
-    blue: "#1A5BA8",
-    lightBlue: "#00A0E3",
-    green: "#7DC242",
-};
+// New Components
+import { JournalCard, JournalCardData, JournalStatusBadge } from "@/components/journal/JournalCard";
+import { JournalFormModal, JournalFormData } from "@/components/journal/JournalFormModal";
+import { JournalForm } from "@/components/journal/JournalForm";
+import { DeleteJournalModal } from "@/components/journal/DeleteJournalModal";
+import { EmptyJournalState } from "@/components/journal/EmptyJournalState";
 
-interface JournalEntry {
-    id: string;
-    content: string;
-    date: string;
-    duration: number;
-    status: string;
-    verification_status: string;
-    manager_notes?: string;
-    created_at: string;
-}
+// Status filter tabs with counts
+const STATUS_TABS = [
+    { key: 'all', label: 'Semua', icon: BookOpen },
+    { key: 'submitted', label: 'Menunggu', icon: Send },
+    { key: 'need_revision', label: 'Perlu Revisi', icon: AlertCircle },
+    { key: 'approved', label: 'Disetujui', icon: CheckCircle2 },
+    { key: 'draft', label: 'Draft', icon: FileEdit },
+];
 
 export default function JurnalSaya() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const isMobile = useIsMobile();
-    const [journals, setJournals] = useState<JournalEntry[]>([]);
+    const [journals, setJournals] = useState<JournalCardData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [filterStatus, setFilterStatus] = useState("all");
 
-    // New Journal State
-    const [isAddOpen, setIsAddOpen] = useState(false);
-    const [newJournalContent, setNewJournalContent] = useState("");
+    // Modal States
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [editingJournal, setEditingJournal] = useState<JournalCardData | null>(null);
+    const [deletingJournal, setDeletingJournal] = useState<JournalCardData | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // Edit Mode State
-    const [editingJournal, setEditingJournal] = useState<JournalEntry | null>(null);
 
     useEffect(() => {
         if (user) fetchJournals();
+    }, [user]);
+
+    // Real-time subscription
+    useEffect(() => {
+        const channel = supabase
+            .channel('employee-journal-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'work_journals',
+                    filter: `user_id=eq.${user?.id}`
+                },
+                () => {
+                    fetchJournals();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [user]);
 
     const fetchJournals = async () => {
@@ -67,148 +84,270 @@ export default function JurnalSaya() {
                 .order('date', { ascending: false });
 
             if (error) throw error;
-            if (data) setJournals(data as unknown as JournalEntry[]);
+            if (data) setJournals(data as unknown as JournalCardData[]);
         } catch (error) {
             console.error("Error fetching journals:", error);
+            toast({
+                variant: "destructive",
+                title: "Gagal memuat jurnal",
+                description: "Silakan coba lagi."
+            });
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleCreateJournal = async (isDraft: boolean = false) => {
-        if (!newJournalContent.trim()) {
-            toast({ variant: "destructive", title: "Gagal", description: "Konten jurnal tidak boleh kosong" });
-            return;
-        }
-        setIsSubmitting(true);
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        await fetchJournals();
+        setIsRefreshing(false);
+        toast({ title: "Data diperbarui", description: "Jurnal berhasil dimuat ulang." });
+    };
+
+    // CRUD Operations
+    const handleSaveJournal = async (data: JournalFormData, isDraft: boolean, isSilent: boolean = false) => {
+        if (!isSilent) setIsSubmitting(true);
         try {
             const status = isDraft ? 'draft' : 'submitted';
+            let savedData = null;
 
-            const { error } = await supabase
-                .from('work_journals' as any)
-                .insert({
-                    user_id: user?.id,
-                    content: newJournalContent,
-                    date: new Date().toISOString().split('T')[0],
-                    duration: 0,
-                    status: 'completed',
-                    verification_status: status
+            if (editingJournal) {
+                // UPDATE existing journal
+                const { data: updated, error } = await supabase
+                    .from('work_journals' as any)
+                    .update({
+                        content: data.content,
+                        work_result: data.work_result,
+                        obstacles: data.obstacles,
+                        mood: data.mood,
+                        date: data.date, // Add date update
+                        verification_status: status,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', editingJournal.id)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                savedData = updated;
+
+                if (!isSilent) {
+                    toast({
+                        title: isDraft ? "Draft Tersimpan" : "Jurnal Diperbarui",
+                        description: isDraft
+                            ? "Perubahan disimpan sebagai draft."
+                            : editingJournal.verification_status === 'need_revision'
+                                ? "Jurnal dikirm ulang untuk review Manager."
+                                : "Jurnal berhasil diperbarui."
+                    });
+                }
+            } else {
+                // CREATE new journal
+                const { data: inserted, error } = await supabase
+                    .from('work_journals' as any)
+                    .insert({
+                        user_id: user?.id,
+                        content: data.content,
+                        work_result: data.work_result,
+                        obstacles: data.obstacles,
+                        mood: data.mood,
+                        date: data.date, // Use selected date
+                        duration: 0,
+                        status: 'completed',
+                        verification_status: status
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                savedData = inserted;
+
+                if (!isSilent) {
+                    toast({
+                        title: isDraft ? "Draft Tersimpan ✨" : "Jurnal Terkirim 🚀",
+                        description: isDraft
+                            ? "Jurnal disimpan sebagai draft. Kirim saat sudah siap."
+                            : "Jurnal akan direview oleh Manager."
+                    });
+                }
+            }
+
+            if (!isSilent) {
+                setIsFormOpen(false);
+                setEditingJournal(null);
+            } else {
+                // If auto-save (silent), update the editingJournal so next save is an Update
+                if (savedData) {
+                    setEditingJournal(savedData as unknown as JournalCardData);
+                }
+            }
+
+            fetchJournals();
+            return savedData;
+        } catch (error: any) {
+            console.error("Save error:", error);
+            if (!isSilent) {
+                toast({
+                    variant: "destructive",
+                    title: "Gagal Menyimpan",
+                    description: error.message
                 });
-
-            if (error) throw error;
-
-            toast({
-                title: isDraft ? "Draft Disimpan" : "Jurnal Terkirim",
-                description: isDraft ? "Jurnal disimpan sebagai draft." : "Menunggu review manager."
-            });
-
-            setNewJournalContent("");
-            setIsAddOpen(false);
-            fetchJournals();
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Gagal Mengirim", description: error.message });
+            }
         } finally {
-            setIsSubmitting(false);
+            if (!isSilent) setIsSubmitting(false);
         }
     };
 
-    const handleUpdateJournal = async (isDraft: boolean = false) => {
-        if (!editingJournal || !newJournalContent.trim()) return;
+    const handleDeleteJournal = async () => {
+        if (!deletingJournal) return;
+
         setIsSubmitting(true);
-        try {
-            // Logic: If 'rejected', changing it to 'submitted' sends it back for review.
-            // If 'draft', it stays draft or becomes submitted.
-            const status = isDraft ? 'draft' : 'submitted';
-
-            const { error } = await supabase
-                .from('work_journals' as any)
-                .update({
-                    content: newJournalContent,
-                    verification_status: status,
-                    // Clear manager notes if re-submitting so it looks fresh? 
-                    // Or keep them for history? Usually better to keep context but maybe flagged as resolved.
-                    // For this simple ver, let's keep notes until manager overwrites them or UI hides them.
-                })
-                .eq('id', editingJournal.id);
-
-            if (error) throw error;
-
-            toast({
-                title: "Jurnal Diperbarui",
-                description: isDraft ? "Perubahan disimpan sebagai draft." : "Jurnal dikirm ulang untuk review."
-            });
-
-            setNewJournalContent("");
-            setEditingJournal(null);
-            setIsAddOpen(false);
-            fetchJournals();
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Gagal Update", description: error.message });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleDeleteJournal = async (id: string) => {
-        if (!confirm("Apakah Anda yakin ingin menghapus jurnal ini?")) return;
         try {
             const { error } = await supabase
                 .from('work_journals' as any)
                 .delete()
-                .eq('id', id);
+                .eq('id', deletingJournal.id);
 
             if (error) throw error;
-            toast({ title: "Terhapus", description: "Jurnal berhasil dihapus." });
+
+            toast({
+                title: "Jurnal Dihapus",
+                description: "Jurnal berhasil dihapus."
+            });
+
+            setIsDeleteOpen(false);
+            setDeletingJournal(null);
             fetchJournals();
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Gagal Hapus", description: error.message });
+            toast({
+                variant: "destructive",
+                title: "Gagal Menghapus",
+                description: error.message
+            });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    const openEditModal = (journal: JournalEntry) => {
+    // Open modals
+    const openCreateModal = () => {
+        setEditingJournal(null);
+        setIsFormOpen(true);
+    };
+
+    const openEditModal = (journal: JournalCardData) => {
         setEditingJournal(journal);
-        setNewJournalContent(journal.content);
-        setIsAddOpen(true);
+        setIsFormOpen(true);
     };
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'approved':
-                return <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 uppercase text-[10px]">Disetujui</Badge>;
-            case 'need_revision':
-            case 'rejected': // legacy support
-                return <Badge className="bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 uppercase text-[10px]">Perlu Revisi</Badge>;
-            case 'draft':
-                return <Badge variant="outline" className="text-slate-500 border-slate-300 uppercase text-[10px]">Draft</Badge>;
-            case 'submitted':
-                return <Badge className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 uppercase text-[10px]">Menunggu</Badge>;
-            default:
-                return <Badge variant="outline" className="text-slate-400 border-slate-200 uppercase text-[10px]">{status}</Badge>;
-        }
+    const openDeleteModal = (journal: JournalCardData) => {
+        setDeletingJournal(journal);
+        setIsDeleteOpen(true);
     };
 
+    // Stats calculation
     const stats = {
         total: journals.length,
         approved: journals.filter(j => j.verification_status === 'approved').length,
-        pending: journals.filter(j => j.verification_status === 'submitted').length
+        pending: journals.filter(j => j.verification_status === 'submitted').length,
+        needsRevision: journals.filter(j => j.verification_status === 'need_revision').length,
+        draft: journals.filter(j => j.verification_status === 'draft').length
+    };
+
+    // Filter journals
+    const filteredJournals = journals.filter(j =>
+        filterStatus === 'all' || j.verification_status === filterStatus
+    );
+
+    // Get count for each tab
+    const getTabCount = (key: string) => {
+        if (key === 'all') return journals.length;
+        return journals.filter(j => j.verification_status === key).length;
+    };
+
+    // Derived existing dates for duplicate checking
+    const existingDates = journals.map(j => j.date);
+
+    // Tablet/Desktop Split View helpers
+
+    // Tablet/Desktop Split View helpers
+    const handleJournalSelect = (journal: JournalCardData) => {
+        if (isMobile) {
+            openEditModal(journal);
+        } else {
+            setEditingJournal(journal);
+            // Scroll to form on tablet if needed, or just set it
+        }
+    };
+
+    const handleCreateNew = () => {
+        if (isMobile) {
+            openCreateModal();
+        } else {
+            setEditingJournal(null); // Clears form for new entry
+        }
+    };
+
+    const handleRequestEdit = (date: string) => {
+        // Find journal by date
+        const journal = journals.find(j => j.date === date);
+        if (journal) {
+            // Check if we can edit it? Rules say "Edit: Allowed for Draft/Correction". 
+            // If it's already approved/submitted, we might just view it.
+            // But for now, we try to open it. OpenEditModal will setEditingJournal.
+            if (isMobile) {
+                // If mobile, close current modal (if strictly one at a time) or just switch
+                // The Modal is controlled by isFormOpen.
+                setEditingJournal(journal);
+                // setIsFormOpen(true) is already true if we are in the form, but let's ensure.
+            } else {
+                setEditingJournal(journal);
+            }
+        }
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-24 md:pb-8">
+        <div className="min-h-screen bg-slate-50/50 pb-24 md:pb-8">
             {/* Header */}
-            <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 py-4 md:px-6 md:py-5">
-                <div className="max-w-5xl mx-auto flex items-center justify-between">
+            <div className={`
+                bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 px-4 py-4 md:px-6 md:py-5 
+                transition-all duration-200
+                ${isMobile ? 'shadow-sm' : ''}
+            `}>
+                <div className="max-w-6xl mx-auto flex items-center justify-between">
                     <div>
-                        <h1 className="text-xl font-bold text-slate-800">Jurnal Aktivitas</h1>
-                        <p className="text-xs text-slate-500 mt-1">Rekap harian aktivitas kerja Anda</p>
+                        <h1 className="text-xl md:text-2xl font-bold text-slate-900 flex items-center gap-2">
+                            {isMobile ? "Today's Work Journal" : "Jurnal Aktivitas"}
+                        </h1>
+                        <p className="text-xs text-slate-500 mt-1 font-medium">
+                            {isMobile ? "Connect to Manager & Admin" : "Catatan harian yang dipantau Manager & Admin"}
+                        </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button onClick={() => { setEditingJournal(null); setNewJournalContent(""); setIsAddOpen(true); }} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            className="text-slate-500 hover:text-slate-700"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        </Button>
+                        <Button
+                            onClick={handleCreateNew}
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-md rounded-full px-4"
+                        >
                             <Plus className="w-4 h-4" />
                             {!isMobile && "Tulis Jurnal"}
                         </Button>
                         {!isMobile && (
-                            <Button onClick={() => navigate('/dashboard')} variant="outline" size="sm">
+                            <Button
+                                onClick={() => navigate('/dashboard')}
+                                variant="outline"
+                                size="sm"
+                                className="border-slate-200"
+                            >
                                 Kembali
                             </Button>
                         )}
@@ -216,214 +355,198 @@ export default function JurnalSaya() {
                 </div>
             </div>
 
-            <div className="max-w-5xl mx-auto px-4 py-6 md:px-6 space-y-6">
+            <div className="max-w-6xl mx-auto px-4 py-6 md:px-6">
 
-                {/* Stats Row */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-                    <Card className="border-slate-200 shadow-sm">
-                        <CardContent className="p-4 flex flex-col justify-center h-full">
-                            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Total Jurnal</p>
-                            <div className="flex items-baseline gap-2 mt-1">
-                                <span className="text-2xl font-bold text-slate-900">{stats.total}</span>
-                                <span className="text-xs text-slate-400">Entri</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-slate-200 shadow-sm">
-                        <CardContent className="p-4 flex flex-col justify-center h-full">
-                            <p className="text-xs text-green-600 font-medium uppercase tracking-wide">Disetujui</p>
-                            <div className="flex items-baseline gap-2 mt-1">
-                                <span className="text-2xl font-bold text-slate-900">{stats.approved}</span>
-                                <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="col-span-2 md:col-span-1 border-slate-200 shadow-sm">
-                        <CardContent className="p-4 flex flex-col justify-center h-full">
-                            <p className="text-xs text-amber-600 font-medium uppercase tracking-wide">Menunggu</p>
-                            <div className="flex items-baseline gap-2 mt-1">
-                                <span className="text-2xl font-bold text-slate-900">{stats.pending}</span>
-                                <AlertCircle className="w-4 h-4 text-amber-500" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* LEFT COLUMN: Stats & List */}
+                    <div className="lg:col-span-7 space-y-6">
 
-                {/* Filter Tabs */}
-                <div className="flex items-center gap-1 overflow-x-auto pb-2 md:pb-0 border-b border-slate-200">
-                    {[
-                        { key: 'all', label: 'Semua' },
-                        { key: 'submitted', label: 'Menunggu Approval' },
-                        { key: 'need_revision', label: 'Perlu Revisi' },
-                        { key: 'approved', label: 'Disetujui' },
-                        { key: 'draft', label: 'Draft' }
-                    ].map((tab) => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setFilterStatus(tab.key)}
-                            className={`px-4 py-2.5 text-xs font-medium transition-all whitespace-nowrap relative ${filterStatus === tab.key
-                                ? "text-blue-600"
-                                : "text-slate-500 hover:text-slate-700"
-                                }`}
-                        >
-                            {tab.label}
-                            {filterStatus === tab.key && (
-                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
-                            )}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Content List */}
-                {isLoading ? (
-                    <div className="space-y-4">
-                        {[1, 2, 3].map(i => <div key={i} className="h-32 bg-slate-200 rounded-xl animate-pulse" />)}
-                    </div>
-                ) : journals.length === 0 ? (
-                    <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <BookOpen className="w-8 h-8 text-slate-300" />
+                        {/* Stats Row - Modern Cards */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+                            <Card className="border-slate-200 shadow-sm bg-white">
+                                <CardContent className="p-4 flex flex-col justify-center text-center sm:text-left">
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total</p>
+                                    <span className="text-2xl md:text-3xl font-bold text-slate-900 mt-1">{stats.total}</span>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-green-100 shadow-sm bg-green-50/50">
+                                <CardContent className="p-4 flex flex-col justify-center text-center sm:text-left">
+                                    <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider">Disetujui</p>
+                                    <span className="text-2xl md:text-3xl font-bold text-green-700 mt-1">{stats.approved}</span>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-amber-100 shadow-sm bg-amber-50/50">
+                                <CardContent className="p-4 flex flex-col justify-center text-center sm:text-left">
+                                    <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">Menunggu</p>
+                                    <span className="text-2xl md:text-3xl font-bold text-amber-700 mt-1">{stats.pending}</span>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-orange-100 shadow-sm bg-orange-50/50">
+                                <CardContent className="p-4 flex flex-col justify-center text-center sm:text-left">
+                                    <p className="text-[10px] text-orange-600 font-bold uppercase tracking-wider">Revisi</p>
+                                    <span className="text-2xl md:text-3xl font-bold text-orange-700 mt-1">{stats.needsRevision}</span>
+                                </CardContent>
+                            </Card>
                         </div>
-                        <h3 className="text-lg font-semibold text-slate-800">Belum ada jurnal</h3>
-                        <p className="text-slate-500 max-w-xs mx-auto mt-2 text-sm mb-4">
-                            Dokumentasikan pekerjaan Anda hari ini.
-                        </p>
-                        <Button onClick={() => { setEditingJournal(null); setNewJournalContent(""); setIsAddOpen(true); }} variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
-                            Tulis Jurnal Pertama
-                        </Button>
+
+                        {/* Filter Tabs */}
+                        <div className="bg-white rounded-xl border border-slate-200 p-1.5 shadow-sm overflow-hidden">
+                            <div className="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0 no-scrollbar">
+                                {STATUS_TABS.map((tab) => {
+                                    const count = getTabCount(tab.key);
+                                    const isActive = filterStatus === tab.key;
+                                    const IconComponent = tab.icon;
+
+                                    return (
+                                        <button
+                                            key={tab.key}
+                                            onClick={() => setFilterStatus(tab.key)}
+                                            className={`
+                                                flex items-center gap-2 px-3 py-2 rounded-lg text-xs md:text-sm font-medium 
+                                                transition-all whitespace-nowrap flex-shrink-0
+                                                ${isActive
+                                                    ? "bg-blue-600 text-white shadow-md"
+                                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                                                }
+                                            `}
+                                        >
+                                            <IconComponent className="w-3.5 h-3.5" />
+                                            {tab.label}
+                                            {count > 0 && (
+                                                <span className={`
+                                                    text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1
+                                                    ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}
+                                                `}>
+                                                    {count}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Journal List */}
+                        {isLoading ? (
+                            <div className="space-y-4">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="h-32 bg-slate-100 rounded-xl animate-pulse" />
+                                ))}
+                            </div>
+                        ) : filteredJournals.length === 0 ? (
+                            <EmptyJournalState
+                                variant={filterStatus === 'all' ? 'default' : 'filter'}
+                                title={filterStatus !== 'all' ? `Tidak ada jurnal "${STATUS_TABS.find(t => t.key === filterStatus)?.label}"` : undefined}
+                                onCta={handleCreateNew}
+                                ctaLabel="Tulis Jurnal Pertama"
+                            />
+                        ) : (
+                            <div className="space-y-3 md:space-y-4">
+                                {filteredJournals.map((journal) => (
+                                    <div
+                                        key={journal.id}
+                                        className={`transition-all duration-200 ${editingJournal?.id === journal.id && !isMobile ? 'ring-2 ring-blue-500 rounded-xl transform scale-[1.01]' : ''}`}
+                                    >
+                                        <JournalCard
+                                            journal={journal}
+                                            isEmployee={true}
+                                            showActions={!isMobile} // On mobile, actions are in menu
+                                            onEdit={handleJournalSelect}
+                                            onDelete={openDeleteModal}
+                                            onView={handleJournalSelect}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Helpful Guidance (Desktop Only) */}
+                        {!isMobile && journals.length > 0 && (
+                            <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
+                                <p className="text-sm text-blue-800"><strong>💡 Petunjuk:</strong></p>
+                                <ul className="text-xs text-blue-700 mt-2 space-y-1 list-disc list-inside">
+                                    <li>Pilih jurnal dari daftar untuk melihat detail atau mengeditnya.</li>
+                                    <li>Klik tombol <strong>+ Tulis Jurnal</strong> untuk membuat jurnal baru.</li>
+                                </ul>
+                            </div>
+                        )}
                     </div>
-                ) : (
-                    <div className="space-y-4">
-                        {journals
-                            .filter(j => filterStatus === 'all' || j.verification_status === filterStatus)
-                            .map((journal) => (
-                                <Card key={journal.id} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
-                                    <CardContent className="p-0">
-                                        <div className="flex">
-                                            {/* Date Strip */}
-                                            <div className="w-16 md:w-20 bg-slate-50 border-r border-slate-100 flex flex-col items-center justify-start py-4 shrink-0">
-                                                <span className="text-xs font-bold text-slate-500 uppercase">
-                                                    {format(new Date(journal.date), "MMM", { locale: id })}
-                                                </span>
-                                                <span className="text-xl md:text-2xl font-bold text-slate-800 mt-1">
-                                                    {format(new Date(journal.date), "dd")}
-                                                </span>
-                                                <span className="text-[10px] text-slate-400 mt-1">
-                                                    {format(new Date(journal.date), "eee", { locale: id })}
-                                                </span>
-                                            </div>
 
-                                            {/* Content */}
-                                            <div className="flex-1 p-4 md:p-5 relative">
-                                                <div className="flex items-start justify-between mb-3">
-                                                    <div className="flex items-center gap-2">
-                                                        {getStatusBadge(journal.verification_status)}
-                                                        {journal.duration > 0 && (
-                                                            <span className="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md">
-                                                                <Clock className="w-3 h-3" />
-                                                                {Math.floor(journal.duration / 60)}h {journal.duration % 60}m
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Actions: Edit for Draft/Need_Revision, Delete for Draft/Submitted */}
-                                                    {(journal.verification_status === 'draft' || journal.verification_status === 'need_revision' || journal.verification_status === 'rejected' || journal.verification_status === 'submitted') && (
-                                                        <div className="flex gap-1">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-7 px-2 text-slate-500 hover:text-blue-600"
-                                                                onClick={() => openEditModal(journal)}
-                                                            >
-                                                                Edit
-                                                            </Button>
-                                                            {journal.verification_status === 'draft' && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-7 px-2 text-slate-500 hover:text-red-600"
-                                                                    onClick={() => handleDeleteJournal(journal.id)}
-                                                                >
-                                                                    Hapus
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                                                    {journal.content}
-                                                </p>
-
-                                                {/* Manager Feedback Section (Highlighted for Revisions) */}
-                                                {journal.manager_notes && (
-                                                    <div className={`mt-4 p-3 rounded-lg text-sm border ${journal.verification_status === 'rejected'
-                                                        ? "bg-red-50 border-red-100"
-                                                        : "bg-blue-50/50 border-blue-100"
-                                                        }`}>
-                                                        <p className={`text-xs font-semibold mb-1 ${journal.verification_status === 'rejected' ? "text-red-700" : "text-blue-700"
-                                                            }`}>
-                                                            {journal.verification_status === 'rejected' ? "Perlu Revisi (Catatan Manager):" : "Catatan Manager:"}
-                                                        </p>
-                                                        <p className="text-slate-600">{journal.manager_notes}</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                    {/* RIGHT COLUMN: Form/Details (Tablet/Desktop Only) */}
+                    <div className="hidden lg:block lg:col-span-5">
+                        <div className="sticky top-24">
+                            <Card className="border-slate-200 shadow-lg overflow-hidden flex flex-col max-h-[calc(100vh-120px)]">
+                                <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                        {editingJournal
+                                            ? (editingJournal.verification_status === 'need_revision' ? '✏️ Revisi Jurnal' : '📝 Detail Jurnal')
+                                            : '✨ Jurnal Baru'
+                                        }
+                                    </h3>
+                                    {editingJournal && (
+                                        <Button variant="ghost" size="sm" onClick={() => setEditingJournal(null)} className="h-8 text-xs text-slate-500">
+                                            Buat Baru
+                                        </Button>
+                                    )}
+                                </div>
+                                <div className="p-0 flex-1 overflow-hidden">
+                                    <div className="h-full overflow-y-auto px-6 py-4 custom-scrollbar">
+                                        <JournalForm
+                                            initialData={editingJournal ? {
+                                                content: editingJournal.content,
+                                                work_result: editingJournal.work_result,
+                                                obstacles: editingJournal.obstacles,
+                                                mood: editingJournal.mood,
+                                                date: editingJournal.date
+                                            } : undefined}
+                                            isEditing={!!editingJournal}
+                                            isRevision={editingJournal?.verification_status === 'need_revision'}
+                                            managerNotes={editingJournal?.manager_notes}
+                                            onSave={handleSaveJournal}
+                                            onCancel={() => setEditingJournal(null)}
+                                            isSubmitting={isSubmitting}
+                                            existingDates={existingDates}
+                                            onRequestEdit={handleRequestEdit}
+                                        />
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
                     </div>
-                )}
+                </div>
             </div>
 
-            {/* Add/Edit Journal Modal */}
-            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{editingJournal ? "Edit Jurnal Aktivitas" : "Tulis Jurnal Aktivitas"}</DialogTitle>
-                        <DialogDescription>
-                            {editingJournal
-                                ? "Perbarui laporan aktivitas Anda."
-                                : "Catat pekerjaan yang Anda selesaikan hari ini."}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-2">
-                        <div className="space-y-2">
-                            <Label>Aktivitas Hari Ini</Label>
-                            <Textarea
-                                placeholder="Jelaskan apa saja yang Anda kerjakan..."
-                                className="min-h-[150px]"
-                                value={newJournalContent}
-                                onChange={(e) => setNewJournalContent(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <div className="flex gap-2 w-full justify-end">
-                            <Button variant="ghost" onClick={() => setIsAddOpen(false)} disabled={isSubmitting}>Batal</Button>
+            {/* Create/Edit Modal */}
+            <JournalFormModal
+                open={isFormOpen}
+                onOpenChange={setIsFormOpen}
+                onSave={handleSaveJournal}
+                isEditing={!!editingJournal}
+                isRevision={editingJournal?.verification_status === 'need_revision'}
+                managerNotes={editingJournal?.manager_notes}
+                initialData={editingJournal ? {
+                    content: editingJournal.content,
+                    work_result: editingJournal.work_result,
+                    obstacles: editingJournal.obstacles,
+                    mood: editingJournal.mood,
+                    date: editingJournal.date
+                } : undefined}
+                existingDates={existingDates}
+                onRequestEdit={handleRequestEdit}
+                isDateLocked={editingJournal ? editingJournal.verification_status !== 'draft' : false}
+            />
 
-                            {/* Save Draft Button */}
-                            <Button
-                                variant="outline"
-                                onClick={() => editingJournal ? handleUpdateJournal(true) : handleCreateJournal(true)}
-                                disabled={isSubmitting}
-                            >
-                                Simpan Draft
-                            </Button>
-
-                            {/* Submit Button */}
-                            <Button
-                                onClick={() => editingJournal ? handleUpdateJournal(false) : handleCreateJournal(false)}
-                                disabled={isSubmitting}
-                                className="bg-blue-600 hover:bg-blue-700"
-                            >
-                                {isSubmitting ? "Mengirim..." : (editingJournal ? "Kirim Ulang" : "Kirim Jurnal")}
-                            </Button>
-                        </div>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* Delete Confirmation Modal */}
+            <DeleteJournalModal
+                open={isDeleteOpen}
+                onOpenChange={setIsDeleteOpen}
+                onConfirm={handleDeleteJournal}
+                isDeleting={isSubmitting}
+                journalDate={deletingJournal
+                    ? format(new Date(deletingJournal.date), "d MMMM yyyy", { locale: id })
+                    : undefined
+                }
+            />
 
             {isMobile && <MobileNavigation />}
         </div>
