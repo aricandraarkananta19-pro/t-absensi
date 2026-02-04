@@ -43,6 +43,10 @@ CREATE INDEX IF NOT EXISTS idx_journal_activity_created_at ON public.journal_act
 -- Enable RLS on Activity Log
 ALTER TABLE public.journal_activity_log ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies to allow re-running
+DROP POLICY IF EXISTS "View Journal Activity" ON public.journal_activity_log;
+DROP POLICY IF EXISTS "Insert Journal Activity" ON public.journal_activity_log;
+
 -- Activity log visible to Admin, Manager, and the journal author
 CREATE POLICY "View Journal Activity" ON public.journal_activity_log
 FOR SELECT TO authenticated
@@ -160,6 +164,11 @@ DROP POLICY IF EXISTS "Users can insert own journals" ON public.work_journals;
 DROP POLICY IF EXISTS "Users can update own journals" ON public.work_journals;
 DROP POLICY IF EXISTS "Users can delete own journals" ON public.work_journals;
 DROP POLICY IF EXISTS "Admins and Managers can view all journals" ON public.work_journals;
+-- Also drop our new policy names to allow re-running
+DROP POLICY IF EXISTS "journal_select_policy" ON public.work_journals;
+DROP POLICY IF EXISTS "journal_insert_policy" ON public.work_journals;
+DROP POLICY IF EXISTS "journal_update_policy" ON public.work_journals;
+DROP POLICY IF EXISTS "journal_delete_policy" ON public.work_journals;
 
 -- VIEW POLICY
 -- Employee: See own journals (all statuses)

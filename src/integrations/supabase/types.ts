@@ -266,6 +266,67 @@ export type Database = {
         }
         Relationships: []
       }
+      work_journals: {
+        Row: {
+          id: string
+          user_id: string
+          content: string
+          date: string
+          duration: number
+          status: string
+          verification_status: string
+          manager_notes: string | null
+          department: string | null
+          manager_id: string | null
+          submitted_at: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          content: string
+          date: string
+          duration?: number
+          status?: string
+          verification_status?: string
+          manager_notes?: string | null
+          department?: string | null
+          manager_id?: string | null
+          submitted_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          content?: string
+          date?: string
+          duration?: number
+          status?: string
+          verification_status?: string
+          manager_notes?: string | null
+          department?: string | null
+          manager_id?: string | null
+          submitted_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_journals_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
