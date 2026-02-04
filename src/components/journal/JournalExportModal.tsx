@@ -34,12 +34,11 @@ export function JournalExportModal({ open, onOpenChange }: JournalExportModalPro
     const handleExport = async () => {
         setIsExporting(true);
         try {
-            // 1. Fetch Data
+            // 1. Fetch Journals
             let query = supabase
                 .from('work_journals')
                 .select(`
-                    id, date, content, work_result, obstacles, mood, verification_status,
-                    profiles:user_id ( full_name, position )
+                    id, date, content, work_result, obstacles, mood, verification_status, user_id
                 `)
                 .gte('date', format(startDate, 'yyyy-MM-dd'))
                 .lte('date', format(endDate, 'yyyy-MM-dd'))
@@ -49,10 +48,10 @@ export function JournalExportModal({ open, onOpenChange }: JournalExportModalPro
                 query = query.eq('verification_status', 'approved');
             }
 
-            const { data, error } = await query;
-            if (error) throw error;
+            const { data: rawJournals, error: journalError } = await query;
+            if (journalError) throw journalError;
 
-            if (!data || data.length === 0) {
+            if (!rawJournals || rawJournals.length === 0) {
                 toast({
                     variant: "destructive",
                     title: "Data Kosong",
@@ -61,6 +60,23 @@ export function JournalExportModal({ open, onOpenChange }: JournalExportModalPro
                 setIsExporting(false);
                 return;
             }
+
+            // 2. Fetch Profiles Manually (Fix for missing FK relationship error)
+            const userIds = [...new Set(rawJournals.map(j => j.user_id))];
+            const { data: profiles, error: profileError } = await supabase
+                .from('profiles')
+                .select('user_id, full_name, position')
+                .in('user_id', userIds);
+
+            if (profileError) throw profileError;
+
+            const profileMap = new Map(profiles?.map(p => [p.user_id, p]));
+
+            // 3. Merge Data
+            const data = rawJournals.map(journal => ({
+                ...journal,
+                profiles: profileMap.get(journal.user_id) || { full_name: 'Unknown', position: '-' }
+            }));
 
             // 2. Generate File
             if (formatType === 'pdf_summary') {

@@ -358,8 +358,8 @@ const JurnalKerja = () => {
         >
             {/* Stats Overview */}
             {isLoadingStats && stats.totalToday === 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-                    {[1, 2, 3, 4, 5].map(i => (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    {[1, 2, 3, 4].map(i => (
                         <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 h-24 flex items-center justify-between">
                             <div className="space-y-2">
                                 <Skeleton className="h-4 w-20" />
@@ -370,7 +370,7 @@ const JurnalKerja = () => {
                     ))}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <Card className="bg-white shadow-sm border-slate-200">
                         <CardContent className="p-4 flex items-center gap-4">
                             <div className="p-3 bg-indigo-50 rounded-xl">
@@ -379,19 +379,6 @@ const JurnalKerja = () => {
                             <div>
                                 <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Jurnal Hari Ini</p>
                                 <p className="text-2xl font-bold text-slate-900">{stats.totalToday}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-white shadow-sm border-slate-200">
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className="p-3 bg-slate-100 rounded-xl">
-                                <Clock className="w-6 h-6 text-slate-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Rata-rata Durasi</p>
-                                <p className="text-2xl font-bold text-slate-900">
-                                    {Math.floor(stats.avgDuration / 60)}j {Math.floor(stats.avgDuration % 60)}m
-                                </p>
                             </div>
                         </CardContent>
                     </Card>
