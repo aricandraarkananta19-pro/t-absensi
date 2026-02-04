@@ -87,7 +87,7 @@ export function JournalFormModal({
     // Mobile: Drawer
     return (
         <Drawer open={open} onOpenChange={onOpenChange}>
-            <DrawerContent className="max-h-[95vh] flex flex-col h-full rounded-t-[20px]">
+            <DrawerContent className="h-[90vh] flex flex-col rounded-t-[20px] after:hidden">
                 <DrawerHeader className="text-left shrink-0">
                     <DrawerTitle className="text-lg font-bold text-slate-800">
                         {isRevision
@@ -104,7 +104,7 @@ export function JournalFormModal({
                         }
                     </DrawerDescription>
                 </DrawerHeader>
-                <div className="px-4 flex-1 overflow-hidden">
+                <div className="px-4 flex-1 overflow-hidden h-full pb-0 bg-white">
                     <JournalForm
                         initialData={initialData}
                         isEditing={isEditing}

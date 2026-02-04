@@ -148,7 +148,7 @@ export function JournalForm({
     return (
         <div className="flex flex-col h-full relative">
             {/* Scrollable Content Area */}
-            <div className={`flex-1 overflow-y-auto px-1 ${isMobile ? 'pb-24' : 'pb-4'} space-y-5 no-scrollbar`}>
+            <div className={`flex-1 overflow-y-auto px-1 ${isMobile ? 'pb-6' : 'pb-4'} space-y-5 no-scrollbar`}>
 
                 {/* Manager Notes Alert (Top Priority) */}
                 {isRevision && managerNotes && (
@@ -425,7 +425,7 @@ export function JournalForm({
 
             {/* Bottom Action Bar (Fixed at bottom of flex column) */}
             {/* Added PB to account for Mobile Safe Area */}
-            <div className={`pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-3 bg-white mt-auto shrink-0 z-20 ${isMobile ? 'pb-8 -mx-1 px-3' : 'pb-0'}`}>
+            <div className={`pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-3 bg-white mt-auto shrink-0 z-20 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] ${isMobile ? 'pb-8 -mx-1 px-3' : 'pb-0'}`}>
                 <Button
                     variant="ghost"
                     onClick={onCancel}
@@ -435,7 +435,7 @@ export function JournalForm({
                     Batal
                 </Button>
 
-                {!isRevision && (
+                {!isRevision && !isDateConflict && (
                     <Button
                         variant="outline"
                         onClick={() => handleSubmit(true)}
