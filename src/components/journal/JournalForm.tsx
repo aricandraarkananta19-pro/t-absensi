@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Send, Save, Sparkles, AlertTriangle, CheckCircle2, CalendarIcon, AlertCircle, Lock } from "lucide-react";
+import { Send, Save, Sparkles, AlertTriangle, CheckCircle2, CalendarIcon, AlertCircle, Lock, X } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, isSameDay, isAfter, subDays, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -21,22 +21,22 @@ export interface JournalFormData {
 }
 
 const MOOD_OPTIONS = [
-    { value: '😊', label: 'Baik', description: 'Produktif dan lancar' },
-    { value: '😐', label: 'Biasa', description: 'Normal, tidak ada masalah' },
-    { value: '😣', label: 'Sulit', description: 'Ada tantangan/kendala' }
+    { value: '😊', label: 'Baik', description: 'Produktif', color: 'bg-green-100 text-green-700 border-green-200' },
+    { value: '😐', label: 'Biasa', description: 'Normal', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+    { value: '😣', label: 'Sulit', description: 'Kendala', color: 'bg-red-100 text-red-700 border-red-200' }
 ];
 
 const WORK_RESULT_OPTIONS = [
-    { value: 'completed', label: 'Selesai', description: 'Semua tugas tercapai' },
-    { value: 'progress', label: 'Dalam Progress', description: 'Masih dalam proses' },
-    { value: 'pending', label: 'Tertunda', description: 'Belum dimulai/terhenti' }
+    { value: 'completed', label: 'Selesai', description: 'Tugas rampung', icon: CheckCircle2, color: 'text-green-600' },
+    { value: 'progress', label: 'Progress', description: 'Masih jalan', icon: Sparkles, color: 'text-blue-600' },
+    { value: 'pending', label: 'Tertunda', description: 'Ada blocker', icon: AlertCircle, color: 'text-amber-600' }
 ];
 
 interface JournalFormProps {
     initialData?: Partial<JournalFormData>;
     isEditing?: boolean;
     isRevision?: boolean;
-    isReadOnly?: boolean; // Added for Sent/Approved states
+    isReadOnly?: boolean;
     managerNotes?: string;
     onSave: (data: JournalFormData, isDraft: boolean, isSilent?: boolean) => Promise<void>;
     onCancel: () => void;
@@ -81,7 +81,7 @@ export function JournalForm({
     const isDateConflict = props.existingDates?.includes(dateString) &&
         (!isEditing || (initialData?.date && initialData.date !== dateString));
 
-    // Auto-resize textarea
+    // Ref for textarea auto-resize
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     useEffect(() => {
         if (textareaRef.current) {
@@ -104,7 +104,6 @@ export function JournalForm({
     // Auto-save logic (Debounce 10s)
     useEffect(() => {
         if (isSubmitting || !content.trim() || isReadOnly) return;
-
         const timer = setTimeout(() => {
             if (content.length >= 10) {
                 onSave({
@@ -116,7 +115,6 @@ export function JournalForm({
                 }, true, true);
             }
         }, 10000);
-
         return () => clearTimeout(timer);
     }, [content, workResult, obstacles, mood, date, isReadOnly]);
 
@@ -142,100 +140,62 @@ export function JournalForm({
     const isDisabled = isReadOnly || isDateConflict;
 
     return (
-        <div className="flex flex-col h-full w-full relative bg-white overflow-hidden">
+        <div className="flex flex-col h-full w-full relative bg-slate-50/50">
             {/* Scrollable Content Area */}
-            <div className="flex-1 min-h-0 overflow-y-auto w-full px-1 space-y-5 pb-4">
+            <div className="flex-1 min-h-0 overflow-y-auto w-full px-4 sm:px-6 py-6 space-y-6">
 
                 {/* Status Banner for ReadOnly */}
                 {isReadOnly && !isRevision && (
-                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex gap-3 items-center mx-1 mt-1">
-                        <Lock className="w-4 h-4 text-slate-500" />
-                        <p className="text-sm font-medium text-slate-600">
-                            Jurnal ini sudah terkirim dan tidak dapat diedit.
-                        </p>
+                    <div className="p-4 bg-slate-100 border border-slate-200 rounded-xl flex gap-3 items-center shadow-sm">
+                        <Lock className="w-5 h-5 text-slate-500" />
+                        <div>
+                            <p className="text-sm font-semibold text-slate-800">Mode Baca</p>
+                            <p className="text-xs text-slate-500">Jurnal ini sudah disetujui dan tidak dapat diubah.</p>
+                        </div>
                     </div>
                 )}
 
                 {/* Manager Notes Alert */}
                 {isRevision && managerNotes && (
-                    <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl animate-in fade-in slide-in-from-top-2 flex gap-3 items-start mx-1 mt-1">
-                        <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                    <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl animate-in fade-in slide-in-from-top-2 flex gap-3 items-start shadow-sm">
+                        <div className="p-2 bg-orange-100 rounded-full shrink-0">
+                            <AlertTriangle className="w-5 h-5 text-orange-600" />
+                        </div>
                         <div>
-                            <p className="text-sm font-bold text-orange-800">Perlu Revisi</p>
-                            <p className="text-xs text-orange-700 mt-0.5 leading-relaxed">{managerNotes}</p>
+                            <p className="text-sm font-bold text-orange-900">Perlu Revisi</p>
+                            <p className="text-sm text-orange-800 mt-1 leading-relaxed">{managerNotes}</p>
                         </div>
                     </div>
                 )}
 
                 {/* Date Selection */}
-                <div className="space-y-3 px-1">
-                    <Label className="text-slate-500 font-medium text-xs uppercase tracking-wider block">
-                        📅 Tanggal Jurnal
+                <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Tanggal Jurnal
                     </Label>
 
                     {isDateConflict ? (
-                        <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl animate-in fade-in zoom-in-95 duration-200">
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-white p-1.5 rounded-full shadow-sm shrink-0">
-                                        <AlertCircle className="w-5 h-5 text-blue-600" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-bold text-slate-800 truncate">
-                                            Sudah ada jurnal tanggal ini
-                                        </p>
-                                        <p className="text-xs text-slate-500 truncate">
-                                            {format(date, "d MMMM yyyy", { locale: id })}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2 w-full">
-                                    {isMobile ? (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setIsDateDrawerOpen(true)}
-                                            className="flex-1 h-9 text-xs border-blue-200 text-blue-700 hover:bg-blue-100"
-                                        >
-                                            Ganti Tanggal
-                                        </Button>
-                                    ) : (
-                                        <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="flex-1 h-9 text-xs border-blue-200 text-blue-700 hover:bg-blue-100"
-                                                >
-                                                    Ganti Tanggal
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={date}
-                                                    onSelect={(d) => {
-                                                        if (d) setDate(d);
-                                                        setIsDatePopoverOpen(false);
-                                                    }}
-                                                    initialFocus
-                                                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    )}
-
-                                    {props.onRequestEdit && (
-                                        <Button
-                                            size="sm"
-                                            onClick={() => props.onRequestEdit?.(format(date, 'yyyy-MM-dd'))}
-                                            className="flex-1 h-9 text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                                        >
-                                            Edit Jurnal Ini
-                                        </Button>
-                                    )}
+                        <div className="p-4 bg-red-50 border border-red-100 rounded-xl animate-in fade-in zoom-in-95 duration-200 flex flex-col gap-3">
+                            <div className="flex items-center gap-3">
+                                <AlertCircle className="w-5 h-5 text-red-600" />
+                                <div>
+                                    <p className="text-sm font-bold text-red-800">Tanggal Konflik</p>
+                                    <p className="text-xs text-red-600">Anda sudah memiliki jurnal untuk {format(date, "d MMMM yyyy", { locale: id })}.</p>
                                 </div>
                             </div>
+                            {!isReadOnly && !props.isDateLocked && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="self-end text-red-700 border-red-200 hover:bg-red-100"
+                                    onClick={() => {
+                                        if (isMobile) setIsDateDrawerOpen(true);
+                                        else setIsDatePopoverOpen(true);
+                                    }}
+                                >
+                                    Ganti Tanggal
+                                </Button>
+                            )}
                         </div>
                     ) : (
                         <div className="relative">
@@ -246,13 +206,16 @@ export function JournalForm({
                                     onClick={() => !isDisabled && props.isDateLocked !== true && setIsDateDrawerOpen(true)}
                                     disabled={isDisabled || props.isDateLocked}
                                     className={cn(
-                                        "w-full justify-start text-left font-semibold text-slate-700 h-12 rounded-xl border-slate-200 bg-white shadow-sm",
-                                        isDisabled && "opacity-90 bg-slate-50 text-slate-500"
+                                        "w-full justify-start text-left font-semibold text-slate-800 h-14 rounded-xl border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm",
+                                        isDisabled && "opacity-80 bg-slate-50"
                                     )}
                                 >
-                                    <CalendarIcon className="mr-3 h-5 w-5 text-blue-600" />
-                                    <div className="flex flex-col items-start gap-0.5 leading-none">
-                                        <span>{date ? format(date, "d MMMM yyyy", { locale: id }) : "Pilih Tanggal"}</span>
+                                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mr-3 border border-blue-100">
+                                        <CalendarIcon className="h-5 w-5 text-blue-600" />
+                                    </div>
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="text-xs text-slate-500 font-medium">Hari & Tanggal</span>
+                                        <span>{date ? format(date, "EEEE, d MMMM yyyy", { locale: id }) : "Pilih Tanggal"}</span>
                                     </div>
                                 </Button>
                             ) : (
@@ -262,11 +225,11 @@ export function JournalForm({
                                             variant={"outline"}
                                             disabled={isDisabled || props.isDateLocked}
                                             className={cn(
-                                                "w-full justify-start text-left font-medium text-sm text-slate-700 h-11 px-4 rounded-lg border-slate-200 bg-white shadow-sm",
-                                                isDisabled && "opacity-90 bg-slate-50 text-slate-500"
+                                                "w-full justify-start text-left font-medium text-slate-700 h-12 px-4 rounded-xl border-slate-200 bg-white hover:bg-slate-50 transition-all",
+                                                isDisabled && "opacity-80 bg-slate-50"
                                             )}
                                         >
-                                            <CalendarIcon className="mr-2 h-4 w-4 text-blue-600" />
+                                            <CalendarIcon className="mr-3 h-4 w-4 text-blue-500" />
                                             {date ? format(date, "EEEE, d MMMM yyyy", { locale: id }) : <span>Pilih tanggal</span>}
                                         </Button>
                                     </PopoverTrigger>
@@ -287,13 +250,13 @@ export function JournalForm({
                         </div>
                     )}
 
-                    {/* Shared Drawer for Mobile (Rendered Unconditionally) */}
+                    {/* Mobile Date Drawer */}
                     {isMobile && (
                         <Drawer open={isDateDrawerOpen} onOpenChange={setIsDateDrawerOpen}>
                             <DrawerContent>
                                 <DrawerHeader>
                                     <DrawerTitle>Pilih Tanggal</DrawerTitle>
-                                    <DrawerDescription>Pilih tanggal untuk entri jurnal ini.</DrawerDescription>
+                                    <DrawerDescription>Tentukan tanggal untuk laporan aktivitas Anda.</DrawerDescription>
                                 </DrawerHeader>
                                 <div className="p-4 flex justify-center pb-8">
                                     <Calendar
@@ -305,7 +268,7 @@ export function JournalForm({
                                         }}
                                         initialFocus
                                         disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                        className="rounded-md border shadow-sm"
+                                        className="rounded-xl border shadow-sm"
                                     />
                                 </div>
                             </DrawerContent>
@@ -313,126 +276,174 @@ export function JournalForm({
                     )}
                 </div>
 
-                {/* Main Content Field */}
-                <div className="space-y-2 px-1">
-                    <Label htmlFor="content" className="text-sm font-semibold text-slate-700 flex items-center justify-between">
-                        <span>Deskripsi Aktivitas <span className="text-red-500">*</span></span>
+                <div className="h-px bg-slate-200 w-full" />
+
+                {/* Main Content */}
+                <div className="space-y-3">
+                    <Label htmlFor="content" className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        Deskripsi Aktivitas <span className="text-red-500">*</span>
                     </Label>
-                    <Textarea
-                        id="content"
-                        ref={textareaRef}
-                        placeholder="Contoh: Menyelesaikan desain UI untuk halaman dashboard, Meeting dengan tim marketing..."
-                        className={cn(
-                            "min-h-[140px] resize-none border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 py-3 leading-relaxed transition-all",
-                            isMobile ? "text-base p-4" : "text-sm",
-                            isDisabled && "bg-slate-50 text-slate-600 border-slate-100"
+                    <div className="relative">
+                        <Textarea
+                            id="content"
+                            ref={textareaRef}
+                            placeholder="Ceritakan apa saja yang Anda kerjakan hari ini secara detail..."
+                            className={cn(
+                                "min-h-[160px] resize-none border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 py-4 px-4 leading-relaxed transition-all rounded-xl shadow-sm text-base text-slate-700 placeholder:text-slate-400 bg-white",
+                                isDisabled && "bg-slate-50 text-slate-500 shadow-none border-slate-100"
+                            )}
+                            disabled={isDisabled}
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
+                        />
+                        {/* Word Count / Validation Indicator */}
+                        {!isReadOnly && (
+                            <div className="absolute bottom-3 right-3 pointer-events-none">
+                                <span className={cn(
+                                    "text-[10px] uppercase font-bold px-2 py-1 rounded-full backdrop-blur-sm transition-colors",
+                                    content.length >= MIN_CHARS
+                                        ? "bg-green-100/80 text-green-700"
+                                        : "bg-slate-100/80 text-slate-500"
+                                )}>
+                                    {content.length >= MIN_CHARS ? 'Siap' : `${content.length}/${MIN_CHARS}`}
+                                </span>
+                            </div>
                         )}
-                        disabled={isDisabled}
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                    />
-                    {!isReadOnly && (
-                        <div className="flex justify-between items-center">
-                            <p className={cn(
-                                "text-[11px] transition-colors",
-                                content.length > 0 && !isValidLength ? "text-red-500 font-medium" : "text-slate-400"
-                            )}>
-                                Min. {MIN_CHARS} karakter {content.length > 0 && `(${content.length}/${MIN_CHARS})`}
-                            </p>
-                        </div>
-                    )}
+                    </div>
                 </div>
 
-                {/* Work Result Selection */}
-                <div className="space-y-2 px-1">
-                    <Label className="text-sm font-semibold text-slate-700">Hasil Pekerjaan</Label>
-                    {isMobile ? (
-                        <>
-                            <button
-                                type="button"
-                                onClick={() => !isDisabled && setIsResultDrawerOpen(true)}
-                                disabled={isDisabled}
-                                className={cn(
-                                    "w-full flex items-center justify-between p-4 border rounded-xl text-left transition-colors shadow-sm min-h-[56px]",
-                                    isDisabled
-                                        ? "bg-slate-50 border-slate-100 text-slate-500"
-                                        : "bg-white border-slate-200 active:bg-slate-50"
-                                )}
-                            >
-                                <span className={cn("font-medium", workResult ? "text-slate-800" : "text-slate-400")}>
-                                    {WORK_RESULT_OPTIONS.find(o => o.value === workResult)?.label || "Pilih status"}
-                                </span>
-                            </button>
-                            <Drawer open={isResultDrawerOpen} onOpenChange={setIsResultDrawerOpen}>
-                                <DrawerContent>
-                                    <DrawerHeader className="text-left pb-2">
-                                        <DrawerTitle>Bagaimana hasil kerjamu?</DrawerTitle>
-                                        <DrawerDescription>Pilih status penyelesaian tugas hari ini.</DrawerDescription>
-                                    </DrawerHeader>
-                                    <div className="p-4 space-y-3 pb-8 bg-slate-50">
-                                        {WORK_RESULT_OPTIONS.map((option) => (
-                                            <button
-                                                key={option.value}
-                                                onClick={() => {
-                                                    setWorkResult(option.value as any);
-                                                    setIsResultDrawerOpen(false);
-                                                }}
-                                                className={cn(
-                                                    "w-full p-4 rounded-xl flex items-center gap-4 border text-left transition-all bg-white",
-                                                    workResult === option.value
-                                                        ? "border-blue-500 ring-1 ring-blue-500 shadow-md"
-                                                        : "border-slate-200 hover:border-slate-300"
-                                                )}
-                                            >
-                                                <div className={cn(
-                                                    "w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-lg transition-colors",
-                                                    workResult === option.value ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-400"
-                                                )}>
-                                                    {option.value === 'completed' && <CheckCircle2 className="w-5 h-5" />}
-                                                    {option.value === 'progress' && <Sparkles className="w-5 h-5" />}
-                                                    {option.value === 'pending' && <AlertCircle className="w-5 h-5" />}
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold text-slate-900 text-base">{option.label}</div>
-                                                    <div className="text-xs text-slate-500 mt-0.5">{option.description}</div>
-                                                </div>
-                                            </button>
-                                        ))}
+                {/* Work Result & Mood Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {/* Work Result */}
+                    <div className="space-y-3">
+                        <Label className="text-sm font-bold text-slate-800">Status Pekerjaan</Label>
+                        {isMobile ? (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => !isDisabled && setIsResultDrawerOpen(true)}
+                                    disabled={isDisabled}
+                                    className={cn(
+                                        "w-full flex items-center gap-3 p-3.5 border rounded-xl text-left transition-all shadow-sm bg-white hover:bg-slate-50",
+                                        isDisabled ? "opacity-60 bg-slate-50" : "border-slate-200"
+                                    )}
+                                >
+                                    <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                                        workResult === 'completed' ? "bg-green-100 text-green-600" :
+                                            workResult === 'pending' ? "bg-amber-100 text-amber-600" :
+                                                "bg-blue-100 text-blue-600"
+                                    )}>
+                                        {workResult === 'completed' ? <CheckCircle2 className="w-5 h-5" /> :
+                                            workResult === 'pending' ? <AlertCircle className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
                                     </div>
-                                </DrawerContent>
-                            </Drawer>
-                        </>
-                    ) : (
-                        <Select value={workResult} onValueChange={(v: 'completed' | 'progress' | 'pending') => setWorkResult(v)} disabled={isDisabled}>
-                            <SelectTrigger className="w-full h-11 border-slate-200 bg-white focus:ring-blue-500">
-                                <SelectValue placeholder="Pilih status hasil kerja" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {WORK_RESULT_OPTIONS.map((option) => (
-                                    <SelectItem key={option.value} value={option.value} className="py-2.5">
-                                        <div className="flex flex-col items-start gap-0.5">
-                                            <span className="font-medium text-sm">{option.label}</span>
-                                            <span className="text-[11px] text-slate-500">{option.description}</span>
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-slate-800 text-sm">
+                                            {WORK_RESULT_OPTIONS.find(o => o.value === workResult)?.label}
+                                        </span>
+                                        <span className="text-xs text-slate-500">
+                                            {WORK_RESULT_OPTIONS.find(o => o.value === workResult)?.description}
+                                        </span>
+                                    </div>
+                                </button>
+
+                                <Drawer open={isResultDrawerOpen} onOpenChange={setIsResultDrawerOpen}>
+                                    <DrawerContent>
+                                        <DrawerHeader className="text-left">
+                                            <DrawerTitle>Status Pekerjaan</DrawerTitle>
+                                            <DrawerDescription>Seberapa jauh progress pekerjaan Anda?</DrawerDescription>
+                                        </DrawerHeader>
+                                        <div className="p-4 space-y-3 pb-8 bg-slate-50/50">
+                                            {WORK_RESULT_OPTIONS.map((option) => (
+                                                <button
+                                                    key={option.value}
+                                                    onClick={() => {
+                                                        setWorkResult(option.value as any);
+                                                        setIsResultDrawerOpen(false);
+                                                    }}
+                                                    className={cn(
+                                                        "w-full p-4 rounded-2xl flex items-center gap-4 border text-left transition-all bg-white relative overflow-hidden",
+                                                        workResult === option.value
+                                                            ? "border-blue-500 ring-2 ring-blue-500/10 shadow-lg scale-[1.02]"
+                                                            : "border-slate-200 hover:border-slate-300 shadow-sm"
+                                                    )}
+                                                >
+                                                    <div className={cn(
+                                                        "w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-xl transition-colors",
+                                                        workResult === option.value ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
+                                                    )}>
+                                                        <option.icon className="w-6 h-6" />
+                                                    </div>
+                                                    <div>
+                                                        <div className={cn("font-bold text-base", workResult === option.value ? "text-blue-700" : "text-slate-900")}>
+                                                            {option.label}
+                                                        </div>
+                                                        <div className="text-sm text-slate-500">{option.description}</div>
+                                                    </div>
+                                                </button>
+                                            ))}
                                         </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    )}
+                                    </DrawerContent>
+                                </Drawer>
+                            </>
+                        ) : (
+                            <Select value={workResult} onValueChange={(v: any) => setWorkResult(v)} disabled={isDisabled}>
+                                <SelectTrigger className="w-full h-[52px] border-slate-200 bg-white focus:ring-blue-500 rounded-xl px-3">
+                                    <SelectValue placeholder="Pilih status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {WORK_RESULT_OPTIONS.map((option) => (
+                                        <SelectItem key={option.value} value={option.value} className="py-3 cursor-pointer">
+                                            <div className="flex items-center gap-3">
+                                                <option.icon className={cn("w-4 h-4", option.color)} />
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="font-semibold text-sm text-slate-700">{option.label}</span>
+                                                    <span className="text-[10px] text-slate-500">{option.description}</span>
+                                                </div>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                    </div>
+
+                    {/* Mood Selector */}
+                    <div className="space-y-3">
+                        <Label className="text-sm font-bold text-slate-800">Mood Kerja</Label>
+                        <div className="flex gap-2">
+                            {MOOD_OPTIONS.map((option) => (
+                                <button
+                                    key={option.value}
+                                    type="button"
+                                    disabled={isDisabled}
+                                    onClick={() => setMood(option.value as '😊' | '😐' | '😣')}
+                                    className={cn(
+                                        "flex-1 flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border-2 transition-all duration-200 h-[52px]",
+                                        mood === option.value
+                                            ? option.color + " ring-2 ring-offset-1 ring-offset-white shadow-sm"
+                                            : "border-slate-100 bg-white hover:border-slate-200 text-slate-400 hover:bg-slate-50",
+                                        isDisabled && "opacity-50 cursor-not-allowed"
+                                    )}
+                                >
+                                    <span className="text-2xl leading-none">{option.value}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Obstacles / Notes Field */}
-                <div className="space-y-2 px-1">
-                    <Label htmlFor="obstacles" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                <div className="space-y-3">
+                    <Label htmlFor="obstacles" className="text-sm font-bold text-slate-700 flex items-center justify-between">
                         Kendala / Catatan
-                        <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Opsional</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Opsional</span>
                     </Label>
                     <Textarea
                         id="obstacles"
-                        placeholder="Tuliskan kendala atau catatan tambahan..."
+                        placeholder="Tuliskan jika ada kendala atau catatan tambahan..."
                         className={cn(
-                            "min-h-[80px] text-sm resize-none border-slate-200 focus:border-blue-500 focus:ring-blue-500/20",
-                            isDisabled && "bg-slate-50 text-slate-600 border-slate-100"
+                            "min-h-[80px] text-sm resize-none border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl shadow-sm bg-white placeholder:text-slate-400",
+                            isDisabled && "bg-slate-50 text-slate-500 border-slate-100"
                         )}
                         value={obstacles}
                         onChange={(e) => setObstacles(e.target.value)}
@@ -440,75 +451,32 @@ export function JournalForm({
                     />
                 </div>
 
-                {/* Mood Selector */}
-                <div className="space-y-3 pb-2 px-1">
-                    <Label className="text-sm font-semibold text-slate-700">Work Mood</Label>
-                    <div className="flex gap-3">
-                        {MOOD_OPTIONS.map((option) => (
-                            <button
-                                key={option.value}
-                                type="button"
-                                disabled={isDisabled}
-                                onClick={() => setMood(option.value as '😊' | '😐' | '😣')}
-                                className={cn(
-                                    "flex-1 flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all",
-                                    mood === option.value
-                                        ? "border-blue-500 bg-blue-50/50 shadow-sm"
-                                        : "border-slate-100 bg-white",
-                                    !isDisabled && mood !== option.value && "hover:bg-slate-50 hover:border-slate-200 active:scale-95",
-                                    isDisabled && mood !== option.value && "opacity-50 grayscale"
-                                )}
-                            >
-                                <span className="text-3xl filter drop-shadow-sm transition-transform duration-200" style={{
-                                    transform: mood === option.value ? 'scale(1.15)' : 'scale(1)'
-                                }}>{option.value}</span>
-                                <span className={cn(
-                                    "text-[10px] font-bold uppercase tracking-wide",
-                                    mood === option.value ? "text-blue-700" : "text-slate-400"
-                                )}>
-                                    {option.label}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Info Text - Only show when editable */}
-                {!isReadOnly && (
-                    <div className="flex items-start gap-2 p-3 bg-slate-50 rounded-lg text-xs text-slate-500 leading-relaxed border border-slate-100 mx-1">
-                        <Sparkles className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                        <p>
-                            Simpan sebagai <strong>Draft</strong> jika belum selesai. Manager akan menerima notifikasi setelah Anda klik <strong>Kirim Laporan</strong>.
-                        </p>
-                    </div>
-                )}
             </div>
 
-            {/* Bottom Action Bar */}
+            {/* Sticky Bottom Action Bar */}
             <div className={cn(
-                "border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-3 bg-white mt-auto shrink-0 z-20 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] p-4 w-full",
-                isMobile ? "pb-8" : "pb-4"
+                "border-t border-slate-200 bg-white/80 backdrop-blur-md p-4 sm:p-5 flex flex-col sm:flex-row gap-3 z-30 shrink-0 shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.1)] transition-all",
+                isMobile ? "pb-8" : "pb-5"
             )}>
                 <Button
                     variant="ghost"
                     onClick={onCancel}
                     disabled={isSubmitting}
-                    className="text-slate-500 h-11 sm:w-auto font-medium hover:bg-slate-100"
+                    className="text-slate-500 font-medium h-12 rounded-xl hover:bg-slate-100"
                 >
                     {isReadOnly ? "Tutup" : "Batal"}
                 </Button>
 
                 {!isReadOnly && (
-                    <div className="flex gap-3 flex-1 justify-end">
+                    <div className="flex gap-3 flex-1 sm:justify-end">
                         {!isRevision && !isDateConflict && (
                             <Button
                                 variant="outline"
                                 onClick={() => handleSubmit(true)}
                                 disabled={isSubmitting || !isValidLength || isDateConflict}
-                                className="gap-2 border-slate-300 h-11 text-slate-700 font-medium flex-1 sm:flex-none hover:bg-slate-50"
+                                className="flex-1 sm:flex-none border-slate-300 text-slate-700 font-semibold h-12 rounded-xl hover:bg-slate-50 hover:text-slate-900"
                             >
-                                <Save className="w-4 h-4" />
-                                <span>Simpan Draft</span>
+                                Simpan Draft
                             </Button>
                         )}
 
@@ -516,23 +484,23 @@ export function JournalForm({
                             onClick={() => handleSubmit(false)}
                             disabled={isSubmitting || !isValidLength || isDateConflict}
                             className={cn(
-                                "gap-2 text-white h-11 text-sm font-bold shadow-md transition-all flex-1 sm:flex-none sm:min-w-[140px]",
+                                "flex-1 sm:flex-none sm:min-w-[160px] h-12 rounded-xl font-bold shadow-lg text-white transition-all transform active:scale-95",
                                 isDateConflict
                                     ? "bg-slate-300 shadow-none cursor-not-allowed text-slate-500"
-                                    : "bg-blue-600 hover:bg-blue-700 shadow-blue-200 hover:shadow-blue-300 hover:-translate-y-0.5"
+                                    : "bg-blue-600 hover:bg-blue-700 shadow-blue-500/30 hover:shadow-blue-500/50"
                             )}
                         >
-                            <Send className="w-4 h-4" />
-                            {isSubmitting
-                                ? "Mengirim..."
-                                : isDateConflict
-                                    ? "Tanggal Konflik"
-                                    : isRevision
-                                        ? "Kirim Revisi"
-                                        : isEditing
-                                            ? "Update Jurnal"
-                                            : "Kirim Laporan"
-                            }
+                            {isSubmitting ? (
+                                <span className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    <span>Menyimpan...</span>
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-2">
+                                    <Send className="w-4 h-4" />
+                                    {isRevision ? "Kirim Revisi" : isEditing ? "Simpan Perubahan" : "Kirim Laporan"}
+                                </span>
+                            )}
                         </Button>
                     </div>
                 )}
