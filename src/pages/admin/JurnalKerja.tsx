@@ -99,7 +99,7 @@ const JurnalKerja = () => {
             const { data: simpleData, error: simpleError } = await supabase
                 .from('work_journals')
                 .select('*')
-                .order('created_at', { ascending: false });
+                .order('date', { ascending: false });
 
             console.log('Simple query result:', { data: simpleData, error: simpleError });
 
