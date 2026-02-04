@@ -22,6 +22,7 @@ import { DeleteJournalModal } from "@/components/journal/DeleteJournalModal";
 import { JournalExportModal } from "@/components/journal/JournalExportModal";
 import { JournalCleanupModal } from "@/components/journal/JournalCleanupModal";
 import { JournalSkeleton } from "@/components/journal/JournalSkeleton";
+import { JournalDetailView } from "@/components/journal/JournalDetailView";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface JournalEntry {
@@ -626,89 +627,17 @@ const JurnalKerja = () => {
                 )}
             </div>
 
-            {/* View Detail Dialog */}
-            <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>📋 Detail Jurnal</DialogTitle>
-                    </DialogHeader>
-                    {viewJournal && (
-                        <div className="space-y-4 py-4">
-                            {/* Employee info */}
-                            <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
-                                <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                                    <AvatarImage src={viewJournal.profiles?.avatar_url || ""} />
-                                    <AvatarFallback className="bg-blue-50 text-blue-600">{getInitials(viewJournal.profiles?.full_name || "")}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                    <p className="font-bold text-slate-800">{viewJournal.profiles?.full_name}</p>
-                                    <p className="text-sm text-slate-500">
-                                        {viewJournal.profiles?.department} • {viewJournal.profiles?.position}
-                                    </p>
-                                    <p className="text-xs text-slate-400 mt-1">
-                                        {format(new Date(viewJournal.date), "EEEE, d MMMM yyyy", { locale: id })}
-                                    </p>
-                                </div>
-                                <div className="flex flex-col items-end gap-2">
-                                    <JournalStatusBadge status={viewJournal.verification_status || viewJournal.status || 'submitted'} />
-                                    {viewJournal.mood && <span className="text-xl">{viewJournal.mood}</span>}
-                                </div>
-                            </div>
-
-                            {/* Work Result */}
-                            {viewJournal.work_result && (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm text-slate-500">Hasil Kerja:</span>
-                                    <Badge className={WORK_RESULT_LABELS[viewJournal.work_result]?.className}>
-                                        {WORK_RESULT_LABELS[viewJournal.work_result]?.label}
-                                    </Badge>
-                                </div>
-                            )}
-
-                            {/* Content */}
-                            <div className="bg-white p-4 rounded-xl border border-slate-200">
-                                <p className="text-sm font-semibold text-slate-700 mb-2">Aktivitas:</p>
-                                <p className="text-slate-700 whitespace-pre-wrap">{viewJournal.content}</p>
-                            </div>
-
-                            {/* Obstacles */}
-                            {viewJournal.obstacles && (
-                                <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
-                                    <p className="text-sm font-semibold text-amber-700 mb-2">Kendala / Catatan:</p>
-                                    <p className="text-slate-700">{viewJournal.obstacles}</p>
-                                </div>
-                            )}
-
-                            {/* Manager Notes */}
-                            {viewJournal.manager_notes && (
-                                <div className={`p-4 rounded-xl border ${(viewJournal.verification_status || viewJournal.status) === 'need_revision'
-                                    ? 'bg-orange-50 border-orange-200'
-                                    : 'bg-blue-50 border-blue-200'
-                                    }`}>
-                                    <p className={`text-sm font-semibold mb-2 ${(viewJournal.verification_status || viewJournal.status) === 'need_revision'
-                                        ? 'text-orange-700'
-                                        : 'text-blue-700'
-                                        }`}>
-                                        Catatan Manager:
-                                    </p>
-                                    <p className="text-slate-700">{viewJournal.manager_notes}</p>
-                                </div>
-                            )}
-
-                            {/* Duration */}
-                            {viewJournal.duration > 0 && (
-                                <div className="flex items-center gap-2 text-sm text-slate-500">
-                                    <Clock className="w-4 h-4" />
-                                    Durasi: {Math.floor(viewJournal.duration / 60)} jam {viewJournal.duration % 60} menit
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsViewOpen(false)}>Tutup</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* Enterprise Journal Detail View */}
+            <JournalDetailView
+                journalId={viewJournal?.id || null}
+                isOpen={isViewOpen}
+                onClose={() => setIsViewOpen(false)}
+                onUpdate={() => {
+                    fetchJournals(page);
+                    fetchStats();
+                    setIsViewOpen(false); // Optional: close on update or keep open? Usually close after approve.
+                }}
+            />
 
             {/* Edit Dialog */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
