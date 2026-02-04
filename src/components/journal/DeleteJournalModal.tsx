@@ -15,6 +15,7 @@ interface DeleteJournalModalProps {
     onConfirm: () => Promise<void>;
     isDeleting?: boolean;
     journalDate?: string;
+    isSoftDelete?: boolean;
 }
 
 export function DeleteJournalModal({
@@ -22,19 +23,20 @@ export function DeleteJournalModal({
     onOpenChange,
     onConfirm,
     isDeleting = false,
-    journalDate
+    journalDate,
+    isSoftDelete = false
 }: DeleteJournalModalProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[400px]">
                 <DialogHeader className="space-y-4">
                     {/* Warning Icon */}
-                    <div className="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-                        <AlertTriangle className="w-7 h-7 text-red-600" />
+                    <div className={`mx-auto w-14 h-14 rounded-full flex items-center justify-center ${isSoftDelete ? 'bg-orange-100' : 'bg-red-100'}`}>
+                        <AlertTriangle className={`w-7 h-7 ${isSoftDelete ? 'text-orange-600' : 'text-red-600'}`} />
                     </div>
 
                     <DialogTitle className="text-center text-lg font-bold text-slate-800">
-                        Hapus Jurnal?
+                        {isSoftDelete ? "Arsipkan Jurnal?" : "Hapus Jurnal?"}
                     </DialogTitle>
                     <DialogDescription className="text-center text-slate-600">
                         {journalDate && (
@@ -42,12 +44,26 @@ export function DeleteJournalModal({
                                 Jurnal tanggal: <strong>{journalDate}</strong>
                             </span>
                         )}
-                        <span className="block">
-                            Jurnal yang dihapus <strong className="text-red-600">tidak dapat dikembalikan</strong>.
-                        </span>
-                        <span className="block mt-2 text-sm">
-                            Apakah Anda yakin ingin melanjutkan?
-                        </span>
+
+                        {isSoftDelete ? (
+                            <>
+                                <span className="block">
+                                    Jurnal ini akan <strong className="text-orange-600">diarsipkan</strong>.
+                                </span>
+                                <span className="block mt-2 text-sm text-slate-500">
+                                    Data tetap tersimpan untuk keperluan audit admin, namun tidak akan muncul lagi di daftar Anda.
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <span className="block">
+                                    Draft ini akan dihapus <strong className="text-red-600">permanen</strong>.
+                                </span>
+                                <span className="block mt-2 text-sm text-slate-500">
+                                    Tindakan ini tidak dapat dibatalkan. Data akan hilang selamanya.
+                                </span>
+                            </>
+                        )}
                     </DialogDescription>
                 </DialogHeader>
 

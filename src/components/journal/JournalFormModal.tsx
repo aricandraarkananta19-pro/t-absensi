@@ -36,18 +36,20 @@ export function JournalFormModal({
 }: JournalFormModalProps) {
 
     const isMobile = useIsMobile();
-    const [isDesktop, setIsDesktop] = useState(!isMobile);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
-        setIsDesktop(!isMobile);
-    }, [isMobile]);
+        setIsMounted(true);
+    }, []);
 
     const handleCancel = () => {
         onOpenChange(false);
     };
 
+    if (!isMounted) return null;
+
     // Desktop: Dialog
-    if (isDesktop) {
+    if (!isMobile) {
         return (
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col p-6">

@@ -15,12 +15,13 @@ import MobileNavigation from "@/components/MobileNavigation";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { toast } from "@/hooks/use-toast";
 
-// New Components
+// Components
 import { JournalCard, JournalCardData, JournalStatusBadge } from "@/components/journal/JournalCard";
 import { JournalFormModal, JournalFormData } from "@/components/journal/JournalFormModal";
 import { JournalForm } from "@/components/journal/JournalForm";
 import { DeleteJournalModal } from "@/components/journal/DeleteJournalModal";
 import { EmptyJournalState } from "@/components/journal/EmptyJournalState";
+import { JournalSummaryView } from "@/components/journal/JournalSummaryView";
 
 // Status filter tabs with counts
 const STATUS_TABS = [
@@ -40,9 +41,12 @@ export default function JurnalSaya() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [filterStatus, setFilterStatus] = useState("all");
 
-    // Modal States
-    const [isFormOpen, setIsFormOpen] = useState(false);
+    // UI States
+    const [isFormOpen, setIsFormOpen] = useState(false); // Mobile Modal
+    const [showDesktopForm, setShowDesktopForm] = useState(false); // Desktop Form Visibility
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+    // Data States
     const [editingJournal, setEditingJournal] = useState<JournalCardData | null>(null);
     const [deletingJournal, setDeletingJournal] = useState<JournalCardData | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,31 +79,26 @@ export default function JurnalSaya() {
     }, [user]);
 
     const fetchJournals = async (isBackground = false) => {
+        if (!user?.id) return; // Critical Fix: Prevent fetching with undefined user (returns empty)
+
         if (!isBackground) setIsLoading(true);
         try {
             const { data, error } = await supabase
                 .from('work_journals' as any)
                 .select('*')
-                .eq('user_id', user?.id)
+                .eq('user_id', user.id) // Ensure referencing valid user.id
+                .is('deleted_at', null) // Soft delete filter
                 .order('date', { ascending: false });
 
             if (error) throw error;
-            if (data) {
-                const journalData = data as unknown as JournalCardData[];
-                setJournals(journalData);
 
-                // Auto-select today's journal on initial load if it exists (Desktop Only)
-                // This prevents the "New Journal -> Conflict" glitch by showing the existing one properly.
-                if (!isBackground && !editingJournal && window.innerWidth >= 1024) {
-                    const todayStr = format(new Date(), 'yyyy-MM-dd');
-                    const todayJournal = journalData.find(j => j.date === todayStr);
-                    if (todayJournal) {
-                        setEditingJournal(todayJournal);
-                    }
-                }
+            // Only update state if we successfully got array back
+            if (data) {
+                setJournals(data as unknown as JournalCardData[]);
             }
         } catch (error) {
             console.error("Error fetching journals:", error);
+            // On background error, DO NOT clear journals (keep stale data is better than empty)
             if (!isBackground) {
                 toast({
                     variant: "destructive",
@@ -134,17 +133,12 @@ export default function JurnalSaya() {
         toast({ title: "Data diperbarui", description: "Jurnal berhasil dimuat ulang." });
     };
 
-    // CRUD Operations
     const handleSaveJournal = async (data: JournalFormData, isDraft: boolean, isSilent: boolean = false) => {
         if (!isSilent) setIsSubmitting(true);
         try {
             const status = isDraft ? 'draft' : 'submitted';
             let savedData: JournalCardData | null = null;
             let actionType: 'create' | 'update' = 'create';
-
-            // Optimistic Update / State Prep
-            // We'll update the list immediately after a successful DB call
-            // instead of waiting for a fetch.
 
             if (editingJournal) {
                 actionType = 'update';
@@ -189,7 +183,7 @@ export default function JurnalSaya() {
                         mood: data.mood,
                         date: data.date,
                         duration: 0,
-                        status: 'completed',
+                        status: 'completed', // Legacy status
                         verification_status: status
                     })
                     .select()
@@ -209,7 +203,7 @@ export default function JurnalSaya() {
                 }
             }
 
-            // --- IMMEDIATE STATE UPDATE (Fixes "Disappearing" issue) ---
+            // Immediate State Update
             if (savedData) {
                 setJournals(prev => {
                     const newList = [...prev];
@@ -217,22 +211,20 @@ export default function JurnalSaya() {
                         const index = newList.findIndex(j => j.id === savedData!.id);
                         if (index !== -1) newList[index] = savedData!;
                     } else {
-                        // Add new to top + sort by date desc
                         newList.unshift(savedData!);
                         newList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
                     }
                     return newList;
                 });
 
-                // Auto-switch filter if the new item is hidden
                 if (filterStatus !== 'all' && filterStatus !== savedData.verification_status) {
                     setFilterStatus('all');
                 }
             }
-            // -----------------------------------------------------------
 
             if (!isSilent) {
                 setIsFormOpen(false);
+                setShowDesktopForm(false);
                 setEditingJournal(null);
             } else {
                 if (savedData) {
@@ -260,20 +252,43 @@ export default function JurnalSaya() {
 
         setIsSubmitting(true);
         try {
-            const { error } = await supabase
-                .from('work_journals' as any)
-                .delete()
-                .eq('id', deletingJournal.id);
+            const isDraft = deletingJournal.verification_status === 'draft';
+            let error;
+
+            if (isDraft) {
+                const { error: deleteError } = await supabase
+                    .from('work_journals' as any)
+                    .delete()
+                    .eq('id', deletingJournal.id);
+                error = deleteError;
+            } else {
+                const { error: updateError } = await supabase
+                    .from('work_journals' as any)
+                    .update({
+                        deleted_at: new Date().toISOString(),
+                        verification_status: 'archived'
+                    })
+                    .eq('id', deletingJournal.id);
+                error = updateError;
+            }
 
             if (error) throw error;
 
             toast({
                 title: "Jurnal Dihapus",
-                description: "Jurnal berhasil dihapus."
+                description: isDraft ? "Draft berhasil dihapus permanen." : "Jurnal berhasil diarsipkan."
             });
 
             setIsDeleteOpen(false);
             setDeletingJournal(null);
+
+            // If we were editing this journal, close existing form
+            if (editingJournal?.id === deletingJournal.id) {
+                setEditingJournal(null);
+                setShowDesktopForm(false);
+                setIsFormOpen(false);
+            }
+
             fetchJournals();
         } catch (error: any) {
             toast({
@@ -286,23 +301,53 @@ export default function JurnalSaya() {
         }
     };
 
-    // Open modals
-    const openCreateModal = () => {
-        setEditingJournal(null);
-        setIsFormOpen(true);
-    };
-
-    const openEditModal = (journal: JournalCardData) => {
-        setEditingJournal(journal);
-        setIsFormOpen(true);
-    };
-
     const openDeleteModal = (journal: JournalCardData) => {
         setDeletingJournal(journal);
         setIsDeleteOpen(true);
     };
 
-    // Stats calculation
+    // Desktop/Mobile Helper
+    const [isDesktop, setIsDesktop] = useState(false);
+    useEffect(() => {
+        const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+        checkDesktop();
+        window.addEventListener('resize', checkDesktop);
+        return () => window.removeEventListener('resize', checkDesktop);
+    }, []);
+
+    const handleJournalSelect = (journal: JournalCardData) => {
+        if (!isDesktop) {
+            setEditingJournal(journal);
+            setIsFormOpen(true);
+        } else {
+            setEditingJournal(journal);
+            setShowDesktopForm(true);
+        }
+    };
+
+    const handleCreateNew = () => {
+        if (!isDesktop) {
+            setEditingJournal(null);
+            setIsFormOpen(true);
+        } else {
+            setEditingJournal(null);
+            setShowDesktopForm(true);
+        }
+    };
+
+    const handleRightPanelCancel = () => {
+        setShowDesktopForm(false);
+        setEditingJournal(null);
+    };
+
+    const handleRequestEdit = (date: string) => {
+        const journal = journals.find(j => j.date === date);
+        if (journal) {
+            handleJournalSelect(journal);
+        }
+    };
+
+    // Derived Data
     const stats = {
         total: journals.length,
         approved: journals.filter(j => j.verification_status === 'approved').length,
@@ -311,68 +356,18 @@ export default function JurnalSaya() {
         draft: journals.filter(j => j.verification_status === 'draft').length
     };
 
-    // Filter journals
     const filteredJournals = journals.filter(j =>
         filterStatus === 'all' || j.verification_status === filterStatus
     );
 
-    // Get count for each tab
     const getTabCount = (key: string) => {
         if (key === 'all') return journals.length;
         return journals.filter(j => j.verification_status === key).length;
     };
 
-    // Derived existing dates for duplicate checking
     const existingDates = journals.map(j => j.date);
-
-    // Tablet/Desktop Split View helpers
-
-    // Check for large screen (Desktop) where side-panel is visible
-    const [isDesktop, setIsDesktop] = useState(false);
-
-    useEffect(() => {
-        const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024); // lg breakpoint
-        checkDesktop();
-        window.addEventListener('resize', checkDesktop);
-        return () => window.removeEventListener('resize', checkDesktop);
-    }, []);
-
-    // Tablet/Desktop Split View helpers
-    const handleJournalSelect = (journal: JournalCardData) => {
-        // Use Modal for Mobile (<640) AND Tablet (<1024)
-        // Only use Side Panel for Desktop (>=1024)
-        if (!isDesktop) {
-            openEditModal(journal);
-        } else {
-            setEditingJournal(journal);
-        }
-    };
-
-    const handleCreateNew = () => {
-        if (!isDesktop) {
-            openCreateModal();
-        } else {
-            setEditingJournal(null); // Clears form for new entry, side panel shows "New" state implicitly or keeps old? 
-            // Actually side panel needs to know we want to create new.
-            // The current side panel logic shows "New" if editingJournal is null.
-            // But we might want to ensure it grabs focus or scrolls.
-            // Ideally we need a state 'isCreating'. 
-            // But for now, setting editingJournal(null) allows the form to render empty.
-            // We should just ensure form is visible.
-        }
-    };
-
-    const handleRequestEdit = (date: string) => {
-        const journal = journals.find(j => j.date === date);
-        if (journal) {
-            if (!isDesktop) {
-                setEditingJournal(journal);
-                setIsFormOpen(true);
-            } else {
-                setEditingJournal(journal);
-            }
-        }
-    };
+    const todayString = format(new Date(), 'yyyy-MM-dd');
+    const todayJournal = journals.find(j => j.date === todayString);
 
     return (
         <div className={`min-h-screen pb-24 md:pb-8 ${isMobile ? 'bg-white' : 'bg-slate-50/50'}`}>
@@ -434,72 +429,44 @@ export default function JurnalSaya() {
                     {/* LEFT COLUMN: Stats & List */}
                     <div className="lg:col-span-7 space-y-6">
 
-                        {/* Stats Row - Responsive: Scroll on mobile, Grid on desktop */}
-                        {/* FIX: Use grid-cols-2 for Tablet (< lg), grid-cols-4 for Desktop (lg) */}
+                        {/* Stats Row */}
                         <div className={`
                             ${isMobile
                                 ? 'flex overflow-x-auto pb-4 gap-3 no-scrollbar -mx-4 px-4 snap-x'
                                 : 'grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4'
                             }
                         `}>
-                            {/* Card 1: Total */}
-                            <Card className={`
-                                border-slate-100 shadow-sm bg-white shrink-0
-                                ${isMobile ? 'w-[140px] snap-start' : ''}
-                            `}>
+                            <Card className={`border-slate-100 shadow-sm bg-white shrink-0 ${isMobile ? 'w-[140px] snap-start' : ''}`}>
                                 <CardContent className="p-4 flex flex-col justify-center text-left">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <div className="p-1.5 bg-slate-50 rounded-md">
-                                            <BookOpen className="w-3.5 h-3.5 text-slate-500" />
-                                        </div>
+                                        <div className="p-1.5 bg-slate-50 rounded-md"><BookOpen className="w-3.5 h-3.5 text-slate-500" /></div>
                                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total</p>
                                     </div>
                                     <span className="text-2xl font-bold text-slate-900">{stats.total}</span>
                                 </CardContent>
                             </Card>
-
-                            {/* Card 2: Approved */}
-                            <Card className={`
-                                border-green-100 shadow-sm bg-green-50/30 shrink-0
-                                ${isMobile ? 'w-[140px] snap-start' : ''}
-                            `}>
+                            <Card className={`border-green-100 shadow-sm bg-green-50/30 shrink-0 ${isMobile ? 'w-[140px] snap-start' : ''}`}>
                                 <CardContent className="p-4 flex flex-col justify-center text-left">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <div className="p-1.5 bg-green-100 rounded-md">
-                                            <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                                        </div>
+                                        <div className="p-1.5 bg-green-100 rounded-md"><CheckCircle2 className="w-3.5 h-3.5 text-green-600" /></div>
                                         <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider">Disetujui</p>
                                     </div>
                                     <span className="text-2xl font-bold text-green-700">{stats.approved}</span>
                                 </CardContent>
                             </Card>
-
-                            {/* Card 3: Pending */}
-                            <Card className={`
-                                border-amber-100 shadow-sm bg-amber-50/30 shrink-0
-                                ${isMobile ? 'w-[140px] snap-start' : ''}
-                            `}>
+                            <Card className={`border-amber-100 shadow-sm bg-amber-50/30 shrink-0 ${isMobile ? 'w-[140px] snap-start' : ''}`}>
                                 <CardContent className="p-4 flex flex-col justify-center text-left">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <div className="p-1.5 bg-amber-100 rounded-md">
-                                            <Send className="w-3.5 h-3.5 text-amber-600" />
-                                        </div>
+                                        <div className="p-1.5 bg-amber-100 rounded-md"><Send className="w-3.5 h-3.5 text-amber-600" /></div>
                                         <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">Menunggu</p>
                                     </div>
                                     <span className="text-2xl font-bold text-amber-700">{stats.pending}</span>
                                 </CardContent>
                             </Card>
-
-                            {/* Card 4: Revision */}
-                            <Card className={`
-                                border-orange-100 shadow-sm bg-orange-50/30 shrink-0
-                                ${isMobile ? 'w-[140px] snap-start' : ''}
-                            `}>
+                            <Card className={`border-orange-100 shadow-sm bg-orange-50/30 shrink-0 ${isMobile ? 'w-[140px] snap-start' : ''}`}>
                                 <CardContent className="p-4 flex flex-col justify-center text-left">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <div className="p-1.5 bg-orange-100 rounded-md">
-                                            <AlertCircle className="w-3.5 h-3.5 text-orange-600" />
-                                        </div>
+                                        <div className="p-1.5 bg-orange-100 rounded-md"><AlertCircle className="w-3.5 h-3.5 text-orange-600" /></div>
                                         <p className="text-[10px] text-orange-600 font-bold uppercase tracking-wider">Revisi</p>
                                     </div>
                                     <span className="text-2xl font-bold text-orange-700">{stats.needsRevision}</span>
@@ -514,7 +481,6 @@ export default function JurnalSaya() {
                                     const count = getTabCount(tab.key);
                                     const isActive = filterStatus === tab.key;
                                     const IconComponent = tab.icon;
-
                                     return (
                                         <button
                                             key={tab.key}
@@ -522,19 +488,13 @@ export default function JurnalSaya() {
                                             className={`
                                                 flex items-center gap-2 px-3 py-2 rounded-lg text-xs md:text-sm font-medium 
                                                 transition-all whitespace-nowrap flex-shrink-0
-                                                ${isActive
-                                                    ? "bg-blue-600 text-white shadow-md"
-                                                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                                                }
+                                                ${isActive ? "bg-blue-600 text-white shadow-md" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"}
                                             `}
                                         >
                                             <IconComponent className="w-3.5 h-3.5" />
                                             {tab.label}
                                             {count > 0 && (
-                                                <span className={`
-                                                    text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1
-                                                    ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}
-                                                `}>
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1 ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
                                                     {count}
                                                 </span>
                                             )}
@@ -547,9 +507,7 @@ export default function JurnalSaya() {
                         {/* Journal List */}
                         {isLoading ? (
                             <div className="space-y-4">
-                                {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-32 bg-slate-100 rounded-xl animate-pulse" />
-                                ))}
+                                {[1, 2, 3].map(i => <div key={i} className="h-32 bg-slate-100 rounded-xl animate-pulse" />)}
                             </div>
                         ) : filteredJournals.length === 0 ? (
                             <EmptyJournalState
@@ -563,12 +521,12 @@ export default function JurnalSaya() {
                                 {filteredJournals.map((journal) => (
                                     <div
                                         key={journal.id}
-                                        className={`transition-all duration-200 ${editingJournal?.id === journal.id && !isMobile ? 'ring-2 ring-blue-500 rounded-xl transform scale-[1.01]' : ''}`}
+                                        className={`transition-all duration-200 ${editingJournal?.id === journal.id && showDesktopForm ? 'ring-2 ring-blue-500 rounded-xl transform scale-[1.01]' : ''}`}
                                     >
                                         <JournalCard
                                             journal={journal}
                                             isEmployee={true}
-                                            showActions={!isMobile} // On mobile, actions are in menu
+                                            showActions={!isMobile}
                                             onEdit={handleJournalSelect}
                                             onDelete={openDeleteModal}
                                             onView={handleJournalSelect}
@@ -579,81 +537,89 @@ export default function JurnalSaya() {
                         )}
 
                         {/* Helpful Guidance (Desktop Only) */}
-                        {!isMobile && journals.length > 0 && (
+                        {!isMobile && journals.length > 0 && !showDesktopForm && (
                             <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
                                 <p className="text-sm text-blue-800"><strong>💡 Petunjuk:</strong></p>
                                 <ul className="text-xs text-blue-700 mt-2 space-y-1 list-disc list-inside">
-                                    <li>Pilih jurnal dari daftar untuk melihat detail atau mengeditnya.</li>
-                                    <li>Klik tombol <strong>+ Tulis Jurnal</strong> untuk membuat jurnal baru.</li>
+                                    <li>Pilih jurnal dari daftar untuk melihat detail.</li>
+                                    <li>Hari ini: <strong>{todayJournal ? 'Sudah mengisi' : 'Belum mengisi'}</strong>.</li>
                                 </ul>
                             </div>
                         )}
                     </div>
 
                     {/* RIGHT COLUMN: Form/Details (Tablet/Desktop Only) */}
-                    {/* RIGHT COLUMN: Form/Details (Tablet/Desktop Only) */}
                     <div className="hidden lg:block lg:col-span-5 h-[calc(100vh-140px)] sticky top-28">
                         <Card className="h-full border-slate-200 shadow-lg flex flex-col bg-white overflow-hidden">
-                            {/* Fixed Header */}
-                            <div className="shrink-0 p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center z-10">
-                                <div className="flex flex-col gap-1">
-                                    <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
-                                        {editingJournal
-                                            ? (
-                                                (editingJournal.verification_status === 'submitted' || editingJournal.verification_status === 'approved')
-                                                    ? '📋 Detail Jurnal'
-                                                    : editingJournal.verification_status === 'need_revision'
-                                                        ? '✏️ Revisi Jurnal'
-                                                        : '✏️ Edit Jurnal'
-                                            )
-                                            : (
-                                                <span className="flex items-center gap-2">
-                                                    <BookOpen className="w-5 h-5 text-blue-600" />
-                                                    Apa yang Anda kerjakan hari ini?
-                                                </span>
-                                            )
-                                        }
-                                    </h3>
-                                    {!editingJournal && (
-                                        <p className="text-xs text-slate-500 font-medium ml-7">
-                                            Catat aktivitas kerja Anda sekarang.
-                                        </p>
-                                    )}
-                                </div>
-                                {editingJournal && (
-                                    <Button variant="ghost" size="sm" onClick={() => setEditingJournal(null)} className="h-8 text-xs text-slate-500">
-                                        Buat Baru
-                                    </Button>
-                                )}
-                            </div>
-
-                            {/* Scrollable Content Container */}
-                            <div className="flex-1 min-h-0 relative">
-                                <JournalForm
-                                    initialData={editingJournal ? {
-                                        content: editingJournal.content,
-                                        work_result: editingJournal.work_result,
-                                        obstacles: editingJournal.obstacles,
-                                        mood: editingJournal.mood,
-                                        date: editingJournal.date
-                                    } : undefined}
-                                    isEditing={!!editingJournal}
-                                    isRevision={editingJournal?.verification_status === 'need_revision'}
-                                    isReadOnly={editingJournal ? (editingJournal.verification_status === 'submitted' || editingJournal.verification_status === 'approved') : false}
-                                    managerNotes={editingJournal?.manager_notes}
-                                    onSave={async (d, draft, silent) => { await handleSaveJournal(d, draft, silent); }}
-                                    onCancel={() => setEditingJournal(null)}
-                                    isSubmitting={isSubmitting}
-                                    existingDates={existingDates}
-                                    onRequestEdit={handleRequestEdit}
+                            {/* MODE 1: FORM (Creating or Editing) */}
+                            {showDesktopForm ? (
+                                <>
+                                    <div className="shrink-0 p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center z-10">
+                                        <div className="flex flex-col gap-1">
+                                            <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
+                                                {editingJournal
+                                                    ? ((editingJournal.verification_status === 'submitted' || editingJournal.verification_status === 'approved') ? '📋 Detail Jurnal' : '✏️ Edit Jurnal')
+                                                    : <span className="flex items-center gap-2"><BookOpen className="w-5 h-5 text-blue-600" /> Isi Jurnal Baru</span>
+                                                }
+                                            </h3>
+                                        </div>
+                                        <Button variant="ghost" size="sm" onClick={handleRightPanelCancel} className="h-8 text-xs text-slate-500 hover:text-red-500">
+                                            Tutup
+                                        </Button>
+                                    </div>
+                                    <div className="flex-1 min-h-0 relative">
+                                        <JournalForm
+                                            initialData={editingJournal ? {
+                                                content: editingJournal.content,
+                                                work_result: editingJournal.work_result,
+                                                obstacles: editingJournal.obstacles,
+                                                mood: editingJournal.mood,
+                                                date: editingJournal.date
+                                            } : undefined}
+                                            isEditing={!!editingJournal}
+                                            isRevision={editingJournal?.verification_status === 'need_revision'}
+                                            isReadOnly={editingJournal ? (editingJournal.verification_status === 'submitted' || editingJournal.verification_status === 'approved') : false}
+                                            managerNotes={editingJournal?.manager_notes}
+                                            onSave={async (d, draft, silent) => { await handleSaveJournal(d, draft, silent); }}
+                                            onCancel={handleRightPanelCancel}
+                                            isSubmitting={isSubmitting}
+                                            existingDates={existingDates}
+                                            onRequestEdit={handleRequestEdit}
+                                        />
+                                    </div>
+                                </>
+                            ) : todayJournal ? (
+                                /* MODE 2: SUMMARY VIEW (Today's Journal Exists) */
+                                <JournalSummaryView
+                                    journal={todayJournal}
+                                    onAction={(j) => handleJournalSelect(j)}
                                 />
-                            </div>
+                            ) : (
+                                /* MODE 3: EMPTY STATE (Create CTA) */
+                                <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-slate-50/30">
+                                    <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 shadow-sm border border-blue-100 animate-pulse">
+                                        <BookOpen className="w-10 h-10 text-blue-500" />
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-slate-900 mb-2">Halo, {user?.email?.split('@')[0]}!</h2>
+                                    <p className="text-slate-500 mb-8 max-w-xs leading-relaxed">
+                                        Anda belum mengisi jurnal hari ini. Yuk catat aktivitas kerjamu sekarang.
+                                    </p>
+                                    <Button
+                                        onClick={handleCreateNew}
+                                        size="lg"
+                                        className="gap-2 bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-200/50 text-white rounded-full px-8 h-12"
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                        Mulai Tulis Jurnal
+                                    </Button>
+                                </div>
+                            )}
                         </Card>
                     </div>
                 </div>
             </div>
 
-            {/* Create/Edit Modal */}
+            {/* Create/Edit Modal (Mobile) */}
             <JournalFormModal
                 open={isFormOpen}
                 onOpenChange={setIsFormOpen}
@@ -680,10 +646,8 @@ export default function JurnalSaya() {
                 onOpenChange={setIsDeleteOpen}
                 onConfirm={handleDeleteJournal}
                 isDeleting={isSubmitting}
-                journalDate={deletingJournal
-                    ? format(new Date(deletingJournal.date), "d MMMM yyyy", { locale: id })
-                    : undefined
-                }
+                journalDate={deletingJournal ? format(new Date(deletingJournal.date), "d MMMM yyyy", { locale: id }) : undefined}
+                isSoftDelete={deletingJournal?.verification_status !== 'draft'} // Pass this prop to Modal to change text
             />
 
             {isMobile && <MobileNavigation />}
