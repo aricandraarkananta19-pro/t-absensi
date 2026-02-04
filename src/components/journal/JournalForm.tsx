@@ -166,13 +166,13 @@ export function JournalForm({
                 {/* Main Content Field */}
                 <div className="space-y-2">
                     <Label htmlFor="content" className="text-slate-700 font-semibold flex items-center gap-2 text-base">
-                        Aktivitas Utama Hari Ini
+                        Apa yang Anda kerjakan hari ini?
                         <span className="text-red-500">*</span>
                     </Label>
                     <Textarea
                         id="content"
                         ref={textareaRef}
-                        placeholder="Jelaskan pekerjaan utama yang Anda selesaikan..."
+                        placeholder="Contoh: Menyelesaikan desain UI untuk halaman dashboard, Meeting dengan tim marketing..."
                         className="min-h-[140px] resize-none text-base border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 py-3 leading-relaxed"
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
@@ -466,7 +466,7 @@ export function JournalForm({
                             ? "Kirim Ulang"
                             : isEditing
                                 ? "Simpan Perubahan"
-                                : "Kirim Jurnal"
+                                : "Kirim Laporan"
                     }
                 </Button>
             </div>

@@ -477,12 +477,24 @@ export default function JurnalSaya() {
                         <div className="sticky top-24">
                             <Card className="border-slate-200 shadow-lg overflow-hidden flex flex-col max-h-[calc(100vh-120px)]">
                                 <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                                        {editingJournal
-                                            ? (editingJournal.verification_status === 'need_revision' ? '✏️ Revisi Jurnal' : '📝 Detail Jurnal')
-                                            : '✨ Jurnal Baru'
-                                        }
-                                    </h3>
+                                    <div className="flex flex-col gap-1">
+                                        <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
+                                            {editingJournal
+                                                ? (editingJournal.verification_status === 'need_revision' ? '✏️ Revisi Jurnal' : '📝 Detail Jurnal')
+                                                : (
+                                                    <span className="flex items-center gap-2">
+                                                        <BookOpen className="w-5 h-5 text-blue-600" />
+                                                        Apa yang Anda kerjakan hari ini?
+                                                    </span>
+                                                )
+                                            }
+                                        </h3>
+                                        {!editingJournal && (
+                                            <p className="text-xs text-slate-500 font-medium ml-7">
+                                                Catat aktivitas kerja Anda sekarang. Jangan menunggu pulang.
+                                            </p>
+                                        )}
+                                    </div>
                                     {editingJournal && (
                                         <Button variant="ghost" size="sm" onClick={() => setEditingJournal(null)} className="h-8 text-xs text-slate-500">
                                             Buat Baru
