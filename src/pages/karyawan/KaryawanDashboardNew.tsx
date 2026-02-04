@@ -49,6 +49,11 @@ const KaryawanDashboardNew = () => {
     const [usedLeaveDays, setUsedLeaveDays] = useState(0);
     const [currentTime, setCurrentTime] = useState(new Date());
 
+    // Journal Logic State
+    const [journalContent, setJournalContent] = useState("");
+    const [isSavingJournal, setIsSavingJournal] = useState(false);
+    const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
     // Update current time every second
     useEffect(() => {
         const timer = setInterval(() => {
@@ -135,6 +140,47 @@ const KaryawanDashboardNew = () => {
         navigate("/auth");
     };
 
+    const handleSaveJournal = async (isDraft: boolean) => {
+        if (!journalContent.trim()) {
+            toast({ variant: "destructive", title: "Gagal", description: "Tulis aktivitas Anda terlebih dahulu." });
+            return;
+        }
+
+        setIsSavingJournal(true);
+        try {
+            const status = isDraft ? 'draft' : 'submitted';
+
+            const { error } = await supabase
+                .from('work_journals' as any)
+                .insert({
+                    user_id: user?.id,
+                    content: journalContent,
+                    date: new Date().toISOString().split('T')[0],
+                    duration: 0,
+                    status: 'completed',
+                    verification_status: status
+                });
+
+            if (error) throw error;
+
+            toast({
+                title: isDraft ? "Draft Disimpan" : "Laporan Terkirim",
+                description: isDraft
+                    ? "Tersimpan di draft. Belum terlihat oleh manajer."
+                    : "Laporan kerja Anda telah dikirim ke manajer.",
+            });
+
+            setJournalContent("");
+            setLastSaved(new Date());
+
+            // Trigger refresh logic if needed (e.g. invalidate queries)
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Error", description: error.message });
+        } finally {
+            setIsSavingJournal(false);
+        }
+    };
+
     const hour = new Date().getHours();
     const greeting = hour < 12 ? "Selamat Pagi" : hour < 17 ? "Selamat Siang" : "Selamat Malam";
 
@@ -175,7 +221,6 @@ const KaryawanDashboardNew = () => {
     const formatDate = (date: Date) => {
         return date.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
     };
-
     // ==========================================
     // MOBILE VIEW (Premium iOS Style)
     // ==========================================
@@ -338,59 +383,6 @@ const KaryawanDashboardNew = () => {
             </div>
         );
     }
-
-    // ==========================================
-    // DESKTOP VIEW - Clean Light Theme (Unchanged logic, just ensure existing consistency)
-    // ==========================================
-    // ==========================================
-    // DESKTOP VIEW - Enterprise & Work-Centric
-    // ==========================================
-
-    // Journal Logic
-    const [journalContent, setJournalContent] = useState("");
-    const [isSavingJournal, setIsSavingJournal] = useState(false);
-    const [lastSaved, setLastSaved] = useState<Date | null>(null);
-
-    const handleSaveJournal = async (isDraft: boolean) => {
-        if (!journalContent.trim()) {
-            toast({ variant: "destructive", title: "Gagal", description: "Tulis aktivitas Anda terlebih dahulu." });
-            return;
-        }
-
-        setIsSavingJournal(true);
-        try {
-            const status = isDraft ? 'draft' : 'submitted';
-
-            const { error } = await supabase
-                .from('work_journals' as any)
-                .insert({
-                    user_id: user?.id,
-                    content: journalContent,
-                    date: new Date().toISOString().split('T')[0],
-                    duration: 0,
-                    status: 'completed',
-                    verification_status: status
-                });
-
-            if (error) throw error;
-
-            toast({
-                title: isDraft ? "Draft Disimpan" : "Laporan Terkirim",
-                description: isDraft
-                    ? "Tersimpan di draft. Belum terlihat oleh manajer."
-                    : "Laporan kerja Anda telah dikirim ke manajer.",
-            });
-
-            setJournalContent("");
-            setLastSaved(new Date());
-
-            // Trigger refresh logic if needed (e.g. invalidate queries)
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Error", description: error.message });
-        } finally {
-            setIsSavingJournal(false);
-        }
-    };
 
     return (
         <div className="min-h-screen bg-slate-50 font-['Inter',system-ui,sans-serif] pb-12">
