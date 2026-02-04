@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
     LayoutDashboard, Clock, BarChart3, FileCheck, BookOpen, Search,
     Calendar as CalendarIcon, Clock as ClockIcon, CheckCircle2, XCircle,
-    MessageSquare, AlertCircle, Filter, MoreHorizontal, TrendingUp, Users, CheckSquare
+    MessageSquare, AlertCircle, Filter, MoreHorizontal, TrendingUp, Users, CheckSquare,
+    Pencil, Trash2
 } from "lucide-react";
 import {
     Dialog,
@@ -56,6 +57,13 @@ const ManagerJurnal = () => {
     const [reviewNote, setReviewNote] = useState("");
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Edit/Delete state
+    const [editingJournal, setEditingJournal] = useState<JournalEntry | null>(null);
+    const [editContent, setEditContent] = useState("");
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [deleteJournal, setDeleteJournal] = useState<JournalEntry | null>(null);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
     useEffect(() => {
         fetchJournals();
@@ -185,6 +193,63 @@ const ManagerJurnal = () => {
                 title: "Gagal Mengupdate",
                 description: error.message
             });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleEditJournal = (journal: JournalEntry) => {
+        setEditingJournal(journal);
+        setEditContent(journal.content);
+        setIsEditOpen(true);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingJournal || !editContent.trim()) return;
+        setIsSubmitting(true);
+        try {
+            const { error } = await supabase
+                .from('work_journals')
+                .update({ content: editContent })
+                .eq('id', editingJournal.id);
+
+            if (error) throw error;
+
+            toast({ title: "Berhasil", description: "Jurnal berhasil diperbarui" });
+            setIsEditOpen(false);
+            setEditingJournal(null);
+            fetchJournals();
+        } catch (error) {
+            console.error('Error updating journal:', error);
+            toast({ variant: "destructive", title: "Gagal", description: "Gagal memperbarui jurnal" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteJournal = (journal: JournalEntry) => {
+        setDeleteJournal(journal);
+        setIsDeleteOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteJournal) return;
+        setIsSubmitting(true);
+        try {
+            const { error } = await supabase
+                .from('work_journals')
+                .delete()
+                .eq('id', deleteJournal.id);
+
+            if (error) throw error;
+
+            toast({ title: "Berhasil", description: "Jurnal berhasil dihapus" });
+            setIsDeleteOpen(false);
+            setDeleteJournal(null);
+            fetchJournals();
+        } catch (error) {
+            console.error('Error deleting journal:', error);
+            toast({ variant: "destructive", title: "Gagal", description: "Gagal menghapus jurnal" });
         } finally {
             setIsSubmitting(false);
         }
@@ -600,11 +665,31 @@ const ManagerJurnal = () => {
                                             </div>
                                         )}
 
-                                        <div className="mt-3 flex items-center gap-4 text-xs text-slate-400">
-                                            <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded">
-                                                <ClockIcon className="w-3 h-3" />
-                                                {Math.floor(journal.duration / 60)}j {journal.duration % 60}m
-                                            </span>
+                                        <div className="mt-3 flex items-center justify-between">
+                                            <div className="flex items-center gap-4 text-xs text-slate-400">
+                                                <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded">
+                                                    <ClockIcon className="w-3 h-3" />
+                                                    {Math.floor(journal.duration / 60)}j {journal.duration % 60}m
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="gap-1 text-blue-600 hover:bg-blue-50 h-7 text-xs"
+                                                    onClick={() => handleEditJournal(journal)}
+                                                >
+                                                    <Pencil className="w-3 h-3" /> Edit
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="gap-1 text-red-600 hover:bg-red-50 h-7 text-xs"
+                                                    onClick={() => handleDeleteJournal(journal)}
+                                                >
+                                                    <Trash2 className="w-3 h-3" /> Hapus
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -665,6 +750,50 @@ const ManagerJurnal = () => {
                                 {isSubmitting ? "Menyimpan..." : "Setujui"}
                             </Button>
                         </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Edit Jurnal</DialogTitle>
+                        <DialogDescription>
+                            Edit konten jurnal dari {editingJournal?.profiles?.full_name}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            placeholder="Konten jurnal..."
+                            className="min-h-[150px]"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
+                        <Button onClick={handleSaveEdit} disabled={isSubmitting}>
+                            {isSubmitting ? "Menyimpan..." : "Simpan"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-red-600">Hapus Jurnal</DialogTitle>
+                        <DialogDescription>
+                            Apakah Anda yakin ingin menghapus jurnal dari {deleteJournal?.profiles?.full_name}? Tindakan ini tidak dapat dibatalkan.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Batal</Button>
+                        <Button variant="destructive" onClick={confirmDelete} disabled={isSubmitting}>
+                            {isSubmitting ? "Menghapus..." : "Hapus"}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

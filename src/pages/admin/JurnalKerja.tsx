@@ -6,10 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
 import {
     LayoutDashboard, Users, Clock, BarChart3, Building2, Shield, Key,
     Settings, Database, BookOpen, Search, Filter, Calendar as CalendarIcon,
-    CheckCircle2, AlertCircle, TrendingUp, User
+    CheckCircle2, AlertCircle, TrendingUp, User, Pencil, Trash2, MoreHorizontal
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -42,6 +45,14 @@ const JurnalKerja = () => {
         avgDuration: 0,
         participationRate: 0
     });
+
+    // Edit/Delete state
+    const [editingJournal, setEditingJournal] = useState<JournalEntry | null>(null);
+    const [editContent, setEditContent] = useState("");
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [deleteJournal, setDeleteJournal] = useState<JournalEntry | null>(null);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const menuSections = [
         {
@@ -159,6 +170,63 @@ const JurnalKerja = () => {
             avgDuration: avgDuration,
             participationRate: 0
         });
+    };
+
+    const handleEditJournal = (journal: JournalEntry) => {
+        setEditingJournal(journal);
+        setEditContent(journal.content);
+        setIsEditOpen(true);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingJournal || !editContent.trim()) return;
+        setIsSubmitting(true);
+        try {
+            const { error } = await supabase
+                .from('work_journals')
+                .update({ content: editContent })
+                .eq('id', editingJournal.id);
+
+            if (error) throw error;
+
+            toast({ title: "Berhasil", description: "Jurnal berhasil diperbarui" });
+            setIsEditOpen(false);
+            setEditingJournal(null);
+            fetchJournals();
+        } catch (error) {
+            console.error('Error updating journal:', error);
+            toast({ variant: "destructive", title: "Gagal", description: "Gagal memperbarui jurnal" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteJournal = (journal: JournalEntry) => {
+        setDeleteJournal(journal);
+        setIsDeleteOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteJournal) return;
+        setIsSubmitting(true);
+        try {
+            const { error } = await supabase
+                .from('work_journals')
+                .delete()
+                .eq('id', deleteJournal.id);
+
+            if (error) throw error;
+
+            toast({ title: "Berhasil", description: "Jurnal berhasil dihapus" });
+            setIsDeleteOpen(false);
+            setDeleteJournal(null);
+            fetchJournals();
+        } catch (error) {
+            console.error('Error deleting journal:', error);
+            toast({ variant: "destructive", title: "Gagal", description: "Gagal menghapus jurnal" });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const getInitials = (name: string) => {
@@ -334,6 +402,26 @@ const JurnalKerja = () => {
                                                     <p className="text-slate-600">{journal.manager_notes}</p>
                                                 </div>
                                             )}
+
+                                            {/* Admin Actions */}
+                                            <div className="mt-4 pt-4 border-t border-slate-100 flex justify-end gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                                    onClick={() => handleEditJournal(journal)}
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5" /> Edit
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="gap-1 text-red-600 border-red-200 hover:bg-red-50"
+                                                    onClick={() => handleDeleteJournal(journal)}
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" /> Hapus
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -342,6 +430,50 @@ const JurnalKerja = () => {
                     </div>
                 )}
             </div>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Edit Jurnal</DialogTitle>
+                        <DialogDescription>
+                            Edit konten jurnal dari {editingJournal?.profiles?.full_name}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            placeholder="Konten jurnal..."
+                            className="min-h-[150px]"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
+                        <Button onClick={handleSaveEdit} disabled={isSubmitting}>
+                            {isSubmitting ? "Menyimpan..." : "Simpan"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-red-600">Hapus Jurnal</DialogTitle>
+                        <DialogDescription>
+                            Apakah Anda yakin ingin menghapus jurnal dari {deleteJournal?.profiles?.full_name}? Tindakan ini tidak dapat dibatalkan.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Batal</Button>
+                        <Button variant="destructive" onClick={confirmDelete} disabled={isSubmitting}>
+                            {isSubmitting ? "Menghapus..." : "Hapus"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </EnterpriseLayout>
     );
 };
