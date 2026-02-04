@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,9 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
     LayoutDashboard, Clock, BarChart3, FileCheck, BookOpen, Search,
-    Calendar as CalendarIcon, CheckCircle2, XCircle, MessageSquare,
-    AlertCircle, Filter, TrendingUp, Users, CheckSquare, Pencil, Trash2,
-    Eye, Send, FileEdit, RefreshCw
+    Calendar as CalendarIcon, CheckCircle2, AlertCircle, TrendingUp, Pencil,
+    Eye, MessageSquare, Loader2, FileEdit
 } from "lucide-react";
 import {
     Dialog,
@@ -22,15 +21,13 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfWeek, endOfWeek, isWithinInterval, subWeeks } from "date-fns";
+import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { JournalStatusBadge } from "@/components/journal/JournalCard";
-import { DeleteJournalModal } from "@/components/journal/DeleteJournalModal";
-import { JournalExportModal } from "@/components/journal/JournalExportModal";
-import { FileDown } from "lucide-react";
+import { JournalSkeleton, JournalStatsSkeleton } from "@/components/journal/JournalSkeleton";
 
+// Interfaces
 interface JournalEntry {
     id: string;
     content: string;
@@ -50,74 +47,165 @@ interface JournalEntry {
     };
 }
 
-// Work result labels
-const WORK_RESULT_LABELS = {
+interface JournalStats {
+    total_entries: number;
+    pending_review: number;
+    need_revision: number;
+    approved: number;
+}
+
+const WORK_RESULT_LABELS: Record<string, { label: string, className: string }> = {
     completed: { label: "Selesai", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
     progress: { label: "Progress", className: "bg-blue-50 text-blue-700 border-blue-200" },
     pending: { label: "Tertunda", className: "bg-amber-50 text-amber-700 border-amber-200" }
 };
 
+const ITEMS_PER_PAGE = 15;
+
 const ManagerJurnal = () => {
     const { user } = useAuth();
-    const [journals, setJournals] = useState<JournalEntry[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filterStatus, setFilterStatus] = useState("all");
-    const [selectedWeek, setSelectedWeek] = useState(new Date());
 
-    // Review Modal State
+    // Data State
+    const [journals, setJournals] = useState<JournalEntry[]>([]);
+    const [stats, setStats] = useState<JournalStats | null>(null);
+
+    // Loading States
+    const [isLoadingList, setIsLoadingList] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [isLoadingStats, setIsLoadingStats] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // Filter & Pagination
+    const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [filterStatus, setFilterStatus] = useState("all");
+    const [hasMore, setHasMore] = useState(true);
+    const [page, setPage] = useState(0);
+
+    // Modal States
     const [selectedJournal, setSelectedJournal] = useState<JournalEntry | null>(null);
     const [reviewNote, setReviewNote] = useState("");
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Edit/Delete state
     const [editingJournal, setEditingJournal] = useState<JournalEntry | null>(null);
     const [editContent, setEditContent] = useState("");
     const [isEditOpen, setIsEditOpen] = useState(false);
-    const [deleteJournal, setDeleteJournal] = useState<JournalEntry | null>(null);
-    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-    // Export state
-    const [isExportOpen, setIsExportOpen] = useState(false);
+    // Refs for Infinite Scroll
+    const observer = useRef<IntersectionObserver | null>(null);
+    const lastJournalElementRef = useCallback((node: HTMLDivElement) => {
+        if (isLoadingList || isLoadingMore) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore) {
+                setPage(prevPage => prevPage + 1);
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [isLoadingList, isLoadingMore, hasMore]);
 
+    // Handle Search Debounce
     useEffect(() => {
-        fetchJournals();
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 500); // 500ms debounce
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
+    // Reset when filters change
+    useEffect(() => {
+        setPage(0);
+        setJournals([]);
+        setHasMore(true);
+        // We do trigger fetch via the page dependency, but we need to ensure state is clean
+    }, [filterStatus, debouncedSearch]);
+
+    // Initial Stats Load
+    useEffect(() => {
+        fetchStats();
+        // Setup Realtime Subscription for stats updates only
         const channel = supabase
-            .channel('manager-journal-changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'work_journals'
-                },
-                () => {
-                    fetchJournals();
-                }
-            )
+            .channel('manager-journal-stats')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'work_journals' }, () => {
+                fetchStats();
+            })
             .subscribe();
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
+        return () => { supabase.removeChannel(channel); };
     }, []);
 
-    const fetchJournals = async () => {
-        setIsLoading(true);
+    // Fetch List Effect
+    useEffect(() => {
+        fetchJournals(page);
+    }, [page, filterStatus, debouncedSearch]);
+
+    const fetchStats = async () => {
+        setIsLoadingStats(true);
         try {
-            const { data: simpleData, error: simpleError } = await supabase
+            // Try to use the optimized RPC
+            const { data, error } = await supabase.rpc('get_manager_journal_stats');
+
+            if (!error && data && data.length > 0) {
+                setStats(data[0]);
+            } else {
+                // Fallback
+                console.warn("RPC fetch failed, using fallback stats count method");
+                const { count: total } = await supabase.from('work_journals').select('*', { count: 'exact', head: true });
+                const { count: pending } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).eq('verification_status', 'submitted');
+                const { count: revision } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).eq('verification_status', 'need_revision');
+                const { count: approved } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).eq('verification_status', 'approved');
+
+                setStats({
+                    total_entries: total || 0,
+                    pending_review: pending || 0,
+                    need_revision: revision || 0,
+                    approved: approved || 0
+                });
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsLoadingStats(false);
+        }
+    };
+
+    const fetchJournals = async (pageIndex: number) => {
+        // Prevent duplicate calls if already loading same page type
+        // if (pageIndex === page && (isLoadingList || isLoadingMore) && pageIndex !== 0) return;
+
+        if (pageIndex === 0) setIsLoadingList(true);
+        else setIsLoadingMore(true);
+
+        try {
+            const from = pageIndex * ITEMS_PER_PAGE;
+            const to = from + ITEMS_PER_PAGE - 1;
+
+            let query = supabase
                 .from('work_journals')
                 .select('*')
-                .order('date', { ascending: false });
+                .order('date', { ascending: false })
+                .range(from, to);
 
-            if (simpleError) throw simpleError;
+            // Apply Filters
+            if (filterStatus !== 'all' && filterStatus !== 'summary') {
+                query = query.eq('verification_status', filterStatus);
+            }
 
-            if (simpleData && simpleData.length > 0) {
-                const userIds = [...new Set(simpleData.map(j => j.user_id))];
+            // Search Strategy:
+            // 1. If searching, we prioritize finding content.
+            // 2. Ideally we search profiles too, but for speed we stick to content server-side first.
+            if (debouncedSearch) {
+                query = query.ilike('content', `%${debouncedSearch}%`);
+            }
 
+            const { data: journalData, error } = await query;
+
+            if (error) throw error;
+
+            if (journalData && journalData.length > 0) {
+                // Efficiently join profiles manually for just this page
+                const userIds = [...new Set(journalData.map(j => j.user_id))];
                 const { data: profiles } = await supabase
                     .from('profiles')
                     .select('user_id, full_name, avatar_url, department, position')
@@ -125,32 +213,47 @@ const ManagerJurnal = () => {
 
                 const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
-                const enrichedData = simpleData.map(journal => ({
+                const enrichedData = journalData.map(journal => ({
                     ...journal,
                     profiles: profileMap.get(journal.user_id) || {
-                        full_name: 'Unknown',
+                        full_name: 'Unknown User',
                         avatar_url: null,
                         department: null,
                         position: null
                     }
                 }));
 
-                setJournals(enrichedData as unknown as JournalEntry[]);
+                setJournals(prev => {
+                    // Safety check to avoid duplicates if strict mode double-invokes
+                    if (pageIndex === 0) return enrichedData as unknown as JournalEntry[];
+
+                    // Simple append
+                    return [...prev, ...enrichedData as unknown as JournalEntry[]];
+                });
+
+                if (journalData.length < ITEMS_PER_PAGE) {
+                    setHasMore(false);
+                }
             } else {
-                setJournals([]);
+                if (pageIndex === 0) setJournals([]);
+                setHasMore(false);
             }
+
         } catch (error) {
-            console.error("Error fetching journals:", error);
+            console.error("Error loading journals:", error);
+            toast({ variant: "destructive", title: "Masalah Koneksi", description: "Gagal memuat data jurnal." });
         } finally {
-            setIsLoading(false);
+            setIsLoadingList(false);
+            setIsLoadingMore(false);
         }
     };
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
-        await fetchJournals();
+        setPage(0);
+        await Promise.all([fetchStats(), fetchJournals(0)]);
         setIsRefreshing(false);
-        toast({ title: "Data Diperbarui", description: "Jurnal terbaru berhasil dimuat." });
+        toast({ title: "Updated", description: "Data terbaru berhasil diambil." });
     };
 
     const handleOpenReview = (journal: JournalEntry) => {
@@ -161,20 +264,15 @@ const ManagerJurnal = () => {
 
     const handleSubmitReview = async (status: 'approved' | 'need_revision') => {
         if (!selectedJournal) return;
-
         if (status === 'need_revision' && !reviewNote.trim()) {
-            toast({
-                variant: "destructive",
-                title: "Catatan Wajib Diisi",
-                description: "Berikan alasan mengapa jurnal perlu direvisi."
-            });
+            toast({ variant: "destructive", title: "Catatan Wajib", description: "Berikan alasan revisi." });
             return;
         }
 
         setIsSubmitting(true);
         try {
             const { error } = await supabase
-                .from('work_journals' as any)
+                .from('work_journals')
                 .update({
                     verification_status: status,
                     manager_notes: reviewNote
@@ -183,23 +281,19 @@ const ManagerJurnal = () => {
 
             if (error) throw error;
 
-            toast({
-                title: status === 'approved' ? "✅ Jurnal Disetujui" : "📝 Revisi Diminta",
-                description: status === 'approved'
-                    ? "Jurnal telah diverifikasi dan terkunci."
-                    : "Karyawan akan melihat catatan dan merevisi jurnal.",
-            });
+            toast({ title: status === 'approved' ? "Disetujui" : "Revisi Diminta" });
 
-            // Optimistic update
+            // Optimistic Update
             setJournals(prev => prev.map(j =>
                 j.id === selectedJournal.id
                     ? { ...j, verification_status: status, manager_notes: reviewNote }
                     : j
             ));
 
+            fetchStats(); // Background update stats
             setIsReviewOpen(false);
         } catch (error: any) {
-            toast({ variant: "destructive", title: "Gagal", description: error.message });
+            toast({ variant: "destructive", title: "Error", description: error.message });
         } finally {
             setIsSubmitting(false);
         }
@@ -222,113 +316,21 @@ const ManagerJurnal = () => {
 
             if (error) throw error;
 
-            toast({ title: "Berhasil", description: "Jurnal berhasil diperbarui" });
+            toast({ title: "Berhasil", description: "Konten diperbarui." });
+
+            setJournals(prev => prev.map(j =>
+                j.id === editingJournal.id ? { ...j, content: editContent } : j
+            ));
+
             setIsEditOpen(false);
-            setEditingJournal(null);
-            fetchJournals();
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Gagal", description: error.message });
+        } catch (e: any) {
+            toast({ variant: "destructive", title: "Gagal", description: e.message });
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleDeleteJournal = (journal: JournalEntry) => {
-        setDeleteJournal(journal);
-        setIsDeleteOpen(true);
-    };
-
-    const confirmDelete = async () => {
-        if (!deleteJournal) return;
-        setIsSubmitting(true);
-        try {
-            const { error } = await supabase
-                .from('work_journals')
-                .delete()
-                .eq('id', deleteJournal.id);
-
-            if (error) throw error;
-
-            toast({ title: "Berhasil", description: "Jurnal berhasil dihapus" });
-            setIsDeleteOpen(false);
-            setDeleteJournal(null);
-            fetchJournals();
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Gagal", description: error.message });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const getInitials = (name: string) => {
-        return name.split(" ").map(n => n.charAt(0)).slice(0, 2).join("").toUpperCase();
-    };
-
-    const filteredJournals = journals.filter(journal => {
-        const fullName = journal.profiles?.full_name || '';
-        const content = journal.content || '';
-
-        const matchesSearch =
-            fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            content.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const matchesStatus = filterStatus === 'all' || filterStatus === 'summary' || journal.verification_status === filterStatus;
-
-        return matchesSearch && matchesStatus;
-    });
-
-    // Weekly Analytics
-    const getWeeklyStats = () => {
-        const start = startOfWeek(selectedWeek, { weekStartsOn: 1 });
-        const end = endOfWeek(selectedWeek, { weekStartsOn: 1 });
-
-        const weeklyJournals = journals.filter(j =>
-            isWithinInterval(new Date(j.date), { start, end })
-        );
-
-        const uniqueUsers = new Set(weeklyJournals.map(j => j.user_id));
-        const approvedCount = weeklyJournals.filter(j => j.verification_status === 'approved').length;
-
-        const dailyActivity = [0, 1, 2, 3, 4, 5, 6].map(offset => {
-            const date = new Date(start);
-            date.setDate(start.getDate() + offset);
-            const dateStr = format(date, 'yyyy-MM-dd');
-            const count = weeklyJournals.filter(j => j.date === dateStr).length;
-            return {
-                day: format(date, 'EEE', { locale: id }),
-                entries: count
-            };
-        });
-
-        const userCounts: Record<string, { count: number, name: string, avatar: string | null }> = {};
-        weeklyJournals.forEach(j => {
-            if (!userCounts[j.user_id]) {
-                userCounts[j.user_id] = {
-                    count: 0,
-                    name: j.profiles?.full_name || 'Unknown',
-                    avatar: j.profiles?.avatar_url || null
-                };
-            }
-            userCounts[j.user_id].count += 1;
-        });
-
-        const sortedContributors = Object.values(userCounts)
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 5);
-
-        return {
-            total: weeklyJournals.length,
-            activeUsers: uniqueUsers.size,
-            approvalRate: weeklyJournals.length > 0 ? Math.round((approvedCount / weeklyJournals.length) * 100) : 0,
-            dailyActivity,
-            sortedContributors
-        };
-    };
-
-    const weeklyStats = getWeeklyStats();
-    const pendingCount = journals.filter(j => j.verification_status === 'submitted').length;
-    const approvedCountGlobal = journals.filter(j => j.verification_status === 'approved').length;
-    const needsRevisionCount = journals.filter(j => j.verification_status === 'need_revision').length;
+    const getInitials = (name: string) => name ? name.split(" ").map(n => n.charAt(0)).slice(0, 2).join("").toUpperCase() : "??";
 
     const menuSections = [
         {
@@ -346,422 +348,239 @@ const ManagerJurnal = () => {
     return (
         <EnterpriseLayout
             title="Jurnal Tim"
-            subtitle="Review & monitoring aktivitas harian tim"
+            subtitle="Monitoring & Review Aktivitas"
             menuSections={menuSections}
             roleLabel="Manager"
             showRefresh={true}
             onRefresh={handleRefresh}
         >
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <Card className="bg-white shadow-sm border-slate-200">
-                    <CardContent className="p-4 flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-slate-500 font-medium">Total Entri</p>
-                            <p className="text-2xl font-bold text-slate-800">{journals.length}</p>
-                        </div>
-                        <div className="p-3 bg-slate-50 rounded-lg">
-                            <BookOpen className="w-5 h-5 text-slate-600" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-amber-50 to-white shadow-sm border-amber-200">
-                    <CardContent className="p-4 flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-amber-600 font-medium">Perlu Review</p>
-                            <p className="text-2xl font-bold text-amber-700">{pendingCount}</p>
-                        </div>
-                        <div className="p-3 bg-amber-100 rounded-lg">
-                            <AlertCircle className="w-5 h-5 text-amber-600" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-orange-50 to-white shadow-sm border-orange-200">
-                    <CardContent className="p-4 flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-orange-600 font-medium">Perlu Revisi</p>
-                            <p className="text-2xl font-bold text-orange-700">{needsRevisionCount}</p>
-                        </div>
-                        <div className="p-3 bg-orange-100 rounded-lg">
-                            <FileEdit className="w-5 h-5 text-orange-600" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-green-50 to-white shadow-sm border-green-200">
-                    <CardContent className="p-4 flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-green-600 font-medium">Disetujui</p>
-                            <p className="text-2xl font-bold text-green-700">{approvedCountGlobal}</p>
-                        </div>
-                        <div className="p-3 bg-green-100 rounded-lg">
-                            <CheckCircle2 className="w-5 h-5 text-green-600" />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+            {/* 1. Stats Area */}
+            {isLoadingStats && !stats ? (
+                <JournalStatsSkeleton />
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <Card className="bg-white shadow-sm border-slate-200">
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-slate-500 font-medium">Total Entri</p>
+                                <p className="text-2xl font-bold text-slate-800">{stats?.total_entries || 0}</p>
+                            </div>
+                            <div className="p-3 bg-slate-50 rounded-lg">
+                                <BookOpen className="w-5 h-5 text-slate-600" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-amber-50 to-white shadow-sm border-amber-200">
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-amber-600 font-medium">Perlu Review</p>
+                                <p className="text-2xl font-bold text-amber-700">{stats?.pending_review || 0}</p>
+                            </div>
+                            <div className="p-3 bg-amber-100 rounded-lg">
+                                <AlertCircle className="w-5 h-5 text-amber-600" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-orange-50 to-white shadow-sm border-orange-200">
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-orange-600 font-medium">Revisi</p>
+                                <p className="text-2xl font-bold text-orange-700">{stats?.need_revision || 0}</p>
+                            </div>
+                            <div className="p-3 bg-orange-100 rounded-lg">
+                                <FileEdit className="w-5 h-5 text-orange-600" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-green-50 to-white shadow-sm border-green-200">
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-green-600 font-medium">Disetujui</p>
+                                <p className="text-2xl font-bold text-green-700">{stats?.approved || 0}</p>
+                            </div>
+                            <div className="p-3 bg-green-100 rounded-lg">
+                                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
 
-            {/* Tab Navigation */}
-            <div className="bg-white rounded-xl border border-slate-200 p-2 mb-6 shadow-sm">
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setFilterStatus('all')}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${filterStatus !== 'summary'
-                            ? "bg-blue-600 text-white shadow-md"
-                            : "text-slate-500 hover:bg-slate-50"
-                            }`}
-                    >
-                        <BookOpen className="w-4 h-4" />
-                        Entri Jurnal
-                    </button>
-                    <button
-                        onClick={() => setFilterStatus('summary')}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${filterStatus === 'summary'
-                            ? "bg-blue-600 text-white shadow-md"
-                            : "text-slate-500 hover:bg-slate-50"
-                            }`}
-                    >
-                        <TrendingUp className="w-4 h-4" />
-                        Rekap & Insight
-                    </button>
+            {/* 2. Navigation & Filters */}
+            <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm pb-4 pt-2 -mx-4 px-4 md:static md:mx-0 md:px-0 md:bg-transparent">
+                <div className="bg-white rounded-xl border border-slate-200 p-2 mb-4 shadow-sm">
+                    <div className="flex flex-col md:flex-row gap-4 items-center justify-between p-2">
+                        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto scrollbar-hide">
+                            {[
+                                { key: 'all', label: 'Semua', className: 'bg-slate-800' },
+                                { key: 'submitted', label: 'Perlu Review', className: 'bg-amber-600 hover:bg-amber-700 border-amber-600' },
+                                { key: 'need_revision', label: 'Revisi', className: 'bg-orange-600 hover:bg-orange-700 border-orange-600' },
+                                { key: 'approved', label: 'Disetujui', className: 'bg-green-600 hover:bg-green-700 border-green-600' }
+                            ].map(btn => (
+                                <Button
+                                    key={btn.key}
+                                    variant={filterStatus === btn.key ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => setFilterStatus(btn.key)}
+                                    className={`whitespace-nowrap ${filterStatus === btn.key ? btn.className : "text-slate-600"}`}
+                                >
+                                    {btn.label}
+                                </Button>
+                            ))}
+                        </div>
+                        <div className="relative w-full md:w-64">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Input
+                                placeholder="Cari isi jurnal..."
+                                className="pl-9 h-9 bg-slate-50"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Actions Bar (Export) */}
-            <div className="flex justify-end mb-4">
-                <Button variant="outline" onClick={() => setIsExportOpen(true)} className="gap-2 bg-white border-slate-200 text-slate-700 shadow-sm hover:bg-slate-50">
-                    <FileDown className="w-4 h-4" />
-                    Export Laporan
-                </Button>
-            </div>
-
-            {
-                filterStatus === 'summary' ? (
-                    <div className="space-y-6">
-                        {/* Weekly Analytics Header */}
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <h3 className="text-lg font-bold text-slate-800">
-                                📊 Ringkasan Mingguan: {format(startOfWeek(selectedWeek, { weekStartsOn: 1 }), "d MMM", { locale: id })} - {format(endOfWeek(selectedWeek, { weekStartsOn: 1 }), "d MMM yyyy", { locale: id })}
-                            </h3>
-                            <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={() => setSelectedWeek(d => subWeeks(d, 1))}>
-                                    Minggu Lalu
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => setSelectedWeek(new Date())}>
-                                    Minggu Ini
-                                </Button>
-                            </div>
+            {/* 3. Journal List (Scrollable Container) */}
+            <div className="h-[calc(100vh-320px)] overflow-y-auto pr-2 pb-20 custom-scrollbar relative">
+                {isLoadingList && journals.length === 0 ? (
+                    <JournalSkeleton />
+                ) : journals.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                            <FileCheck className="w-8 h-8 text-slate-400" />
                         </div>
-
-                        {/* Analytics Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-4">
-                                <Card className="bg-blue-50/50 border-blue-100 shadow-sm">
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="p-2 bg-blue-100 rounded-lg">
-                                                <TrendingUp className="w-4 h-4 text-blue-700" />
-                                            </div>
-                                            <p className="text-sm font-medium text-blue-900">Total Jurnal</p>
-                                        </div>
-                                        <p className="text-2xl font-bold text-blue-900">{weeklyStats.total}</p>
-                                    </CardContent>
-                                </Card>
-                                <Card className="bg-indigo-50/50 border-indigo-100 shadow-sm">
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="p-2 bg-indigo-100 rounded-lg">
-                                                <Users className="w-4 h-4 text-indigo-700" />
-                                            </div>
-                                            <p className="text-sm font-medium text-indigo-900">Karyawan Aktif</p>
-                                        </div>
-                                        <p className="text-2xl font-bold text-indigo-900">{weeklyStats.activeUsers}</p>
-                                    </CardContent>
-                                </Card>
-                                <Card className="bg-emerald-50/50 border-emerald-100 shadow-sm">
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="p-2 bg-emerald-100 rounded-lg">
-                                                <CheckSquare className="w-4 h-4 text-emerald-700" />
-                                            </div>
-                                            <p className="text-sm font-medium text-emerald-900">Approval Rate</p>
-                                        </div>
-                                        <p className="text-2xl font-bold text-emerald-900">{weeklyStats.approvalRate}%</p>
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            <Card className="md:col-span-2 shadow-sm border-slate-200">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-base">Aktivitas Harian</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="h-[250px] w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={weeklyStats.dailyActivity}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                                                <RechartsTooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                                <Bar dataKey="entries" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Leaderboard */}
-                        <Card className="shadow-sm border-slate-200">
-                            <CardHeader>
-                                <CardTitle className="text-base">🏆 Top Kontributor Mingguan</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {weeklyStats.sortedContributors.map((contributor, index) => (
-                                        <div key={index} className="flex items-center justify-between border-b border-slate-50 last:border-0 pb-3 last:pb-0">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-xs ${index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                                                    index === 1 ? 'bg-slate-100 text-slate-600' :
-                                                        index === 2 ? 'bg-amber-100 text-amber-700' :
-                                                            'bg-slate-50 text-slate-500'
-                                                    }`}>
-                                                    {index + 1}
-                                                </div>
-                                                <Avatar className="h-10 w-10 border border-slate-100">
-                                                    <AvatarImage src={contributor.avatar || ""} />
-                                                    <AvatarFallback className="bg-blue-50 text-blue-600 font-semibold">{getInitials(contributor.name)}</AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="text-sm font-semibold text-slate-800">{contributor.name}</p>
-                                                    <p className="text-xs text-slate-500">{contributor.count} jurnal</p>
-                                                </div>
-                                            </div>
-                                            <Badge variant="secondary" className="bg-blue-50 text-blue-600">Aktif</Badge>
-                                        </div>
-                                    ))}
-                                    {weeklyStats.sortedContributors.length === 0 && (
-                                        <p className="text-center text-sm text-slate-500 py-4">Belum ada data minggu ini.</p>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <h3 className="text-lg font-semibold text-slate-700">Tidak ada jurnal</h3>
+                        <p className="text-slate-500 max-w-sm">
+                            {filterStatus !== 'all' ? 'Coba ubah filter atau status pencarian Anda.' : 'Belum ada data jurnal yang masuk hari ini.'}
+                        </p>
                     </div>
                 ) : (
-                    <>
-                        {/* Filters */}
-                        <div className="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                            <div className="relative flex-1 w-full md:max-w-md">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                <Input
-                                    type="text"
-                                    placeholder="Cari nama atau isi jurnal..."
-                                    className="pl-9 bg-slate-50 border-slate-200"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-                                {[
-                                    { key: 'all', label: 'Semua', className: 'bg-slate-800 hover:bg-slate-700' },
-                                    { key: 'submitted', label: 'Perlu Review', className: 'bg-amber-600 hover:bg-amber-700 border-amber-600' },
-                                    { key: 'need_revision', label: 'Perlu Revisi', className: 'bg-orange-600 hover:bg-orange-700 border-orange-600' },
-                                    { key: 'approved', label: 'Disetujui', className: 'bg-green-600 hover:bg-green-700 border-green-600' }
-                                ].map(btn => (
-                                    <Button
-                                        key={btn.key}
-                                        variant={filterStatus === btn.key ? 'default' : 'outline'}
-                                        size="sm"
-                                        onClick={() => setFilterStatus(btn.key)}
-                                        className={filterStatus === btn.key ? btn.className : "text-slate-600"}
-                                    >
-                                        {btn.label}
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* List */}
-                        {isLoading ? (
-                            <div className="text-center py-12">
-                                <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                                <p className="text-slate-500">Memuat data...</p>
-                            </div>
-                        ) : filteredJournals.length === 0 ? (
-                            <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
-                                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Filter className="w-6 h-6 text-slate-300" />
-                                </div>
-                                <h3 className="text-lg font-semibold text-slate-800">Tidak ada data</h3>
-                                <p className="text-slate-500">Sesuaikan filter atau tunggu update terbaru.</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {filteredJournals.map((journal) => (
-                                    <div key={journal.id} className="group relative bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md hover:border-slate-300 transition-all">
-                                        {/* Top Right: Status & Actions */}
-                                        <div className="absolute top-4 right-4 flex items-center gap-2">
-                                            {journal.verification_status === 'submitted' && (
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => handleOpenReview(journal)}
-                                                    className="bg-blue-600 text-white hover:bg-blue-700 shadow-sm h-8 text-xs gap-1"
-                                                >
-                                                    <Eye className="w-3 h-3" /> Review
-                                                </Button>
+                    <div className="space-y-4">
+                        {journals.map((journal, index) => {
+                            const isLast = index === journals.length - 1;
+                            return (
+                                <div
+                                    key={`${journal.id}-${index}`}
+                                    ref={isLast ? lastJournalElementRef : null}
+                                    className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-all relative group"
+                                >
+                                    {/* Actions & Status */}
+                                    <div className="absolute top-4 right-4 flex items-center gap-2">
+                                        <JournalStatusBadge status={journal.verification_status} />
+                                        <Button
+                                            size="sm"
+                                            variant={journal.verification_status === 'submitted' ? 'default' : 'ghost'}
+                                            className={journal.verification_status === 'submitted' ? "bg-blue-600 h-8 text-xs hover:bg-blue-700 text-white" : "h-8 w-8 p-0"}
+                                            onClick={() => handleOpenReview(journal)}
+                                        >
+                                            {journal.verification_status === 'submitted' ? (
+                                                <> <Eye className="w-3 h-3 mr-1" /> Review </>
+                                            ) : (
+                                                <Eye className="w-4 h-4 text-slate-400" />
                                             )}
-                                            {journal.verification_status !== 'submitted' && (
-                                                <>
-                                                    <JournalStatusBadge status={journal.verification_status} />
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600"
-                                                        onClick={() => handleOpenReview(journal)}
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </Button>
-                                                </>
-                                            )}
-                                        </div>
+                                        </Button>
+                                    </div>
 
-                                        <div className="flex gap-4">
-                                            <Avatar className="h-11 w-11 border border-slate-100 shadow-sm">
-                                                <AvatarImage src={journal.profiles?.avatar_url || ""} />
-                                                <AvatarFallback className="bg-blue-50 text-blue-600 font-semibold">{getInitials(journal.profiles?.full_name || "")}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 pr-28">
-                                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3 mb-2">
-                                                    <h4 className="text-sm font-bold text-slate-800">{journal.profiles?.full_name}</h4>
-                                                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                                                        <span>{journal.profiles?.position || "Staff"}</span>
-                                                        <span>•</span>
-                                                        <span className="flex items-center gap-1">
-                                                            <CalendarIcon className="w-3 h-3" />
-                                                            {format(new Date(journal.date), "d MMM yyyy", { locale: id })}
-                                                        </span>
-                                                        {journal.mood && <span>{journal.mood}</span>}
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex flex-wrap gap-2 mb-3">
-                                                    {journal.work_result && (
-                                                        <Badge className={`text-[10px] uppercase ${WORK_RESULT_LABELS[journal.work_result]?.className || ''}`}>
-                                                            {WORK_RESULT_LABELS[journal.work_result]?.label}
-                                                        </Badge>
-                                                    )}
-                                                    {journal.duration > 0 && (
-                                                        <span className="text-[10px] text-slate-400 flex items-center gap-1 bg-slate-50 px-2 py-1 rounded">
-                                                            <Clock className="w-3 h-3" />
-                                                            {Math.floor(journal.duration / 60)}j {journal.duration % 60}m
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                                                    {journal.content}
-                                                </div>
-
-                                                {/* Obstacles */}
-                                                {journal.obstacles && (
-                                                    <div className="mt-3 p-2.5 bg-amber-50/50 border border-amber-100 rounded-lg text-xs">
-                                                        <p className="font-semibold text-amber-700 mb-1">Kendala:</p>
-                                                        <p className="text-slate-600">{journal.obstacles}</p>
-                                                    </div>
-                                                )}
-
-                                                {journal.manager_notes && (
-                                                    <div className={`mt-3 flex items-start gap-2 p-2.5 rounded-lg border ${journal.verification_status === 'need_revision'
-                                                        ? 'bg-orange-50 border-orange-200'
-                                                        : 'bg-blue-50/50 border-blue-100'
-                                                        }`}>
-                                                        <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${journal.verification_status === 'need_revision' ? 'text-orange-600' : 'text-blue-600'
-                                                            }`} />
-                                                        <div>
-                                                            <p className={`text-xs font-semibold mb-1 ${journal.verification_status === 'need_revision' ? 'text-orange-700' : 'text-blue-700'
-                                                                }`}>
-                                                                Catatan Manager:
-                                                            </p>
-                                                            <p className="text-xs text-slate-600">{journal.manager_notes}</p>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="gap-1 text-blue-600 hover:bg-blue-50 h-7 text-xs"
-                                                        onClick={() => handleEditJournal(journal)}
-                                                    >
-                                                        <Pencil className="w-3 h-3" /> Edit
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="gap-1 text-red-600 hover:bg-red-50 h-7 text-xs"
-                                                        onClick={() => handleDeleteJournal(journal)}
-                                                    >
-                                                        <Trash2 className="w-3 h-3" /> Hapus
-                                                    </Button>
+                                    {/* Content */}
+                                    <div className="flex gap-4">
+                                        <Avatar className="h-11 w-11 border border-slate-100 shrink-0">
+                                            <AvatarImage src={journal.profiles?.avatar_url || ""} />
+                                            <AvatarFallback className="bg-blue-50 text-blue-600 font-bold">
+                                                {getInitials(journal.profiles?.full_name || "?")}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1 pr-2 md:pr-24">
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-2">
+                                                <h4 className="text-sm font-bold text-slate-800">{journal.profiles?.full_name}</h4>
+                                                <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
+                                                    <span>{journal.profiles?.position || "Staff"}</span>
+                                                    <span>•</span>
+                                                    <span className="flex items-center gap-1">
+                                                        <CalendarIcon className="w-3 h-3" />
+                                                        {format(new Date(journal.date), "d MMM yyyy", { locale: id })}
+                                                    </span>
+                                                    {journal.mood && <span className="text-base">{journal.mood}</span>}
                                                 </div>
                                             </div>
+
+                                            {journal.work_result && (
+                                                <Badge className={`mb-2 text-[10px] uppercase ${WORK_RESULT_LABELS[journal.work_result]?.className || ''}`}>
+                                                    {WORK_RESULT_LABELS[journal.work_result]?.label}
+                                                </Badge>
+                                            )}
+
+                                            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap mb-3">
+                                                {journal.content}
+                                            </p>
+
+                                            {journal.obstacles && (
+                                                <div className="p-2.5 bg-amber-50/50 border border-amber-100 rounded-lg text-xs mb-3">
+                                                    <p className="font-semibold text-amber-700 mb-1">Kendala:</p>
+                                                    <p className="text-slate-600">{journal.obstacles}</p>
+                                                </div>
+                                            )}
+
+                                            {journal.manager_notes && (
+                                                <div className="flex items-start gap-2 p-2.5 rounded-lg border bg-blue-50/30 border-blue-100">
+                                                    <MessageSquare className="w-4 h-4 mt-0.5 text-blue-600 shrink-0" />
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-blue-700 mb-0.5">Catatan Manager:</p>
+                                                        <p className="text-xs text-slate-600">{journal.manager_notes}</p>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                ))}
+
+                                    {/* Desktop Edit Button */}
+                                    <div className="hidden group-hover:flex absolute bottom-4 right-4 gap-2">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50" onClick={() => handleEditJournal(journal)}>
+                                            <Pencil className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {isLoadingMore && (
+                            <div className="py-4 text-center">
+                                <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
+                                <span className="text-xs text-slate-400 mt-1 block">Memuat lebih banyak...</span>
                             </div>
                         )}
-                    </>
-                )
-            }
 
-            {/* Review Modal */}
+                        {!isLoadingMore && !hasMore && journals.length > 0 && (
+                            <div className="py-8 text-center text-slate-400 text-xs border-t border-dashed border-slate-200 mt-4">
+                                — Semua data ditampilkan —
+                            </div>
+                        )}
+
+                        {/* Safe pad for mobile bottom */}
+                        <div className="h-10 md:h-0"></div>
+                    </div>
+                )}
+            </div>
+
+            {/* Review Dialog */}
             <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
                 <DialogContent className="sm:max-w-[540px]">
                     <DialogHeader>
-                        <DialogTitle>📋 Review Jurnal Kerja</DialogTitle>
-                        <DialogDescription>
-                            Berikan feedback atau verifikasi laporan aktivitas karyawan.
-                        </DialogDescription>
+                        <DialogTitle>📋 Review Jurnal</DialogTitle>
+                        <DialogDescription>Verifikasi aktivitas {selectedJournal?.profiles?.full_name}</DialogDescription>
                     </DialogHeader>
 
                     {selectedJournal && (
-                        <div className="space-y-4 py-4">
-                            {/* Employee info */}
-                            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                                <Avatar className="h-10 w-10">
-                                    <AvatarImage src={selectedJournal.profiles?.avatar_url || ""} />
-                                    <AvatarFallback className="bg-blue-50 text-blue-600">{getInitials(selectedJournal.profiles?.full_name || "")}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-semibold text-slate-800">{selectedJournal.profiles?.full_name}</p>
-                                    <p className="text-xs text-slate-500">
-                                        {format(new Date(selectedJournal.date), "EEEE, d MMMM yyyy", { locale: id })}
-                                    </p>
-                                </div>
+                        <div className="space-y-4">
+                            <div className="bg-slate-50 p-4 rounded-lg border max-h-40 overflow-y-auto custom-scrollbar text-sm text-slate-700 whitespace-pre-wrap">
+                                {selectedJournal.content}
                             </div>
-
-                            {/* Journal content */}
-                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 max-h-60 overflow-y-auto">
-                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{selectedJournal.content}</p>
-
-                                {selectedJournal.obstacles && (
-                                    <div className="mt-3 pt-3 border-t border-slate-200">
-                                        <p className="text-xs font-semibold text-amber-700 mb-1">Kendala:</p>
-                                        <p className="text-xs text-slate-600">{selectedJournal.obstacles}</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Manager notes input */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">
-                                    Catatan Manager
-                                    <span className="text-slate-400 font-normal ml-1">(wajib untuk revisi)</span>
-                                </label>
+                                <label className="text-sm font-medium">Catatan (Opsional untuk Approve)</label>
                                 <Textarea
-                                    placeholder="Tulis feedback, saran, atau alasan revisi..."
                                     value={reviewNote}
-                                    onChange={(e) => setReviewNote(e.target.value)}
+                                    onChange={e => setReviewNote(e.target.value)}
+                                    placeholder="Berikan feedback atau alasan revisi..."
                                     className="resize-none"
                                 />
                             </div>
@@ -769,25 +588,13 @@ const ManagerJurnal = () => {
                     )}
 
                     <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => setIsReviewOpen(false)} disabled={isSubmitting}>
-                            Batal
-                        </Button>
+                        <Button variant="outline" onClick={() => setIsReviewOpen(false)}>Batal</Button>
                         <div className="flex gap-2 w-full sm:w-auto">
-                            <Button
-                                onClick={() => handleSubmitReview('need_revision')}
-                                disabled={isSubmitting}
-                                variant="outline"
-                                className="flex-1 sm:flex-none border-orange-300 text-orange-600 hover:bg-orange-50 gap-1"
-                            >
-                                <AlertCircle className="w-4 h-4" /> Minta Revisi
+                            <Button variant="outline" className="flex-1 sm:flex-none border-orange-200 text-orange-700 hover:bg-orange-50" onClick={() => handleSubmitReview('need_revision')} disabled={isSubmitting}>
+                                Minta Revisi
                             </Button>
-                            <Button
-                                onClick={() => handleSubmitReview('approved')}
-                                disabled={isSubmitting}
-                                className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white gap-1"
-                            >
-                                <CheckCircle2 className="w-4 h-4" />
-                                {isSubmitting ? "Menyimpan..." : "Setujui"}
+                            <Button className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white" onClick={() => handleSubmitReview('approved')} disabled={isSubmitting}>
+                                {isSubmitting ? <Loader2 className="animate-spin w-4 h-4" /> : "Setujui"}
                             </Button>
                         </div>
                     </DialogFooter>
@@ -796,34 +603,18 @@ const ManagerJurnal = () => {
 
             {/* Edit Dialog */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>✏️ Edit Jurnal</DialogTitle>
-                        <DialogDescription>
-                            Edit konten jurnal dari {editingJournal?.profiles?.full_name}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <Textarea
-                            value={editContent}
-                            onChange={(e) => setEditContent(e.target.value)}
-                            placeholder="Konten jurnal..."
-                            className="min-h-[150px]"
-                        />
-                    </div>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Edit Jurnal</DialogTitle></DialogHeader>
+                    <Textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="min-h-[150px]" />
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditOpen(false)}>Batal</Button>
-                        <Button onClick={handleSaveEdit} disabled={isSubmitting}>Simpan</Button>
+                        <Button onClick={handleSaveEdit} disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="animate-spin w-4 h-4" /> : "Simpan Perubahan"}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* Export Modal */}
-            <JournalExportModal
-                open={isExportOpen}
-                onOpenChange={setIsExportOpen}
-            />
-        </EnterpriseLayout >
+        </EnterpriseLayout>
     );
 };
 

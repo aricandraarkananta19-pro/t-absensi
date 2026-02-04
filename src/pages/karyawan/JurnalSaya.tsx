@@ -571,7 +571,13 @@ export default function JurnalSaya() {
                                 <div className="flex flex-col gap-1">
                                     <h3 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
                                         {editingJournal
-                                            ? (editingJournal.verification_status === 'need_revision' ? '✏️ Revisi Jurnal' : '📝 Detail Jurnal')
+                                            ? (
+                                                (editingJournal.verification_status === 'submitted' || editingJournal.verification_status === 'approved')
+                                                    ? '📋 Detail Jurnal'
+                                                    : editingJournal.verification_status === 'need_revision'
+                                                        ? '✏️ Revisi Jurnal'
+                                                        : '✏️ Edit Jurnal'
+                                            )
                                             : (
                                                 <span className="flex items-center gap-2">
                                                     <BookOpen className="w-5 h-5 text-blue-600" />
@@ -605,8 +611,9 @@ export default function JurnalSaya() {
                                     } : undefined}
                                     isEditing={!!editingJournal}
                                     isRevision={editingJournal?.verification_status === 'need_revision'}
+                                    isReadOnly={editingJournal ? (editingJournal.verification_status === 'submitted' || editingJournal.verification_status === 'approved') : false}
                                     managerNotes={editingJournal?.manager_notes}
-                                    onSave={handleSaveJournal}
+                                    onSave={async (d, draft, silent) => { await handleSaveJournal(d, draft, silent); }}
                                     onCancel={() => setEditingJournal(null)}
                                     isSubmitting={isSubmitting}
                                     existingDates={existingDates}
@@ -622,9 +629,10 @@ export default function JurnalSaya() {
             <JournalFormModal
                 open={isFormOpen}
                 onOpenChange={setIsFormOpen}
-                onSave={handleSaveJournal}
+                onSave={async (d, draft, silent) => { await handleSaveJournal(d, draft, silent); }}
                 isEditing={!!editingJournal}
                 isRevision={editingJournal?.verification_status === 'need_revision'}
+                isReadOnly={editingJournal ? (editingJournal.verification_status === 'submitted' || editingJournal.verification_status === 'approved') : false}
                 managerNotes={editingJournal?.manager_notes}
                 initialData={editingJournal ? {
                     content: editingJournal.content,

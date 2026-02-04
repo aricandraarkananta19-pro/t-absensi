@@ -12,6 +12,7 @@ interface JournalFormModalProps {
     initialData?: Partial<JournalFormData>;
     isEditing?: boolean;
     isRevision?: boolean; // When editing a journal that needs revision
+    isReadOnly?: boolean; // view mode
     managerNotes?: string; // Show manager feedback when in revision mode
     existingDates?: string[];
     onRequestEdit?: (date: string) => void;
@@ -27,6 +28,7 @@ export function JournalFormModal({
     initialData,
     isEditing = false,
     isRevision = false,
+    isReadOnly = false,
     managerNotes,
     existingDates,
     onRequestEdit,
@@ -51,17 +53,21 @@ export function JournalFormModal({
                 <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col p-6">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-bold text-slate-800">
-                            {isRevision
-                                ? "✏️ Revisi Jurnal Aktivitas"
-                                : isEditing
-                                    ? "✏️ Edit Jurnal Aktivitas"
-                                    : "📝 Apa yang kamu kerjakan hari ini?"
+                            {isReadOnly
+                                ? "📋 Detail Jurnal"
+                                : isRevision
+                                    ? "✏️ Revisi Jurnal Aktivitas"
+                                    : isEditing
+                                        ? "✏️ Edit Jurnal Aktivitas"
+                                        : "📝 Apa yang kamu kerjakan hari ini?"
                             }
                         </DialogTitle>
                         <DialogDescription className="text-slate-500">
-                            {isRevision
-                                ? "Perbaiki jurnal sesuai catatan dari Manager, lalu kirim ulang."
-                                : "Catatan ini akan dibaca oleh Manager dan Admin."
+                            {isReadOnly
+                                ? "Detail jurnal yang telah dikirim."
+                                : isRevision
+                                    ? "Perbaiki jurnal sesuai catatan dari Manager, lalu kirim ulang."
+                                    : "Catatan ini akan dibaca oleh Manager dan Admin."
                             }
                         </DialogDescription>
                     </DialogHeader>
@@ -71,6 +77,7 @@ export function JournalFormModal({
                             initialData={initialData}
                             isEditing={isEditing}
                             isRevision={isRevision}
+                            isReadOnly={isReadOnly}
                             managerNotes={managerNotes}
                             onSave={onSave}
                             onCancel={handleCancel}
@@ -90,17 +97,21 @@ export function JournalFormModal({
             <DrawerContent className="h-[90vh] flex flex-col rounded-t-[20px] after:hidden">
                 <DrawerHeader className="text-left shrink-0">
                     <DrawerTitle className="text-lg font-bold text-slate-800">
-                        {isRevision
-                            ? "✏️ Revisi Jurnal"
-                            : isEditing
-                                ? "✏️ Edit Jurnal"
-                                : "📝 Apa yang kamu kerjakan hari ini?"
+                        {isReadOnly
+                            ? "📋 Detail Jurnal"
+                            : isRevision
+                                ? "✏️ Revisi Jurnal"
+                                : isEditing
+                                    ? "✏️ Edit Jurnal"
+                                    : "📝 Apa yang kamu kerjakan hari ini?"
                         }
                     </DrawerTitle>
                     <DrawerDescription className="text-slate-500 text-sm">
-                        {isRevision
-                            ? "Perbaiki sesuai catatan Manager."
-                            : "Catatan ini akan dibaca oleh Manager."
+                        {isReadOnly
+                            ? "Detail jurnal yang telah dikirim."
+                            : isRevision
+                                ? "Perbaiki sesuai catatan Manager."
+                                : "Catatan ini akan dibaca oleh Manager."
                         }
                     </DrawerDescription>
                 </DrawerHeader>
@@ -109,6 +120,7 @@ export function JournalFormModal({
                         initialData={initialData}
                         isEditing={isEditing}
                         isRevision={isRevision}
+                        isReadOnly={isReadOnly}
                         managerNotes={managerNotes}
                         onSave={onSave}
                         onCancel={handleCancel}
