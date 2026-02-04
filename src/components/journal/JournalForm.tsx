@@ -190,14 +190,41 @@ export function JournalForm({
                                     </div>
                                 </div>
                                 <div className="flex gap-2 w-full">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setIsDateDrawerOpen(true)}
-                                        className="flex-1 h-9 text-xs border-blue-200 text-blue-700 hover:bg-blue-100"
-                                    >
-                                        Ganti Tanggal
-                                    </Button>
+                                    {isMobile ? (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setIsDateDrawerOpen(true)}
+                                            className="flex-1 h-9 text-xs border-blue-200 text-blue-700 hover:bg-blue-100"
+                                        >
+                                            Ganti Tanggal
+                                        </Button>
+                                    ) : (
+                                        <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="flex-1 h-9 text-xs border-blue-200 text-blue-700 hover:bg-blue-100"
+                                                >
+                                                    Ganti Tanggal
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={date}
+                                                    onSelect={(d) => {
+                                                        if (d) setDate(d);
+                                                        setIsDatePopoverOpen(false);
+                                                    }}
+                                                    initialFocus
+                                                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+
                                     {props.onRequestEdit && (
                                         <Button
                                             size="sm"
@@ -213,44 +240,21 @@ export function JournalForm({
                     ) : (
                         <div className="relative">
                             {isMobile ? (
-                                <>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => !isDisabled && props.isDateLocked !== true && setIsDateDrawerOpen(true)}
-                                        disabled={isDisabled || props.isDateLocked}
-                                        className={cn(
-                                            "w-full justify-start text-left font-semibold text-slate-700 h-12 rounded-xl border-slate-200 bg-white shadow-sm",
-                                            isDisabled && "opacity-90 bg-slate-50 text-slate-500"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-3 h-5 w-5 text-blue-600" />
-                                        <div className="flex flex-col items-start gap-0.5 leading-none">
-                                            <span>{date ? format(date, "d MMMM yyyy", { locale: id }) : "Pilih Tanggal"}</span>
-                                        </div>
-                                    </Button>
-                                    <Drawer open={isDateDrawerOpen} onOpenChange={setIsDateDrawerOpen}>
-                                        <DrawerContent>
-                                            <DrawerHeader>
-                                                <DrawerTitle>Pilih Tanggal</DrawerTitle>
-                                                <DrawerDescription>Pilih tanggal untuk entri jurnal ini.</DrawerDescription>
-                                            </DrawerHeader>
-                                            <div className="p-4 flex justify-center pb-8">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={date}
-                                                    onSelect={(d) => {
-                                                        if (d) setDate(d);
-                                                        setIsDateDrawerOpen(false);
-                                                    }}
-                                                    initialFocus
-                                                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                                    className="rounded-md border shadow-sm"
-                                                />
-                                            </div>
-                                        </DrawerContent>
-                                    </Drawer>
-                                </>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => !isDisabled && props.isDateLocked !== true && setIsDateDrawerOpen(true)}
+                                    disabled={isDisabled || props.isDateLocked}
+                                    className={cn(
+                                        "w-full justify-start text-left font-semibold text-slate-700 h-12 rounded-xl border-slate-200 bg-white shadow-sm",
+                                        isDisabled && "opacity-90 bg-slate-50 text-slate-500"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-3 h-5 w-5 text-blue-600" />
+                                    <div className="flex flex-col items-start gap-0.5 leading-none">
+                                        <span>{date ? format(date, "d MMMM yyyy", { locale: id }) : "Pilih Tanggal"}</span>
+                                    </div>
+                                </Button>
                             ) : (
                                 <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
                                     <PopoverTrigger asChild>
@@ -281,6 +285,31 @@ export function JournalForm({
                                 </Popover>
                             )}
                         </div>
+                    )}
+
+                    {/* Shared Drawer for Mobile (Rendered Unconditionally) */}
+                    {isMobile && (
+                        <Drawer open={isDateDrawerOpen} onOpenChange={setIsDateDrawerOpen}>
+                            <DrawerContent>
+                                <DrawerHeader>
+                                    <DrawerTitle>Pilih Tanggal</DrawerTitle>
+                                    <DrawerDescription>Pilih tanggal untuk entri jurnal ini.</DrawerDescription>
+                                </DrawerHeader>
+                                <div className="p-4 flex justify-center pb-8">
+                                    <Calendar
+                                        mode="single"
+                                        selected={date}
+                                        onSelect={(d) => {
+                                            if (d) setDate(d);
+                                            setIsDateDrawerOpen(false);
+                                        }}
+                                        initialFocus
+                                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                        className="rounded-md border shadow-sm"
+                                    />
+                                </div>
+                            </DrawerContent>
+                        </Drawer>
                     )}
                 </div>
 
