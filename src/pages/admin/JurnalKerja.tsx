@@ -93,25 +93,52 @@ const JurnalKerja = () => {
     const fetchJournals = async () => {
         setIsLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('work_journals' as any)
-                .select(`
-                    *,
-                    profiles:user_id (
-                        full_name,
-                        avatar_url,
-                        department,
-                        position
-                    )
-                `)
+            console.log('Fetching journals...');
+
+            // First try simple query without join
+            const { data: simpleData, error: simpleError } = await supabase
+                .from('work_journals')
+                .select('*')
                 .order('created_at', { ascending: false });
 
-            if (error) throw error;
+            console.log('Simple query result:', { data: simpleData, error: simpleError });
 
-            if (data) {
-                const typedData = data as unknown as JournalEntry[];
-                setJournals(typedData);
-                calculateStats(typedData);
+            if (simpleError) {
+                console.error('Simple query error:', simpleError);
+                throw simpleError;
+            }
+
+            // If we have data, try to enrich with profile info
+            if (simpleData && simpleData.length > 0) {
+                // Get unique user IDs
+                const userIds = [...new Set(simpleData.map(j => j.user_id))];
+
+                // Fetch profiles separately
+                const { data: profiles } = await supabase
+                    .from('profiles')
+                    .select('user_id, full_name, avatar_url, department, position')
+                    .in('user_id', userIds);
+
+                // Create a map for quick lookup
+                const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+                // Merge journals with profiles
+                const enrichedData = simpleData.map(journal => ({
+                    ...journal,
+                    profiles: profileMap.get(journal.user_id) || {
+                        full_name: 'Unknown',
+                        avatar_url: null,
+                        department: null,
+                        position: null
+                    }
+                }));
+
+                console.log('Enriched data:', enrichedData);
+                setJournals(enrichedData as unknown as JournalEntry[]);
+                calculateStats(enrichedData as unknown as JournalEntry[]);
+            } else {
+                console.log('No journals found');
+                setJournals([]);
             }
         } catch (error) {
             console.error("Error fetching journals:", error);

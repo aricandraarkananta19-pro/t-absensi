@@ -83,24 +83,48 @@ const ManagerJurnal = () => {
     const fetchJournals = async () => {
         setIsLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('work_journals' as any)
-                .select(`
-                    *,
-                    profiles:user_id (
-                        full_name,
-                        avatar_url,
-                        department,
-                        position
-                    )
-                `)
+            console.log('Manager: Fetching journals...');
+
+            // Simple query without join
+            const { data: simpleData, error: simpleError } = await supabase
+                .from('work_journals')
+                .select('*')
                 .order('date', { ascending: false });
 
-            if (error) throw error;
+            console.log('Manager query result:', { data: simpleData, error: simpleError });
 
-            if (data) {
-                const typedData = data as unknown as JournalEntry[];
-                setJournals(typedData);
+            if (simpleError) {
+                console.error('Query error:', simpleError);
+                throw simpleError;
+            }
+
+            if (simpleData && simpleData.length > 0) {
+                // Get unique user IDs
+                const userIds = [...new Set(simpleData.map(j => j.user_id))];
+
+                // Fetch profiles separately
+                const { data: profiles } = await supabase
+                    .from('profiles')
+                    .select('user_id, full_name, avatar_url, department, position')
+                    .in('user_id', userIds);
+
+                const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+                const enrichedData = simpleData.map(journal => ({
+                    ...journal,
+                    profiles: profileMap.get(journal.user_id) || {
+                        full_name: 'Unknown',
+                        avatar_url: null,
+                        department: null,
+                        position: null
+                    }
+                }));
+
+                console.log('Manager enriched data:', enrichedData);
+                setJournals(enrichedData as unknown as JournalEntry[]);
+            } else {
+                console.log('Manager: No journals found');
+                setJournals([]);
             }
         } catch (error) {
             console.error("Error fetching journals:", error);
