@@ -122,12 +122,12 @@ export function JournalCard({
 
     // Edit rules for employee
     const canEdit = isEmployee
-        ? ['draft', 'need_revision'].includes(status)
+        ? ['draft', 'need_revision', 'submitted'].includes(status)
         : true; // Managers/Admins can always edit
 
     // Delete rules for employee
     const canDelete = isEmployee
-        ? status === 'draft'
+        ? ['draft', 'submitted', 'need_revision'].includes(status)
         : true; // Managers/Admins can always delete
 
     const isLocked = status === 'approved';

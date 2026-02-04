@@ -52,8 +52,8 @@ export default function JurnalSaya() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        if (user) fetchJournals();
-    }, [user]);
+        if (user?.id) fetchJournals();
+    }, [user?.id]); // Only refetch if user ID changes, not just reference
 
     // Real-time subscription
     useEffect(() => {
@@ -79,27 +79,34 @@ export default function JurnalSaya() {
     }, [user]);
 
     const fetchJournals = async (isBackground = false) => {
-        if (!user?.id) return; // Critical Fix: Prevent fetching with undefined user (returns empty)
+        if (!user?.id) return;
 
-        if (!isBackground) setIsLoading(true);
+        // SMART LOADING: Only show skeleton if we have NO data.
+        // If we already have data, keep showing it while we refresh (UI Stability).
+        const shouldShowSkeleton = !isBackground && journals.length === 0;
+
+        if (shouldShowSkeleton) {
+            setIsLoading(true);
+        } else {
+            setIsRefreshing(true); // Show spinner in header instead of wiping content
+        }
+
         try {
             const { data, error } = await supabase
                 .from('work_journals' as any)
                 .select('*')
-                .eq('user_id', user.id) // Ensure referencing valid user.id
-                .is('deleted_at', null) // Soft delete filter
+                .eq('user_id', user.id)
+                .is('deleted_at', null)
                 .order('date', { ascending: false });
 
             if (error) throw error;
 
-            // Only update state if we successfully got array back
             if (data) {
                 setJournals(data as unknown as JournalCardData[]);
             }
         } catch (error) {
             console.error("Error fetching journals:", error);
-            // On background error, DO NOT clear journals (keep stale data is better than empty)
-            if (!isBackground) {
+            if (!isBackground && !isRefreshing) {
                 toast({
                     variant: "destructive",
                     title: "Gagal memuat jurnal",
@@ -107,7 +114,11 @@ export default function JurnalSaya() {
                 });
             }
         } finally {
-            if (!isBackground) setIsLoading(false);
+            if (shouldShowSkeleton) {
+                setIsLoading(false);
+            } else {
+                setIsRefreshing(false);
+            }
         }
     };
 
@@ -578,7 +589,7 @@ export default function JurnalSaya() {
                                             } : undefined}
                                             isEditing={!!editingJournal}
                                             isRevision={editingJournal?.verification_status === 'need_revision'}
-                                            isReadOnly={editingJournal ? (editingJournal.verification_status === 'submitted' || editingJournal.verification_status === 'approved') : false}
+                                            isReadOnly={editingJournal ? (editingJournal.verification_status === 'approved') : false}
                                             managerNotes={editingJournal?.manager_notes}
                                             onSave={async (d, draft, silent) => { await handleSaveJournal(d, draft, silent); }}
                                             onCancel={handleRightPanelCancel}
@@ -626,7 +637,7 @@ export default function JurnalSaya() {
                 onSave={async (d, draft, silent) => { await handleSaveJournal(d, draft, silent); }}
                 isEditing={!!editingJournal}
                 isRevision={editingJournal?.verification_status === 'need_revision'}
-                isReadOnly={editingJournal ? (editingJournal.verification_status === 'submitted' || editingJournal.verification_status === 'approved') : false}
+                isReadOnly={editingJournal ? (editingJournal.verification_status === 'approved') : false}
                 managerNotes={editingJournal?.manager_notes}
                 initialData={editingJournal ? {
                     content: editingJournal.content,
