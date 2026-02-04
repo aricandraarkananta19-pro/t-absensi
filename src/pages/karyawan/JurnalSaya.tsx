@@ -84,7 +84,20 @@ export default function JurnalSaya() {
                 .order('date', { ascending: false });
 
             if (error) throw error;
-            if (data) setJournals(data as unknown as JournalCardData[]);
+            if (data) {
+                const journalData = data as unknown as JournalCardData[];
+                setJournals(journalData);
+
+                // Auto-select today's journal on initial load if it exists (Desktop Only)
+                // This prevents the "New Journal -> Conflict" glitch by showing the existing one properly.
+                if (!isBackground && !editingJournal && window.innerWidth >= 1024) {
+                    const todayStr = format(new Date(), 'yyyy-MM-dd');
+                    const todayJournal = journalData.find(j => j.date === todayStr);
+                    if (todayJournal) {
+                        setEditingJournal(todayJournal);
+                    }
+                }
+            }
         } catch (error) {
             console.error("Error fetching journals:", error);
             if (!isBackground) {
@@ -98,6 +111,21 @@ export default function JurnalSaya() {
             if (!isBackground) setIsLoading(false);
         }
     };
+
+    // Sync editingJournal with latest data from journals list (Real-time consistency)
+    useEffect(() => {
+        if (editingJournal && journals.length > 0) {
+            const updated = journals.find(j => j.id === editingJournal.id);
+            // Only update if there are meaningful changes to status or content
+            if (updated && (
+                updated.verification_status !== editingJournal.verification_status ||
+                updated.manager_notes !== editingJournal.manager_notes ||
+                updated.content !== editingJournal.content
+            )) {
+                setEditingJournal(updated);
+            }
+        }
+    }, [journals]);
 
     const handleRefresh = async () => {
         setIsRefreshing(true);
@@ -564,7 +592,7 @@ export default function JurnalSaya() {
 
                     {/* RIGHT COLUMN: Form/Details (Tablet/Desktop Only) */}
                     {/* RIGHT COLUMN: Form/Details (Tablet/Desktop Only) */}
-                    <div className="hidden lg:block lg:col-span-5 h-[calc(100vh-100px)] sticky top-24">
+                    <div className="hidden lg:block lg:col-span-5 h-[calc(100vh-140px)] sticky top-28">
                         <Card className="h-full border-slate-200 shadow-lg flex flex-col bg-white overflow-hidden">
                             {/* Fixed Header */}
                             <div className="shrink-0 p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center z-10">
