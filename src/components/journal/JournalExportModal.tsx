@@ -1,19 +1,18 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { FileDown, Calendar as CalendarIcon, FileSpreadsheet, FileText, Loader2, Sparkles, BookOpen } from "lucide-react";
-import { format, startOfWeek, endOfWeek, getWeek } from "date-fns";
+import { FileDown, Calendar as CalendarIcon, FileSpreadsheet, BookOpen, Sparkles, Building2, Loader2, CheckCircle2 } from "lucide-react";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, isSameDay } from "date-fns";
 import { id } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DateRange } from "react-day-picker";
 
 interface JournalExportModalProps {
     open: boolean;
@@ -21,489 +20,497 @@ interface JournalExportModalProps {
 }
 
 export function JournalExportModal({ open, onOpenChange }: JournalExportModalProps) {
+    // ---- STATE ----
     const [formatType, setFormatType] = useState<"pdf_summary" | "pdf_detail" | "excel">("pdf_summary");
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-    const [scope, setScope] = useState<"all" | "approved">("approved");
-    const [isExporting, setIsExporting] = useState(false);
+    const [scope, setScope] = useState<"all" | "approved" | "pending">("approved");
+    const [department, setDepartment] = useState<string>("all");
+    const [status, setStatus] = useState<"idle" | "fetching" | "generating" | "complete">("idle");
+    const [departmentsList, setDepartmentsList] = useState<string[]>([]);
 
-    // Calculate week range
-    const startDate = startOfWeek(selectedDate, { weekStartsOn: 1 });
-    const endDate = endOfWeek(selectedDate, { weekStartsOn: 1 });
-    const weekNumber = getWeek(selectedDate, { weekStartsOn: 1 });
+    // Period Selection
+    const [periodType, setPeriodType] = useState<"this_week" | "this_month" | "last_month" | "custom">("this_week");
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: startOfWeek(new Date(), { weekStartsOn: 1 }),
+        to: endOfWeek(new Date(), { weekStartsOn: 1 })
+    });
 
-    const handleExport = async () => {
-        setIsExporting(true);
+    // ---- EFFECTS ----
+    useEffect(() => {
+        if (open) {
+            fetchDepartments();
+            setPeriodType("this_week");
+            setDateRange({
+                from: startOfWeek(new Date(), { weekStartsOn: 1 }),
+                to: endOfWeek(new Date(), { weekStartsOn: 1 })
+            });
+            setStatus("idle");
+        }
+    }, [open]);
+
+    // Handle Period Presets
+    const handlePeriodChange = (type: "this_week" | "this_month" | "last_month" | "custom") => {
+        setPeriodType(type);
+        const today = new Date();
+
+        switch (type) {
+            case "this_week":
+                setDateRange({
+                    from: startOfWeek(today, { weekStartsOn: 1 }),
+                    to: endOfWeek(today, { weekStartsOn: 1 })
+                });
+                break;
+            case "this_month":
+                setDateRange({
+                    from: startOfMonth(today),
+                    to: endOfMonth(today)
+                });
+                break;
+            case "last_month":
+                const lastMonth = subMonths(today, 1);
+                setDateRange({
+                    from: startOfMonth(lastMonth),
+                    to: endOfMonth(lastMonth)
+                });
+                break;
+            case "custom":
+                // Keep existing or reset if empty
+                if (!dateRange?.from) setDateRange({ from: today, to: today });
+                break;
+        }
+    };
+
+    const fetchDepartments = async () => {
         try {
-            // 1. Fetch Journals
+            const { data } = await supabase.from('profiles').select('department');
+            if (data) {
+                const uniqueDepts = [...new Set(data.map(d => d.department).filter(Boolean))];
+                setDepartmentsList(uniqueDepts.sort());
+            }
+        } catch (e) {
+            console.error("Failed to fetch departments", e);
+        }
+    };
+
+    // ---- EXPORT LOGIC ----
+    const handleExport = async () => {
+        if (!dateRange?.from || !dateRange?.to) {
+            toast({ variant: "destructive", title: "Periode Invalid", description: "Mohon pilih rentang tanggal." });
+            return;
+        }
+
+        setStatus("fetching");
+
+        try {
+            // 1. Dynamic Import for Performance
+            const [jsPDF, autoTable] = await Promise.all([
+                import("jspdf").then(m => m.default),
+                import("jspdf-autotable").then(m => m.default)
+            ]);
+
+            // 2. Fetch Journals
             let query = supabase
                 .from('work_journals')
-                .select(`
-                    id, date, content, work_result, obstacles, mood, verification_status, user_id
-                `)
-                .gte('date', format(startDate, 'yyyy-MM-dd'))
-                .lte('date', format(endDate, 'yyyy-MM-dd'))
+                .select(`id, date, content, work_result, obstacles, mood, verification_status, user_id`)
+                .gte('date', format(dateRange.from, 'yyyy-MM-dd'))
+                .lte('date', format(dateRange.to, 'yyyy-MM-dd'))
                 .order('date', { ascending: true });
 
-            if (scope === 'approved') {
-                query = query.eq('verification_status', 'approved');
-            }
+            if (scope === 'approved') query = query.eq('verification_status', 'approved');
+            // if (scope === 'pending') query = query.eq('verification_status', 'submitted'); // Optional
 
             const { data: rawJournals, error: journalError } = await query;
             if (journalError) throw journalError;
 
             if (!rawJournals || rawJournals.length === 0) {
-                toast({
-                    variant: "destructive",
-                    title: "Data Kosong",
-                    description: "Tidak ada jurnal ditemukan untuk periode ini."
-                });
-                setIsExporting(false);
+                toast({ variant: "destructive", title: "Data Kosong", description: "Tidak ada jurnal di periode ini." });
+                setStatus("idle");
                 return;
             }
 
-            // 2. Fetch Profiles Manually (Fix for missing FK relationship error)
+            // 3. Fetch Profiles & Filter by Department
             const userIds = [...new Set(rawJournals.map(j => j.user_id))];
-            const { data: profiles, error: profileError } = await supabase
-                .from('profiles')
-                .select('user_id, full_name, position')
-                .in('user_id', userIds);
 
-            if (profileError) throw profileError;
-
-            const profileMap = new Map(profiles?.map(p => [p.user_id, p]));
-
-            // 3. Merge Data
-            const data = rawJournals.map(journal => ({
-                ...journal,
-                profiles: profileMap.get(journal.user_id) || { full_name: 'Unknown', position: '-' }
-            }));
-
-            // 2. Generate File
-            if (formatType === 'pdf_summary') {
-                generateSummaryPDF(data);
-            } else if (formatType === 'pdf_detail') {
-                generateDetailPDF(data);
-            } else {
-                generateExcel(data);
+            let profileQuery = supabase.from('profiles').select('user_id, full_name, position, department').in('user_id', userIds);
+            if (department !== 'all') {
+                profileQuery = profileQuery.eq('department', department);
             }
 
-            toast({
-                title: "Export Berhasil",
-                description: `Laporan berhasil diunduh.`
-            });
-            onOpenChange(false);
+            const { data: profiles, error: profileError } = await profileQuery;
+            if (profileError) throw profileError;
+
+            if (!profiles || profiles.length === 0) {
+                toast({ variant: "destructive", title: "Filter Departemen", description: "Tidak ada karyawan di departemen ini yang memiliki jurnal." });
+                setStatus("idle");
+                return;
+            }
+
+            const profileMap = new Map(profiles.map(p => [p.user_id, p]));
+
+            // 4. Merge & Final Filter
+            // Only keep journals where we found a profile (handles department filtering)
+            const finalData = rawJournals
+                .filter(j => profileMap.has(j.user_id))
+                .map(journal => ({
+                    ...journal,
+                    profiles: profileMap.get(journal.user_id) || { full_name: 'Unknown', position: '-', department: '-' }
+                }));
+
+            if (finalData.length === 0) {
+                toast({ variant: "destructive", title: "Data Kosong", description: "Tidak ada data setelah filter departemen diterapkan." });
+                setStatus("idle");
+                return;
+            }
+
+            setStatus("generating");
+
+            // 5. Generate Report
+            const fileName = `Report_${department === 'all' ? 'All' : department}_${format(dateRange.from, 'ddMM')}-${format(dateRange.to, 'ddMM')}`;
+
+            if (formatType === 'pdf_summary') {
+                await generateSummaryPDF(finalData, jsPDF, fileName);
+            } else if (formatType === 'pdf_detail') {
+                await generateDetailPDF(finalData, jsPDF, autoTable, fileName);
+            } else {
+                await generateExcel(finalData, fileName);
+            }
+
+            toast({ title: "Selesai", description: "Laporan berhasil diunduh." });
+            setStatus("complete");
+            setTimeout(() => {
+                onOpenChange(false);
+                setStatus("idle");
+            }, 1000);
+
         } catch (error: any) {
-            console.error("Export error:", error);
-            toast({
-                variant: "destructive",
-                title: "Gagal Export",
-                description: error.message
-            });
-        } finally {
-            setIsExporting(false);
+            console.error("Export Error:", error);
+            toast({ variant: "destructive", title: "Gagal Export", description: error.message || "Terjadi kesalahan sistem." });
+            setStatus("idle");
         }
     };
 
-    const generateSummaryPDF = (data: any[]) => {
+    // ---- GENERATORS ----
+    const generateSummaryPDF = async (data: any[], jsPDF: any, fileName: string) => {
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.width;
         let yPos = 20;
 
-        // --- Helper for centering text ---
-        const centerTerm = (text: string, y: number) => {
+        const centerText = (text: string, y: number, fontSize = 12, font = "normal", color = 0) => {
+            doc.setFontSize(fontSize);
+            doc.setFont("helvetica", font);
+            doc.setTextColor(color);
             const textWidth = doc.getTextWidth(text);
             doc.text(text, (pageWidth - textWidth) / 2, y);
         };
 
-        // ==========================
-        // PAGE 1: EXECUTIVE SUMMARY
-        // ==========================
-
-        // Header
-        doc.setFontSize(22);
-        doc.setFont("helvetica", "bold");
-        centerTerm("Weekly Work Journal Summary Report", yPos);
+        // Title
+        centerText("Executive Work Journal Summary", yPos, 22, "bold");
         yPos += 10;
 
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(100);
-        centerTerm(`Period: ${format(startDate, "d MMMM", { locale: id })} - ${format(endDate, "d MMMM yyyy", { locale: id })}`, yPos);
+        // Metadata
+        const dateStr = dateRange?.from && dateRange?.to ?
+            `${format(dateRange.from, "d MMMM", { locale: id })} - ${format(dateRange.to, "d MMMM yyyy", { locale: id })}` : "Periode Custom";
+
+        centerText(`Period: ${dateStr}`, yPos, 10, "normal", 100);
+        yPos += 7;
+        centerText(`Department: ${department === 'all' ? 'All Departments' : department}`, yPos, 10, "normal", 100);
         yPos += 20;
 
-        // Metrics Calculation
-        const uniqueUsers = new Set(data.map(d => d.profiles?.full_name)).size;
+        // Metrics
+        const uniqueUsers = new Set(data.map(d => d.profiles.full_name)).size;
         const totalEntries = data.length;
         const completedCount = data.filter(d => d.work_result === 'completed').length;
         const completionRate = totalEntries > 0 ? Math.round((completedCount / totalEntries) * 100) : 0;
 
-        // Mode of Mood
-        const moods = data.map(d => d.mood).filter(Boolean);
-        const moodFrequency: Record<string, number> = {};
-        let dominantMood = "Neutral";
-        let maxMoodCount = 0;
-        moods.forEach(m => {
-            moodFrequency[m] = (moodFrequency[m] || 0) + 1;
-            if (moodFrequency[m] > maxMoodCount) {
-                maxMoodCount = moodFrequency[m];
-                dominantMood = m;
-            }
-        });
-
-        // 4 Key Metrics Boxes
-        const boxWidth = 35;
-        const boxHeight = 25;
-        const startX = (pageWidth - (boxWidth * 4 + 15)) / 2; // Simple centering logic
-        const gap = 5;
+        const boxWidth = 40;
+        const startX = (pageWidth - (boxWidth * 3 + 20)) / 2;
 
         const metrics = [
-            { label: "Active Employees", value: uniqueUsers.toString() },
-            { label: "Total Entries", value: totalEntries.toString() },
-            { label: "Completion Rate", value: `${completionRate}%` },
-            { label: "Dominant Mood", value: dominantMood }
+            { label: "Active Employees", val: uniqueUsers },
+            { label: "Total Entries", val: totalEntries },
+            { label: "Completion Rate", val: `${completionRate}%` }
         ];
 
-        metrics.forEach((metric, index) => {
-            const x = startX + (index * (boxWidth + gap));
-            doc.setFillColor(245, 247, 250); // Light gray
-            doc.setDrawColor(200);
-            doc.roundedRect(x, yPos, boxWidth, boxHeight, 3, 3, "FD");
+        metrics.forEach((m, i) => {
+            const x = startX + (i * (boxWidth + 10));
+            doc.setFillColor(248, 250, 252);
+            doc.setDrawColor(226, 232, 240);
+            doc.roundedRect(x, yPos, boxWidth, 30, 3, 3, "FD");
 
-            doc.setFontSize(10);
+            doc.setFontSize(9);
             doc.setTextColor(100);
-            doc.text(metric.label, x + (boxWidth / 2), yPos + 8, { align: "center" });
+            doc.text(m.label, x + (boxWidth / 2), yPos + 10, { align: 'center' });
 
-            doc.setFontSize(14);
-            doc.setTextColor(0);
+            doc.setFontSize(16);
+            doc.setTextColor(15, 23, 42);
             doc.setFont("helvetica", "bold");
-            doc.text(metric.value, x + (boxWidth / 2), yPos + 18, { align: "center" });
+            doc.text(String(m.val), x + (boxWidth / 2), yPos + 22, { align: 'center' });
         });
 
-        yPos += 40;
+        yPos += 45;
 
-        // Auto-Narrative Generation
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "bold");
-        doc.text("Executive Summary", 14, yPos);
-        yPos += 10;
+        // Divider
+        doc.setDrawColor(226, 232, 240);
+        doc.line(20, yPos, pageWidth - 20, yPos);
+        yPos += 20;
 
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(50);
-
-        // Smart narrative construction
-        const narrativeLines = [];
-
-        // Line 1: Volume & Engagement
-        narrativeLines.push(`During this week, a total of ${uniqueUsers} employees actively contributed to the work journal system, submitting ${totalEntries} entries. The team demonstrated coherent engagement with daily reporting tasks.`);
-
-        // Line 2: Productivity & Output
-        const stability = completionRate > 80 ? "strong" : completionRate > 50 ? "moderate" : "variable";
-        narrativeLines.push(`Productivity indicators show that ${completionRate}% of recorded tasks were marked as completed, reflecting ${stability} operational stability. The remaining tasks are currently in progress or awaiting external feedback.`);
-
-        // Line 3: Atmosphere
-        narrativeLines.push(`The dominant mood recorded this week was '${dominantMood}', suggesting the team is operating under a ${dominantMood === 'Happy' || dominantMood === 'Excited' ? 'positive' : dominantMood === 'Sad' || dominantMood === 'Tired' ? 'challenging' : 'balanced'} atmosphere.`);
-
-        const splitNarrative = doc.splitTextToSize(narrativeLines.join(" "), pageWidth - 28);
-        doc.text(splitNarrative, 14, yPos);
-        yPos += 30;
-
-        // ==========================
-        // PAGE 2: TIME HIGHLIGHTS & INSIGHTS
-        // ==========================
-        doc.addPage();
-        yPos = 20;
-
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "bold");
+        // Employee Breakdown
+        doc.setFontSize(14);
         doc.setTextColor(0);
-        doc.text("Time Highlights & Insights", 14, yPos);
-        yPos += 10;
+        doc.text("Activity Breakdown By Employee", 20, yPos);
+        yPos += 15;
 
-        // Extract key obstacles (Top 3)
-        const allObstacles = data.map(d => d.obstacles).filter(o => o && o.length > 3);
-        // Simple distinct extraction - in real app, frequency analysis would be better
-        const distinctObstacles = [...new Set(allObstacles)].slice(0, 5);
+        const empMap: Record<string, any> = {};
+        data.forEach(d => {
+            const name = d.profiles.full_name;
+            if (!empMap[name]) empMap[name] = { total: 0, completed: 0, obstacles: 0 };
+            empMap[name].total++;
+            if (d.work_result === 'completed') empMap[name].completed++;
+            if (d.obstacles) empMap[name].obstacles++;
+        });
 
-        const contentHighlights = [
-            {
-                title: "Most Reported Challenges",
-                items: distinctObstacles.length > 0 ? distinctObstacles : ["No major obstacles reported."]
-            },
-            {
-                title: "Top Activity Keywords",
-                items: ["Development", "Coordination", "Meeting", "Support", "Maintenance"] // Placeholder logic as NLP is expensive
-            }
-        ];
+        // Simple List
+        Object.keys(empMap).sort().forEach((name) => {
+            if (yPos > 270) { doc.addPage(); yPos = 20; }
 
-        contentHighlights.forEach(section => {
-            doc.setFontSize(12);
+            const stats = empMap[name];
+            const rate = Math.round((stats.completed / stats.total) * 100);
+
+            doc.setFillColor(255, 255, 255);
+            doc.setDrawColor(226, 232, 240);
+            // doc.roundedRect(20, yPos, pageWidth - 40, 15, 2, 2, "S");
+
+            doc.setFontSize(11);
             doc.setFont("helvetica", "bold");
-            doc.text(section.title, 14, yPos);
-            yPos += 8;
+            doc.setTextColor(30, 41, 59);
+            doc.text(name, 20, yPos);
 
-            doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
-            section.items.forEach(item => {
-                doc.text(`• ${item}`, 20, yPos);
-                yPos += 6;
-            });
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`${stats.total} entries`, 100, yPos);
+            doc.text(`${rate}% success`, 140, yPos);
+
+            if (stats.obstacles > 0) {
+                doc.setTextColor(220, 38, 38);
+                doc.text(`${stats.obstacles} issues`, 180, yPos);
+            } else {
+                doc.setTextColor(22, 163, 74);
+                doc.text("Smooth", 180, yPos);
+            }
+
             yPos += 10;
         });
 
-        yPos += 10;
-        doc.setDrawColor(200);
-        doc.line(14, yPos, pageWidth - 14, yPos);
-        yPos += 15;
-
-        // ==========================
-        // PAGE 3: SUMMARY BY EMPLOYEE
-        // ==========================
-        doc.addPage();
-        yPos = 20;
-
-        doc.setFontSize(16);
-        doc.setFont("helvetica", "bold");
-        doc.text("Summary by Employee", 14, yPos);
-        yPos += 15;
-
-        // Group by Employee
-        const employeeMap: Record<string, any> = {};
-        data.forEach(d => {
-            const name = d.profiles?.full_name || "Unknown";
-            if (!employeeMap[name]) {
-                employeeMap[name] = {
-                    name,
-                    entries: 0,
-                    completed: 0,
-                    obstacles: [],
-                    dates: new Set()
-                };
-            }
-            employeeMap[name].entries++;
-            employeeMap[name].dates.add(d.date);
-            if (d.work_result === 'completed') employeeMap[name].completed++;
-            if (d.obstacles && d.obstacles.length > 3) employeeMap[name].obstacles.push(d.obstacles);
-        });
-
-        // Loop Employees
-        doc.setFontSize(10);
-        Object.values(employeeMap).forEach((emp: any) => {
-            // Avoid page break issues
-            if (yPos > 250) {
-                doc.addPage();
-                yPos = 20;
-            }
-
-            // Employee Card (Visual)
-            doc.setFillColor(249, 250, 251);
-            doc.roundedRect(14, yPos, pageWidth - 28, 35, 2, 2, "F");
-
-            // Info
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(0);
-            doc.text(emp.name, 20, yPos + 10);
-
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(100);
-            doc.text(`${emp.dates.size} Days Active  |  ${Math.round((emp.completed / emp.entries) * 100)}% Completion Rate`, 20, yPos + 18);
-
-            // Short note
-            doc.setTextColor(50);
-            const obstacleNote = emp.obstacles.length > 0
-                ? `Reported challenges: ${emp.obstacles[0].substring(0, 60)}...`
-                : "No significant constraints reported.";
-            doc.text(obstacleNote, 20, yPos + 26);
-
-            yPos += 40;
-        });
-
-        // Add Footer timestamp to all pages
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text(`Generated automatically by Work Journal System - ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 285);
-            doc.text(`Page ${i} of ${pageCount}`, pageWidth - 30, 285);
-        }
-
-        doc.save(`Weekly_Summary_W${weekNumber}_${format(startDate, 'yyyyMMdd')}.pdf`);
+        doc.save(`${fileName}_Summary.pdf`);
     };
 
-    const generateDetailPDF = (data: any[]) => {
+    const generateDetailPDF = async (data: any[], jsPDF: any, autoTable: any, fileName: string) => {
         const doc = new jsPDF();
 
-        // Header
         doc.setFontSize(18);
-        doc.text("Detailed Journal Report", 14, 20);
+        doc.text("Detailed Work Journal Log", 14, 20);
 
         doc.setFontSize(10);
         doc.setTextColor(100);
-        doc.text(`Period: ${format(startDate, "d MMMM", { locale: id })} - ${format(endDate, "d MMMM yyyy", { locale: id })}`, 14, 28);
-        doc.text(`Printed: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 34);
+        const dateStr = dateRange?.from && dateRange?.to ?
+            `${format(dateRange.from, "d MMM yyyy", { locale: id })} - ${format(dateRange.to, "d MMM yyyy", { locale: id })}` : "";
+        doc.text(`Period: ${dateStr}`, 14, 28);
 
-        // Table
         const tableBody = data.map(item => [
             format(new Date(item.date), "dd/MM"),
-            item.profiles?.full_name || "Unknown",
+            item.profiles.full_name,
+            item.profiles.department || "-",
             item.content,
-            item.work_result || "-",
-            item.verification_status,
+            item.work_result,
+            item.obstacles || "-"
         ]);
 
         autoTable(doc, {
-            startY: 40,
-            head: [['Date', 'Name', 'Activity', 'Result', 'Status']],
+            startY: 35,
+            head: [['Date', 'Name', 'Dept', 'Activity', 'Result', 'Issues']],
             body: tableBody,
             theme: 'grid',
-            headStyles: { fillColor: [50, 50, 50], textColor: 255 },
-            styles: { fontSize: 8, cellPadding: 3 },
+            styles: { fontSize: 8, cellPadding: 2 },
             columnStyles: {
                 0: { cellWidth: 15 },
-                1: { cellWidth: 30 },
-                2: { cellWidth: 'auto' },
-                3: { cellWidth: 20 },
+                1: { cellWidth: 25 },
+                2: { cellWidth: 20 },
+                3: { cellWidth: 'auto' }, // Activity gets remaining space
                 4: { cellWidth: 20 },
+                5: { cellWidth: 30 },
             }
         });
 
-        doc.save(`Log_Detail_W${weekNumber}_${format(startDate, 'yyyyMMdd')}.pdf`);
+        doc.save(`${fileName}_Detail.pdf`);
     };
 
-    const generateExcel = (data: any[]) => {
-        const headers = ["Tanggal", "Nama Karyawan", "Posisi", "Aktivitas", "Hasil Kerja", "Kendala", "Status", "Mood"];
+    const generateExcel = async (data: any[], fileName: string) => {
+        const headers = ["Tanggal", "Nama Karyawan", "Departemen", "Posisi", "Aktivitas", "Hasil Kerja", "Kendala", "Mood", "Status"];
         const rows = data.map(item => [
             item.date,
-            `"${item.profiles?.full_name?.replace(/"/g, '""') || ''}"`,
-            `"${item.profiles?.position?.replace(/"/g, '""') || ''}"`,
-            `"${item.content?.replace(/"/g, '""') || ''}"`,
+            `"${item.profiles.full_name.replace(/"/g, '""')}"`,
+            `"${item.profiles.department?.replace(/"/g, '""') || ''}"`,
+            `"${item.profiles.position?.replace(/"/g, '""') || ''}"`,
+            `"${item.content.replace(/"/g, '""')}"`,
             item.work_result,
             `"${item.obstacles?.replace(/"/g, '""') || ''}"`,
-            item.verification_status,
-            item.mood
+            item.mood,
+            item.verification_status
         ]);
 
-        const csvContent = [
-            headers.join(","),
-            ...rows.map(row => row.join(","))
-        ].join("\n");
-
+        const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        link.setAttribute("download", `Data_W${weekNumber}.csv`);
+        link.setAttribute("download", `${fileName}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                    <DialogTitle>📥 Export Laporan Jurnal</DialogTitle>
+        <Dialog open={open} onOpenChange={(v) => { if (status === 'idle') onOpenChange(v) }}>
+            <DialogContent className="sm:max-w-[600px] gap-0 p-0 overflow-hidden bg-white">
+                <DialogHeader className="p-6 pb-2">
+                    <DialogTitle className="flex items-center gap-2 text-xl">
+                        <FileDown className="w-5 h-5 text-blue-600" />
+                        Export Laporan Jurnal
+                    </DialogTitle>
                     <DialogDescription>
-                        Pilih jenis laporan yang ingin diunduh.
+                        Unduh data jurnal kinerja tim dalam format yang Anda butuhkan.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid gap-6 py-4">
-                    {/* Format Selection based on User Persona */}
-                    <div className="grid gap-2">
-                        <Label className="mb-2">Jenis Laporan</Label>
-                        <div className="grid grid-cols-1 gap-3">
-                            {/* Option 1: Executive Summary */}
+                <div className="p-6 grid gap-6">
+                    {/* 1. Format Selection */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {[
+                            { id: 'pdf_summary', label: 'Summary', icon: Sparkles, color: 'text-purple-600', bg: 'bg-purple-50', activeBorder: 'border-purple-500' },
+                            { id: 'pdf_detail', label: 'Detailed Log', icon: BookOpen, color: 'text-blue-600', bg: 'bg-blue-50', activeBorder: 'border-blue-500' },
+                            { id: 'excel', label: 'Excel / CSV', icon: FileSpreadsheet, color: 'text-green-600', bg: 'bg-green-50', activeBorder: 'border-green-500' }
+                        ].map((item) => (
                             <div
-                                onClick={() => setFormatType('pdf_summary')}
+                                key={item.id}
+                                onClick={() => setFormatType(item.id as any)}
                                 className={cn(
-                                    "cursor-pointer flex items-center gap-4 p-4 rounded-xl border-2 transition-all hover:bg-purple-50",
-                                    formatType === 'pdf_summary' ? "border-purple-500 bg-purple-50" : "border-slate-100"
+                                    "cursor-pointer flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all gap-2 text-center h-24",
+                                    formatType === item.id
+                                        ? `${item.activeBorder} ${item.bg}`
+                                        : "border-slate-100 hover:border-slate-200 hover:bg-slate-50"
                                 )}
                             >
-                                <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
-                                    <Sparkles className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-slate-800">Executive Summary</p>
-                                    <p className="text-xs text-slate-500">PDF Ringkas dengan insight & analitik tim.</p>
-                                </div>
+                                <item.icon className={cn("w-6 h-6", item.color)} />
+                                <span className={cn("text-xs font-bold text-slate-700")}>{item.label}</span>
                             </div>
-
-                            {/* Option 2: Detailed Log */}
-                            <div
-                                onClick={() => setFormatType('pdf_detail')}
-                                className={cn(
-                                    "cursor-pointer flex items-center gap-4 p-4 rounded-xl border-2 transition-all hover:bg-blue-50",
-                                    formatType === 'pdf_detail' ? "border-blue-500 bg-blue-50" : "border-slate-100"
-                                )}
-                            >
-                                <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
-                                    <BookOpen className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-slate-800">Detailed Log</p>
-                                    <p className="text-xs text-slate-500">PDF Lengkap berisi semua entri jurnal mentah.</p>
-                                </div>
-                            </div>
-
-                            {/* Option 3: SpreadSheet */}
-                            <div
-                                onClick={() => setFormatType('excel')}
-                                className={cn(
-                                    "cursor-pointer flex items-center gap-4 p-4 rounded-xl border-2 transition-all hover:bg-green-50",
-                                    formatType === 'excel' ? "border-green-500 bg-green-50" : "border-slate-100"
-                                )}
-                            >
-                                <div className="p-2 bg-green-100 rounded-lg text-green-600">
-                                    <FileSpreadsheet className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-slate-800">Excel / Spreadsheet</p>
-                                    <p className="text-xs text-slate-500">Format CSV untuk olah data manual.</p>
-                                </div>
-                            </div>
-                        </div>
+                        ))}
                     </div>
 
-                    {/* Week Selection */}
-                    <div className="grid gap-2">
-                        <Label>Periode Laporan</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                        "w-full justify-start text-left font-normal h-12",
-                                        !selectedDate && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {startDate ? (
-                                        `${format(startDate, "d MMM", { locale: id })} - ${format(endDate, "d MMMM yyyy", { locale: id })}`
-                                    ) : (
-                                        <span>Pilih minggu lapor</span>
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={selectedDate}
-                                    onSelect={(d) => d && setSelectedDate(d)}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
+                    <div className="grid sm:grid-cols-2 gap-6">
+                        {/* 2. Period Selection */}
+                        <div className="space-y-3">
+                            <Label className="text-xs font-bold text-slate-500 uppercase">Periode Waktu</Label>
+                            <Select value={periodType} onValueChange={(v: any) => handlePeriodChange(v)}>
+                                <SelectTrigger className="h-10">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="this_week">Minggu Ini</SelectItem>
+                                    <SelectItem value="this_month">Bulan Ini</SelectItem>
+                                    <SelectItem value="last_month">Bulan Lalu</SelectItem>
+                                    <SelectItem value="custom">Custom Range</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            {/* Date Picker Display */}
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full justify-start text-left font-normal",
+                                            !dateRange && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4 text-slate-500" />
+                                        {dateRange?.from ? (
+                                            dateRange.to ? (
+                                                <span className="text-xs">
+                                                    {format(dateRange.from, "d MMM", { locale: id })} - {format(dateRange.to, "d MMM yyyy", { locale: id })}
+                                                </span>
+                                            ) : (
+                                                format(dateRange.from, "d MMM yyyy", { locale: id })
+                                            )
+                                        ) : (
+                                            <span>Pilih Tanggal</span>
+                                        )}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        initialFocus
+                                        mode="range"
+                                        defaultMonth={dateRange?.from}
+                                        selected={dateRange}
+                                        onSelect={(range) => {
+                                            setDateRange(range);
+                                            if (range?.from && range?.to) setPeriodType('custom');
+                                        }}
+                                        numberOfMonths={2}
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        {/* 3. Filter Options */}
+                        <div className="space-y-3">
+                            <Label className="text-xs font-bold text-slate-500 uppercase">Filter Data</Label>
+
+                            {/* Department */}
+                            <Select value={department} onValueChange={setDepartment}>
+                                <SelectTrigger className="h-10">
+                                    <Building2 className="w-3.5 h-3.5 mr-2 text-slate-400" />
+                                    <SelectValue placeholder="Semua Departemen" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Departemen</SelectItem>
+                                    {departmentsList.map(d => (
+                                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            {/* Scope */}
+                            <Select value={scope} onValueChange={(v: any) => setScope(v)}>
+                                <SelectTrigger className="h-10">
+                                    <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-slate-400" />
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="approved">Hanya Disetujui (Approved)</SelectItem>
+                                    <SelectItem value="all">Semua Status</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </div>
 
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Batal</Button>
-                    <Button onClick={handleExport} disabled={isExporting} className="gap-2 bg-slate-900 text-white hover:bg-slate-800">
-                        {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-                        {isExporting ? "Membuat Laporan..." : "Download Report"}
+                <DialogFooter className="p-6 pt-2 bg-slate-50 border-t border-slate-100 gap-3">
+                    <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={status !== 'idle'}>
+                        Batal
+                    </Button>
+                    <Button
+                        onClick={handleExport}
+                        disabled={status !== 'idle' || !dateRange?.from || !dateRange?.to}
+                        className={cn(
+                            "min-w-[140px] gap-2 transition-all",
+                            status === 'complete' ? "bg-green-600 hover:bg-green-700" : "bg-slate-900 hover:bg-slate-800"
+                        )}
+                    >
+                        {status === 'idle' && <><FileDown className="w-4 h-4" /> Download Report</>}
+                        {status === 'fetching' && <><Loader2 className="w-4 h-4 animate-spin" /> Mengambil Data...</>}
+                        {status === 'generating' && <><Loader2 className="w-4 h-4 animate-spin" /> Menulis PDF...</>}
+                        {status === 'complete' && <><CheckCircle2 className="w-4 h-4" /> Selesai!</>}
                     </Button>
                 </DialogFooter>
             </DialogContent>
