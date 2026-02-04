@@ -175,26 +175,26 @@ export function JournalForm({
                     {/* Conflict Alert - Ultra Compact Decision Card */}
                     {isDateConflict ? (
                         <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl animate-in fade-in zoom-in-95 duration-200">
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                                <div className="flex items-center gap-3 w-full sm:w-auto">
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center gap-3">
                                     <div className="bg-white p-1.5 rounded-full shadow-sm shrink-0">
                                         <AlertCircle className="w-5 h-5 text-blue-600" />
                                     </div>
-                                    <div className="min-w-0">
+                                    <div className="min-w-0 flex-1">
                                         <p className="text-sm font-bold text-slate-800 truncate">
-                                            Jurnal tanggal ini sudah ada
+                                            Sudah ada jurnal tanggal ini
                                         </p>
                                         <p className="text-xs text-slate-500 truncate">
                                             {format(date, "d MMMM yyyy", { locale: id })}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex gap-2 w-full sm:w-auto">
+                                <div className="flex gap-2 w-full">
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() => setIsDateDrawerOpen(true)}
-                                        className="flex-1 sm:flex-none h-9 text-xs border-blue-200 text-blue-700 hover:bg-blue-100"
+                                        className="flex-1 h-9 text-xs border-blue-200 text-blue-700 hover:bg-blue-100"
                                     >
                                         Ganti Tanggal
                                     </Button>
@@ -202,7 +202,7 @@ export function JournalForm({
                                         <Button
                                             size="sm"
                                             onClick={() => props.onRequestEdit?.(format(date, 'yyyy-MM-dd'))}
-                                            className="flex-1 sm:flex-none h-9 text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                                            className="flex-1 h-9 text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                                         >
                                             Edit Jurnal Ini
                                         </Button>
@@ -291,7 +291,7 @@ export function JournalForm({
                 {/* Main Content Field */}
                 <div className="space-y-2 px-1">
                     <Label htmlFor="content" className="text-sm font-semibold text-slate-700 flex items-center justify-between">
-                        <span>Apa yang Anda kerjakan hari ini? <span className="text-red-500">*</span></span>
+                        <span>Deskripsi Aktivitas <span className="text-red-500">*</span></span>
                     </Label>
                     <Textarea
                         id="content"
