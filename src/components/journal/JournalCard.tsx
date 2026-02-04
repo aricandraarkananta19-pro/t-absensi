@@ -1,11 +1,12 @@
-import { useState } from "react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     Calendar, Clock, Pencil, Trash2, CheckCircle2,
-    AlertCircle, FileEdit, Send, Eye, MoreHorizontal, History
+    AlertCircle, FileEdit, Send, Eye, MoreHorizontal, History, MessageSquare,
+    User
 } from "lucide-react";
 import { format, isAfter, addDays, parseISO, startOfDay } from "date-fns";
 import { id } from "date-fns/locale";
@@ -28,13 +29,19 @@ export interface JournalCardData {
     content: string;
     date: string;
     duration: number;
-    verification_status: string;
+    verification_status: string; // 'draft', 'submitted', 'need_revision', 'approved'
     manager_notes?: string;
     work_result?: 'completed' | 'progress' | 'pending';
     obstacles?: string;
-    mood?: '😊' | '😐' | '😣';
+    mood?: string;
     created_at: string;
     updated_at?: string;
+    profiles?: {
+        full_name: string;
+        avatar_url: string | null;
+        department: string | null;
+        position: string | null;
+    };
 }
 
 interface JournalCardProps {
@@ -44,64 +51,62 @@ interface JournalCardProps {
     onView?: (journal: JournalCardData) => void;
     showActions?: boolean;
     isEmployee?: boolean;
+    showProfile?: boolean; // New prop to toggle profile visibility
 }
 
-// Status badge configuration with clear visual hierarchy
-const STATUS_CONFIG = {
+// ----------------------------------------------------------------------
+// CONFIGURATION
+// ----------------------------------------------------------------------
+
+const STATUS_CONFIG: Record<string, { label: string; className: string; icon: any; description: string }> = {
     draft: {
         label: "Draft",
-        className: "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-150",
+        className: "bg-slate-100 text-slate-600 border-slate-200",
         icon: FileEdit,
-        description: "Belum dikirim"
+        description: "Hanya terlihat oleh Anda"
     },
     submitted: {
-        label: "Terkirim",
-        className: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100",
-        icon: Send,
-        description: "Menunggu review Manager"
-    },
-    read: {
-        label: "Dibaca Manager",
-        className: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100",
-        icon: Eye,
-        description: "Manager telah membaca"
+        label: "Menunggu Review",
+        className: "bg-blue-50 text-blue-700 border-blue-200",
+        icon: Clock,
+        description: "Menunggu persetujuan atasan"
     },
     need_revision: {
         label: "Perlu Revisi",
-        className: "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100",
+        className: "bg-orange-50 text-orange-700 border-orange-200",
         icon: AlertCircle,
-        description: "Ada catatan untuk diperbaiki"
+        description: "Perlu perbaikan dari karyawan"
     },
     approved: {
         label: "Disetujui",
-        className: "bg-green-50 text-green-700 border-green-200 hover:bg-green-100",
+        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
         icon: CheckCircle2,
         description: "Jurnal telah diverifikasi"
     }
 };
 
-const WORK_RESULT_LABELS = {
-    completed: { label: "Selesai", className: "bg-emerald-50 text-emerald-700" },
-    progress: { label: "Dalam Progress", className: "bg-blue-50 text-blue-700" },
-    pending: { label: "Tertunda", className: "bg-amber-50 text-amber-700" }
+const WORK_RESULT_LABELS: Record<string, { label: string; className: string }> = {
+    completed: { label: "Selesai", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+    progress: { label: "Progress", className: "bg-blue-50 text-blue-700 border-blue-200" },
+    pending: { label: "Tertunda", className: "bg-amber-50 text-amber-700 border-amber-200" }
 };
 
+
 export function JournalStatusBadge({ status, showIcon = true }: { status: string; showIcon?: boolean }) {
-    const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.submitted;
+    const safeStatus = STATUS_CONFIG[status] ? status : 'submitted';
+    const config = STATUS_CONFIG[safeStatus];
     const IconComponent = config.icon;
 
     return (
         <TooltipProvider>
-            <Tooltip>
+            <Tooltip delayDuration={300}>
                 <TooltipTrigger asChild>
-                    <Badge
-                        className={`${config.className} font-medium text-[10px] uppercase tracking-wide px-2.5 py-1 cursor-help transition-colors`}
-                    >
-                        {showIcon && <IconComponent className="w-3 h-3 mr-1" />}
+                    <Badge variant="outline" className={`${config.className} font-semibold text-[10px] uppercase tracking-wide px-2.5 py-0.5 gap-1.5 cursor-default hover:bg-opacity-80 transition-all`}>
+                        {showIcon && <IconComponent className="w-3 h-3" />}
                         {config.label}
                     </Badge>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
+                <TooltipContent side="top" className="text-xs font-medium">
                     {config.description}
                 </TooltipContent>
             </Tooltip>
@@ -109,285 +114,200 @@ export function JournalStatusBadge({ status, showIcon = true }: { status: string
     );
 }
 
+// ----------------------------------------------------------------------
+// MAIN COMPONENT
+// ----------------------------------------------------------------------
+
 export function JournalCard({
     journal,
     onEdit,
     onDelete,
     onView,
     showActions = true,
-    isEmployee = true
+    isEmployee = true,
+    showProfile = false
 }: JournalCardProps) {
     const isMobile = useIsMobile();
     const status = journal.verification_status || 'submitted';
 
-    // Edit rules for employee
-    const canEdit = isEmployee
-        ? ['draft', 'need_revision', 'submitted'].includes(status)
-        : true; // Managers/Admins can always edit
+    // Permission Logic
+    const canEdit = isEmployee ? ['draft', 'need_revision'].includes(status) : true;
+    const canDelete = isEmployee ? ['draft'].includes(status) : true; // Employees can only delete drafts usually, or maybe revised ones.
+    const isLocked = status === 'approved' && isEmployee; // Employee cannot touch approved journals
 
-    // Delete rules for employee
-    const canDelete = isEmployee
-        ? ['draft', 'submitted', 'need_revision'].includes(status)
-        : true; // Managers/Admins can always delete
+    // Parsing Dates safely
+    const journalDate = new Date(journal.date);
+    const createdAt = parseISO(journal.created_at);
+    const isBackdated = isAfter(startOfDay(createdAt), addDays(startOfDay(journalDate), 1));
 
-    const isLocked = status === 'approved';
-
-    // Backdated logic: If created_at is more than 1 day after date
-    const isBackdated = isAfter(startOfDay(parseISO(journal.created_at)), addDays(startOfDay(parseISO(journal.date)), 1));
-
-    // Truncate content for preview
-    const truncatedContent = journal.content.length > 150
-        ? journal.content.substring(0, 150) + "..."
-        : journal.content;
+    // Profile Initials
+    const getInitials = (name: string) => name ? name.split(" ").map(n => n.charAt(0)).slice(0, 2).join("").toUpperCase() : "??";
 
     return (
-        <Card className={`
-            bg-white border text-left
-            ${isMobile
-                ? 'border-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl mb-3'
-                : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 rounded-xl'
-            }
-            transition-all duration-200 overflow-hidden group w-full cursor-pointer active:scale-[0.99]
-            ${isLocked ? 'bg-slate-50/50' : ''}
-        `}
-            onClick={() => {
-                if (isMobile && canEdit) onEdit?.(journal);
-                else if (isMobile) onView?.(journal);
-            }}
+        <Card
+            className={`
+                group relative overflow-hidden transition-all duration-300 border
+                ${isMobile ? 'rounded-2xl border-slate-200/60 shadow-sm mb-3' : 'rounded-xl hover:shadow-md hover:border-slate-300 border-slate-200'}
+                bg-white
+            `}
+            onClick={() => onView?.(journal)}
         >
-            <CardContent className="p-0">
-                <div className="flex flex-col md:flex-row">
-                    {/* Date Strip - Desktop Only */}
-                    {!isMobile && (
-                        <div className="w-24 bg-white border-r border-slate-100 flex flex-col items-center justify-center py-6 shrink-0 group-hover:bg-slate-50/50 transition-colors">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                                {format(new Date(journal.date), "MMM", { locale: id })}
+            <CardContent className="p-0 flex flex-col sm:flex-row h-full">
+
+                {/* 1. LEFT SIDE: Profile or Date Strip */}
+                {showProfile && journal.profiles ? (
+                    <div className="p-4 sm:w-64 sm:border-r border-b sm:border-b-0 border-dashed border-slate-200 bg-slate-50/50 flex sm:flex-col flex-row items-center sm:items-start gap-3 shrink-0">
+                        <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-white shadow-sm">
+                            <AvatarImage src={journal.profiles.avatar_url || ""} />
+                            <AvatarFallback className="bg-blue-100 text-blue-600 text-xs font-bold">
+                                {getInitials(journal.profiles.full_name)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0 text-left">
+                            <p className="font-semibold text-slate-900 text-sm truncate leading-snug">
+                                {journal.profiles.full_name}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate mt-0.5">
+                                {journal.profiles.position || "Karyawan"}
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-2 text-[10px] text-slate-400 font-medium">
+                                <Calendar className="w-3 h-3" />
+                                {format(journalDate, "d MMM yyyy", { locale: id })}
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    // Default Date Strip for Employee View (Desktop)
+                    !isMobile && (
+                        <div className="w-20 bg-slate-50/30 border-r border-slate-100 flex flex-col items-center justify-center py-4 shrink-0 hover:bg-slate-100 transition-colors">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                                {format(journalDate, "MMM", { locale: id })}
                             </span>
-                            <span className="text-4xl font-bold text-slate-800 leading-none tracking-tight">
-                                {format(new Date(journal.date), "dd")}
+                            <span className="text-2xl font-bold text-slate-700 leading-none mt-1">
+                                {format(journalDate, "dd")}
                             </span>
-                            <span className="text-[10px] font-medium text-slate-400 mt-2 bg-slate-100 px-2 py-0.5 rounded-full">
-                                {format(new Date(journal.date), "EEEE", { locale: id })}
+                            <span className="text-[10px] font-medium text-slate-400 mt-1">
+                                {format(journalDate, "ccc", { locale: id })}
                             </span>
                         </div>
-                    )}
+                    )
+                )}
 
-                    {/* Content Area */}
-                    <div className={`flex-1 ${isMobile ? 'p-4' : 'p-5'}`}>
+                {/* 2. MAIN CONTENT AREA */}
+                <div className="flex-1 p-4 sm:p-5 relative min-w-0">
 
-                        {/* Mobile Header: Date & Status */}
-                        {isMobile && (
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-slate-900">
-                                        {format(new Date(journal.date), "EEEE, dd MMM yyyy", { locale: id })}
-                                    </span>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        {journal.mood && <span className="text-sm">{journal.mood}</span>}
-                                        {journal.duration > 0 && (
-                                            <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
-                                                <Clock className="w-3 h-3" />
-                                                {Math.floor(journal.duration / 60)}j {journal.duration % 60}m
-                                            </span>
-                                        )}
-                                    </div>
+                    {/* Header Row: Status & Title */}
+                    <div className="flex flex-wrap items-start justify-between gap-y-2 gap-x-4 mb-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                            {/* Mobile Date Header if not showing profile or if strictly mobile layout */}
+                            {(!showProfile || isMobile) && (showProfile ? null : (
+                                <div className="sm:hidden flex items-center gap-2 text-xs font-semibold text-slate-700 mr-2">
+                                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                    {format(journalDate, "d MMM yyyy", { locale: id })}
                                 </div>
-                                <div onClick={(e) => e.stopPropagation()}>
-                                    {/* Mobile Menu */}
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 -mr-2">
-                                                <MoreHorizontal className="w-5 h-5" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48">
-                                            <DropdownMenuItem onClick={() => onView?.(journal)}>
-                                                <Eye className="w-4 h-4 mr-2" /> Lihat Detail
-                                            </DropdownMenuItem>
-                                            {canEdit && (
-                                                <DropdownMenuItem onClick={() => onEdit?.(journal)}>
-                                                    <Pencil className="w-4 h-4 mr-2" /> Edit Jurnal
-                                                </DropdownMenuItem>
-                                            )}
-                                            {canDelete && (
-                                                <>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() => onDelete?.(journal)}
-                                                        className="text-red-600"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 mr-2" /> Hapus Jurnal
-                                                    </DropdownMenuItem>
-                                                </>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
+                            ))}
+
+                            <JournalStatusBadge status={status} />
+
+                            {journal.work_result && (
+                                <Badge variant="outline" className={`${WORK_RESULT_LABELS[journal.work_result]?.className} text-[10px] h-5`}>
+                                    {WORK_RESULT_LABELS[journal.work_result]?.label}
+                                </Badge>
+                            )}
+
+                            {isBackdated && (
+                                <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-600 border-amber-200 h-5 gap-1">
+                                    <History className="w-3 h-3" />
+                                    Terlambat
+                                </Badge>
+                            )}
+                        </div>
+
+                        {/* Duration Badge */}
+                        {journal.duration > 0 && (
+                            <div className="flex items-center gap-1 text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-full">
+                                <Clock className="w-3 h-3" />
+                                <span>{Math.floor(journal.duration / 60)}j {journal.duration % 60}m</span>
                             </div>
                         )}
+                    </div>
 
-                        {/* Top Badge Row (Desktop & Mobile) */}
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <JournalStatusBadge status={status} /> {/* Re-add Badge here */}
-                                {journal.work_result && (
-                                    <Badge className={`${WORK_RESULT_LABELS[journal.work_result].className} text-[10px] uppercase font-medium border-0`}>
-                                        {WORK_RESULT_LABELS[journal.work_result].label}
-                                    </Badge>
-                                )}
-                                {isBackdated && (
-                                    <Badge variant="outline" className="text-[10px] text-amber-600 bg-amber-50 border-amber-200 gap-1 px-2">
-                                        <History className="w-3 h-3" />
-                                        Terlambat
-                                    </Badge>
-                                )}
-                            </div>
+                    {/* Content Preview */}
+                    <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap line-clamp-3 mb-4">
+                        {journal.content}
+                    </div>
 
-                            {/* Desktop Actions */}
-                            {!isMobile && showActions && (
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {/* Quick Actions (visible on hover) */}
-                                    {canEdit && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-7 px-2 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                            onClick={() => onEdit?.(journal)}
-                                        >
-                                            <Pencil className="w-3.5 h-3.5 mr-1" />
-                                            Edit
-                                        </Button>
-                                    )}
-
-                                    {canDelete && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-7 px-2 text-red-600 hover:bg-red-50 hover:text-red-700"
-                                            onClick={() => onDelete?.(journal)}
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5 mr-1" />
-                                            Hapus
-                                        </Button>
-                                    )}
-
-                                    {/* More Actions Dropdown */}
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600">
-                                                <MoreHorizontal className="w-4 h-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48">
-                                            <DropdownMenuItem onClick={() => onView?.(journal)}>
-                                                <Eye className="w-4 h-4 mr-2" /> Lihat Detail
-                                            </DropdownMenuItem>
-                                            {canEdit && (
-                                                <DropdownMenuItem onClick={() => onEdit?.(journal)}>
-                                                    <Pencil className="w-4 h-4 mr-2" /> Edit Jurnal
-                                                </DropdownMenuItem>
-                                            )}
-                                            {canDelete && (
-                                                <>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() => onDelete?.(journal)}
-                                                        className="text-red-600 focus:text-red-700"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 mr-2" /> Hapus Jurnal
-                                                    </DropdownMenuItem>
-                                                </>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            )}
-
-                            {/* Status indicator for locked journals */}
-                            {isLocked && (
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <div className="flex items-center gap-1 text-[10px] text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                                                <CheckCircle2 className="w-3 h-3" />
-                                                <span className="hidden sm:inline">Terkunci</span>
-                                            </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            Jurnal yang sudah disetujui tidak dapat diubah.
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            )}
-                        </div>
-
-                        {/* Content Preview */}
-                        <p className={`
-                            text-slate-700 leading-relaxed 
-                            ${isMobile ? 'text-sm line-clamp-2 mt-2' : 'text-sm whitespace-pre-wrap'}
-                        `}>
-                            {isMobile ? journal.content : truncatedContent}
-                        </p>
-
-                        {/* Obstacles Section */}
+                    {/* Footer Info: Obstacles & Notes */}
+                    <div className="space-y-2">
                         {journal.obstacles && (
-                            <div className="mt-3 p-2.5 bg-amber-50/50 border border-amber-100 rounded-lg">
-                                <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wide mb-1">
-                                    Kendala / Catatan
-                                </p>
-                                <p className="text-xs text-slate-600">{journal.obstacles}</p>
+                            <div className="flex items-start gap-2 text-xs bg-amber-50/50 p-2 rounded-md border border-amber-100/50">
+                                <AlertCircle className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />
+                                <div className="text-slate-600">
+                                    <span className="font-semibold text-amber-700">Kendala: </span>
+                                    {journal.obstacles}
+                                </div>
                             </div>
                         )}
 
-                        {/* Manager Feedback (Highlighted for revisions) */}
                         {journal.manager_notes && (
-                            <div className={`
-                                mt-3 p-3 rounded-lg text-sm border
-                                ${status === 'need_revision'
-                                    ? 'bg-orange-50 border-orange-200'
-                                    : 'bg-blue-50/50 border-blue-100'
-                                }
-                            `}>
-                                <p className={`text-[10px] font-semibold mb-1 uppercase tracking-wide ${status === 'need_revision' ? 'text-orange-700' : 'text-blue-700'
-                                    }`}>
-                                    {status === 'need_revision' ? '⚠️ Catatan Revisi dari Manager:' : '💬 Catatan Manager:'}
-                                </p>
-                                <p className="text-slate-600 text-sm">{journal.manager_notes}</p>
+                            <div className={`flex items-start gap-2 text-xs p-2 rounded-md border ${status === 'need_revision' ? 'bg-orange-50 border-orange-100' : 'bg-blue-50 border-blue-100'
+                                }`}>
+                                <MessageSquare className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${status === 'need_revision' ? 'text-orange-600' : 'text-blue-600'
+                                    }`} />
+                                <div className="text-slate-600">
+                                    <span className={`font-semibold ${status === 'need_revision' ? 'text-orange-700' : 'text-blue-700'
+                                        }`}>Catatan Manager: </span>
+                                    {journal.manager_notes}
+                                </div>
                             </div>
                         )}
+                    </div>
 
-                        {/* Helpful hint for editable journals */}
-                        {isEmployee && status === 'draft' && (
-                            <p className="mt-3 text-[10px] text-slate-400 italic flex items-center gap-1">
-                                <FileEdit className="w-3 h-3" />
-                                Jurnal ini masih draft. Anda dapat mengedit atau mengirimnya kapan saja.
-                            </p>
-                        )}
+                </div>
 
-                        {isEmployee && status === 'need_revision' && (
-                            <p className="mt-3 text-[10px] text-orange-500 italic flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3" />
-                                Jurnal ini perlu direvisi. Silakan edit dan kirim ulang.
-                            </p>
-                        )}
+                {/* 3. RIGHT SIDE: Actions (Hover or Mobile Menu) */}
+                <div className="p-2 sm:p-4 flex sm:flex-col items-center justify-end sm:justify-start gap-1 border-t sm:border-t-0 sm:border-l border-slate-100 bg-slate-50/30">
+                    <div className="w-full flex justify-end gap-1">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                            onClick={(e) => { e.stopPropagation(); onView?.(journal); }}
+                        >
+                            <Eye className="w-4 h-4 ml-1 md:ml-0 md:mr-1.5" />
+                            <span className="hidden md:inline">Lihat</span>
+                        </Button>
 
-                        {isEmployee && status === 'approved' && (
-                            <p className="mt-3 text-[10px] text-green-600 italic flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" />
-                                Jurnal telah disetujui dan terkunci.
-                            </p>
-                        )}
-
-                        {isBackdated && (
-                            <p className="mt-3 text-[10px] text-amber-500 italic flex items-center gap-1">
-                                <History className="w-3 h-3" />
-                                Jurnal ini diisi terlambat ({format(parseISO(journal.created_at), "d MMM")}).
-                            </p>
+                        {/* More Actions Dropdown */}
+                        {(canEdit || canDelete) && showActions && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400">
+                                        <MoreHorizontal className="w-4 h-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {canEdit && (
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit?.(journal); }}>
+                                            <Pencil className="w-4 h-4 mr-2" /> Edit Jurnal
+                                        </DropdownMenuItem>
+                                    )}
+                                    {canDelete && (
+                                        <DropdownMenuItem
+                                            onClick={(e) => { e.stopPropagation(); onDelete?.(journal); }}
+                                            className="text-red-600 focus:text-red-700"
+                                        >
+                                            <Trash2 className="w-4 h-4 mr-2" /> Hapus
+                                        </DropdownMenuItem>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         )}
                     </div>
                 </div>
+
             </CardContent>
-        </Card >
+        </Card>
     );
 }
 
