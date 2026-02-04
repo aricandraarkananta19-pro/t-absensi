@@ -307,20 +307,25 @@ export default function JurnalSaya() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50/50 pb-24 md:pb-8">
+        <div className={`min-h-screen pb-24 md:pb-8 ${isMobile ? 'bg-white' : 'bg-slate-50/50'}`}>
             {/* Header */}
             <div className={`
-                bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 px-4 py-4 md:px-6 md:py-5 
+                bg-white/90 backdrop-blur-xl border-b border-slate-100/50 sticky top-0 z-30 px-4 py-3 md:px-6 md:py-5 
                 transition-all duration-200
-                ${isMobile ? 'shadow-sm' : ''}
+                ${isMobile ? 'shadow-[0_4px_20px_-12px_rgba(0,0,0,0.05)]' : ''}
             `}>
                 <div className="max-w-6xl mx-auto flex items-center justify-between">
                     <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
+                                {format(new Date(), "EEEE, d MMMM yyyy", { locale: id })}
+                            </span>
+                        </div>
                         <h1 className="text-xl md:text-2xl font-bold text-slate-900 flex items-center gap-2">
-                            {isMobile ? "Today's Work Journal" : "Jurnal Aktivitas"}
+                            {isMobile ? "Work Journal" : "Jurnal Aktivitas Saya"}
                         </h1>
-                        <p className="text-xs text-slate-500 mt-1 font-medium">
-                            {isMobile ? "Connect to Manager & Admin" : "Catatan harian yang dipantau Manager & Admin"}
+                        <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                            {isMobile ? "Daily activity log" : "Catat dan kelola laporan kerja harian Anda"}
                         </p>
                     </div>
                     <div className="flex gap-2">
@@ -361,30 +366,71 @@ export default function JurnalSaya() {
                     {/* LEFT COLUMN: Stats & List */}
                     <div className="lg:col-span-7 space-y-6">
 
-                        {/* Stats Row - Modern Cards */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
-                            <Card className="border-slate-200 shadow-sm bg-white">
-                                <CardContent className="p-4 flex flex-col justify-center text-center sm:text-left">
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total</p>
-                                    <span className="text-2xl md:text-3xl font-bold text-slate-900 mt-1">{stats.total}</span>
+                        {/* Stats Row - Responsive: Scroll on mobile, Grid on desktop */}
+                        <div className={`
+                            ${isMobile ? 'flex overflow-x-auto pb-4 gap-3 no-scrollbar -mx-4 px-4 snap-x' : 'grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4'}
+                        `}>
+                            {/* Card 1: Total */}
+                            <Card className={`
+                                border-slate-100 shadow-sm bg-white shrink-0
+                                ${isMobile ? 'w-[140px] snap-start' : ''}
+                            `}>
+                                <CardContent className="p-4 flex flex-col justify-center text-left">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="p-1.5 bg-slate-50 rounded-md">
+                                            <BookOpen className="w-3.5 h-3.5 text-slate-500" />
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total</p>
+                                    </div>
+                                    <span className="text-2xl font-bold text-slate-900">{stats.total}</span>
                                 </CardContent>
                             </Card>
-                            <Card className="border-green-100 shadow-sm bg-green-50/50">
-                                <CardContent className="p-4 flex flex-col justify-center text-center sm:text-left">
-                                    <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider">Disetujui</p>
-                                    <span className="text-2xl md:text-3xl font-bold text-green-700 mt-1">{stats.approved}</span>
+
+                            {/* Card 2: Approved */}
+                            <Card className={`
+                                border-green-100 shadow-sm bg-green-50/30 shrink-0
+                                ${isMobile ? 'w-[140px] snap-start' : ''}
+                            `}>
+                                <CardContent className="p-4 flex flex-col justify-center text-left">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="p-1.5 bg-green-100 rounded-md">
+                                            <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                                        </div>
+                                        <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider">Disetujui</p>
+                                    </div>
+                                    <span className="text-2xl font-bold text-green-700">{stats.approved}</span>
                                 </CardContent>
                             </Card>
-                            <Card className="border-amber-100 shadow-sm bg-amber-50/50">
-                                <CardContent className="p-4 flex flex-col justify-center text-center sm:text-left">
-                                    <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">Menunggu</p>
-                                    <span className="text-2xl md:text-3xl font-bold text-amber-700 mt-1">{stats.pending}</span>
+
+                            {/* Card 3: Pending */}
+                            <Card className={`
+                                border-amber-100 shadow-sm bg-amber-50/30 shrink-0
+                                ${isMobile ? 'w-[140px] snap-start' : ''}
+                            `}>
+                                <CardContent className="p-4 flex flex-col justify-center text-left">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="p-1.5 bg-amber-100 rounded-md">
+                                            <Send className="w-3.5 h-3.5 text-amber-600" />
+                                        </div>
+                                        <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wider">Menunggu</p>
+                                    </div>
+                                    <span className="text-2xl font-bold text-amber-700">{stats.pending}</span>
                                 </CardContent>
                             </Card>
-                            <Card className="border-orange-100 shadow-sm bg-orange-50/50">
-                                <CardContent className="p-4 flex flex-col justify-center text-center sm:text-left">
-                                    <p className="text-[10px] text-orange-600 font-bold uppercase tracking-wider">Revisi</p>
-                                    <span className="text-2xl md:text-3xl font-bold text-orange-700 mt-1">{stats.needsRevision}</span>
+
+                            {/* Card 4: Revision */}
+                            <Card className={`
+                                border-orange-100 shadow-sm bg-orange-50/30 shrink-0
+                                ${isMobile ? 'w-[140px] snap-start' : ''}
+                            `}>
+                                <CardContent className="p-4 flex flex-col justify-center text-left">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="p-1.5 bg-orange-100 rounded-md">
+                                            <AlertCircle className="w-3.5 h-3.5 text-orange-600" />
+                                        </div>
+                                        <p className="text-[10px] text-orange-600 font-bold uppercase tracking-wider">Revisi</p>
+                                    </div>
+                                    <span className="text-2xl font-bold text-orange-700">{stats.needsRevision}</span>
                                 </CardContent>
                             </Card>
                         </div>
@@ -502,7 +548,7 @@ export default function JurnalSaya() {
                                     )}
                                 </div>
                                 <div className="p-0 flex-1 overflow-hidden">
-                                    <div className="h-full overflow-y-auto px-6 py-4 custom-scrollbar">
+                                    <div className="h-full px-6 py-4 flex flex-col">
                                         <JournalForm
                                             initialData={editingJournal ? {
                                                 content: editingJournal.content,

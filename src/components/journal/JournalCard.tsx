@@ -159,21 +159,16 @@ export function JournalCard({
                 <div className="flex flex-col md:flex-row">
                     {/* Date Strip - Desktop Only */}
                     {!isMobile && (
-                        <div className="w-20 bg-gradient-to-b from-slate-50 to-slate-100 border-r border-slate-100 flex flex-col items-center justify-start py-5 shrink-0">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <div className="w-24 bg-white border-r border-slate-100 flex flex-col items-center justify-center py-6 shrink-0 group-hover:bg-slate-50/50 transition-colors">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
                                 {format(new Date(journal.date), "MMM", { locale: id })}
                             </span>
-                            <span className="text-3xl font-bold text-slate-800 leading-tight mt-1">
+                            <span className="text-4xl font-bold text-slate-800 leading-none tracking-tight">
                                 {format(new Date(journal.date), "dd")}
                             </span>
-                            <span className="text-[10px] text-slate-400 mt-1">
+                            <span className="text-[10px] font-medium text-slate-400 mt-2 bg-slate-100 px-2 py-0.5 rounded-full">
                                 {format(new Date(journal.date), "EEEE", { locale: id })}
                             </span>
-                            {journal.mood && (
-                                <div className="mt-4 text-2xl" title="Work Mood">
-                                    {journal.mood}
-                                </div>
-                            )}
                         </div>
                     )}
 

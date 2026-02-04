@@ -66,7 +66,7 @@ export function JournalFormModal({
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="flex-1 overflow-y-auto -mr-6 pr-6 pt-2">
+                    <div className="flex-1 overflow-hidden h-full -mr-6 pr-6 pt-2">
                         <JournalForm
                             initialData={initialData}
                             isEditing={isEditing}

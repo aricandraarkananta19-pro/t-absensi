@@ -146,22 +146,142 @@ export function JournalForm({
     };
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
-            <div className="flex-1 space-y-5 overflow-y-auto px-1">
-                {/* Manager Notes Alert */}
+        <div className="flex flex-col h-full relative">
+            {/* Scrollable Content Area */}
+            <div className={`flex-1 overflow-y-auto px-1 ${isMobile ? 'pb-24' : 'pb-4'} space-y-5 no-scrollbar`}>
+
+                {/* Manager Notes Alert (Top Priority) */}
                 {isRevision && managerNotes && (
-                    <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl animate-in fade-in slide-in-from-top-2">
-                        <div className="flex gap-3">
-                            <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-                            <div>
-                                <p className="text-sm font-semibold text-orange-800 mb-1">
-                                    Catatan Revisi dari Manager
-                                </p>
-                                <p className="text-sm text-orange-700">{managerNotes}</p>
-                            </div>
+                    <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl animate-in fade-in slide-in-from-top-2 flex gap-3 items-start">
+                        <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-sm font-bold text-orange-800">Perlu Revisi</p>
+                            <p className="text-xs text-orange-700 mt-0.5 leading-relaxed">{managerNotes}</p>
                         </div>
                     </div>
                 )}
+
+                {/* Date Selection & Conflict Handling */}
+                <div className="space-y-3">
+                    <Label className="text-slate-500 font-medium text-xs uppercase tracking-wider block">
+                        📅 Tanggal Jurnal
+                    </Label>
+
+                    {/* Conflict Alert - Ultra Compact Decision Card */}
+                    {isDateConflict ? (
+                        <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div className="flex items-center gap-3 w-full sm:w-auto">
+                                    <div className="bg-white p-1.5 rounded-full shadow-sm shrink-0">
+                                        <AlertCircle className="w-5 h-5 text-blue-600" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-bold text-slate-800 truncate">
+                                            Jurnal tanggal ini sudah ada
+                                        </p>
+                                        <p className="text-xs text-slate-500 truncate">
+                                            {format(date, "d MMMM yyyy", { locale: id })}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setIsDateDrawerOpen(true)}
+                                        className="flex-1 sm:flex-none h-9 text-xs border-blue-200 text-blue-700 hover:bg-blue-100"
+                                    >
+                                        Ganti Tanggal
+                                    </Button>
+                                    {props.onRequestEdit && (
+                                        <Button
+                                            size="sm"
+                                            onClick={() => props.onRequestEdit?.(format(date, 'yyyy-MM-dd'))}
+                                            className="flex-1 sm:flex-none h-9 text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                                        >
+                                            Edit Jurnal Ini
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        // Normal Date Picker
+                        <div className="relative">
+                            {isMobile ? (
+                                <>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setIsDateDrawerOpen(true)}
+                                        disabled={props.isDateLocked}
+                                        className={cn(
+                                            "w-full justify-start text-left font-semibold text-slate-700 h-12 rounded-xl border-slate-200 bg-white shadow-sm hover:bg-slate-50",
+                                            !date && "text-muted-foreground",
+                                            props.isDateLocked && "opacity-75 cursor-not-allowed bg-slate-100"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-3 h-5 w-5 text-blue-500" />
+                                        <div className="flex flex-col items-start gap-0.5 leading-none">
+                                            <span className="text-sm text-slate-900">{date ? format(date, "d MMMM yyyy", { locale: id }) : "Pilih Tanggal"}</span>
+                                            <span className="text-[10px] text-slate-400 font-normal">{date ? format(date, "EEEE", { locale: id }) : "Hari ini"}</span>
+                                        </div>
+                                    </Button>
+                                    <Drawer open={isDateDrawerOpen} onOpenChange={setIsDateDrawerOpen}>
+                                        <DrawerContent>
+                                            <DrawerHeader>
+                                                <DrawerTitle>Pilih Tanggal</DrawerTitle>
+                                                <DrawerDescription>Pilih tanggal untuk entri jurnal ini.</DrawerDescription>
+                                            </DrawerHeader>
+                                            <div className="p-4 flex justify-center pb-8">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={date}
+                                                    onSelect={(d) => {
+                                                        if (d) setDate(d);
+                                                        setIsDateDrawerOpen(false);
+                                                    }}
+                                                    initialFocus
+                                                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                                    className="rounded-md border shadow-sm"
+                                                />
+                                            </div>
+                                        </DrawerContent>
+                                    </Drawer>
+                                </>
+                            ) : (
+                                <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            disabled={props.isDateLocked}
+                                            className={cn(
+                                                "w-full justify-start text-left font-semibold text-slate-700 h-11 px-4 rounded-lg border-slate-200 bg-white shadow-sm hover:bg-slate-50",
+                                                !date && "text-muted-foreground",
+                                                props.isDateLocked && "opacity-75 cursor-not-allowed bg-slate-100"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
+                                            {date ? format(date, "EEEE, d MMMM yyyy", { locale: id }) : <span>Pilih tanggal</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={date}
+                                            onSelect={(d) => {
+                                                if (d) setDate(d);
+                                                setIsDatePopoverOpen(false);
+                                            }}
+                                            initialFocus
+                                            disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            )}
+                        </div>
+                    )}
+                </div>
 
                 {/* Main Content Field */}
                 <div className="space-y-2">
@@ -173,152 +293,37 @@ export function JournalForm({
                         id="content"
                         ref={textareaRef}
                         placeholder="Contoh: Menyelesaikan desain UI untuk halaman dashboard, Meeting dengan tim marketing..."
-                        className="min-h-[140px] resize-none text-base border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 py-3 leading-relaxed"
+                        className={`
+                            min-h-[140px] resize-none border-slate-200 focus:border-blue-400 focus:ring-blue-400/20 py-3 leading-relaxed
+                            ${isMobile ? 'text-lg p-4' : 'text-base'}
+                        `}
+                        disabled={isDateConflict}
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                     />
                 </div>
 
-                {/* Date Selection */}
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-slate-700 font-semibold text-base">Tanggal Jurnal</Label>
-
-                        {isMobile ? (
-                            <>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setIsDateDrawerOpen(true)}
-                                    disabled={props.isDateLocked}
-                                    className={cn(
-                                        "w-full justify-start text-left font-normal h-12 rounded-xl border-slate-200",
-                                        !date && "text-muted-foreground",
-                                        isDateConflict && "border-red-300 bg-red-50 text-red-900",
-                                        props.isDateLocked && "opacity-50 cursor-not-allowed bg-slate-100"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP", { locale: id }) : <span>Pilih tanggal</span>}
-                                </Button>
-                                <Drawer open={isDateDrawerOpen} onOpenChange={setIsDateDrawerOpen}>
-                                    <DrawerContent>
-                                        <DrawerHeader>
-                                            <DrawerTitle>Pilih Tanggal</DrawerTitle>
-                                            <DrawerDescription>Pilih tanggal untuk entri jurnal ini.</DrawerDescription>
-                                        </DrawerHeader>
-                                        <div className="p-4 flex justify-center pb-8">
-                                            <Calendar
-                                                mode="single"
-                                                selected={date}
-                                                onSelect={(d) => {
-                                                    if (d) {
-                                                        setDate(d);
-                                                        setIsDateDrawerOpen(false);
-                                                    }
-                                                }}
-                                                initialFocus
-                                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                                className="rounded-md border shadow-sm"
-                                            />
-                                        </div>
-                                    </DrawerContent>
-                                </Drawer>
-                            </>
-                        ) : (
-                            <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        disabled={props.isDateLocked}
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal h-12 border-slate-200",
-                                            !date && "text-muted-foreground",
-                                            isDateConflict && "border-red-300 bg-red-50 text-red-900",
-                                            props.isDateLocked && "opacity-50 cursor-not-allowed bg-slate-100"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {date ? format(date, "PPP", { locale: id }) : <span>Pilih tanggal</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={date}
-                                        onSelect={(d) => {
-                                            if (d) {
-                                                setDate(d);
-                                                setIsDatePopoverOpen(false);
-                                            }
-                                        }}
-                                        initialFocus
-                                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        )}
-                    </div>
-
-                    {/* Date Conflict Warning */}
-                    {isDateConflict && (
-                        <div className="p-3 bg-red-50 border border-red-100 rounded-xl relative overflow-hidden">
-                            <div className="flex gap-3 relative z-10">
-                                <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-semibold text-red-800 mb-1">
-                                        Sudah ada jurnal di tanggal ini
-                                    </p>
-                                    <p className="text-xs text-red-700 mb-2">
-                                        Kamu hanya bisa membuat satu jurnal per hari. Apakah kamu ingin mengedit jurnal yang sudah ada?
-                                    </p>
-                                    {props.onRequestEdit && (
-                                        <Button
-                                            size="sm"
-                                            variant="destructive"
-                                            className="h-8 text-xs bg-red-600 hover:bg-red-700"
-                                            onClick={() => props.onRequestEdit?.(format(date, 'yyyy-MM-dd'))}
-                                        >
-                                            Edit Jurnal {format(date, "d MMM", { locale: id })}
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {!isToday && !isDateConflict && (
-                        <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-start gap-3">
-                            <span className="text-lg">🗓️</span>
-                            <div>
-                                <p className="text-sm text-amber-800 font-medium">
-                                    Kamu mengisi jurnal untuk tanggal: <span className="font-bold">{format(date, "dd MMMM yyyy", { locale: id })}</span>
-                                </p>
-                                <p className="text-xs text-amber-700 mt-1">
-                                    Tidak masalah lupa sesekali 🙂. Silakan isi kegiatanmu di hari tersebut.
-                                </p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
                 {/* Work Result Selection */}
                 <div className="space-y-2">
                     <Label className="text-slate-700 font-semibold text-base">Hasil Pekerjaan</Label>
-
                     {isMobile ? (
                         <>
                             <button
                                 type="button"
-                                onClick={() => setIsResultDrawerOpen(true)}
-                                className="w-full flex items-center justify-between p-4 border border-slate-200 rounded-xl bg-white text-left active:bg-slate-50 transition-colors shadow-sm"
+                                onClick={() => !isDateConflict && setIsResultDrawerOpen(true)}
+                                disabled={isDateConflict}
+                                className={`w-full flex items-center justify-between p-4 border rounded-xl text-left transition-colors shadow-sm
+                                    ${isDateConflict ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-200 active:bg-slate-50'}
+                                `}
                             >
                                 <span className="font-medium text-slate-800">
                                     {WORK_RESULT_OPTIONS.find(o => o.value === workResult)?.label || "Pilih status"}
                                 </span>
-                                <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
-                                    Ganti
-                                </span>
+                                {!isDateConflict && (
+                                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                                        Ganti
+                                    </span>
+                                )}
                             </button>
                             <Drawer open={isResultDrawerOpen} onOpenChange={setIsResultDrawerOpen}>
                                 <DrawerContent>
@@ -359,7 +364,7 @@ export function JournalForm({
                             </Drawer>
                         </>
                     ) : (
-                        <Select value={workResult} onValueChange={(v: 'completed' | 'progress' | 'pending') => setWorkResult(v)}>
+                        <Select value={workResult} onValueChange={(v: 'completed' | 'progress' | 'pending') => setWorkResult(v)} disabled={isDateConflict}>
                             <SelectTrigger className="w-full h-12 border-slate-200 bg-white">
                                 <SelectValue placeholder="Pilih status hasil kerja" />
                             </SelectTrigger>
@@ -377,29 +382,29 @@ export function JournalForm({
                     )}
                 </div>
 
-                {/* Obstacles/Notes Field */}
+                {/* Obstacles & Mood - Also disable on conflict */}
                 <div className="space-y-2">
                     <Label htmlFor="obstacles" className="text-slate-700 font-semibold flex items-center gap-2 text-base">
-                        Kendala / Catatan
-                        <span className="text-xs text-slate-400 font-normal bg-slate-100 px-2 py-0.5 rounded-full">Optional</span>
+                        Kendala / Catatan <span className="text-xs text-slate-400 font-normal bg-slate-100 px-2 py-0.5 rounded-full">Optional</span>
                     </Label>
                     <Textarea
                         id="obstacles"
-                        placeholder="Tuliskan kendala atau hal-hal yang memerlukan perhatian..."
-                        className="min-h-[80px] resize-none text-sm border-slate-200 focus:border-blue-400 focus:ring-blue-400/20"
+                        placeholder="Tuliskan kendala..."
+                        className="min-h-[80px] text-sm border-slate-200"
                         value={obstacles}
                         onChange={(e) => setObstacles(e.target.value)}
+                        disabled={isDateConflict}
                     />
                 </div>
 
-                {/* Mood Selector */}
-                <div className="space-y-3">
+                <div className="space-y-3 pb-4">
                     <Label className="text-slate-700 font-semibold text-base">Work Mood</Label>
                     <div className="flex gap-3">
                         {MOOD_OPTIONS.map((option) => (
                             <button
                                 key={option.value}
                                 type="button"
+                                disabled={isDateConflict}
                                 onClick={() => setMood(option.value as '😊' | '😐' | '😣')}
                                 className={`
                                     flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all active:scale-95
@@ -407,37 +412,25 @@ export function JournalForm({
                                         ? 'border-blue-500 bg-blue-50 shadow-md ring-1 ring-blue-200'
                                         : 'border-slate-200 bg-white hover:bg-slate-50'
                                     }
+                                    ${isDateConflict ? 'opacity-50 grayscale cursor-not-allowed' : ''}
                                 `}
                             >
-                                <span className="text-4xl filter drop-shadow-sm transition-transform duration-200" style={{
-                                    transform: mood === option.value ? 'scale(1.1)' : 'scale(1)'
-                                }}>{option.value}</span>
-                                <span className={`text-xs font-bold ${mood === option.value ? 'text-blue-700' : 'text-slate-500'}`}>
-                                    {option.label}
-                                </span>
+                                <span className="text-4xl filter drop-shadow-sm">{option.value}</span>
+                                <span className="text-xs font-bold text-slate-500">{option.label}</span>
                             </button>
                         ))}
                     </div>
                 </div>
-
-                {/* Helper Info - Only show relevant desktop/mobile tooltip */}
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 mb-4">
-                    <p className="text-xs text-slate-500 flex items-start gap-2 leading-relaxed">
-                        <Sparkles className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                        <span>
-                            <strong>Tips:</strong> Simpan sebagai Draft jika belum selesai. Manager akan membaca jurnal yang sudah dikirim.
-                        </span>
-                    </p>
-                </div>
             </div>
 
-            {/* Sticky Actions */}
-            <div className={`mt-auto pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-3 ${isMobile ? 'sticky bottom-0 bg-white/95 backdrop-blur-sm -mx-1 px-1 py-4 z-10' : ''}`}>
+            {/* Bottom Action Bar (Fixed at bottom of flex column) */}
+            {/* Added PB to account for Mobile Safe Area */}
+            <div className={`pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-3 bg-white mt-auto shrink-0 z-20 ${isMobile ? 'pb-8 -mx-1 px-3' : 'pb-0'}`}>
                 <Button
                     variant="ghost"
                     onClick={onCancel}
                     disabled={isSubmitting}
-                    className="text-slate-500 h-12 sm:w-auto"
+                    className="text-slate-500 h-12 sm:w-auto font-medium"
                 >
                     Batal
                 </Button>
@@ -446,7 +439,7 @@ export function JournalForm({
                     <Button
                         variant="outline"
                         onClick={() => handleSubmit(true)}
-                        disabled={isSubmitting || !content.trim()}
+                        disabled={isSubmitting || !content.trim() || isDateConflict}
                         className="gap-2 border-slate-300 h-12 text-slate-700 font-medium sm:w-auto hover:bg-slate-50"
                     >
                         <Save className="w-4 h-4" />
@@ -456,17 +449,24 @@ export function JournalForm({
 
                 <Button
                     onClick={() => handleSubmit(false)}
-                    disabled={isSubmitting || !content.trim()}
-                    className="gap-2 bg-blue-600 hover:bg-blue-700 text-white flex-1 h-12 text-base font-bold shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all"
+                    disabled={isSubmitting || !content.trim() || isDateConflict}
+                    className={`gap-2 text-white flex-1 h-12 text-base font-bold shadow-lg transition-all
+                        ${isDateConflict
+                            ? 'bg-slate-300 shadow-none cursor-not-allowed text-slate-500'
+                            : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200 hover:shadow-blue-300'
+                        }
+                    `}
                 >
                     <Send className="w-4 h-4" />
                     {isSubmitting
                         ? "Mengirim..."
-                        : isRevision
-                            ? "Kirim Ulang"
-                            : isEditing
-                                ? "Simpan Perubahan"
-                                : "Kirim Laporan"
+                        : isDateConflict
+                            ? "Tanggal Terisi"
+                            : isRevision
+                                ? "Kirim Ulang"
+                                : isEditing
+                                    ? "Simpan Perubahan"
+                                    : "Kirim Laporan"
                     }
                 </Button>
             </div>
