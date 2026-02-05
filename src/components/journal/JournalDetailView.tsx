@@ -132,7 +132,7 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                     .from('work_journals')
                     .select(`
                         id, content, date, duration, user_id, status, verification_status,
-                        work_result, obstacles, mood, manager_notes,
+                        work_result, obstacles, mood, manager_notes, deleted_at,
                         profiles:user_id ( full_name, avatar_url, department, position )
                     `)
                     .eq('id', journalId)
@@ -142,9 +142,10 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
 
                 if (error) throw error;
 
-                if (!data) {
+                // Check if deleted (soft delete)
+                if (!data || data.deleted_at) {
                     setIsDeleted(true);
-                    setError("Jurnal tidak ditemukan atau telah dihapus.");
+                    setError("Jurnal tidak ditemukan atau telah diarsipkan.");
                 } else {
                     setJournal(data as unknown as JournalDetail);
                     setNote(data.manager_notes || "");

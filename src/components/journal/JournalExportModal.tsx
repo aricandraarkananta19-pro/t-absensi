@@ -107,10 +107,11 @@ export function JournalExportModal({ open, onOpenChange }: JournalExportModalPro
                 import("jspdf-autotable").then(m => m.default)
             ]);
 
-            // 2. Fetch Journals
+            // 2. Fetch Journals - CRITICAL: Exclude soft-deleted items
             let query = supabase
                 .from('work_journals')
                 .select(`id, date, content, work_result, obstacles, mood, verification_status, user_id`)
+                .is('deleted_at', null) // CRITICAL: Exclude soft-deleted items
                 .gte('date', format(dateRange.from, 'yyyy-MM-dd'))
                 .lte('date', format(dateRange.to, 'yyyy-MM-dd'))
                 .order('date', { ascending: true });
