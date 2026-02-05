@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,32 +37,146 @@ import { id } from "date-fns/locale";
 
 const ITEMS_PER_PAGE = 15;
 
-const JurnalKerja = () => {
-    const { user } = useAuth();
+// ========== REACT QUERY KEYS & FETCH FUNCTIONS ==========
 
-    // Data State
-    const [journals, setJournals] = useState<JournalCardData[]>([]);
-    const [stats, setStats] = useState({
-        totalToday: 0,
+const journalQueryKeys = {
+    adminList: (status: string, search: string, page: number) =>
+        ['journals', 'admin', 'list', status, search, page] as const,
+    adminStats: () => ['journals', 'admin', 'stats'] as const,
+};
+
+async function fetchAdminStats() {
+    const { data, error } = await supabase.rpc('get_admin_journal_stats');
+    if (!error && data && data.length > 0) {
+        return {
+            totalToday: data[0].total_today || 0,
+            avgDuration: Number(data[0].avg_duration_today || 0),
+            pendingCount: data[0].pending_total || 0,
+            approvedCount: data[0].approved_total || 0,
+            needsRevisionCount: data[0].need_revision_total || 0
+        };
+    }
+    // Fallback
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { count: totalToday } = await supabase
+        .from('work_journals')
+        .select('*', { count: 'exact', head: true })
+        .is('deleted_at', null)
+        .eq('date', todayStr);
+
+    return {
+        totalToday: totalToday || 0,
         avgDuration: 0,
         pendingCount: 0,
         approvedCount: 0,
         needsRevisionCount: 0
-    });
+    };
+}
 
-    // Loading State
-    const [isLoadingList, setIsLoadingList] = useState(true);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [isLoadingStats, setIsLoadingStats] = useState(true);
-    const [isRefreshing, setIsRefreshing] = useState(false);
+async function fetchAdminJournals(status: string, search: string, page: number) {
+    const from = page * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
 
-    // Filter & Pagination
+    let query = supabase
+        .from('work_journals')
+        .select('*')
+        .is('deleted_at', null)
+        .order('date', { ascending: false })
+        .range(from, to);
+
+    if (status !== 'all') {
+        if (status === 'submitted') {
+            query = query.or(`verification_status.eq.submitted,status.eq.submitted`);
+        } else {
+            query = query.or(`verification_status.eq.${status},status.eq.${status}`);
+        }
+    }
+
+    if (search) {
+        query = query.ilike('content', `%${search}%`);
+    }
+
+    const { data: simpleData, error } = await query;
+    if (error) throw error;
+    if (!simpleData || simpleData.length === 0) return [];
+
+    // Fetch profiles
+    const userIds = [...new Set(simpleData.map(j => j.user_id))];
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, avatar_url, department, position')
+        .in('user_id', userIds);
+
+    const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+    return simpleData.map(journal => ({
+        ...journal,
+        profiles: profileMap.get(journal.user_id) || {
+            full_name: 'Unknown',
+            avatar_url: null,
+            department: null,
+            position: null
+        }
+    })) as unknown as JournalCardData[];
+}
+
+const JurnalKerja = () => {
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
+
+    // Filter & Pagination (local UI state)
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
-    // Status filter keys match database status or 'all'
     const [filterStatus, setFilterStatus] = useState("all");
     const [page, setPage] = useState(0);
-    const [hasMore, setHasMore] = useState(true);
+    const [allJournals, setAllJournals] = useState<JournalCardData[]>([]); // Aggregated from all pages
+
+    // ========== REACT QUERY HOOKS ==========
+    // Stats - cached for 10 minutes, persists across navigation
+    const {
+        data: stats = { totalToday: 0, avgDuration: 0, pendingCount: 0, approvedCount: 0, needsRevisionCount: 0 },
+        isLoading: isLoadingStats,
+        isFetching: isFetchingStats
+    } = useQuery({
+        queryKey: journalQueryKeys.adminStats(),
+        queryFn: fetchAdminStats,
+        staleTime: 10 * 60 * 1000, // 10 minutes
+        gcTime: 30 * 60 * 1000, // 30 minutes cache
+    });
+
+    // Journal list - cached per filter/search/page
+    const {
+        data: pageJournals = [],
+        isLoading: isLoadingList,
+        isFetching: isFetchingList,
+        isPlaceholderData
+    } = useQuery({
+        queryKey: journalQueryKeys.adminList(filterStatus, debouncedSearch, page),
+        queryFn: () => fetchAdminJournals(filterStatus, debouncedSearch, page),
+        staleTime: 10 * 60 * 1000,
+        gcTime: 30 * 60 * 1000,
+        placeholderData: (prev) => prev, // Keep previous data while loading
+    });
+
+    // Aggregate journals when page data changes
+    useEffect(() => {
+        if (pageJournals.length > 0) {
+            setAllJournals(prev => {
+                if (page === 0) return pageJournals;
+                // Avoid duplicates
+                const existingIds = new Set(prev.map(j => j.id));
+                const newItems = pageJournals.filter(j => !existingIds.has(j.id));
+                return [...prev, ...newItems];
+            });
+        } else if (page === 0) {
+            setAllJournals([]);
+        }
+    }, [pageJournals, page]);
+
+    // Derive hasMore from page data
+    const hasMore = pageJournals.length === ITEMS_PER_PAGE;
+    const isLoadingMore = isFetchingList && page > 0;
+    const isRefreshing = isFetchingStats || (isFetchingList && page === 0 && !isLoadingList);
 
     // Actions State
     const [editingJournal, setEditingJournal] = useState<JournalCardData | null>(null);
@@ -123,141 +238,18 @@ const JurnalKerja = () => {
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
-    // Reset list on filter/search change
+    // Reset pagination on filter/search change
     useEffect(() => {
         setPage(0);
-        setJournals([]);
-        setHasMore(true);
+        setAllJournals([]);
     }, [filterStatus, debouncedSearch]);
 
-    // Initial Load & Realtime
-    useEffect(() => {
-        fetchStats();
-        /*
-        const channel = supabase
-            .channel('admin-journal-stats')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'work_journals' }, () => {
-                fetchStats();
-            })
-            .subscribe();
-
-        return () => { supabase.removeChannel(channel); };
-        */
-    }, []);
-
-    // Fetch List
-    useEffect(() => {
-        fetchJournals(page);
-    }, [page, filterStatus, debouncedSearch]);
-
-
-    const fetchStats = async () => {
-        setIsLoadingStats(true);
-        try {
-            const { data, error } = await supabase.rpc('get_admin_journal_stats');
-            if (!error && data && data.length > 0) {
-                setStats({
-                    totalToday: data[0].total_today || 0,
-                    avgDuration: Number(data[0].avg_duration_today || 0),
-                    pendingCount: data[0].pending_total || 0,
-                    approvedCount: data[0].approved_total || 0,
-                    needsRevisionCount: data[0].need_revision_total || 0
-                });
-            } else {
-                // Fallback
-                const todayStr = new Date().toISOString().split('T')[0];
-                const { count: totalToday } = await supabase
-                    .from('work_journals')
-                    .select('*', { count: 'exact', head: true })
-                    .is('deleted_at', null) // Consistency: Ignore deleted
-                    .eq('date', todayStr);
-
-                setStats(prev => ({ ...prev, totalToday: totalToday || 0 }));
-            }
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsLoadingStats(false);
-        }
-    };
-
-    const fetchJournals = async (pageIndex: number) => {
-        if (pageIndex === 0) setIsLoadingList(true);
-        else setIsLoadingMore(true);
-
-        try {
-            const from = pageIndex * ITEMS_PER_PAGE;
-            const to = from + ITEMS_PER_PAGE - 1;
-
-            let query = supabase
-                .from('work_journals')
-                .select('*')
-                .is('deleted_at', null) // CRITICAL FIX: Don't show soft-deleted items
-                .order('date', { ascending: false })
-                .range(from, to);
-
-            if (filterStatus !== 'all') {
-                if (filterStatus === 'submitted') {
-                    query = query.or(`verification_status.eq.submitted,status.eq.submitted`);
-                } else {
-                    query = query.or(`verification_status.eq.${filterStatus},status.eq.${filterStatus}`);
-                }
-            }
-
-            if (debouncedSearch) {
-                query = query.ilike('content', `%${debouncedSearch}%`);
-            }
-
-            const { data: simpleData, error } = await query;
-
-            if (error) throw error;
-
-            if (simpleData && simpleData.length > 0) {
-                const userIds = [...new Set(simpleData.map(j => j.user_id))];
-                const { data: profiles } = await supabase
-                    .from('profiles')
-                    .select('user_id, full_name, avatar_url, department, position')
-                    .in('user_id', userIds);
-
-                const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
-
-                // Transform to JournalCardData
-                const enrichedData = simpleData.map(journal => ({
-                    ...journal,
-                    profiles: profileMap.get(journal.user_id) || {
-                        full_name: 'Unknown',
-                        avatar_url: null,
-                        department: null,
-                        position: null
-                    }
-                }));
-
-                setJournals(prev => {
-                    if (pageIndex === 0) return enrichedData as unknown as JournalCardData[];
-                    return [...prev, ...enrichedData as unknown as JournalCardData[]];
-                });
-
-                if (simpleData.length < ITEMS_PER_PAGE) {
-                    setHasMore(false);
-                }
-            } else {
-                if (pageIndex === 0) setJournals([]);
-                setHasMore(false);
-            }
-        } catch (error) {
-            console.error("Error fetching journals:", error);
-            toast({ variant: "destructive", title: "Gagal memuat data", description: "Periksa koneksi internet." });
-        } finally {
-            setIsLoadingList(false);
-            setIsLoadingMore(false);
-        }
-    };
-
-    const handleRefresh = async () => {
-        setIsRefreshing(true);
+    // Manual Refresh - Invalidate React Query cache
+    const handleRefresh = () => {
+        // Invalidate queries to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ['journals', 'admin'] });
         setPage(0);
-        await Promise.all([fetchStats(), fetchJournals(0)]);
-        setIsRefreshing(false);
+        setAllJournals([]);
         toast({ title: "Data Diperbarui", description: "Jurnal terbaru berhasil dimuat." });
     };
 
@@ -295,7 +287,7 @@ const JurnalKerja = () => {
             setEditingJournal(null);
 
             // Optimistic update
-            setJournals(prev => prev.map(j => j.id === editingJournal.id ? { ...j, content: editContent } : j));
+            setAllJournals(prev => prev.map(j => j.id === editingJournal.id ? { ...j, content: editContent } : j));
         } catch (error: any) {
             toast({ variant: "destructive", title: "Gagal", description: error.message });
         } finally {
@@ -328,9 +320,9 @@ const JurnalKerja = () => {
             setIsDeleteOpen(false);
             setDeleteJournal(null);
 
-            // UI update (Remove off list)
-            setJournals(prev => prev.filter(j => j.id !== deleteJournal.id));
-            fetchStats(); // Update stats as well
+            // UI update (Remove from list and refresh cache)
+            setAllJournals(prev => prev.filter(j => j.id !== deleteJournal.id));
+            queryClient.invalidateQueries({ queryKey: ['journals', 'admin', 'stats'] });
 
         } catch (error: any) {
             toast({ variant: "destructive", title: "Gagal", description: error.message });
@@ -445,15 +437,15 @@ const JurnalKerja = () => {
                                     key={btn.key}
                                     onClick={() => setFilterStatus(btn.key)}
                                     className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${filterStatus === btn.key
-                                            ? 'bg-white text-slate-900 shadow-sm'
-                                            : 'text-slate-500 hover:text-slate-700'
+                                        ? 'bg-white text-slate-900 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
                                         }`}
                                 >
                                     {btn.label}
                                     {btn.count !== null && btn.count > 0 && (
                                         <span className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${filterStatus === btn.key
-                                                ? 'bg-blue-100 text-blue-700'
-                                                : 'bg-slate-200 text-slate-500'
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'bg-slate-200 text-slate-500'
                                             }`}>
                                             {btn.count}
                                         </span>
@@ -484,9 +476,9 @@ const JurnalKerja = () => {
 
             {/* Journal Feed */}
             <div className="max-w-5xl mx-auto pb-20 min-h-[500px]">
-                {isLoadingList && journals.length === 0 ? (
+                {isLoadingList && allJournals.length === 0 ? (
                     <JournalSkeleton />
-                ) : journals.length === 0 ? (
+                ) : allJournals.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 text-center">
                         <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
                             <BookOpen className="w-10 h-10 text-slate-300" />
@@ -498,8 +490,8 @@ const JurnalKerja = () => {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {journals.map((journal, index) => {
-                            const isLast = index === journals.length - 1;
+                        {allJournals.map((journal, index) => {
+                            const isLast = index === allJournals.length - 1;
                             return (
                                 <div
                                     key={`${journal.id}-${index}`}
@@ -523,7 +515,7 @@ const JurnalKerja = () => {
                             </div>
                         )}
 
-                        {!hasMore && journals.length > 0 && (
+                        {!hasMore && allJournals.length > 0 && (
                             <div className="py-8 text-center">
                                 <span className="px-4 py-1.5 bg-slate-100 text-slate-400 text-[10px] font-medium uppercase tracking-widest rounded-full">
                                     End of List
@@ -540,8 +532,7 @@ const JurnalKerja = () => {
                 isOpen={isViewOpen}
                 onClose={() => setIsViewOpen(false)}
                 onUpdate={() => {
-                    fetchJournals(page);
-                    fetchStats();
+                    queryClient.invalidateQueries({ queryKey: ['journals', 'admin'] });
                     setIsViewOpen(false);
                 }}
             />

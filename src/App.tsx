@@ -34,7 +34,25 @@ import JurnalKerja from "./pages/admin/JurnalKerja";
 import ExportDatabase from "./pages/admin/ExportDatabase";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // CRITICAL: Keep data fresh for 10 minutes - prevents refetch on navigation
+      staleTime: 10 * 60 * 1000, // 10 minutes
+      // Keep previous data while refetching (no skeleton flash)
+      // gcTime replaces cacheTime in v5
+      gcTime: 30 * 60 * 1000, // 30 minutes cache
+      // Don't refetch on window focus (enterprise stability)
+      refetchOnWindowFocus: false,
+      // Don't refetch on mount if data is still fresh
+      refetchOnMount: false,
+      // Don't refetch on reconnect
+      refetchOnReconnect: false,
+      // Retry failed requests only once
+      retry: 1,
+    },
+  },
+});
 
 // Component to handle root path - redirect based on auth status
 const RootRedirect = () => {
