@@ -145,20 +145,24 @@ const PengajuanCuti = () => {
   };
 
   const handleDelete = async (id: string) => {
+    // CRITICAL: Use soft delete for enterprise data safety
     const { error } = await supabase
       .from("leave_requests")
-      .delete()
+      .update({
+        status: "cancelled",
+        updated_at: new Date().toISOString()
+      })
       .eq("id", id);
 
     if (error) {
       toast({
         variant: "destructive",
-        title: "Gagal menghapus",
+        title: "Gagal membatalkan",
         description: error.message,
       });
     } else {
       toast({
-        title: "Berhasil dihapus",
+        title: "Berhasil dibatalkan",
         description: "Pengajuan cuti telah dibatalkan.",
       });
       fetchLeaveRequests();

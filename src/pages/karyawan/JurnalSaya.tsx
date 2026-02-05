@@ -55,7 +55,9 @@ export default function JurnalSaya() {
         if (user?.id) fetchJournals();
     }, [user?.id]); // Only refetch if user ID changes, not just reference
 
-    // Real-time subscription
+    // Real-time subscription - DISABLED for stability (enterprise requirement)
+    // Data refreshes only on: page load, manual refresh, after save/delete actions
+    /*
     useEffect(() => {
         const channel = supabase
             .channel('employee-journal-changes')
@@ -77,6 +79,7 @@ export default function JurnalSaya() {
             supabase.removeChannel(channel);
         };
     }, [user]);
+    */
 
     const fetchJournals = async (isBackground = false) => {
         if (!user?.id) return;
@@ -263,31 +266,20 @@ export default function JurnalSaya() {
 
         setIsSubmitting(true);
         try {
-            const isDraft = deletingJournal.verification_status === 'draft';
-            let error;
-
-            if (isDraft) {
-                const { error: deleteError } = await supabase
-                    .from('work_journals' as any)
-                    .delete()
-                    .eq('id', deletingJournal.id);
-                error = deleteError;
-            } else {
-                const { error: updateError } = await supabase
-                    .from('work_journals' as any)
-                    .update({
-                        deleted_at: new Date().toISOString(),
-                        verification_status: 'archived'
-                    })
-                    .eq('id', deletingJournal.id);
-                error = updateError;
-            }
+            // CRITICAL: ALL deletes are soft deletes (enterprise data safety)
+            const { error } = await supabase
+                .from('work_journals' as any)
+                .update({
+                    deleted_at: new Date().toISOString(),
+                    verification_status: 'archived'
+                })
+                .eq('id', deletingJournal.id);
 
             if (error) throw error;
 
             toast({
                 title: "Jurnal Dihapus",
-                description: isDraft ? "Draft berhasil dihapus permanen." : "Jurnal berhasil diarsipkan."
+                description: "Jurnal berhasil diarsipkan."
             });
 
             setIsDeleteOpen(false);

@@ -244,17 +244,21 @@ const Pengaturan = () => {
   const handleResetAttendance = async () => {
     setIsSaving(true);
     try {
+      // CRITICAL: Use soft delete for enterprise data safety
       const { error } = await supabase
         .from("attendance")
-        .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000"); // Safe delete all
+        .update({
+          deleted_at: new Date().toISOString(),
+          status: "archived"
+        })
+        .is("deleted_at", null); // Only archive non-deleted items
 
       if (error) throw error;
 
-      await logAuditAction("RESET_ATTENDANCE", "Reset semua data absensi");
-      toast({ title: "Reset Berhasil", description: "Semua data absensi telah dihapus selamanya." });
+      await logAuditAction("ARCHIVE_ATTENDANCE", "Arsipkan semua data absensi");
+      toast({ title: "Arsip Berhasil", description: "Semua data absensi telah diarsipkan (soft delete)." });
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Gagal Reset", description: e.message });
+      toast({ variant: "destructive", title: "Gagal Arsip", description: e.message });
     } finally {
       setIsSaving(false);
     }
@@ -263,17 +267,21 @@ const Pengaturan = () => {
   const handleResetLeave = async () => {
     setIsSaving(true);
     try {
+      // CRITICAL: Use soft delete for enterprise data safety
       const { error } = await supabase
         .from("leave_requests")
-        .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000");
+        .update({
+          status: "archived",
+          updated_at: new Date().toISOString()
+        })
+        .not("status", "eq", "archived"); // Only archive non-archived items
 
       if (error) throw error;
 
-      await logAuditAction("RESET_LEAVE", "Reset semua data cuti");
-      toast({ title: "Reset Berhasil", description: "Semua data pengajuan cuti telah dihapus." });
+      await logAuditAction("ARCHIVE_LEAVE", "Arsipkan semua data cuti");
+      toast({ title: "Arsip Berhasil", description: "Semua data pengajuan cuti telah diarsipkan (soft delete)." });
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Gagal Reset", description: e.message });
+      toast({ variant: "destructive", title: "Gagal Arsip", description: e.message });
     } finally {
       setIsSaving(false);
     }

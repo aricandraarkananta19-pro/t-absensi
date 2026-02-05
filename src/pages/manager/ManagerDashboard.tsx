@@ -29,6 +29,9 @@ const ManagerDashboard = () => {
       fetchStats();
     }
 
+    // Realtime subscription - DISABLED for stability (enterprise requirement)
+    // Data refreshes only on: page load, manual refresh
+    /*
     // Setup realtime subscription for attendance
     const attendanceChannel = supabase
       .channel("manager-dashboard-attendance-changes")
@@ -53,6 +56,7 @@ const ManagerDashboard = () => {
       supabase.removeChannel(attendanceChannel);
       supabase.removeChannel(profilesChannel);
     };
+    */
   }, [settingsLoading, settings.attendanceStartDate]);
 
   const fetchStats = async () => {

@@ -68,6 +68,9 @@ const ManagerCuti = () => {
   useEffect(() => {
     fetchLeaveRequests();
 
+    // Realtime subscription - DISABLED for stability (enterprise requirement)
+    // Data refreshes only on: page load, manual refresh, after approve/reject actions
+    /*
     const channel = supabase
       .channel("leave-changes")
       .on(
@@ -80,6 +83,7 @@ const ManagerCuti = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+    */
   }, []);
 
   const fetchLeaveRequests = async () => {

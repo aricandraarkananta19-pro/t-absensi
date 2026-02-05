@@ -35,7 +35,11 @@ export function JournalCleanupModal({ open, onOpenChange }: JournalCleanupModalP
 
         setIsDeleting(true);
         try {
-            let query = supabase.from('work_journals').delete();
+            // CRITICAL: Use SOFT DELETE for data safety (enterprise requirement)
+            let query = supabase.from('work_journals').update({
+                deleted_at: new Date().toISOString(),
+                verification_status: 'archived'
+            });
 
             let message = "";
 
@@ -45,18 +49,21 @@ export function JournalCleanupModal({ open, onOpenChange }: JournalCleanupModalP
                 // Safe delete by date range
                 query = query
                     .gte('date', format(start, 'yyyy-MM-dd'))
-                    .lte('date', format(end, 'yyyy-MM-dd'));
+                    .lte('date', format(end, 'yyyy-MM-dd'))
+                    .is('deleted_at', null); // Only archive non-deleted items
 
-                message = `Data bulan ${format(selectedMonth, 'MMMM yyyy', { locale: id })} berhasil dihapus.`;
+                message = `Data bulan ${format(selectedMonth, 'MMMM yyyy', { locale: id })} berhasil diarsipkan.`;
             } else {
                 // Delete older than 3 months
                 const cutOffDate = subMonths(new Date(), 3);
-                query = query.lt('date', format(cutOffDate, 'yyyy-MM-dd'));
+                query = query
+                    .lt('date', format(cutOffDate, 'yyyy-MM-dd'))
+                    .is('deleted_at', null);
 
-                message = "Data lama (>3 bulan) berhasil bersihkan.";
+                message = "Data lama (>3 bulan) berhasil diarsipkan.";
             }
 
-            const { error, count } = await query; // count option if enabled in supabase client
+            const { error } = await query;
 
             if (error) throw error;
 
