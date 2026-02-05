@@ -348,83 +348,133 @@ const JurnalKerja = () => {
             showRefresh={false}
             onRefresh={handleRefresh}
         >
-            {/* New Enterprise Stats Bar */}
-            <div className="bg-white border-b border-slate-200 px-6 py-4 -mx-6 mb-6 mt-[-24px] sticky top-[60px] z-20 shadow-[0_4px_20px_-12px_rgba(0,0,0,0.1)]">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-7xl mx-auto">
+            {/* Enterprise Stats Bar - 2 Layers */}
+            <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-4 md:px-6 py-4 -mx-6 mb-6 mt-[-24px] sticky top-[60px] z-20 shadow-sm">
+                <div className="max-w-7xl mx-auto space-y-4">
 
-                    {/* Key Metrics */}
-                    <div className="flex items-center gap-6 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
-                        <div className="flex items-center gap-3 shrink-0">
-                            <div className="p-2 bg-slate-100 rounded-lg"><BookOpen className="w-5 h-5 text-slate-600" /></div>
-                            <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Hari Ini</p>
-                                <p className="text-xl font-bold text-slate-900">{isLoadingStats ? "..." : stats.totalToday}</p>
+                    {/* Layer 1: Summary Stats */}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6 overflow-x-auto pb-1 hide-scrollbar">
+
+                            {/* Total Today */}
+                            <div className="flex items-center gap-3 shrink-0">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shadow-sm">
+                                    <BookOpen className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold text-slate-900 tabular-nums">
+                                        {isLoadingStats ? <span className="inline-block w-8 h-6 bg-slate-100 animate-pulse rounded" /> : stats.totalToday}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Hari Ini</p>
+                                </div>
+                            </div>
+
+                            <div className="w-px h-10 bg-slate-200 shrink-0" />
+
+                            {/* Pending */}
+                            <div className="flex items-center gap-2.5 shrink-0">
+                                <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                <div>
+                                    <p className="text-xl font-bold text-amber-600 tabular-nums">
+                                        {isLoadingStats ? "-" : stats.pendingCount}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500 font-medium">Menunggu</p>
+                                </div>
+                            </div>
+
+                            {/* Revisi */}
+                            <div className="flex items-center gap-2.5 shrink-0">
+                                <div className="w-2 h-2 rounded-full bg-orange-500" />
+                                <div>
+                                    <p className="text-xl font-bold text-orange-600 tabular-nums">
+                                        {isLoadingStats ? "-" : stats.needsRevisionCount}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500 font-medium">Revisi</p>
+                                </div>
+                            </div>
+
+                            {/* Approved */}
+                            <div className="flex items-center gap-2.5 shrink-0">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                <div>
+                                    <p className="text-xl font-bold text-emerald-600 tabular-nums">
+                                        {isLoadingStats ? "-" : stats.approvedCount}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500 font-medium">Disetujui</p>
+                                </div>
                             </div>
                         </div>
-                        <div className="w-px h-8 bg-slate-200 shrink-0" />
-                        <div className="flex items-center gap-3 shrink-0">
-                            <div className="p-2 bg-amber-50 rounded-lg"><Send className="w-5 h-5 text-amber-600" /></div>
-                            <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Menunggu</p>
-                                <p className="text-xl font-bold text-amber-600">{isLoadingStats ? "..." : stats.pendingCount}</p>
-                            </div>
-                        </div>
-                        <div className="w-px h-8 bg-slate-200 shrink-0" />
-                        <div className="flex items-center gap-3 shrink-0">
-                            <div className="p-2 bg-orange-50 rounded-lg"><AlertCircle className="w-5 h-5 text-orange-600" /></div>
-                            <div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Revisi</p>
-                                <p className="text-xl font-bold text-orange-600">{isLoadingStats ? "..." : stats.needsRevisionCount}</p>
-                            </div>
-                        </div>
-                        <div className="w-px h-8 bg-slate-200 shrink-0 hidden md:block" />
+
+                        {/* Refresh Button (Desktop) */}
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            className="hidden md:flex gap-2 text-slate-600 hover:text-blue-600"
+                        >
+                            <Loader2 className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
                     </div>
 
-                    {/* Actions Toolbar */}
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                        <div className="relative flex-1 md:w-[280px]">
+                    {/* Layer 2: Search + Filters */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+
+                        {/* Search */}
+                        <div className="relative flex-1 min-w-0">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="Cari nama, role, atau isi jurnal..."
-                                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                placeholder="Cari nama, departemen, atau isi jurnal..."
+                                className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
 
-                        <div className="flex items-center border border-slate-200 rounded-lg bg-slate-50 p-1">
+                        {/* Status Filter Tabs */}
+                        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl shrink-0 overflow-x-auto">
                             {[
-                                { key: 'all', label: 'Semua' },
-                                { key: 'submitted', label: 'Baru' },
-                                { key: 'need_revision', label: 'Revisi' },
-                                { key: 'approved', label: 'Selesai' },
+                                { key: 'all', label: 'Semua', count: null },
+                                { key: 'submitted', label: 'Baru', count: stats.pendingCount },
+                                { key: 'need_revision', label: 'Revisi', count: stats.needsRevisionCount },
+                                { key: 'approved', label: 'Selesai', count: stats.approvedCount },
                             ].map(btn => (
                                 <button
                                     key={btn.key}
                                     onClick={() => setFilterStatus(btn.key)}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${filterStatus === btn.key
-                                        ? 'bg-white text-slate-900 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700'
+                                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${filterStatus === btn.key
+                                            ? 'bg-white text-slate-900 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-700'
                                         }`}
                                 >
                                     {btn.label}
+                                    {btn.count !== null && btn.count > 0 && (
+                                        <span className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${filterStatus === btn.key
+                                                ? 'bg-blue-100 text-blue-700'
+                                                : 'bg-slate-200 text-slate-500'
+                                            }`}>
+                                            {btn.count}
+                                        </span>
+                                    )}
                                 </button>
                             ))}
                         </div>
 
+                        {/* Actions Menu */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon" className="shrink-0 border-slate-200">
+                                <Button variant="outline" size="icon" className="shrink-0 border-slate-200 rounded-xl h-10 w-10">
                                     <MoreHorizontal className="w-4 h-4 text-slate-600" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setIsExportOpen(true)}>
-                                    <Download className="w-4 h-4 mr-2" /> Export Data
+                            <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={() => setIsExportOpen(true)} className="gap-2">
+                                    <Download className="w-4 h-4" /> Export Data
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setIsCleanupOpen(true)} className="text-red-600">
-                                    <Trash2 className="w-4 h-4 mr-2" /> Bersihkan Data Lama
+                                <DropdownMenuItem onClick={() => setIsCleanupOpen(true)} className="text-red-600 gap-2">
+                                    <Trash2 className="w-4 h-4" /> Arsipkan Data Lama
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
