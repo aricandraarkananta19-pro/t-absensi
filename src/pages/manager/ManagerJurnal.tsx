@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,26 +31,120 @@ interface JournalStats {
 
 const ITEMS_PER_PAGE = 15;
 
+const journalQueryKeys = {
+    managerList: (status: string, search: string) =>
+        ['journals', 'manager', 'list', status, search] as const,
+    managerStats: () => ['journals', 'manager', 'stats'] as const,
+};
+
+async function fetchManagerStats() {
+    const { data, error } = await supabase.rpc('get_manager_journal_stats');
+    if (!error && data && data.length > 0) {
+        return data[0];
+    }
+    // Fallback
+    const { count: total } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).is('deleted_at', null);
+    const { count: pending } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('verification_status', 'submitted');
+    const { count: revision } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('verification_status', 'need_revision');
+    const { count: approved } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('verification_status', 'approved');
+
+    return {
+        total_entries: total || 0,
+        pending_review: pending || 0,
+        need_revision: revision || 0,
+        approved: approved || 0
+    };
+}
+
+async function fetchManagerJournals({ pageParam = 0, status, search }: { pageParam: number, status: string, search: string }) {
+    const from = pageParam * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+
+    let query = supabase
+        .from('work_journals')
+        .select('*')
+        .is('deleted_at', null)
+        .order('date', { ascending: false })
+        .range(from, to);
+
+    // Apply Filters
+    if (status !== 'all') {
+        query = query.eq('verification_status', status);
+    }
+
+    if (search) {
+        query = query.ilike('content', `%${search}%`);
+    }
+
+    const { data: journalData, error } = await query;
+
+    if (error) throw error;
+    if (!journalData || journalData.length === 0) return [];
+
+    // Efficiently join profiles manually
+    const userIds = [...new Set(journalData.map(j => j.user_id))];
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, avatar_url, department, position')
+        .in('user_id', userIds);
+
+    const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+    return journalData.map(journal => ({
+        ...journal,
+        profiles: profileMap.get(journal.user_id) || {
+            full_name: 'Unknown User',
+            avatar_url: null,
+            department: null,
+            position: null
+        }
+    })) as unknown as JournalCardData[];
+}
+
 const ManagerJurnal = () => {
     const { user } = useAuth();
     const queryClient = useQueryClient();
 
-    // Data State
-    const [journals, setJournals] = useState<JournalCardData[]>([]);
-    const [stats, setStats] = useState<JournalStats | null>(null);
-
-    // Loading States
-    const [isLoadingList, setIsLoadingList] = useState(true);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [isLoadingStats, setIsLoadingStats] = useState(true);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-
-    // Filter & Pagination
+    // Filter
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
-    const [hasMore, setHasMore] = useState(true);
-    const [page, setPage] = useState(0);
+
+    // ========== REACT QUERY HOOKS ==========
+
+    // Stats
+    const {
+        data: stats = { total_entries: 0, pending_review: 0, need_revision: 0, approved: 0 },
+        isLoading: isLoadingStats,
+        isFetching: isFetchingStats
+    } = useQuery({
+        queryKey: journalQueryKeys.managerStats(),
+        queryFn: fetchManagerStats,
+        staleTime: 10 * 60 * 1000,
+    });
+
+    // Infinite List
+    const {
+        data: infiniteData,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading: isLoadingList,
+        isFetching: isFetchingList
+    } = useInfiniteQuery({
+        queryKey: journalQueryKeys.managerList(filterStatus, debouncedSearch),
+        queryFn: ({ pageParam }) => fetchManagerJournals({ pageParam, status: filterStatus, search: debouncedSearch }),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => {
+            return lastPage.length === ITEMS_PER_PAGE ? allPages.length : undefined;
+        },
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const journals = infiniteData?.pages.flatMap(page => page) || [];
+    const hasMore = !!hasNextPage;
+    const isLoadingMore = isFetchingNextPage;
+    const isRefreshing = isFetchingStats || (isFetchingList && !isFetchingNextPage);
 
     // Actions States
     const [viewJournalId, setViewJournalId] = useState<string | null>(null);
@@ -68,12 +162,12 @@ const ManagerJurnal = () => {
         if (isLoadingList || isLoadingMore) return;
         if (observer.current) observer.current.disconnect();
         observer.current = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && hasMore) {
-                setPage(prevPage => prevPage + 1);
+            if (entries[0].isIntersecting && hasNextPage) {
+                fetchNextPage();
             }
         });
         if (node) observer.current.observe(node);
-    }, [isLoadingList, isLoadingMore, hasMore]);
+    }, [isLoadingList, isLoadingMore, hasNextPage, fetchNextPage]);
 
     // Handle Search Debounce
     useEffect(() => {
@@ -83,136 +177,10 @@ const ManagerJurnal = () => {
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
-    // Reset when filters change
-    useEffect(() => {
-        setPage(0);
-        setJournals([]);
-        setHasMore(true);
-    }, [filterStatus, debouncedSearch]);
-
-    // Initial Stats Load & Realtime Stats
-    useEffect(() => {
-        fetchStats();
-        /*
-        const channel = supabase
-            .channel('manager-journal-stats')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'work_journals' }, () => {
-                fetchStats();
-            })
-            .subscribe();
-
-        return () => { supabase.removeChannel(channel); };
-        */
-    }, []);
-
-    // Fetch List
-    useEffect(() => {
-        fetchJournals(page);
-    }, [page, filterStatus, debouncedSearch]);
-
-    const fetchStats = async () => {
-        setIsLoadingStats(true);
-        try {
-            const { data, error } = await supabase.rpc('get_manager_journal_stats');
-
-            if (!error && data && data.length > 0) {
-                setStats(data[0]);
-            } else {
-                // Fallback
-                const { count: total } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).is('deleted_at', null);
-                const { count: pending } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('verification_status', 'submitted');
-                const { count: revision } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('verification_status', 'need_revision');
-                const { count: approved } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('verification_status', 'approved');
-
-                setStats({
-                    total_entries: total || 0,
-                    pending_review: pending || 0,
-                    need_revision: revision || 0,
-                    approved: approved || 0
-                });
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setIsLoadingStats(false);
-        }
-    };
-
-    const fetchJournals = async (pageIndex: number) => {
-        if (pageIndex === 0) setIsLoadingList(true);
-        else setIsLoadingMore(true);
-
-        try {
-            const from = pageIndex * ITEMS_PER_PAGE;
-            const to = from + ITEMS_PER_PAGE - 1;
-
-            let query = supabase
-                .from('work_journals')
-                .select('*')
-                .is('deleted_at', null) // Consistency: Ignore deleted
-                .order('date', { ascending: false })
-                .range(from, to);
-
-            // Apply Filters
-            if (filterStatus !== 'all') {
-                query = query.eq('verification_status', filterStatus);
-            }
-
-            if (debouncedSearch) {
-                query = query.ilike('content', `%${debouncedSearch}%`);
-            }
-
-            const { data: journalData, error } = await query;
-
-            if (error) throw error;
-
-            if (journalData && journalData.length > 0) {
-                // Efficiently join profiles manually
-                const userIds = [...new Set(journalData.map(j => j.user_id))];
-                const { data: profiles } = await supabase
-                    .from('profiles')
-                    .select('user_id, full_name, avatar_url, department, position')
-                    .in('user_id', userIds);
-
-                const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
-
-                const enrichedData = journalData.map(journal => ({
-                    ...journal,
-                    profiles: profileMap.get(journal.user_id) || {
-                        full_name: 'Unknown User',
-                        avatar_url: null,
-                        department: null,
-                        position: null
-                    }
-                }));
-
-                setJournals(prev => {
-                    if (pageIndex === 0) return enrichedData as unknown as JournalCardData[];
-                    return [...prev, ...enrichedData as unknown as JournalCardData[]];
-                });
-
-                if (journalData.length < ITEMS_PER_PAGE) {
-                    setHasMore(false);
-                }
-            } else {
-                if (pageIndex === 0) setJournals([]);
-                setHasMore(false);
-            }
-
-        } catch (error) {
-            console.error("Error loading journals:", error);
-            toast({ variant: "destructive", title: "Masalah Koneksi", description: "Gagal memuat data jurnal." });
-        } finally {
-            setIsLoadingList(false);
-            setIsLoadingMore(false);
-        }
-    };
-
     const handleRefresh = async () => {
-        setIsRefreshing(true);
-        setPage(0);
-        await Promise.all([fetchStats(), fetchJournals(0)]);
-        setIsRefreshing(false);
+        await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['journals', 'manager'] })
+        ]);
         toast({ title: "Updated", description: "Data terbaru berhasil diambil." });
     };
 
@@ -247,9 +215,7 @@ const ManagerJurnal = () => {
 
             toast({ title: "Berhasil", description: "Konten diperbarui." });
 
-            setJournals(prev => prev.map(j =>
-                j.id === editingJournal.id ? { ...j, content: editContent } : j
-            ));
+            await queryClient.invalidateQueries({ queryKey: journalQueryKeys.managerList(filterStatus, debouncedSearch) });
 
             setIsEditOpen(false);
             setEditingJournal(null);
@@ -428,11 +394,7 @@ const ManagerJurnal = () => {
                 onClose={() => setIsDetailOpen(false)}
                 onUpdate={() => {
                     // Refresh data after update
-                    setPage(0);
-                    setJournals([]);
-                    setHasMore(true);
-                    fetchJournals(0);
-                    fetchStats();
+                    queryClient.invalidateQueries({ queryKey: ['journals', 'manager'] });
                     setIsDetailOpen(false);
                 }}
             />
