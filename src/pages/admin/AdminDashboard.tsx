@@ -126,6 +126,7 @@ const AdminDashboard = () => {
     }
 
     // Setup realtime subscriptions
+    /* 
     const attendanceChannel = supabase
       .channel("dashboard-attendance-changes")
       .on(
@@ -158,10 +159,12 @@ const AdminDashboard = () => {
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(leaveChannel);
     };
+    */
   }, [settingsLoading, fetchAllData]);
 
   // Auto refresh every minute
   useEffect(() => {
+    /*
     const refreshInterval = setInterval(() => {
       fetchAllData(false);
     }, AUTO_REFRESH_INTERVAL);
@@ -175,6 +178,7 @@ const AdminDashboard = () => {
       clearInterval(refreshInterval);
       clearInterval(countdownInterval);
     };
+    */
   }, [fetchAllData]);
 
   const handleManualRefresh = () => {
@@ -800,21 +804,14 @@ const AdminDashboard = () => {
                         <p className="text-sm font-medium text-slate-500">Pengajuan Cuti Tertunda</p>
                         <div className="mt-2 flex items-baseline gap-2">
                           <span className="text-3xl font-bold text-amber-600">{stats.pendingLeave}</span>
-                          <span className="text-sm text-slate-500">Menunggu</span>
+                          <span className="text-sm text-slate-500">Orang</span>
                         </div>
                         {/* Trend Label */}
                         <div className="flex items-center gap-1.5 mt-2">
-                          {stats.pendingLeave > 0 ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
-                              <AlertCircle className="h-3 w-3" />
-                              Perlu review
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Semua selesai
-                            </span>
-                          )}
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-medium">
+                            <AlertCircle className="h-3 w-3" />
+                            Perlu tindakan segera
+                          </span>
                         </div>
                         <p className="text-xs text-slate-400 mt-1">{stats.approvedLeaveThisMonth} disetujui bulan ini</p>
                       </div>
@@ -826,34 +823,33 @@ const AdminDashboard = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem>Lihat Semua</DropdownMenuItem>
-                          <DropdownMenuItem>Proses Pengajuan</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Performance Rate - Teal Top Border */}
+                {/* Work Journal - Purple Top Border */}
                 <Card className="border-0 shadow-md hover:shadow-lg transition-all bg-white md:bg-white/90 md:backdrop-blur-lg overflow-hidden relative md:border md:border-white/30 md:shadow-xl">
-                  <div className="h-1 bg-gradient-to-r from-teal-500 to-cyan-500" />
+                  <div className="h-1 bg-gradient-to-r from-purple-500 to-indigo-500" />
                   {/* Faded Background Icon */}
-                  <TrendingUp className="absolute right-4 top-8 h-20 w-20 sm:h-24 sm:w-24 text-teal-500/10" />
+                  <Briefcase className="absolute right-4 top-8 h-20 w-20 sm:h-24 sm:w-24 text-purple-500/10" />
                   <CardContent className="p-4 sm:p-6 relative z-10">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-sm font-medium text-slate-500">Rate Kehadiran Bulanan</p>
+                        <p className="text-sm font-medium text-slate-500">Jurnal Kerja</p>
                         <div className="mt-2 flex items-baseline gap-2">
-                          <span className="text-3xl font-bold text-teal-600">{stats.attendanceRate}%</span>
-                          <span className="text-sm text-slate-500">Rate</span>
+                          <span className="text-3xl font-bold text-purple-600">85%</span>
+                          <span className="text-sm text-slate-500">Terkirim</span>
                         </div>
                         {/* Trend Label */}
                         <div className="flex items-center gap-1.5 mt-2">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 text-xs font-medium">
-                            <TrendingUp className="h-3 w-3" />
-                            +2.3% dari bulan lalu
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-xs font-medium">
+                            <CheckCircle2 className="h-3 w-3" />
+                            On-target hari ini
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400 mt-1">{stats.attendanceThisMonth} kehadiran tercatat</p>
+                        <p className="text-xs text-slate-400 mt-1">10 jurnal perlu review</p>
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -862,8 +858,7 @@ const AdminDashboard = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Lihat Detail</DropdownMenuItem>
-                          <DropdownMenuItem>Status Orientasi</DropdownMenuItem>
+                          <DropdownMenuItem>Lihat Jurnal</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -873,458 +868,220 @@ const AdminDashboard = () => {
             )}
           </div>
 
-          {/* Main Analytics Section - Responsive Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            {/* Attendance Overview Chart - Takes 2 columns on lg */}
-            <Card className="border-slate-200 shadow-sm md:col-span-2 lg:col-span-2 bg-white md:bg-white/90 md:backdrop-blur-lg md:border-white/30 md:shadow-xl">
-              <CardHeader className="pb-2 px-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base sm:text-lg font-semibold text-slate-900">Ringkasan Kehadiran</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">Tren persentase kehadiran bulanan</CardDescription>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Ekspor Grafik</DropdownMenuItem>
-                      <DropdownMenuItem>Lihat Detail</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent className="px-2 sm:px-6">
-                {/* Chart with horizontal scroll on mobile */}
-                <div className="chart-scroll-container scrollbar-hide">
-                  <div className="h-[220px] sm:h-[280px] min-w-[400px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#0066b3" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#7dc242" stopOpacity={0.05} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                        <XAxis
-                          dataKey="day"
-                          tick={{ fontSize: 12, fill: "#64748B" }}
-                          axisLine={{ stroke: "#E2E8F0" }}
-                          tickLine={false}
-                        />
-                        <YAxis
-                          tick={{ fontSize: 12, fill: "#64748B" }}
-                          axisLine={false}
-                          tickLine={false}
-                          domain={[60, 100]}
-                          tickFormatter={(value) => `${value}%`}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Area
-                          type="monotone"
-                          dataKey="hadir"
-                          stroke="#0066b3"
-                          strokeWidth={2.5}
-                          fillOpacity={1}
-                          fill="url(#colorAttendance)"
-                          name="Tingkat Kehadiran"
-                          dot={{ fill: "#0066b3", strokeWidth: 0, r: 4 }}
-                          activeDot={{ r: 6, fill: "#7dc242", stroke: "#fff", strokeWidth: 2 }}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Workforce by Department - Donut Chart */}
-            <Card className="border-slate-200 shadow-sm bg-white md:bg-white/90 md:backdrop-blur-lg md:border-white/30 md:shadow-xl md:col-span-2 lg:col-span-1">
-              <CardHeader className="pb-2 px-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base sm:text-lg font-semibold text-slate-900">Karyawan per Departemen</CardTitle>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Lihat Semua</DropdownMenuItem>
-                      <DropdownMenuItem>Ekspor</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6">
-                {departmentData.length === 0 ? (
-                  /* Empty State */
-                  <div className="flex flex-col items-center justify-center py-8 sm:py-12">
-                    <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center mb-4 border border-slate-200/60">
-                      <FolderOpen className="h-7 w-7 sm:h-8 sm:w-8 text-slate-400" />
-                    </div>
-                    <h3 className="text-sm font-semibold text-slate-700 mb-1">Belum Ada Data</h3>
-                    <p className="text-xs text-slate-400 text-center max-w-xs">Data departemen akan muncul setelah karyawan ditambahkan</p>
-                  </div>
-                ) : (
-                  /* Donut Chart with Legend - Responsive Layout */
-                  <div className="flex flex-col sm:flex-row items-center gap-4">
-                    {/* Donut Chart */}
-                    <div className="h-[140px] w-[140px] sm:h-[180px] sm:w-[180px] flex-shrink-0">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={departmentData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={50}
-                            outerRadius={75}
-                            paddingAngle={3}
-                            dataKey="value"
-                          >
-                            {departmentData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value: number) => [`${value} karyawan`, 'Jumlah']}
-                            contentStyle={{
-                              borderRadius: '8px',
-                              border: '1px solid #e2e8f0',
-                              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    {/* Legend on the Right */}
-                    <div className="flex-1 space-y-2">
-                      {departmentData.slice(0, 5).map((dept) => (
-                        <div key={dept.name} className="flex items-center gap-2">
-                          <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: dept.color }} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-slate-700 truncate">{dept.name}</p>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-xs font-semibold text-slate-900">{dept.value}</span>
-                            <span className="text-xs text-slate-400 ml-1">
-                              ({stats.totalEmployees > 0 ? ((dept.value / stats.totalEmployees) * 100).toFixed(0) : 0}%)
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                      {departmentData.length > 5 && (
-                        <p className="text-xs text-slate-400 pl-4">+{departmentData.length - 5} lainnya</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Secondary Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Payroll/Attendance Overview (Bar Chart) */}
-            <Card className="border-slate-200 shadow-sm lg:col-span-1 bg-white">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg font-semibold text-slate-900">Ringkasan Kehadiran</CardTitle>
-                    <CardDescription>Hadir vs terlambat bulanan</CardDescription>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Lihat Detail</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {/* Attendance Chart - Takes 2/3 width */}
+            <Card className="lg:col-span-2 border-slate-200 shadow-md bg-white">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-slate-100">
+                <div>
+                  <CardTitle className="text-lg font-bold text-slate-900">Statistik Kehadiran</CardTitle>
+                  <CardDescription>Tren kehadiran karyawan dalam 12 bulan terakhir</CardDescription>
                 </div>
-                <div className="flex gap-4 mt-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-sm bg-[#0066b3]" />
-                    <span className="text-xs text-slate-500">Hadir</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-sm bg-[#7dc242]" />
-                    <span className="text-xs text-slate-500">Terlambat</span>
-                  </div>
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="gap-1.5 font-normal">
+                    <div className="h-2 w-2 rounded-full bg-[#10B981]" />
+                    Hadir
+                  </Badge>
+                  <Badge variant="outline" className="gap-1.5 font-normal">
+                    <div className="h-2 w-2 rounded-full bg-[#F59E0B]" />
+                    Terlambat
+                  </Badge>
                 </div>
               </CardHeader>
-              <CardContent>
-                {monthlyData.length === 0 ? (
-                  /* Empty State for Attendance Summary */
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center mb-4 border border-slate-200/60">
-                      <FolderOpen className="h-8 w-8 text-slate-400" />
-                    </div>
-                    <h3 className="text-sm font-semibold text-slate-700 mb-1">Belum Ada Data Kehadiran</h3>
-                    <p className="text-xs text-slate-400 text-center max-w-xs">Data kehadiran akan muncul setelah karyawan mulai absensi</p>
-                  </div>
-                ) : (
-                  <div className="h-[200px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                        <XAxis
-                          dataKey="week"
-                          tick={{ fontSize: 11, fill: "#64748B" }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <YAxis
-                          tick={{ fontSize: 11, fill: "#64748B" }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar
-                          dataKey="hadir"
-                          fill="#0066b3"
-                          name="Hadir"
-                          radius={[4, 4, 0, 0]}
-                          maxBarSize={30}
-                        />
-                        <Bar
-                          dataKey="terlambat"
-                          fill="#7dc242"
-                          name="Terlambat"
-                          radius={[4, 4, 0, 0]}
-                          maxBarSize={30}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Attendance Heatmap */}
-            <Card className="border-slate-200 shadow-sm bg-white">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-semibold text-slate-900">Peta Panas Kehadiran</CardTitle>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Lihat Lengkap</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {heatmapData.hours.map((hour, hourIndex) => (
-                    <div key={hour} className="flex items-center gap-2">
-                      <span className="text-xs text-slate-400 w-12">{hour}</span>
-                      <div className="flex gap-1 flex-1">
-                        {heatmapData.months.map((month, monthIndex) => {
-                          const intensity = Math.random();
-                          const bgColor = intensity > 0.7 ? '#0066b3' :
-                            intensity > 0.4 ? '#00aaff' :
-                              intensity > 0.2 ? '#7dc242' : '#d4edda';
-                          return (
-                            <div
-                              key={`${hour}-${month}`}
-                              className="flex-1 h-8 rounded transition-all hover:scale-105"
-                              style={{ backgroundColor: bgColor }}
-                              title={`${month} ${hour}: ${Math.round(intensity * 100)}%`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex items-center gap-2 mt-3">
-                    <span className="text-xs text-slate-400 w-12"></span>
-                    <div className="flex gap-1 flex-1">
-                      {heatmapData.months.map(month => (
-                        <span key={month} className="flex-1 text-center text-xs text-slate-400">{month}</span>
-                      ))}
-                    </div>
-                  </div>
+              <CardContent className="p-6">
+                <div className="h-[300px] w-full mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={weeklyData}
+                      margin={{
+                        top: 10,
+                        right: 10,
+                        left: 0,
+                        bottom: 0,
+                      }}
+                    >
+                      <defs>
+                        <linearGradient id="colorHadir" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.1} />
+                          <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis
+                        dataKey="day"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: '#64748B' }}
+                        dy={10}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: '#64748B' }}
+                        tickFormatter={(value) => `${value}%`}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Area
+                        type="monotone"
+                        dataKey="hadir"
+                        stroke="#10B981"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorHadir)"
+                        activeDot={{ r: 6, strokeWidth: 0 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Company Announcements */}
-            <Card className="border-slate-200 shadow-sm bg-white">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-semibold text-slate-900">Pengumuman Perusahaan</CardTitle>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Lihat Semua</DropdownMenuItem>
-                      <DropdownMenuItem>Tambah Baru</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+            {/* Recent Activity / Department Stats - Takes 1/3 width */}
+            <Card className="border-slate-200 shadow-md bg-white flex flex-col">
+              <CardHeader className="pb-2 border-b border-slate-100">
+                <CardTitle className="text-lg font-bold text-slate-900">Distribusi Departemen</CardTitle>
+                <CardDescription>Komposisi tim berdasarkan divisi</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {announcements.slice(0, 5).map((item, index) => (
-                    <div key={item.id} className="flex items-start gap-3">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-100 text-violet-600 text-xs font-semibold">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-700 truncate">{item.title}</p>
-                        <p className="text-xs text-slate-400">{item.date}</p>
-                      </div>
-                    </div>
-                  ))}
+              <CardContent className="flex-1 p-6 flex items-center justify-center">
+                <div className="h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={departmentData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {departmentData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={36}
+                        iconType="circle"
+                        formatter={(value, entry: any) => (
+                          <span className="text-xs text-slate-600 font-medium ml-1">{value}</span>
+                        )}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Recent Activity & Quick Links */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Recent Attendance */}
-            <Card className="border-slate-200 shadow-sm lg:col-span-2 bg-white">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg font-semibold text-slate-900">Absensi Terbaru</CardTitle>
-                    <CardDescription>Aktivitas absen masuk hari ini</CardDescription>
-                  </div>
-                  <Link to="/admin/absensi">
-                    <Button variant="ghost" size="sm" className="text-violet-600 hover:text-violet-700 gap-1">
-                      Lihat Semua
-                      <ArrowUpRight className="h-4 w-4" />
-                    </Button>
-                  </Link>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Attendance Cards */}
+            <Card className="border-slate-200 shadow-md bg-white">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-slate-100">
+                <div>
+                  <CardTitle className="text-lg font-bold text-slate-900">Aktivitas Absensi Terbaru</CardTitle>
+                  <CardDescription>5 karyawan terakhir yang melakukan clock-in</CardDescription>
                 </div>
+                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => navigate('/admin/absensi')}>
+                  Lihat Semua <ArrowUpRight className="ml-1 h-3.5 w-3.5" />
+                </Button>
               </CardHeader>
-              <CardContent>
-                {recentAttendance.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Clock className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                    <p className="text-sm text-slate-500">Belum ada absensi hari ini</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {recentAttendance.map((record) => (
-                      <div key={record.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
-                            <span className="text-sm font-semibold text-white">
-                              {getInitials(record.full_name)}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-slate-900">{record.full_name}</p>
-                            <p className="text-xs text-slate-500">Masuk pukul {formatTime(record.clock_in)}</p>
-                          </div>
+              <CardContent className="p-0">
+                {isLoading ? (
+                  <div className="p-6 space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex items-center gap-4">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-20" />
                         </div>
-                        {getStatusBadge(record.status)}
+                        <Skeleton className="h-8 w-16 rounded-full" />
                       </div>
                     ))}
                   </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {recentAttendance.length > 0 ? (
+                      recentAttendance.map((record) => (
+                        <div key={record.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-medium border border-slate-200">
+                              {getInitials(record.full_name)}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900">{record.full_name}</p>
+                              <div className="flex items-center gap-2 text-xs text-slate-500">
+                                <Clock className="h-3 w-3" />
+                                {formatTime(record.clock_in)}
+                              </div>
+                            </div>
+                          </div>
+                          {getStatusBadge(record.status)}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center text-slate-500">
+                        <UserX className="h-10 w-10 mx-auto text-slate-300 mb-2" />
+                        <p>Belum ada data absensi hari ini</p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Quick Stats */}
-            <Card className="border-slate-200 shadow-sm bg-white">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-slate-900">Ringkasan Bulan Ini</CardTitle>
-                <CardDescription>{currentMonth}</CardDescription>
+            {/* Announcements / Upcoming Events */}
+            <Card className="border-slate-200 shadow-md bg-white">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-slate-100">
+                <div>
+                  <CardTitle className="text-lg font-bold text-slate-900">Pengumuman & Acara</CardTitle>
+                  <CardDescription>Agenda penting perusahaan</CardDescription>
+                </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-slate-600">Tingkat Kehadiran</span>
-                    <span className={`text-sm font-semibold ${stats.attendanceRate >= 95 ? 'text-emerald-600' : stats.attendanceRate >= 80 ? 'text-amber-600' : 'text-red-600'}`}>
-                      {stats.attendanceRate >= 95 ? '✓ Tercapai' : 'Perlu Ditingkatkan'}
-                    </span>
-                  </div>
-                  <div className="flex items-end gap-2 mb-2">
-                    <span className="text-3xl font-bold text-violet-600">{stats.attendanceRate}%</span>
-                    <span className="text-sm text-slate-500 mb-1">dari target</span>
-                  </div>
-                  <Progress value={stats.attendanceRate} className="h-2 bg-violet-100" />
-                  <p className="text-xs text-slate-500 mt-2">{stats.attendanceThisMonth} total kehadiran bulan ini</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
-                    <UserCheck className="h-5 w-5 text-emerald-600 mb-2" />
-                    <p className="text-2xl font-bold text-emerald-700">{stats.presentToday}</p>
-                    <p className="text-xs text-emerald-600">Hadir Hari Ini</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-100">
-                    <AlertCircle className="h-5 w-5 text-amber-600 mb-2" />
-                    <p className="text-2xl font-bold text-amber-700">{stats.lateToday}</p>
-                    <p className="text-xs text-amber-600">Terlambat Hari Ini</p>
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Briefcase className="h-4 w-4 text-slate-500" />
-                    <span className="text-sm font-medium text-slate-600">Cuti Disetujui</span>
-                  </div>
-                  <p className="text-xl font-bold text-slate-700">{stats.approvedLeaveThisMonth}</p>
-                  <p className="text-xs text-slate-500">karyawan cuti bulan ini</p>
+              <CardContent className="p-0">
+                <div className="divide-y divide-slate-100">
+                  {announcements.map((item) => (
+                    <div key={item.id} className="p-4 flex gap-4 hover:bg-slate-50 transition-colors group cursor-pointer">
+                      <div className={`
+                        flex-shrink-0 w-12 h-12 rounded-xl flex flex-col items-center justify-center border
+                        ${item.type === 'event' ? 'bg-blue-50 border-blue-100 text-blue-600' :
+                          item.type === 'deadline' ? 'bg-red-50 border-red-100 text-red-600' :
+                            item.type === 'training' ? 'bg-purple-50 border-purple-100 text-purple-600' :
+                              'bg-emerald-50 border-emerald-100 text-emerald-600'}
+                      `}>
+                        <span className="text-xs font-bold uppercase">{item.date.split(" ")[1]}</span>
+                        <span className="text-lg font-bold leading-none">{item.date.split(" ")[0]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-900 group-hover:text-[#0066b3] transition-colors">{item.title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{item.date}</p>
+                        <div className="mt-1.5 flex gap-2">
+                          <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-normal bg-white">
+                            {item.type === 'event' ? 'Acara' :
+                              item.type === 'deadline' ? 'Tenggat' :
+                                item.type === 'training' ? 'Training' : 'Kebijakan'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-slate-300 group-hover:text-slate-500 self-center" />
+                    </div>
+                  ))}
                 </div>
               </CardContent>
+              <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+                <Button variant="ghost" size="sm" className="w-full text-slate-500 hover:text-[#0066b3] text-xs">
+                  Lihat Semua Pengumuman
+                </Button>
+              </div>
             </Card>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="border-t border-slate-200 bg-white mt-8">
-          <div className="px-6 lg:px-8 py-4">
-            <p className="text-center text-sm text-slate-400">
-              © 2025 Talenta Digital Sistem Absensi. Hak cipta dilindungi.
-            </p>
-          </div>
-        </footer>
       </main>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 lg:hidden z-50">
-        <div className="flex items-center justify-around py-2">
-          <Link to="/dashboard" className="flex flex-col items-center gap-1 px-4 py-2 text-violet-600">
-            <BarChart3 className="h-5 w-5" />
-            <span className="text-xs font-medium">Dashboard</span>
-          </Link>
-          <Link to="/admin/karyawan" className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500">
-            <Users className="h-5 w-5" />
-            <span className="text-xs">Karyawan</span>
-          </Link>
-          <Link to="/admin/absensi" className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500">
-            <Clock className="h-5 w-5" />
-            <span className="text-xs">Absensi</span>
-          </Link>
-          <Link to="/admin/laporan" className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500">
-            <FileText className="h-5 w-5" />
-            <span className="text-xs">Laporan</span>
-          </Link>
-          <Link to="/admin/pengaturan" className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500">
-            <Settings className="h-5 w-5" />
-            <span className="text-xs">Pengaturan</span>
-          </Link>
-        </div>
-      </nav>
     </div>
   );
 };

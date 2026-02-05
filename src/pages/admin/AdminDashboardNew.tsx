@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -186,6 +187,7 @@ const AdminDashboardNew = () => {
             }
         };
 
+        /*
         const interval = setInterval(() => {
             checkDateChange();
             if (!document.hidden) {
@@ -194,6 +196,7 @@ const AdminDashboardNew = () => {
         }, AUTO_REFRESH_INTERVAL);
 
         return () => clearInterval(interval);
+        */
     }, [activeDate]);
 
 
@@ -225,6 +228,7 @@ const AdminDashboardNew = () => {
             fetchAllData(true);
         }
 
+        /*
         const attendanceChannel = supabase
             .channel("dashboard-attendance-changes")
             .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, () => fetchAllData(false))
@@ -245,6 +249,7 @@ const AdminDashboardNew = () => {
             supabase.removeChannel(profilesChannel);
             supabase.removeChannel(leaveChannel);
         };
+        */
     }, [settingsLoading, fetchAllData]);
 
     const fetchLiveStats = async (karyawanUserIds: Set<string>) => {
@@ -390,13 +395,19 @@ const AdminDashboardNew = () => {
     const fetchWeeklyTrend = async (karyawanUserIds: Set<string>) => {
         const today = activeDate;
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-        const startOfYear = new Date(today.getFullYear(), 0, 1);
+
+        // OPTIMIZATION: Only fetch last 6 months, not whole year
+        const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1);
         const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
 
         const [profilesResult, attendanceResult] = await Promise.all([
+            // Optimization: We already have profile data in fetchAllData parent or unrelated? 
+            // We need count for each month. 
+            // Profiles count can change over time but for trend we usually take current count or snapshot.
+            // Using current active profiles is standard for simple dashboards.
             supabase.from("profiles").select("user_id"),
             supabase.from("attendance").select("user_id, status, clock_in")
-                .gte("clock_in", startOfYear.toISOString())
+                .gte("clock_in", sixMonthsAgo.toISOString())
                 .lte("clock_in", endOfToday.toISOString()),
         ]);
 
@@ -523,439 +534,314 @@ const AdminDashboardNew = () => {
             subtitle={`Rekap Kehadiran: ${activeDateDisplay}`}
             menuSections={menuWithBadges}
             roleLabel="Administrator"
-            showRefresh={true}
+            showRefresh={false}
             onRefresh={() => fetchAllData(false)}
             refreshInterval={60}
         >
-            {/* Live Status Bar */}
-            <div className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Today's Live Counter */}
-                <div
-                    className="p-4 rounded-2xl border flex items-center gap-4"
-                    style={{
-                        backgroundColor: `${BRAND_COLORS.green}08`,
-                        borderColor: `${BRAND_COLORS.green}25`
-                    }}
-                >
+            <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out space-y-6">
+                {/* Live Status Bar */}
+                <div className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {/* Today's Live Counter */}
                     <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm relative"
+                        className="p-4 rounded-2xl border flex items-center gap-4"
                         style={{
-                            background: `linear-gradient(135deg, ${BRAND_COLORS.green} 0%, #8BC34A 100%)`
+                            backgroundColor: `${BRAND_COLORS.green}08`,
+                            borderColor: `${BRAND_COLORS.green}25`
                         }}
                     >
-                        <Activity className="h-6 w-6 text-white" />
-                        {liveStats.clockedInToday > 0 && (
-                            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-400 animate-pulse" />
-                        )}
-                    </div>
-                    <div className="flex-1">
-                        <p className="text-sm text-slate-600">Clock-In Hari Ini (Live)</p>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-bold" style={{ color: BRAND_COLORS.green }}>
-                                {liveStats.clockedInToday}
-                            </span>
-                            <span className="text-sm text-slate-500">
-                                / {stats.totalEmployees} karyawan
-                            </span>
-                        </div>
-                    </div>
-                    {liveStats.lastClockIn && (
-                        <div className="text-right">
-                            <p className="text-xs text-slate-500">Terakhir</p>
-                            <p className="text-sm font-medium text-slate-700">
-                                {formatTime(liveStats.lastClockIn)}
-                            </p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Working Hours Status */}
-                <div
-                    className="p-4 rounded-2xl border flex items-center gap-4"
-                    style={{
-                        backgroundColor: workingHoursActive ? `${BRAND_COLORS.blue}08` : "#F1F5F9",
-                        borderColor: workingHoursActive ? `${BRAND_COLORS.blue}25` : "#E2E8F0"
-                    }}
-                >
-                    <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-                        style={{
-                            background: workingHoursActive
-                                ? `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
-                                : "#94A3B8"
-                        }}
-                    >
-                        <Timer className="h-6 w-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                        <p className="text-sm text-slate-600">Jam Kerja</p>
-                        <div className="flex items-center gap-2">
-                            <span className="text-base font-semibold text-slate-800">
-                                {settings.clockInStart} - {settings.clockOutEnd}
-                            </span>
-                            {workingHoursActive ? (
-                                <Badge className="text-xs border-0 text-white px-2" style={{ backgroundColor: BRAND_COLORS.green }}>
-                                    Aktif
-                                </Badge>
-                            ) : (
-                                <Badge variant="secondary" className="text-xs px-2">
-                                    Tidak Aktif
-                                </Badge>
+                        <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm relative"
+                            style={{
+                                background: `linear-gradient(135deg, ${BRAND_COLORS.green} 0%, #8BC34A 100%)`
+                            }}
+                        >
+                            <Activity className="h-6 w-6 text-white" />
+                            {liveStats.clockedInToday > 0 && (
+                                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-400 animate-pulse" />
                             )}
                         </div>
+                        <div className="flex-1">
+                            <p className="text-sm text-slate-600">Clock-In Hari Ini (Live)</p>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-2xl font-bold" style={{ color: BRAND_COLORS.green }}>
+                                    {liveStats.clockedInToday}
+                                </span>
+                                <span className="text-sm text-slate-500">
+                                    / {stats.totalEmployees} karyawan
+                                </span>
+                            </div>
+                        </div>
+                        {liveStats.lastClockIn && (
+                            <div className="text-right">
+                                <p className="text-xs text-slate-500">Terakhir</p>
+                                <p className="text-sm font-medium text-slate-700">
+                                    {formatTime(liveStats.lastClockIn)}
+                                </p>
+                            </div>
+                        )}
                     </div>
-                </div>
 
-                {/* Report Date Info */}
-                <div
-                    className="p-4 rounded-2xl border flex items-center gap-4"
-                    style={{
-                        backgroundColor: `${BRAND_COLORS.lightBlue}08`,
-                        borderColor: `${BRAND_COLORS.lightBlue}25`
-                    }}
-                >
+                    {/* Working Hours Status */}
                     <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+                        className="p-4 rounded-2xl border flex items-center gap-4"
                         style={{
-                            background: `linear-gradient(135deg, ${BRAND_COLORS.lightBlue} 0%, ${BRAND_COLORS.blue} 100%)`
+                            backgroundColor: workingHoursActive ? `${BRAND_COLORS.blue}08` : "#F1F5F9",
+                            borderColor: workingHoursActive ? `${BRAND_COLORS.blue}25` : "#E2E8F0"
                         }}
                     >
-                        <CalendarClock className="h-6 w-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                        <p className="text-sm text-slate-600">Terakhir Update</p>
-                        <p className="text-base font-semibold text-slate-800">
-                            {lastUpdated ? lastUpdated.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) : "-"}
-                        </p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-xs text-slate-500">Status</p>
-                        <Badge variant="outline" className="text-xs border-green-200 text-green-700 bg-green-50">
-                            Sync Aktif
-                        </Badge>
-                    </div>
-                </div>
-            </div>
-
-            {/* No Data Warning */}
-            {!hasDataForToday && !isLoading && (
-                <div
-                    className="mb-6 p-4 rounded-2xl border flex items-center gap-4"
-                    style={{
-                        backgroundColor: "#FEF3C7",
-                        borderColor: "#FCD34D"
-                    }}
-                >
-                    <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                        <AlertCircle className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div>
-                        <p className="font-semibold text-amber-800">Belum ada absensi hari ini</p>
-                        <p className="text-sm text-amber-700">
-                            Menampilkan data live untuk {activeDateDisplay}. Statistik akan muncul saat karyawan mulai clock-in.
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            {/* KPI Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <StatCard
-                    title="Total Karyawan"
-                    value={stats.totalEmployees}
-                    unit="Orang"
-                    trend={{
-                        value: `+${stats.newEmployeesThisMonth} bulan ini`,
-                        direction: "up",
-                    }}
-                    subtitle={`Dari ${stats.departments} departemen`}
-                    icon={Users}
-                    color="primary"
-                    isLoading={isLoading}
-                />
-                <StatCard
-                    title="Kehadiran Hari Ini"
-                    value={stats.totalEmployees > 0 ? `${Math.round((stats.presentToday / stats.totalEmployees) * 100)}%` : "0%"}
-                    trend={{
-                        value: `${stats.presentToday} dari ${stats.totalEmployees}`,
-                        direction: stats.presentToday >= stats.totalEmployees * 0.8 ? "up" : "down",
-                    }}
-                    subtitle={`Terlambat: ${stats.lateToday} orang`}
-                    icon={UserCheck}
-                    color="success"
-                    isLoading={isLoading}
-                />
-                <StatCard
-                    title="Pengajuan Cuti"
-                    value={stats.pendingLeave}
-                    unit="Pengajuan"
-                    subtitle="Menunggu persetujuan"
-                    icon={Calendar}
-                    color="warning"
-                    isLoading={isLoading}
-                />
-                <StatCard
-                    title="Kehadiran Bulan Ini"
-                    value={`${stats.attendanceRate}%`}
-                    trend={{
-                        value: stats.attendanceRate >= 80 ? "Di atas target" : "Di bawah target",
-                        direction: stats.attendanceRate >= 80 ? "up" : "down",
-                    }}
-                    subtitle={`${stats.attendanceThisMonth} total absensi`}
-                    icon={BarChart3}
-                    color={stats.attendanceRate >= 80 ? "info" : "danger"}
-                    isLoading={isLoading}
-                />
-            </div>
-
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-                {/* Attendance Trend Chart */}
-                <Card className="lg:col-span-2 border-slate-200 shadow-sm bg-white">
-                    <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-base font-semibold text-slate-800">Tren Kehadiran</CardTitle>
-                                <CardDescription className="text-sm">Persentase kehadiran 6 bulan terakhir</CardDescription>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 text-xs gap-1.5 border-slate-200 hover:border-slate-300"
-                            >
-                                <Download className="h-3.5 w-3.5" />
-                                Export
-                            </Button>
+                        <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+                            style={{
+                                background: workingHoursActive
+                                    ? `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
+                                    : "#94A3B8"
+                            }}
+                        >
+                            <Timer className="h-6 w-6 text-white" />
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <Skeleton className="h-[240px] w-full" />
-                        ) : (
-                            <div className="h-[240px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                        <defs>
-                                            <linearGradient id="colorHadir" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor={CHART_COLORS.success} stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor={CHART_COLORS.success} stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                                        <XAxis
-                                            dataKey="day"
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fill: '#64748B', fontSize: 12 }}
-                                        />
-                                        <YAxis
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fill: '#64748B', fontSize: 12 }}
-                                            domain={[0, 100]}
-                                            tickFormatter={(value) => `${value}%`}
-                                        />
-                                        <Tooltip content={<CustomTooltip />} />
-                                        <Area
-                                            type="monotone"
-                                            dataKey="hadir"
-                                            stroke={CHART_COLORS.success}
-                                            strokeWidth={2}
-                                            fill="url(#colorHadir)"
-                                            name="Kehadiran"
-                                        />
-                                    </AreaChart>
-                                </ResponsiveContainer>
+                        <div className="flex-1">
+                            <p className="text-sm text-slate-600">Jam Kerja</p>
+                            <div className="flex items-center gap-2">
+                                <span className="text-base font-semibold text-slate-800">
+                                    {settings.clockInStart} - {settings.clockOutEnd}
+                                </span>
+                                {workingHoursActive ? (
+                                    <Badge className="text-xs border-0 text-white px-2" style={{ backgroundColor: BRAND_COLORS.green }}>
+                                        Aktif
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="secondary" className="text-xs px-2">
+                                        Tidak Aktif
+                                    </Badge>
+                                )}
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        </div>
+                    </div>
 
-                {/* Department Distribution */}
-                <Card className="border-slate-200 shadow-sm bg-white">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-base font-semibold text-slate-800">Distribusi Departemen</CardTitle>
-                        <CardDescription className="text-sm">Jumlah karyawan per departemen</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <Skeleton className="h-[240px] w-full" />
-                        ) : departmentData.length > 0 ? (
-                            <div className="h-[240px] flex items-center justify-center">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={departmentData}
-                                            cx="50%"
-                                            cy="45%"
-                                            innerRadius={50}
-                                            outerRadius={80}
-                                            paddingAngle={2}
-                                            dataKey="value"
-                                        >
-                                            {departmentData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip
-                                            formatter={(value: number) => [`${value} orang`, "Jumlah"]}
-                                            contentStyle={{
-                                                background: 'white',
-                                                border: '1px solid #E2E8F0',
-                                                borderRadius: '8px',
-                                                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                                            }}
-                                        />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                        ) : (
-                            <div className="h-[240px] flex items-center justify-center text-slate-400 text-sm">
-                                Tidak ada data departemen
-                            </div>
-                        )}
-                        {/* Legend */}
-                        {departmentData.length > 0 && (
-                            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
-                                {departmentData.slice(0, 4).map((item, index) => (
-                                    <div key={index} className="flex items-center gap-1.5 text-xs text-slate-600">
-                                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                                        <span className="truncate max-w-[80px]">{item.name}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+                    {/* Report Date Info */}
+                    <div
+                        className="p-4 rounded-2xl border flex items-center gap-4"
+                        style={{
+                            backgroundColor: `${BRAND_COLORS.lightBlue}08`,
+                            borderColor: `${BRAND_COLORS.lightBlue}25`
+                        }}
+                    >
+                        <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+                            style={{
+                                background: `linear-gradient(135deg, ${BRAND_COLORS.lightBlue} 0%, ${BRAND_COLORS.blue} 100%)`
+                            }}
+                        >
+                            <CalendarClock className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-sm text-slate-600">Terakhir Update</p>
+                            <p className="text-base font-semibold text-slate-800">
+                                {lastUpdated ? lastUpdated.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) : "-"}
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-xs text-slate-500">Status</p>
+                            <Badge variant="outline" className="text-xs border-green-200 text-green-700 bg-green-50">
+                                Sync Aktif
+                            </Badge>
+                        </div>
+                    </div>
+                </div>
 
-            {/* Bottom Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* Recent Attendance */}
-                <Card className="border-slate-200 shadow-sm bg-white">
-                    <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-base font-semibold text-slate-800">Aktivitas Hari Ini</CardTitle>
-                                <CardDescription className="text-sm">Kehadiran {activeDateDisplay}</CardDescription>
-                            </div>
-                            <Link to="/admin/absensi">
+                {/* No Data Warning */}
+                {!hasDataForToday && !isLoading && (
+                    <div
+                        className="mb-6 p-4 rounded-2xl border flex items-center gap-4"
+                        style={{
+                            backgroundColor: "#FEF3C7",
+                            borderColor: "#FCD34D"
+                        }}
+                    >
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                            <AlertCircle className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                            <p className="font-semibold text-amber-800">Belum ada absensi hari ini</p>
+                            <p className="text-sm text-amber-700">
+                                Menampilkan data live untuk {activeDateDisplay}. Statistik akan muncul saat karyawan mulai clock-in.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* KPI Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <StatCard
+                        title="Total Karyawan"
+                        value={stats.totalEmployees}
+                        unit="Orang"
+                        trend={{
+                            value: `+${stats.newEmployeesThisMonth} bulan ini`,
+                            direction: "up",
+                        }}
+                        subtitle={`Dari ${stats.departments} departemen`}
+                        icon={Users}
+                        color="primary"
+                        isLoading={isLoading}
+                    />
+                    <StatCard
+                        title="Kehadiran Hari Ini"
+                        value={stats.totalEmployees > 0 ? `${Math.round((stats.presentToday / stats.totalEmployees) * 100)}%` : "0%"}
+                        trend={{
+                            value: `${stats.presentToday} dari ${stats.totalEmployees}`,
+                            direction: stats.presentToday >= stats.totalEmployees * 0.8 ? "up" : "down",
+                        }}
+                        subtitle={`Terlambat: ${stats.lateToday} orang`}
+                        icon={UserCheck}
+                        color="success"
+                        isLoading={isLoading}
+                    />
+                    <StatCard
+                        title="Pengajuan Cuti"
+                        value={stats.pendingLeave}
+                        unit="Pengajuan"
+                        subtitle="Menunggu persetujuan"
+                        icon={Calendar}
+                        color="warning"
+                        isLoading={isLoading}
+                    />
+                    <StatCard
+                        title="Kehadiran Bulan Ini"
+                        value={`${stats.attendanceRate}%`}
+                        trend={{
+                            value: stats.attendanceRate >= 80 ? "Di atas target" : "Di bawah target",
+                            direction: stats.attendanceRate >= 80 ? "up" : "down",
+                        }}
+                        subtitle={`${stats.attendanceThisMonth} total absensi`}
+                        icon={BarChart3}
+                        color={stats.attendanceRate >= 80 ? "info" : "danger"}
+                        isLoading={isLoading}
+                    />
+                </div>
+
+                {/* Charts Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                    {/* Attendance Trend Chart */}
+                    <Card className="lg:col-span-2 border-slate-200 shadow-sm bg-white">
+                        <CardHeader className="pb-2">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle className="text-base font-semibold text-slate-800">Tren Kehadiran</CardTitle>
+                                    <CardDescription className="text-sm">Persentase kehadiran 6 bulan terakhir</CardDescription>
+                                </div>
                                 <Button
-                                    variant="ghost"
+                                    variant="outline"
                                     size="sm"
-                                    className="h-8 text-xs gap-1 hover:bg-blue-50"
-                                    style={{ color: BRAND_COLORS.blue }}
+                                    className="h-8 text-xs gap-1.5 border-slate-200 hover:border-slate-300"
                                 >
-                                    Lihat Semua
-                                    <ChevronRight className="h-3.5 w-3.5" />
+                                    <Download className="h-3.5 w-3.5" />
+                                    Export
                                 </Button>
-                            </Link>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                        {isLoading ? (
-                            <div className="space-y-3">
-                                {[...Array(4)].map((_, i) => (
-                                    <Skeleton key={i} className="h-14 w-full" />
-                                ))}
                             </div>
-                        ) : recentAttendance.length > 0 ? (
-                            <div className="space-y-2">
-                                {recentAttendance.map((record, index) => (
-                                    <div
-                                        key={record.id}
-                                        className={cn(
-                                            "flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-slate-50 group",
-                                            index === 0 && "bg-gradient-to-r from-green-50/50 to-transparent"
-                                        )}
-                                    >
-                                        <div
-                                            className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold text-white shadow-sm"
-                                            style={{
-                                                background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
-                                            }}
-                                        >
-                                            {getInitials(record.full_name || "Unknown User")}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-slate-800 truncate">{record.full_name || "Unknown User"}</p>
-                                            <p className="text-xs text-slate-500">Clock in {formatTime(record.clock_in)}</p>
-                                        </div>
-                                        {getStatusBadge(record.status)}
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-8">
-                                <div
-                                    className="w-16 h-16 mx-auto mb-3 rounded-2xl flex items-center justify-center"
-                                    style={{ backgroundColor: `${BRAND_COLORS.blue}10` }}
-                                >
-                                    <Clock className="h-8 w-8" style={{ color: `${BRAND_COLORS.blue}50` }} />
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? (
+                                <Skeleton className="h-[240px] w-full" />
+                            ) : (
+                                <div className="h-[240px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                            <defs>
+                                                <linearGradient id="colorHadir" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor={CHART_COLORS.success} stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor={CHART_COLORS.success} stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                                            <XAxis
+                                                dataKey="day"
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fill: '#64748B', fontSize: 12 }}
+                                            />
+                                            <YAxis
+                                                axisLine={false}
+                                                tickLine={false}
+                                                tick={{ fill: '#64748B', fontSize: 12 }}
+                                                domain={[0, 100]}
+                                                tickFormatter={(value) => `${value}%`}
+                                            />
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="hadir"
+                                                stroke={CHART_COLORS.success}
+                                                strokeWidth={2}
+                                                fill="url(#colorHadir)"
+                                                name="Kehadiran"
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
                                 </div>
-                                <p className="text-slate-500 text-sm font-medium">Belum ada data kehadiran</p>
-                                <p className="text-slate-400 text-xs mt-1">Data akan muncul saat karyawan clock-in</p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                            )}
+                        </CardContent>
+                    </Card>
 
-                {/* Quick Actions */}
-                <Card className="border-slate-200 shadow-sm bg-white">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-base font-semibold text-slate-800">Aksi Cepat</CardTitle>
-                        <CardDescription className="text-sm">Menu administrasi umum</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                        <div className="grid grid-cols-2 gap-3">
-                            <Link to="/admin/karyawan">
-                                <div className="p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all group cursor-pointer">
-                                    <div
-                                        className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 transition-all group-hover:shadow-md"
-                                        style={{ backgroundColor: `${BRAND_COLORS.blue}15` }}
-                                    >
-                                        <Users className="h-5 w-5" style={{ color: BRAND_COLORS.blue }} />
-                                    </div>
-                                    <p className="text-sm font-semibold text-slate-800">Kelola Karyawan</p>
-                                    <p className="text-xs text-slate-500 mt-0.5">Tambah & edit data</p>
+                    {/* Department Distribution */}
+                    <Card className="border-slate-200 shadow-sm bg-white">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-semibold text-slate-800">Distribusi Departemen</CardTitle>
+                            <CardDescription className="text-sm">Jumlah karyawan per departemen</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? (
+                                <Skeleton className="h-[240px] w-full" />
+                            ) : departmentData.length > 0 ? (
+                                <div className="h-[240px] flex items-center justify-center">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={departmentData}
+                                                cx="50%"
+                                                cy="45%"
+                                                innerRadius={50}
+                                                outerRadius={80}
+                                                paddingAngle={2}
+                                                dataKey="value"
+                                            >
+                                                {departmentData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip
+                                                content={({ active, payload }: any) => {
+                                                    if (active && payload && payload.length) {
+                                                        const { name, value, color } = payload[0].payload;
+                                                        return (
+                                                            <div className="bg-white p-2 border border-slate-200 shadow-lg rounded-lg text-xs">
+                                                                <div className="font-semibold text-slate-800 mb-1">{name}</div>
+                                                                <div style={{ color }}>{value} Orang</div>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                }}
+                                            />
+                                            <Legend
+                                                verticalAlign="bottom"
+                                                height={36}
+                                                iconType="circle"
+                                                layout="horizontal"
+                                                align="center"
+                                                formatter={(value) => <span className="text-[10px] text-slate-500">{value}</span>}
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
                                 </div>
-                            </Link>
-                            <Link to="/admin/laporan">
-                                <div className="p-4 rounded-xl border border-slate-200 hover:border-green-300 hover:bg-green-50/50 transition-all group cursor-pointer">
-                                    <div
-                                        className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 transition-all group-hover:shadow-md"
-                                        style={{ backgroundColor: `${BRAND_COLORS.green}15` }}
-                                    >
-                                        <BarChart3 className="h-5 w-5" style={{ color: BRAND_COLORS.green }} />
-                                    </div>
-                                    <p className="text-sm font-semibold text-slate-800">Laporan</p>
-                                    <p className="text-xs text-slate-500 mt-0.5">Export & cetak</p>
+                            ) : (
+                                <div className="h-[240px] flex items-center justify-center text-slate-400 text-sm">
+                                    Belum ada data departemen
                                 </div>
-                            </Link>
-                            <Link to="/admin/absensi">
-                                <div className="p-4 rounded-xl border border-slate-200 hover:border-cyan-300 hover:bg-cyan-50/50 transition-all group cursor-pointer">
-                                    <div
-                                        className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 transition-all group-hover:shadow-md"
-                                        style={{ backgroundColor: `${BRAND_COLORS.lightBlue}15` }}
-                                    >
-                                        <Clock className="h-5 w-5" style={{ color: BRAND_COLORS.lightBlue }} />
-                                    </div>
-                                    <p className="text-sm font-semibold text-slate-800">Rekap Absensi</p>
-                                    <p className="text-xs text-slate-500 mt-0.5">Lihat kehadiran</p>
-                                </div>
-                            </Link>
-                            <Link to="/admin/pengaturan">
-                                <div className="p-4 rounded-xl border border-slate-200 hover:border-slate-400 hover:bg-slate-100/50 transition-all group cursor-pointer">
-                                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mb-3 group-hover:bg-slate-200 transition-colors">
-                                        <Settings className="h-5 w-5 text-slate-600" />
-                                    </div>
-                                    <p className="text-sm font-semibold text-slate-800">Pengaturan</p>
-                                    <p className="text-xs text-slate-500 mt-0.5">Konfigurasi sistem</p>
-                                </div>
-                            </Link>
-                        </div>
-                    </CardContent>
-                </Card>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </EnterpriseLayout>
     );

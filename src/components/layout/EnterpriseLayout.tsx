@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -65,6 +66,7 @@ const EnterpriseLayout = ({
 
     useEffect(() => {
         if (!showRefresh) return;
+        /*
         const countdownInterval = setInterval(() => {
             setNextRefresh(prev => {
                 if (prev <= 1) {
@@ -75,6 +77,7 @@ const EnterpriseLayout = ({
             });
         }, 1000);
         return () => clearInterval(countdownInterval);
+        */
     }, [showRefresh, refreshInterval, onRefresh]);
 
     const handleLogout = async () => {

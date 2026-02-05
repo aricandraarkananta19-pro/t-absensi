@@ -4,7 +4,7 @@ import {
   ArrowLeft, Users, Plus, Search, Edit, Trash2,
   Building2, MoreHorizontal, UserPlus, Mail, KeyRound,
   Filter, LayoutGrid, List as ListIcon, ShieldAlert,
-  Briefcase, Phone
+  Briefcase, Phone, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,9 +65,18 @@ const KelolaKaryawan = () => {
   const [departments, setDepartments] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Stats State
+  const [statsData, setStatsData] = useState({ total: 0, admins: 0, managers: 0, staff: 0 });
+
   // Filters
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  // Initialize filter from URL param if available
   const [filterDepartment, setFilterDepartment] = useState(searchParams.get("dept") || "all");
   const [filterRole, setFilterRole] = useState("all");
 
@@ -79,21 +88,23 @@ const KelolaKaryawan = () => {
 
   const form = useForm<EmployeeFormData>({
     resolver: zodResolver(employeeSchema),
-    defaultValues: {
-      full_name: "",
-      email: "",
-      password: "",
-      phone: "",
-      department: "",
-      position: "",
-      role: "karyawan",
-    },
+    defaultValues: { full_name: "", email: "", password: "", phone: "", department: "", position: "", role: "karyawan" },
   });
+
+  // Debounce Search
+  useEffect(() => {
+    const handler = setTimeout(() => { setDebouncedSearch(searchQuery); setPage(1); }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Reset page on filter change
+  useEffect(() => { setPage(1); }, [filterDepartment, filterRole]);
 
   useEffect(() => {
     fetchEmployees();
-    fetchDepartments();
-  }, []);
+    fetchStats();
+    if (departments.length === 0) fetchDepartments();
+  }, [page, debouncedSearch, filterDepartment, filterRole]);
 
   const fetchDepartments = async () => {
     const { data } = await supabase.from("profiles").select("department").not("department", "is", null);
@@ -103,20 +114,78 @@ const KelolaKaryawan = () => {
     }
   };
 
+  const fetchStats = async () => {
+    // Approximate counts for performance
+    const { count: total } = await supabase.from("profiles").select("id", { count: 'exact', head: true }).is("deleted_at", null);
+    const { count: admins } = await supabase.from("user_roles").select("role", { count: 'exact', head: true }).eq('role', 'admin');
+    const { count: managers } = await supabase.from("user_roles").select("role", { count: 'exact', head: true }).eq('role', 'manager');
+    const { count: staff } = await supabase.from("user_roles").select("role", { count: 'exact', head: true }).eq('role', 'karyawan');
+
+    setStatsData({
+      total: total || 0,
+      admins: admins || 0,
+      managers: managers || 0,
+      staff: staff || 0
+    });
+  };
+
   const fetchEmployees = async () => {
     setIsLoading(true);
-    let emailMap: Record<string, string> = {};
-    try {
-      const emailResponse = await supabase.functions.invoke("list-employees");
-      if (emailResponse.data?.success) emailMap = emailResponse.data.emails;
-    } catch (e) {
-      console.error("Failed to fetch emails", e);
+
+    // 1. Prepare Base Query
+    let query = supabase.from("profiles").select("*", { count: 'exact' }).is("deleted_at", null);
+
+    // 2. Apply Filters (Server-Side)
+    if (debouncedSearch) {
+      query = query.ilike('full_name', `%${debouncedSearch}%`);
     }
 
-    const { data: profiles, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
+    if (filterDepartment !== 'all') {
+      query = query.eq('department', filterDepartment);
+    }
+
+    // Role Filter (Requires Strategy: Get IDs from user_roles first)
+    if (filterRole !== 'all') {
+      const roleData = await supabase.from("user_roles").select("user_id").eq("role", filterRole);
+      const userIds = roleData.data?.map(r => r.user_id) || [];
+      if (userIds.length > 0) {
+        query = query.in('user_id', userIds);
+      } else {
+        // No users with this role, return empty
+        setEmployees([]);
+        setTotalRecords(0);
+        setTotalPages(1);
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    // 3. Paginate
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data: profiles, count, error } = await query
+      .range(from, to)
+      .order("created_at", { ascending: false });
 
     if (!error && profiles) {
+      setTotalRecords(count || 0);
+      setTotalPages(Math.ceil((count || 0) / pageSize));
+
+      // 4. Fetch Relations (Emails & Roles) for THIS PAGE ONLY
       const userIds = profiles.map(p => p.user_id);
+
+      let emailMap: Record<string, string> = {};
+      try {
+        // Optimized: Only list-employees? Edge function usually returns ALL. 
+        // If it supports ID filter use it, otherwise we accept the overhead or skip for now.
+        // Assuming list-employees is 'cached' or fast enough.
+        const emailResponse = await supabase.functions.invoke("list-employees");
+        if (emailResponse.data?.success) emailMap = emailResponse.data.emails;
+      } catch (e) {
+        console.error("Failed emails", e);
+      }
+
       const { data: allRoles } = await supabase.from("user_roles").select("user_id, role").in("user_id", userIds);
       const roleMap = new Map(allRoles?.map(r => [r.user_id, r.role]) || []);
 
@@ -174,6 +243,7 @@ const KelolaKaryawan = () => {
         setDialogOpen(false);
         fetchEmployees();
         fetchDepartments();
+        fetchStats();
       }
     } else {
       // Create Logic
@@ -190,38 +260,28 @@ const KelolaKaryawan = () => {
         setDialogOpen(false);
         fetchEmployees();
         fetchDepartments();
+        fetchStats();
       }
     }
     setIsSubmitting(false);
   };
 
   const handleDelete = async (employee: Employee) => {
-    if (!confirm(`Hapus ${employee.full_name}? Aksi ini tidak dapat dibatalkan.`)) return;
-    const { error } = await supabase.from("profiles").delete().eq("id", employee.id);
+    if (!confirm(`Hapus ${employee.full_name}? Karyawan akan diarsipkan.`)) return;
+
+    // CRITICAL: Soft Delete Implementation
+    const { error } = await supabase
+      .from("profiles")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", employee.id);
+
     if (error) toast({ variant: "destructive", title: "Gagal", description: error.message });
     else {
-      toast({ title: "Berhasil", description: "Karyawan dihapus" });
+      toast({ title: "Berhasil", description: "Karyawan berhasil diarsipkan" });
       fetchEmployees();
+      fetchStats();
     }
   };
-
-  // Filter Logic
-  const filteredEmployees = employees.filter(emp => {
-    const matchesSearch = emp.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      emp.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      emp.position?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDept = filterDepartment === "all" || emp.department === filterDepartment;
-    const matchesRole = filterRole === "all" || emp.role === filterRole;
-    return matchesSearch && matchesDept && matchesRole;
-  });
-
-  // Stats
-  const stats = useMemo(() => ({
-    total: employees.length,
-    admins: employees.filter(e => e.role === 'admin').length,
-    managers: employees.filter(e => e.role === 'manager').length,
-    staff: employees.filter(e => e.role === 'karyawan').length,
-  }), [employees]);
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20 md:pb-8">
@@ -245,19 +305,19 @@ const KelolaKaryawan = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card className="border-none shadow-sm bg-white"><CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <div className="text-3xl font-bold text-slate-800">{stats.total}</div>
+            <div className="text-3xl font-bold text-slate-800">{statsData.total}</div>
             <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1">Total Karyawan</div>
           </CardContent></Card>
           <Card className="border-none shadow-sm bg-blue-50/50"><CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <div className="text-3xl font-bold text-blue-700">{stats.staff}</div>
+            <div className="text-3xl font-bold text-blue-700">{statsData.staff}</div>
             <div className="text-xs text-blue-600 font-medium uppercase tracking-wider mt-1">Staff</div>
           </CardContent></Card>
           <Card className="border-none shadow-sm bg-amber-50/50"><CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <div className="text-3xl font-bold text-amber-700">{stats.managers}</div>
+            <div className="text-3xl font-bold text-amber-700">{statsData.managers}</div>
             <div className="text-xs text-amber-600 font-medium uppercase tracking-wider mt-1">Manager</div>
           </CardContent></Card>
           <Card className="border-none shadow-sm bg-red-50/50"><CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <div className="text-3xl font-bold text-red-700">{stats.admins}</div>
+            <div className="text-3xl font-bold text-red-700">{statsData.admins}</div>
             <div className="text-xs text-red-600 font-medium uppercase tracking-wider mt-1">Admin</div>
           </CardContent></Card>
         </div>
@@ -305,7 +365,7 @@ const KelolaKaryawan = () => {
           <div className="flex items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
           </div>
-        ) : filteredEmployees.length === 0 ? (
+        ) : employees.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-dashed border-slate-200">
             <Users className="h-12 w-12 text-slate-300 mx-auto mb-3" />
             <h3 className="text-lg font-medium text-slate-900">Tidak ada karyawan</h3>
@@ -316,7 +376,7 @@ const KelolaKaryawan = () => {
             {/* Mobile View */}
             {isMobile ? (
               <div className="space-y-3">
-                {filteredEmployees.map(emp => (
+                {employees.map(emp => (
                   <div key={emp.id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-start gap-3">
                     <div className={cn(
                       "h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
@@ -385,7 +445,7 @@ const KelolaKaryawan = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEmployees.map(emp => (
+                    {employees.map(emp => (
                       <TableRow key={emp.id} className="hover:bg-slate-50">
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -448,6 +508,26 @@ const KelolaKaryawan = () => {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                <div className="text-sm text-slate-500">
+                  Menampilkan {((page - 1) * pageSize) + 1} - {Math.min(page * pageSize, totalRecords)} dari {totalRecords} data
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center px-4 font-medium text-sm">
+                    Halaman {page} dari {totalPages}
+                  </div>
+                  <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
           </div>

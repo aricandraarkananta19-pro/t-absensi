@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -144,6 +145,7 @@ const ManagerDashboardNew = () => {
             fetchAllData(true);
         }
 
+        /*
         const attendanceChannel = supabase
             .channel("manager-dashboard-attendance-changes")
             .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, () => fetchAllData(false))
@@ -164,6 +166,7 @@ const ManagerDashboardNew = () => {
             supabase.removeChannel(profilesChannel);
             supabase.removeChannel(leaveChannel);
         };
+        */
     }, [settingsLoading, fetchAllData]);
 
     // Fetch today's live stats
@@ -345,7 +348,7 @@ const ManagerDashboardNew = () => {
             subtitle={`Rekap Kehadiran: ${reportDateDisplay}`}
             menuSections={menuSections}
             roleLabel="Manager"
-            showRefresh={true}
+            showRefresh={false}
             onRefresh={() => fetchAllData(false)}
             refreshInterval={60}
         >

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import {
@@ -288,7 +289,7 @@ const LaporanKehadiran = () => {
         }
     };
 
-    // =============== CORE LOGIC: FETCH ATTENDANCE REPORT ===============
+    // =============== CORE LOGIC: FETCH ATTENDANCE REPORT (SERVER-SIDE) ===============
     const fetchEmployeeReports = async () => {
         setIsLoading(true);
 
@@ -297,105 +298,68 @@ const LaporanKehadiran = () => {
             return;
         }
 
-        const startDate = dateRange.from;
-        const endDate = dateRange.to || dateRange.from;
+        const startDate = format(dateRange.from, 'yyyy-MM-dd');
+        // Handle "to" date: if missing, default to same day
+        const endDate = format(dateRange.to || dateRange.from, 'yyyy-MM-dd');
 
-        // 1. Get Employees
-        const { data: karyawanRoles } = await supabase.from("user_roles").select("user_id").in("role", ABSENSI_WAJIB_ROLE);
-        const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
-
-        const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, department, created_at, join_date");
-        if (!profiles) { setIsLoading(false); return; }
-
-        const karyawanProfiles = profiles.filter(p => karyawanUserIds.has(p.user_id))
-            .sort((a, b) => (a.full_name || "").localeCompare(b.full_name || ""));
-
-        // 2. Fetch Attendance Records for Period
-        const { data: attendanceData } = await supabase.from("attendance")
-            .select("*")
-            .gte("clock_in", startDate.toISOString())
-            .lte("clock_in", new Date(endDate.getTime() + 86400000).toISOString()); // +1 day buffer
-
-        // 3. Fetch Approved Leaves for Period logic inside map
-        // Optimization: Fetch all leaves with user_id.
-        const { data: leaveDataWithUser } = await supabase.from("leave_requests")
-            .select("user_id, start_date, end_date, leave_type, status")
-            .eq("status", "approved")
-            .lte("start_date", endDate.toISOString().split("T")[0])
-            .gte("end_date", startDate.toISOString().split("T")[0]);
-
-        // 4. Generate Report per Employee
-        const reports: EmployeeReport[] = karyawanProfiles.map(employee => {
-            const empRecords = attendanceData?.filter(a => a.user_id === employee.user_id) || [];
-            const empLeaves = leaveDataWithUser?.filter(l => l.user_id === employee.user_id) || [];
-
-            // Normalize Start Date
-            // Use Employee Join Date or Created At. 
-            // Do NOT override with system start date for historical reports, as that would hide past data.
-            const rawJoinDate = employee.join_date || employee.created_at;
-            const joinDate = rawJoinDate ? new Date(rawJoinDate) : new Date('2000-01-01');
-
-            // Pass joinDate as effective start for the generator to handle pre-employment days
-            const effectiveStartDateStr = joinDate.toISOString().split("T")[0];
-
-            // GENERATE COMPLETE TIMELINE
-            const timeline = generateAttendancePeriod(startDate, endDate, empRecords, empLeaves, effectiveStartDateStr);
-
-            // Aggregate Stats
-            let present = 0, late = 0, absent = 0, leave = 0;
-            const absentDates: string[] = [];
-            const lateDates: string[] = [];
-            const leaveDates: string[] = [];
-
-            timeline.forEach(day => {
-                // Pre-employment days are now handled by generateAttendancePeriod (status='future')
-                // so we don't need manual filtering here.
-
-                // Fix: Late and Early Leave are considered PRESENT
-                if (['present', 'late', 'early_leave'].includes(day.status)) {
-                    present++;
-                }
-
-                if (day.status === 'late') {
-                    late++;
-                    lateDates.push(day.date);
-                }
-
-                if (day.status === 'leave' || day.status === 'permission' || day.status === 'sick') {
-                    leave++;
-                    leaveDates.push(day.date);
-                }
-                else if (day.status === 'absent' || day.status === 'alpha') {
-                    if (!day.isWeekend && day.status !== 'future') {
-                        absent++;
-                        absentDates.push(day.date);
-                    }
-                }
+        try {
+            // Using RPC for High Performance (avoids client-side loop)
+            const { data, error } = await supabase.rpc('get_attendance_report', {
+                p_start_date: startDate,
+                p_end_date: endDate,
+                p_department: 'all' // Fetch all for summary stats, then filter client-side
             });
 
-            // Remarks Logic
-            let remarks = "Kehadiran baik";
-            if (absent > 2) remarks = "Perlu evaluasi kehadiran (Alpha > 2)";
-            else if (late > 4) remarks = "Sering terlambat";
+            if (error) throw error;
 
-            return {
-                user_id: employee.user_id,
-                full_name: employee.full_name,
-                department: employee.department,
-                details: timeline,
-                present,
-                late,
-                absent,
-                leave,
-                absentDates,
-                lateDates,
-                leaveDates,
-                remarks
-            };
-        });
+            if (data) {
+                const reports: EmployeeReport[] = data.map((d: any) => {
+                    // Calculate remarks
+                    let remarks = "Kehadiran baik";
+                    const absentCount = Number(d.absent);
+                    const lateCount = Number(d.late);
 
-        setEmployeeReports(reports);
-        setIsLoading(false);
+                    if (absentCount > 2) remarks = "Perlu evaluasi kehadiran (Alpha > 2)";
+                    else if (lateCount > 4) remarks = "Sering terlambat";
+
+                    // Parse details
+                    const details: DailyAttendanceStatus[] = (d.details || []).map((det: any) => ({
+                        date: det.date,
+                        formattedDate: format(new Date(det.date), 'd MMMM yyyy', { locale: id }),
+                        dayName: format(new Date(det.date), 'EEEE', { locale: id }),
+                        status: det.status,
+                        clockIn: det.clockIn,
+                        clockOut: det.clockOut,
+                        recordId: null,
+                        notes: det.notes,
+                        isWeekend: det.isWeekend
+                    }));
+
+                    return {
+                        user_id: d.user_id,
+                        full_name: d.full_name,
+                        department: d.department,
+                        present: Number(d.present),
+                        late: lateCount,
+                        absent: absentCount,
+                        leave: Number(d.leave),
+                        details: details,
+                        remarks: remarks,
+                        // Compatibility fields (populated from details)
+                        absentDates: details.filter(x => ['absent', 'alpha'].includes(x.status)).map(x => x.date),
+                        lateDates: details.filter(x => x.status === 'late').map(x => x.date),
+                        leaveDates: details.filter(x => ['leave', 'permission', 'sick'].includes(x.status)).map(x => x.date),
+                    };
+                });
+
+                setEmployeeReports(reports);
+            }
+        } catch (err: any) {
+            console.error("Report Error:", err);
+            toast({ variant: "destructive", title: "Gagal Memuat Laporan", description: err.message });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // Initial Load & Subscriptions
@@ -406,12 +370,14 @@ const LaporanKehadiran = () => {
         fetchEmployeeReports();
 
         // Realtime Subscriptions
+        /*
         const channels = [
             supabase.channel("leave-changes-report").on("postgres_changes", { event: "*", schema: "public", table: "leave_requests" }, () => { fetchLeaveRequests(); fetchEmployeeReports(); }).subscribe(),
             supabase.channel("attendance-report-changes").on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, () => fetchEmployeeReports()).subscribe()
         ];
-
+        
         return () => { channels.forEach(c => supabase.removeChannel(c)); };
+        */
     }, [dateRange, settingsLoading]);
 
     // Derived States
@@ -827,58 +793,60 @@ const LaporanKehadiran = () => {
                     <div className="flex-1 overflow-y-auto p-1">
                         {selectedEmployee && (
                             <div className="space-y-4">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className="bg-slate-50 sticky top-0 z-10">
-                                            <TableHead className="w-[140px]">Tanggal</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>Jam Masuk</TableHead>
-                                            <TableHead>Jam Pulang</TableHead>
-                                            <TableHead>Keterangan</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {selectedEmployee.details.map((day, idx) => {
-                                            // CUSTOM STATUS LOGIC FOR UI
-                                            let displayStatus: string = day.status;
-                                            let statusBadge = <Badge variant="secondary">{day.status}</Badge>;
+                                <div className="rounded-md border border-slate-200 overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow className="bg-slate-50 sticky top-0 z-10">
+                                                <TableHead className="w-[140px] whitespace-nowrap">Tanggal</TableHead>
+                                                <TableHead className="whitespace-nowrap">Status</TableHead>
+                                                <TableHead className="whitespace-nowrap">Jam Masuk</TableHead>
+                                                <TableHead className="whitespace-nowrap">Jam Pulang</TableHead>
+                                                <TableHead className="whitespace-nowrap">Keterangan</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {selectedEmployee.details.map((day, idx) => {
+                                                // CUSTOM STATUS LOGIC FOR UI
+                                                let displayStatus: string = day.status;
+                                                let statusBadge = <Badge variant="secondary">{day.status}</Badge>;
 
-                                            // Check "Belum Pulang"
-                                            if (day.clockIn && !day.clockOut && isToday(new Date(day.date))) {
-                                                displayStatus = 'belum_pulang';
-                                                statusBadge = <Badge className="bg-blue-100 text-blue-700 animate-pulse border-0">Belum Pulang</Badge>;
-                                            } else {
-                                                switch (day.status) {
-                                                    case 'present':
-                                                    case 'early_leave': statusBadge = <Badge className="bg-emerald-100 text-emerald-700 border-0">Hadir</Badge>; break;
-                                                    case 'late': statusBadge = <Badge className="bg-amber-100 text-amber-700 border-0">Terlambat</Badge>; break;
-                                                    case 'absent':
-                                                    case 'alpha': statusBadge = <Badge className="bg-red-100 text-red-700 border-0">Tidak Hadir</Badge>; break;
-                                                    case 'leave': statusBadge = <Badge className="bg-purple-100 text-purple-700 border-0">Cuti</Badge>; break;
-                                                    case 'permission': statusBadge = <Badge className="bg-blue-100 text-blue-700 border-0">Izin</Badge>; break;
-                                                    case 'weekend': statusBadge = <Badge variant="outline" className="text-slate-400 font-normal">Libur</Badge>; break;
-                                                    case 'holiday': statusBadge = <Badge variant="outline" className="text-red-400 font-normal border-red-200 bg-red-50">Libur Nasional</Badge>; break;
-                                                    case 'future': statusBadge = <Badge variant="secondary" className="text-slate-300">-</Badge>; break;
+                                                // Check "Belum Pulang"
+                                                if (day.clockIn && !day.clockOut && isToday(new Date(day.date))) {
+                                                    displayStatus = 'belum_pulang';
+                                                    statusBadge = <Badge className="bg-blue-100 text-blue-700 animate-pulse border-0">Belum Pulang</Badge>;
+                                                } else {
+                                                    switch (day.status) {
+                                                        case 'present':
+                                                        case 'early_leave': statusBadge = <Badge className="bg-emerald-100 text-emerald-700 border-0">Hadir</Badge>; break;
+                                                        case 'late': statusBadge = <Badge className="bg-amber-100 text-amber-700 border-0">Terlambat</Badge>; break;
+                                                        case 'absent':
+                                                        case 'alpha': statusBadge = <Badge className="bg-red-100 text-red-700 border-0">Tidak Hadir</Badge>; break;
+                                                        case 'leave': statusBadge = <Badge className="bg-purple-100 text-purple-700 border-0">Cuti</Badge>; break;
+                                                        case 'permission': statusBadge = <Badge className="bg-blue-100 text-blue-700 border-0">Izin</Badge>; break;
+                                                        case 'weekend': statusBadge = <Badge variant="outline" className="text-slate-400 font-normal">Libur</Badge>; break;
+                                                        case 'holiday': statusBadge = <Badge variant="outline" className="text-red-400 font-normal border-red-200 bg-red-50">Libur Nasional</Badge>; break;
+                                                        case 'future': statusBadge = <Badge variant="secondary" className="text-slate-300">-</Badge>; break;
+                                                    }
                                                 }
-                                            }
 
-                                            return (
-                                                <TableRow key={idx} className={cn("hover:bg-slate-50", day.isWeekend && "bg-slate-50/50")}>
-                                                    <TableCell className="font-medium text-slate-700">
-                                                        <div className="flex flex-col">
-                                                            <span>{day.formattedDate}</span>
-                                                            <span className="text-xs text-slate-400 font-normal">{day.dayName}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>{statusBadge}</TableCell>
-                                                    <TableCell className="text-sm">{day.clockIn ? format(new Date(day.clockIn), 'HH:mm') : '-'}</TableCell>
-                                                    <TableCell className="text-sm">{day.clockOut ? format(new Date(day.clockOut), 'HH:mm') : '-'}</TableCell>
-                                                    <TableCell className="text-xs text-slate-500 max-w-[150px] truncate">{day.notes || '-'}</TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </Table>
+                                                return (
+                                                    <TableRow key={idx} className={cn("hover:bg-slate-50", day.isWeekend && "bg-slate-50/50")}>
+                                                        <TableCell className="font-medium text-slate-700">
+                                                            <div className="flex flex-col">
+                                                                <span className="whitespace-nowrap">{day.formattedDate}</span>
+                                                                <span className="text-xs text-slate-400 font-normal">{day.dayName}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>{statusBadge}</TableCell>
+                                                        <TableCell className="text-sm whitespace-nowrap">{day.clockIn ? format(new Date(day.clockIn), 'HH:mm') : '-'}</TableCell>
+                                                        <TableCell className="text-sm whitespace-nowrap">{day.clockOut ? format(new Date(day.clockOut), 'HH:mm') : '-'}</TableCell>
+                                                        <TableCell className="text-xs text-slate-500 max-w-[150px] truncate">{day.notes || '-'}</TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                </div>
                             </div>
                         )}
                     </div>

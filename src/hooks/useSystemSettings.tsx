@@ -100,18 +100,18 @@ export const useSystemSettings = () => {
     fetchSettings();
 
     // Setup realtime subscription
-    const channel = supabase
-      .channel("settings-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "system_settings" },
-        () => fetchSettings()
-      )
-      .subscribe();
+    // const channel = supabase
+    //   .channel("settings-changes")
+    //   .on(
+    //     "postgres_changes",
+    //     { event: "*", schema: "public", table: "system_settings" },
+    //     () => fetchSettings()
+    //   )
+    //   .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // return () => {
+    //   supabase.removeChannel(channel);
+    // };
   }, [fetchSettings]);
 
   // Map camelCase keys to snake_case for DB

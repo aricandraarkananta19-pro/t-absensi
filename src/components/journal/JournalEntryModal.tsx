@@ -59,7 +59,7 @@ export function JournalEntryModal({
         <div className="grid gap-4 py-4">
             <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg border border-blue-100">
                 <div className="flex flex-col">
-                    <span className="text-xs text-blue-600 font-semibold uppercase tracking-wider">Total Session</span>
+                    <span className="text-xs text-blue-600 font-semibold uppercase tracking-wider">Durasi Kerja</span>
                     <span className="text-lg font-bold text-blue-900">{duration}</span>
                 </div>
                 <div className="h-8 w-8 bg-blue-200 rounded-full flex items-center justify-center animate-pulse">
@@ -69,12 +69,12 @@ export function JournalEntryModal({
 
             <div className="grid gap-2">
                 <Label htmlFor="journal" className="text-slate-700 font-medium">
-                    What were your big wins today?
+                    Apa pencapaian utama Anda hari ini?
                 </Label>
                 <div className="relative">
                     <Textarea
                         id="journal"
-                        placeholder="I fixed the login bug and deployed the new header..."
+                        placeholder="Saya menyelesaikan perbaikan bug login dan deploy header baru..."
                         className="min-h-[120px] pr-10 resize-none text-base"
                         value={journalText}
                         onChange={(e) => setJournalText(e.target.value)}
@@ -91,17 +91,17 @@ export function JournalEntryModal({
                 {/* Helper Chips */}
                 <div className="flex flex-wrap gap-2 mt-1">
                     <button className="text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-full text-slate-600 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" /> Polish with AI
+                        <Sparkles className="w-3 h-3" /> Rapikan dengan AI
                     </button>
                     <button
                         className="text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-full text-slate-600 hover:bg-blue-50 hover:text-blue-600"
-                        onClick={() => setJournalText(prev => prev + "Deployment completed. ")}
+                        onClick={() => setJournalText(prev => prev + "Deployment selesai. ")}
                     >
                         + Deployment
                     </button>
                     <button
                         className="text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-full text-slate-600 hover:bg-blue-50 hover:text-blue-600"
-                        onClick={() => setJournalText(prev => prev + "Meeting with client. ")}
+                        onClick={() => setJournalText(prev => prev + "Meeting dengan klien. ")}
                     >
                         + Meeting
                     </button>
@@ -115,16 +115,16 @@ export function JournalEntryModal({
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>Ready to wrap up?</DialogTitle>
+                        <DialogTitle>Siap untuk pulang?</DialogTitle>
                         <DialogDescription>
-                            Great work today! Quickly capture what you accomplished.
+                            Kerja bagus hari ini! Catat singkat apa yang Anda selesaikan.
                         </DialogDescription>
                     </DialogHeader>
                     {Content}
                     <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
-                        <Button variant="ghost" onClick={onSkip} className="text-slate-500">Skip & Clock Out</Button>
+                        <Button variant="ghost" onClick={onSkip} className="text-slate-500">Lewati & Pulang</Button>
                         <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-                            <Send className="w-4 h-4" /> Save & Clock Out
+                            <Send className="w-4 h-4" /> Simpan & Pulang
                         </Button>
                     </div>
                 </DialogContent>
@@ -136,9 +136,9 @@ export function JournalEntryModal({
         <Drawer open={open} onOpenChange={onOpenChange}>
             <DrawerContent>
                 <DrawerHeader className="text-left">
-                    <DrawerTitle>Ready to wrap up?</DrawerTitle>
+                    <DrawerTitle>Siap untuk pulang?</DrawerTitle>
                     <DrawerDescription>
-                        Great work today! Quickly capture what you accomplished.
+                        Kerja bagus hari ini! Catat singkat apa yang Anda selesaikan.
                     </DrawerDescription>
                 </DrawerHeader>
                 <div className="px-4">
@@ -146,10 +146,10 @@ export function JournalEntryModal({
                 </div>
                 <DrawerFooter className="pt-2">
                     <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white w-full gap-2">
-                        <Send className="w-4 h-4" /> Save & Clock Out
+                        <Send className="w-4 h-4" /> Simpan & Pulang
                     </Button>
                     <DrawerClose asChild>
-                        <Button variant="outline" onClick={onSkip}>Skip & Clock Out</Button>
+                        <Button variant="outline" onClick={onSkip}>Lewati & Pulang</Button>
                     </DrawerClose>
                 </DrawerFooter>
             </DrawerContent>

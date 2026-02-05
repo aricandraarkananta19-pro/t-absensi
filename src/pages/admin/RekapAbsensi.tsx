@@ -21,7 +21,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -167,6 +166,7 @@ const RekapAbsensi = () => {
       const { data: attendanceData, error: attendanceError } = await supabase
         .from("attendance")
         .select("*")
+        .is("deleted_at", null)
         .gte("clock_in", start.toISOString())
         .lte("clock_in", new Date(new Date(end).getTime() + 86400000).toISOString()); // Buffer for timezone
 
@@ -299,22 +299,24 @@ const RekapAbsensi = () => {
   }, [filterDate, selectedMonth, dateRange, viewMode]);
 
   // Realtime Subscription
-  useEffect(() => {
-    const channel = supabase
-      .channel('realtime-attendance-rekap')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'attendance' },
-        () => {
-          fetchAttendance();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchAttendance]);
+  /*
+    useEffect(() => {
+      const channel = supabase
+        .channel('realtime-attendance-rekap')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'attendance' },
+          () => {
+            fetchAttendance();
+          }
+        )
+        .subscribe();
+  
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }, [fetchAttendance]);
+    */
 
   useEffect(() => {
     if (!settingsLoading) fetchAttendance();
@@ -437,8 +439,9 @@ const RekapAbsensi = () => {
       // Use count: 'exact' to verify deletion
       const { error, count } = await supabase
         .from('attendance')
-        .delete({ count: 'exact' })
-        .eq('id', recordToDelete.id);
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', recordToDelete.id)
+        .select('*', { count: 'exact', head: true });
 
       if (error) throw error;
 

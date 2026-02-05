@@ -104,8 +104,8 @@ const StatCard = ({
     return (
         <div className={cn(
             "bg-white rounded-2xl border border-slate-200 p-5 relative overflow-hidden",
-            "hover:shadow-md hover:border-slate-300 transition-all duration-200 group",
-            "shadow-sm",
+            "hover:shadow-lg hover:border-blue-200/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 ease-out group",
+            "shadow-sm cursor-default",
             className
         )}>
             {/* Top Border Accent */}
