@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,8 +39,8 @@ const ITEMS_PER_PAGE = 15;
 // ========== REACT QUERY KEYS & FETCH FUNCTIONS ==========
 
 const journalQueryKeys = {
-    adminList: (status: string, search: string, page: number) =>
-        ['journals', 'admin', 'list', status, search, page] as const,
+    adminList: (status: string, search: string) =>
+        ['journals', 'admin', 'list', status, search] as const,
     adminStats: () => ['journals', 'admin', 'stats'] as const,
 };
 
@@ -73,8 +72,9 @@ async function fetchAdminStats() {
     };
 }
 
-async function fetchAdminJournals(status: string, search: string, page: number) {
-    const from = page * ITEMS_PER_PAGE;
+// Updated fetch function for Infinite Query
+async function fetchAdminJournals({ pageParam = 0, status, search }: { pageParam: number, status: string, search: string }) {
+    const from = pageParam * ITEMS_PER_PAGE;
     const to = from + ITEMS_PER_PAGE - 1;
 
     let query = supabase
@@ -128,11 +128,12 @@ const JurnalKerja = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
-    const [page, setPage] = useState(0);
-    const [allJournals, setAllJournals] = useState<JournalCardData[]>([]); // Aggregated from all pages
+
+    // REMOVED: allJournals state (replaced by infinite query data)
+    // REMOVED: page state (managed by infinite query)
 
     // ========== REACT QUERY HOOKS ==========
-    // Stats - cached for 10 minutes, persists across navigation
+    // Stats
     const {
         data: stats = { totalToday: 0, avgDuration: 0, pendingCount: 0, approvedCount: 0, needsRevisionCount: 0 },
         isLoading: isLoadingStats,
@@ -140,43 +141,36 @@ const JurnalKerja = () => {
     } = useQuery({
         queryKey: journalQueryKeys.adminStats(),
         queryFn: fetchAdminStats,
-        staleTime: 10 * 60 * 1000, // 10 minutes
-        gcTime: 30 * 60 * 1000, // 30 minutes cache
-    });
-
-    // Journal list - cached per filter/search/page
-    const {
-        data: pageJournals = [],
-        isLoading: isLoadingList,
-        isFetching: isFetchingList,
-        isPlaceholderData
-    } = useQuery({
-        queryKey: journalQueryKeys.adminList(filterStatus, debouncedSearch, page),
-        queryFn: () => fetchAdminJournals(filterStatus, debouncedSearch, page),
         staleTime: 10 * 60 * 1000,
         gcTime: 30 * 60 * 1000,
-        placeholderData: (prev) => prev, // Keep previous data while loading
     });
 
-    // Aggregate journals when page data changes
-    useEffect(() => {
-        if (pageJournals.length > 0) {
-            setAllJournals(prev => {
-                if (page === 0) return pageJournals;
-                // Avoid duplicates
-                const existingIds = new Set(prev.map(j => j.id));
-                const newItems = pageJournals.filter(j => !existingIds.has(j.id));
-                return [...prev, ...newItems];
-            });
-        } else if (page === 0) {
-            setAllJournals([]);
-        }
-    }, [pageJournals, page]);
+    // Infinite Journal List
+    const {
+        data: infiniteData,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading: isLoadingList,
+        isFetching: isFetchingList
+    } = useInfiniteQuery({
+        queryKey: journalQueryKeys.adminList(filterStatus, debouncedSearch),
+        queryFn: ({ pageParam }) => fetchAdminJournals({ pageParam, status: filterStatus, search: debouncedSearch }),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) => {
+            return lastPage.length === ITEMS_PER_PAGE ? allPages.length : undefined;
+        },
+        staleTime: 10 * 60 * 1000, // 10 minutes cache
+        gcTime: 30 * 60 * 1000,
+    });
 
-    // Derive hasMore from page data
-    const hasMore = pageJournals.length === ITEMS_PER_PAGE;
-    const isLoadingMore = isFetchingList && page > 0;
-    const isRefreshing = isFetchingStats || (isFetchingList && page === 0 && !isLoadingList);
+    // Flatten pages into a single list
+    const allJournals = infiniteData?.pages.flatMap(page => page) || [];
+
+    // Loading & Refresh states
+    const isLoadingMore = isFetchingNextPage;
+    const isRefreshing = isFetchingStats || (isFetchingList && !isFetchingNextPage);
+    const hasMore = !!hasNextPage;
 
     // Actions State
     const [editingJournal, setEditingJournal] = useState<JournalCardData | null>(null);
@@ -199,12 +193,12 @@ const JurnalKerja = () => {
         if (isLoadingList || isLoadingMore) return;
         if (observer.current) observer.current.disconnect();
         observer.current = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && hasMore) {
-                setPage(prevPage => prevPage + 1);
+            if (entries[0].isIntersecting && hasNextPage) {
+                fetchNextPage();
             }
         });
         if (node) observer.current.observe(node);
-    }, [isLoadingList, isLoadingMore, hasMore]);
+    }, [isLoadingList, isLoadingMore, hasNextPage, fetchNextPage]);
 
     // Menu Configuration
     const menuSections = [
@@ -238,18 +232,13 @@ const JurnalKerja = () => {
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
-    // Reset pagination on filter/search change
-    useEffect(() => {
-        setPage(0);
-        setAllJournals([]);
-    }, [filterStatus, debouncedSearch]);
+    // Reset pagination handled automatically by React Query keys changing
+    // useEffect for resetting page is NO LONGER NEEDED as filterStatus/debouncedSearch are part of the query key
 
     // Manual Refresh - Invalidate React Query cache
-    const handleRefresh = () => {
+    const handleRefresh = async () => {
         // Invalidate queries to trigger refetch
-        queryClient.invalidateQueries({ queryKey: ['journals', 'admin'] });
-        setPage(0);
-        setAllJournals([]);
+        await queryClient.invalidateQueries({ queryKey: ['journals', 'admin'] });
         toast({ title: "Data Diperbarui", description: "Jurnal terbaru berhasil dimuat." });
     };
 
@@ -286,8 +275,8 @@ const JurnalKerja = () => {
             setIsEditOpen(false);
             setEditingJournal(null);
 
-            // Optimistic update
-            setAllJournals(prev => prev.map(j => j.id === editingJournal.id ? { ...j, content: editContent } : j));
+            // Invalidate to refresh data
+            queryClient.invalidateQueries({ queryKey: journalQueryKeys.adminList(filterStatus, debouncedSearch) });
         } catch (error: any) {
             toast({ variant: "destructive", title: "Gagal", description: error.message });
         } finally {

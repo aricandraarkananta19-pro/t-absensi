@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     BookOpen, Calendar, Clock, CheckCircle2, AlertCircle,
     Plus, FileEdit, Send, Eye, RefreshCw, Filter
@@ -36,10 +37,33 @@ export default function JurnalSaya() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const isMobile = useIsMobile();
-    const [journals, setJournals] = useState<JournalCardData[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isRefreshing, setIsRefreshing] = useState(false);
+    const queryClient = useQueryClient();
     const [filterStatus, setFilterStatus] = useState("all");
+
+    // ========== REACT QUERY FOR DATA PERSISTENCE ==========
+    const {
+        data: journals = [],
+        isLoading,
+        isFetching: isRefreshing,
+        refetch
+    } = useQuery({
+        queryKey: ['journals', 'employee', user?.id],
+        queryFn: async () => {
+            if (!user?.id) return [];
+            const { data, error } = await supabase
+                .from('work_journals' as any)
+                .select('*')
+                .eq('user_id', user.id)
+                .is('deleted_at', null)
+                .order('date', { ascending: false });
+
+            if (error) throw error;
+            return (data || []) as unknown as JournalCardData[];
+        },
+        enabled: !!user?.id,
+        staleTime: 10 * 60 * 1000, // 10 minutes - data persists across navigation
+        gcTime: 30 * 60 * 1000,    // 30 minutes garbage collection
+    });
 
     // UI States
     const [isFormOpen, setIsFormOpen] = useState(false); // Mobile Modal
@@ -50,10 +74,6 @@ export default function JurnalSaya() {
     const [editingJournal, setEditingJournal] = useState<JournalCardData | null>(null);
     const [deletingJournal, setDeletingJournal] = useState<JournalCardData | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    useEffect(() => {
-        if (user?.id) fetchJournals();
-    }, [user?.id]); // Only refetch if user ID changes, not just reference
 
     // Real-time subscription - DISABLED for stability (enterprise requirement)
     // Data refreshes only on: page load, manual refresh, after save/delete actions
@@ -70,7 +90,7 @@ export default function JurnalSaya() {
                     filter: `user_id=eq.${user?.id}`
                 },
                 () => {
-                    fetchJournals(true);
+                    refetch();
                 }
             )
             .subscribe();
@@ -78,52 +98,8 @@ export default function JurnalSaya() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [user]);
+    }, [user, refetch]);
     */
-
-    const fetchJournals = async (isBackground = false) => {
-        if (!user?.id) return;
-
-        // SMART LOADING: Only show skeleton if we have NO data.
-        // If we already have data, keep showing it while we refresh (UI Stability).
-        const shouldShowSkeleton = !isBackground && journals.length === 0;
-
-        if (shouldShowSkeleton) {
-            setIsLoading(true);
-        } else {
-            setIsRefreshing(true); // Show spinner in header instead of wiping content
-        }
-
-        try {
-            const { data, error } = await supabase
-                .from('work_journals' as any)
-                .select('*')
-                .eq('user_id', user.id)
-                .is('deleted_at', null)
-                .order('date', { ascending: false });
-
-            if (error) throw error;
-
-            if (data) {
-                setJournals(data as unknown as JournalCardData[]);
-            }
-        } catch (error) {
-            console.error("Error fetching journals:", error);
-            if (!isBackground && !isRefreshing) {
-                toast({
-                    variant: "destructive",
-                    title: "Gagal memuat jurnal",
-                    description: "Silakan coba lagi."
-                });
-            }
-        } finally {
-            if (shouldShowSkeleton) {
-                setIsLoading(false);
-            } else {
-                setIsRefreshing(false);
-            }
-        }
-    };
 
     // Sync editingJournal with latest data from journals list (Real-time consistency)
     useEffect(() => {
@@ -141,9 +117,8 @@ export default function JurnalSaya() {
     }, [journals]);
 
     const handleRefresh = async () => {
-        setIsRefreshing(true);
-        await fetchJournals(false);
-        setIsRefreshing(false);
+        // Invalidate cache to force refetch
+        await queryClient.invalidateQueries({ queryKey: ['journals', 'employee', user?.id] });
         toast({ title: "Data diperbarui", description: "Jurnal berhasil dimuat ulang." });
     };
 
@@ -217,10 +192,10 @@ export default function JurnalSaya() {
                 }
             }
 
-            // Immediate State Update
+            // Immediate State Update (Optimistic update via Query Client)
             if (savedData) {
-                setJournals(prev => {
-                    const newList = [...prev];
+                queryClient.setQueryData(['journals', 'employee', user?.id], (old: JournalCardData[] | undefined) => {
+                    const newList = old ? [...old] : [];
                     if (actionType === 'update') {
                         const index = newList.findIndex(j => j.id === savedData!.id);
                         if (index !== -1) newList[index] = savedData!;
@@ -292,7 +267,8 @@ export default function JurnalSaya() {
                 setIsFormOpen(false);
             }
 
-            fetchJournals();
+            // Refetch to ensure consistency
+            refetch();
         } catch (error: any) {
             toast({
                 variant: "destructive",
