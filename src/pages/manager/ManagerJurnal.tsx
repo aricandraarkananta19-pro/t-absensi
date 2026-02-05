@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,6 +33,7 @@ const ITEMS_PER_PAGE = 15;
 
 const ManagerJurnal = () => {
     const { user } = useAuth();
+    const queryClient = useQueryClient();
 
     // Data State
     const [journals, setJournals] = useState<JournalCardData[]>([]);
@@ -425,9 +427,13 @@ const ManagerJurnal = () => {
                 isOpen={isDetailOpen}
                 onClose={() => setIsDetailOpen(false)}
                 onUpdate={() => {
-                    fetchJournals(page);
+                    // Refresh data after update
+                    setPage(0);
+                    setJournals([]);
+                    setHasMore(true);
+                    fetchJournals(0);
                     fetchStats();
-                    setIsDetailOpen(false); // Close after review action
+                    setIsDetailOpen(false);
                 }}
             />
 

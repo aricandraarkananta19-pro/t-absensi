@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, X, Wifi, WifiOff } from "lucide-react";
@@ -8,14 +8,21 @@ const PWAUpdatePrompt = () => {
     const [needRefresh, setNeedRefresh] = useState(false);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+    // CRITICAL FIX: Store interval ID for proper cleanup
+    const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
     const {
         updateServiceWorker,
     } = useRegisterSW({
         onRegisteredSW(swUrl, registration) {
             console.log("SW registered:", swUrl);
-            // Check for updates every 1 hour
+            // Check for updates every 1 hour - WITH CLEANUP
             if (registration) {
-                setInterval(() => {
+                // Clear any existing interval first
+                if (updateIntervalRef.current) {
+                    clearInterval(updateIntervalRef.current);
+                }
+                updateIntervalRef.current = setInterval(() => {
                     registration.update();
                 }, 60 * 60 * 1000);
             }
@@ -32,6 +39,16 @@ const PWAUpdatePrompt = () => {
             setNeedRefresh(true);
         },
     });
+
+    // Cleanup interval on unmount
+    useEffect(() => {
+        return () => {
+            if (updateIntervalRef.current) {
+                clearInterval(updateIntervalRef.current);
+                updateIntervalRef.current = null;
+            }
+        };
+    }, []);
 
     // Track online/offline status
     useEffect(() => {

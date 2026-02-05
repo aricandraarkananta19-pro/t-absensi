@@ -128,28 +128,58 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
             setError(null);
 
             try {
-                const { data, error } = await supabase
+                // Fetch journal data first
+                const { data: journalData, error: journalError } = await supabase
                     .from('work_journals')
-                    .select(`
-                        id, content, date, duration, user_id, status, verification_status,
-                        work_result, obstacles, mood, manager_notes, deleted_at,
-                        profiles:user_id ( full_name, avatar_url, department, position )
-                    `)
+                    .select('id, content, date, duration, user_id, status, verification_status, work_result, obstacles, mood, manager_notes, deleted_at')
                     .eq('id', journalId)
+                    .is('deleted_at', null)
                     .maybeSingle();
 
                 if (abortControllerRef.current?.signal.aborted) return;
 
-                if (error) throw error;
+                if (journalError) throw journalError;
 
                 // Check if deleted (soft delete)
-                if (!data || data.deleted_at) {
+                if (!journalData) {
                     setIsDeleted(true);
                     setError("Jurnal tidak ditemukan atau telah diarsipkan.");
-                } else {
-                    setJournal(data as unknown as JournalDetail);
-                    setNote(data.manager_notes || "");
+                    return;
                 }
+
+                // Fetch profile data separately for safety
+                let profileData = {
+                    full_name: 'Unknown User',
+                    avatar_url: null as string | null,
+                    department: null as string | null,
+                    position: null as string | null
+                };
+
+                if (journalData.user_id) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('full_name, avatar_url, department, position')
+                        .eq('user_id', journalData.user_id)
+                        .maybeSingle();
+
+                    if (profile) {
+                        profileData = {
+                            full_name: profile.full_name || 'Unknown User',
+                            avatar_url: profile.avatar_url,
+                            department: profile.department,
+                            position: profile.position
+                        };
+                    }
+                }
+
+                const fullData: JournalDetail = {
+                    ...journalData,
+                    profiles: profileData
+                };
+
+                setJournal(fullData);
+                setNote(journalData.manager_notes || "");
+
             } catch (err: any) {
                 if (err.name !== 'AbortError') {
                     console.error("Detail Fetch Error:", err);
