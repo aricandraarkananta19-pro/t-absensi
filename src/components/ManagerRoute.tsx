@@ -9,7 +9,7 @@ const ManagerRoute = ({ children }: ManagerRouteProps) => {
   const { user, loading, isAdminOrManager, role } = useAuth();
 
   // Wait for both auth loading AND role to be fetched
-  if (loading || (user && role === null)) {
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -18,6 +18,10 @@ const ManagerRoute = ({ children }: ManagerRouteProps) => {
         </div>
       </div>
     );
+  }
+
+  if (user && role === null) {
+    return <Navigate to="/" replace />;
   }
 
   if (!user) {

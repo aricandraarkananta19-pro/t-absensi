@@ -8,7 +8,7 @@ interface AdminRouteProps {
 const AdminRoute = ({ children }: AdminRouteProps) => {
   const { user, loading, isAdmin, role } = useAuth();
 
-  if (loading || (user && role === null)) {
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -17,6 +17,10 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
         </div>
       </div>
     );
+  }
+
+  if (user && role === null) {
+    return <Navigate to="/" replace />;
   }
 
   if (!user) {
