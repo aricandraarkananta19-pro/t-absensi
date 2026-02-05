@@ -35,6 +35,12 @@ export interface JournalCardData {
     mood?: '😊' | '😐' | '😣';
     created_at: string;
     updated_at?: string;
+    profiles?: {
+        full_name: string;
+        avatar_url: string | null;
+        department?: string | null;
+        position?: string | null;
+    };
 }
 
 interface JournalCardProps {
@@ -86,26 +92,19 @@ const WORK_RESULT_LABELS = {
     pending: { label: "Tertunda", className: "bg-amber-50 text-amber-700" }
 };
 
+// Status badge with simplified enterprise look
 export function JournalStatusBadge({ status, showIcon = true }: { status: string; showIcon?: boolean }) {
     const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.submitted;
     const IconComponent = config.icon;
 
     return (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Badge
-                        className={`${config.className} font-medium text-[10px] uppercase tracking-wide px-2.5 py-1 cursor-help transition-colors`}
-                    >
-                        {showIcon && <IconComponent className="w-3 h-3 mr-1" />}
-                        {config.label}
-                    </Badge>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                    {config.description}
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
+        <Badge
+            variant="outline"
+            className={`${config.className} font-medium text-[10px] uppercase tracking-wide gap-1.5 px-2.5 py-0.5 border h-6`}
+        >
+            {showIcon && <IconComponent className="w-3 h-3" />}
+            {config.label}
+        </Badge>
     );
 }
 
@@ -119,275 +118,156 @@ export function JournalCard({
 }: JournalCardProps) {
     const isMobile = useIsMobile();
     const status = journal.verification_status || 'submitted';
+    const profile = (journal as any).profiles; // Type assertion since interface might lag
 
-    // Edit rules for employee
+    // Permission Logic
     const canEdit = isEmployee
         ? ['draft', 'need_revision', 'submitted'].includes(status)
-        : true; // Managers/Admins can always edit
-
-    // Delete rules for employee
+        : true;
     const canDelete = isEmployee
         ? ['draft', 'submitted', 'need_revision'].includes(status)
-        : true; // Managers/Admins can always delete
-
+        : true;
     const isLocked = status === 'approved';
-
-    // Backdated logic: If created_at is more than 1 day after date
     const isBackdated = isAfter(startOfDay(parseISO(journal.created_at)), addDays(startOfDay(parseISO(journal.date)), 1));
 
-    // Truncate content for preview
-    const truncatedContent = journal.content.length > 150
-        ? journal.content.substring(0, 150) + "..."
+    // Content Truncation
+    const truncatedContent = journal.content.length > 200
+        ? journal.content.substring(0, 200) + "..."
         : journal.content;
 
     return (
         <Card className={`
-            bg-white border text-left
-            ${isMobile
-                ? 'border-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-2xl mb-3'
-                : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 rounded-xl'
-            }
-            transition-all duration-200 overflow-hidden group w-full cursor-pointer active:scale-[0.99]
-            ${isLocked ? 'bg-slate-50/50' : ''}
+            bg-white border transition-all duration-200 group w-full cursor-pointer
+            ${isMobile ? 'rounded-xl mb-3 border-slate-200 shadow-sm' : 'rounded-lg border-slate-200 hover:border-slate-300 hover:shadow-md'}
+            ${isLocked ? 'bg-slate-50/40' : ''}
         `}
             onClick={() => {
                 if (isMobile && canEdit) onEdit?.(journal);
-                else if (isMobile) onView?.(journal);
+                else onView?.(journal);
             }}
         >
-            <CardContent className="p-0">
-                <div className="flex flex-col md:flex-row">
-                    {/* Date Strip - Desktop Only */}
-                    {!isMobile && (
-                        <div className="w-24 bg-white border-r border-slate-100 flex flex-col items-center justify-center py-6 shrink-0 group-hover:bg-slate-50/50 transition-colors">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                                {format(new Date(journal.date), "MMM", { locale: id })}
-                            </span>
-                            <span className="text-4xl font-bold text-slate-800 leading-none tracking-tight">
-                                {format(new Date(journal.date), "dd")}
-                            </span>
-                            <span className="text-[10px] font-medium text-slate-400 mt-2 bg-slate-100 px-2 py-0.5 rounded-full">
-                                {format(new Date(journal.date), "EEEE", { locale: id })}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Content Area */}
-                    <div className={`flex-1 ${isMobile ? 'p-4' : 'p-5'}`}>
-
-                        {/* Mobile Header: Date & Status */}
-                        {isMobile && (
-                            <div className="flex items-center justify-between mb-3">
+            <CardContent className="p-4 md:p-5">
+                <div className="flex flex-col gap-4">
+                    {/* Header: User Info (Admin) or Date (Employee) */}
+                    <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                            {!isEmployee && profile ? (
+                                <>
+                                    <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-100">
+                                        {profile.avatar_url ? (
+                                            <img src={profile.avatar_url} alt={profile.full_name} className="h-full w-full object-cover" />
+                                        ) : (
+                                            <span className="text-sm font-bold text-slate-500">{profile.full_name?.charAt(0)}</span>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-slate-900 leading-tight">{profile.full_name}</h4>
+                                        <p className="text-xs text-slate-500 mt-0.5">{profile.department || "Karyawan"} • {profile.position || "-"}</p>
+                                    </div>
+                                </>
+                            ) : (
                                 <div className="flex flex-col">
                                     <span className="text-sm font-bold text-slate-900">
                                         {format(new Date(journal.date), "EEEE, dd MMM yyyy", { locale: id })}
                                     </span>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        {journal.mood && <span className="text-sm">{journal.mood}</span>}
-                                        {journal.duration > 0 && (
-                                            <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
-                                                <Clock className="w-3 h-3" />
-                                                {Math.floor(journal.duration / 60)}j {journal.duration % 60}m
-                                            </span>
-                                        )}
-                                    </div>
+                                    {!isEmployee && <span className="text-xs text-slate-400">Pengguna Tidak Dikenal</span>}
                                 </div>
-                                <div onClick={(e) => e.stopPropagation()}>
-                                    {/* Mobile Menu */}
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 -mr-2">
-                                                <MoreHorizontal className="w-5 h-5" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48">
-                                            <DropdownMenuItem onClick={() => onView?.(journal)}>
-                                                <Eye className="w-4 h-4 mr-2" /> Lihat Detail
-                                            </DropdownMenuItem>
-                                            {canEdit && (
-                                                <DropdownMenuItem onClick={() => onEdit?.(journal)}>
-                                                    <Pencil className="w-4 h-4 mr-2" /> Edit Jurnal
-                                                </DropdownMenuItem>
-                                            )}
-                                            {canDelete && (
-                                                <>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() => onDelete?.(journal)}
-                                                        className="text-red-600"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 mr-2" /> Hapus Jurnal
-                                                    </DropdownMenuItem>
-                                                </>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Top Badge Row (Desktop & Mobile) */}
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <JournalStatusBadge status={status} /> {/* Re-add Badge here */}
-                                {journal.work_result && (
-                                    <Badge className={`${WORK_RESULT_LABELS[journal.work_result].className} text-[10px] uppercase font-medium border-0`}>
-                                        {WORK_RESULT_LABELS[journal.work_result].label}
-                                    </Badge>
-                                )}
-                                {isBackdated && (
-                                    <Badge variant="outline" className="text-[10px] text-amber-600 bg-amber-50 border-amber-200 gap-1 px-2">
-                                        <History className="w-3 h-3" />
-                                        Terlambat
-                                    </Badge>
-                                )}
-                            </div>
-
-                            {/* Desktop Actions */}
-                            {!isMobile && showActions && (
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {/* Quick Actions (visible on hover) */}
-                                    {canEdit && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-7 px-2 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                            onClick={() => onEdit?.(journal)}
-                                        >
-                                            <Pencil className="w-3.5 h-3.5 mr-1" />
-                                            Edit
-                                        </Button>
-                                    )}
-
-                                    {canDelete && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-7 px-2 text-red-600 hover:bg-red-50 hover:text-red-700"
-                                            onClick={() => onDelete?.(journal)}
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5 mr-1" />
-                                            Hapus
-                                        </Button>
-                                    )}
-
-                                    {/* More Actions Dropdown */}
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600">
-                                                <MoreHorizontal className="w-4 h-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48">
-                                            <DropdownMenuItem onClick={() => onView?.(journal)}>
-                                                <Eye className="w-4 h-4 mr-2" /> Lihat Detail
-                                            </DropdownMenuItem>
-                                            {canEdit && (
-                                                <DropdownMenuItem onClick={() => onEdit?.(journal)}>
-                                                    <Pencil className="w-4 h-4 mr-2" /> Edit Jurnal
-                                                </DropdownMenuItem>
-                                            )}
-                                            {canDelete && (
-                                                <>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={() => onDelete?.(journal)}
-                                                        className="text-red-600 focus:text-red-700"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 mr-2" /> Hapus Jurnal
-                                                    </DropdownMenuItem>
-                                                </>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            )}
-
-                            {/* Status indicator for locked journals */}
-                            {isLocked && (
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <div className="flex items-center gap-1 text-[10px] text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                                                <CheckCircle2 className="w-3 h-3" />
-                                                <span className="hidden sm:inline">Terkunci</span>
-                                            </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            Jurnal yang sudah disetujui tidak dapat diubah.
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
                             )}
                         </div>
 
-                        {/* Content Preview */}
-                        <p className={`
-                            text-slate-700 leading-relaxed 
-                            ${isMobile ? 'text-sm line-clamp-2 mt-2' : 'text-sm whitespace-pre-wrap'}
-                        `}>
-                            {isMobile ? journal.content : truncatedContent}
-                        </p>
-
-                        {/* Obstacles Section */}
-                        {journal.obstacles && (
-                            <div className="mt-3 p-2.5 bg-amber-50/50 border border-amber-100 rounded-lg">
-                                <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wide mb-1">
-                                    Kendala / Catatan
-                                </p>
-                                <p className="text-xs text-slate-600">{journal.obstacles}</p>
-                            </div>
-                        )}
-
-                        {/* Manager Feedback (Highlighted for revisions) */}
-                        {journal.manager_notes && (
-                            <div className={`
-                                mt-3 p-3 rounded-lg text-sm border
-                                ${status === 'need_revision'
-                                    ? 'bg-orange-50 border-orange-200'
-                                    : 'bg-blue-50/50 border-blue-100'
-                                }
-                            `}>
-                                <p className={`text-[10px] font-semibold mb-1 uppercase tracking-wide ${status === 'need_revision' ? 'text-orange-700' : 'text-blue-700'
-                                    }`}>
-                                    {status === 'need_revision' ? '⚠️ Catatan Revisi dari Manager:' : '💬 Catatan Manager:'}
-                                </p>
-                                <p className="text-slate-600 text-sm">{journal.manager_notes}</p>
-                            </div>
-                        )}
-
-                        {/* Helpful hint for editable journals */}
-                        {isEmployee && status === 'draft' && (
-                            <p className="mt-3 text-[10px] text-slate-400 italic flex items-center gap-1">
-                                <FileEdit className="w-3 h-3" />
-                                Jurnal ini masih draft. Anda dapat mengedit atau mengirimnya kapan saja.
-                            </p>
-                        )}
-
-                        {isEmployee && status === 'need_revision' && (
-                            <p className="mt-3 text-[10px] text-orange-500 italic flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3" />
-                                Jurnal ini perlu direvisi. Silakan edit dan kirim ulang.
-                            </p>
-                        )}
-
-                        {isEmployee && status === 'approved' && (
-                            <p className="mt-3 text-[10px] text-green-600 italic flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" />
-                                Jurnal telah disetujui dan terkunci.
-                            </p>
-                        )}
-
-                        {isBackdated && (
-                            <p className="mt-3 text-[10px] text-amber-500 italic flex items-center gap-1">
-                                <History className="w-3 h-3" />
-                                Jurnal ini diisi terlambat ({format(parseISO(journal.created_at), "d MMM")}).
-                            </p>
-                        )}
+                        {/* Top Right: Status & Date (for Admin) */}
+                        <div className="flex flex-col items-end gap-1.5">
+                            <JournalStatusBadge status={status} />
+                            {!isEmployee && (
+                                <span className="text-[10px] text-slate-400 font-medium">
+                                    {format(new Date(journal.date), "d MMM yyyy", { locale: id })}
+                                </span>
+                            )}
+                        </div>
                     </div>
+
+                    {/* Divider for Employee View to separate Date from Content */}
+                    {isEmployee && <div className="h-px bg-slate-100 -mx-5 md:-mx-5" />}
+
+                    {/* Body Content */}
+                    <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                        {isMobile ? journal.content : truncatedContent}
+                    </div>
+
+                    {/* Footer Info (Manager Notes, Obstacles, Backdated) */}
+                    {(journal.manager_notes || journal.obstacles || isBackdated) && (
+                        <div className="flex flex-col gap-2 mt-1">
+                            {/* Manager Feedback */}
+                            {journal.manager_notes && (
+                                <div className={`text-xs p-3 rounded-md border ${status === 'need_revision' ? 'bg-orange-50 border-orange-100 text-orange-800' : 'bg-blue-50 border-blue-100 text-blue-800'}`}>
+                                    <span className="font-semibold block mb-1">💬 Catatan Manager:</span>
+                                    {journal.manager_notes}
+                                </div>
+                            )}
+
+                            {/* Obstacles */}
+                            {journal.obstacles && (
+                                <div className="text-xs p-3 rounded-md bg-amber-50 border border-amber-100 text-amber-800">
+                                    <span className="font-semibold block mb-1">⚠️ Kendala:</span>
+                                    {journal.obstacles}
+                                </div>
+                            )}
+
+                            {/* Backdated Tag */}
+                            {isBackdated && (
+                                <div className="flex items-center gap-1.5 text-[10px] text-amber-600 font-medium mt-1">
+                                    <History className="w-3 h-3" />
+                                    <span>Diisi terlambat: {format(parseISO(journal.created_at), "d MMM HH:mm")}</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Actions Row */}
+                    {showActions && (
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-1">
+                            <div className="flex items-center gap-3">
+                                {journal.duration > 0 && (
+                                    <span className="text-xs text-slate-500 flex items-center gap-1.5">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        {Math.floor(journal.duration / 60)}j {journal.duration % 60}m
+                                    </span>
+                                )}
+                                {journal.mood && <span className="text-sm grayscale opacity-70 hover:grayscale-0 transition-all cursor-help" title="Mood">{journal.mood}</span>}
+                            </div>
+
+                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                <Button variant="ghost" size="sm" className="h-8 text-xs text-slate-600 hover:text-blue-600 hover:bg-blue-50" onClick={() => onView?.(journal)}>
+                                    Detail
+                                </Button>
+
+                                {!isEmployee && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400">
+                                                <MoreHorizontal className="w-4 h-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => onView?.(journal)}><Eye className="mr-2 h-4 w-4" /> Lihat Detail</DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={() => onDelete?.(journal)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" /> Hapus</DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
+
+                                {isEmployee && !isLocked && (
+                                    <>
+                                        {canEdit && <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => onEdit?.(journal)}><Pencil className="w-3.5 h-3.5" /></Button>}
+                                        {canDelete && <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500 hover:bg-red-50" onClick={() => onDelete?.(journal)}><Trash2 className="w-3.5 h-3.5" /></Button>}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </CardContent>
-        </Card >
+        </Card>
     );
 }
 

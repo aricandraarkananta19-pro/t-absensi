@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     LayoutDashboard, Users, Clock, BarChart3, Building2, Shield, Key,
     Settings, Database, BookOpen, Search, CheckCircle2, AlertCircle,
-    Trash2, Send, FileEdit, Download, Loader2
+    Trash2, Send, FileEdit, Download, Loader2, MoreHorizontal
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -23,6 +23,12 @@ import { JournalDetailView } from "@/components/journal/JournalDetailView";
 import { JournalFormModal } from "@/components/journal/JournalFormModal";
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -342,136 +348,102 @@ const JurnalKerja = () => {
             showRefresh={false}
             onRefresh={handleRefresh}
         >
-            {/* Stats Overview */}
-            {isLoadingStats && stats.totalToday === 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 h-24 flex items-center justify-between">
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-20" />
-                                <Skeleton className="h-8 w-12" />
+            {/* New Enterprise Stats Bar */}
+            <div className="bg-white border-b border-slate-200 px-6 py-4 -mx-6 mb-6 mt-[-24px] sticky top-[60px] z-20 shadow-[0_4px_20px_-12px_rgba(0,0,0,0.1)]">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-7xl mx-auto">
+
+                    {/* Key Metrics */}
+                    <div className="flex items-center gap-6 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+                        <div className="flex items-center gap-3 shrink-0">
+                            <div className="p-2 bg-slate-100 rounded-lg"><BookOpen className="w-5 h-5 text-slate-600" /></div>
+                            <div>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total Hari Ini</p>
+                                <p className="text-xl font-bold text-slate-900">{isLoadingStats ? "..." : stats.totalToday}</p>
                             </div>
-                            <Skeleton className="h-10 w-10 rounded-lg" />
                         </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <Card className="bg-white shadow-sm border-slate-200">
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className="p-3 bg-indigo-50 rounded-xl">
-                                <BookOpen className="w-6 h-6 text-indigo-600" />
-                            </div>
+                        <div className="w-px h-8 bg-slate-200 shrink-0" />
+                        <div className="flex items-center gap-3 shrink-0">
+                            <div className="p-2 bg-amber-50 rounded-lg"><Send className="w-5 h-5 text-amber-600" /></div>
                             <div>
-                                <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">Jurnal Hari Ini</p>
-                                <p className="text-2xl font-bold text-slate-900">{stats.totalToday}</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Menunggu</p>
+                                <p className="text-xl font-bold text-amber-600">{isLoadingStats ? "..." : stats.pendingCount}</p>
                             </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-amber-50 to-white shadow-sm border-amber-200">
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className="p-3 bg-amber-100 rounded-xl">
-                                <Send className="w-6 h-6 text-amber-600" />
-                            </div>
+                        </div>
+                        <div className="w-px h-8 bg-slate-200 shrink-0" />
+                        <div className="flex items-center gap-3 shrink-0">
+                            <div className="p-2 bg-orange-50 rounded-lg"><AlertCircle className="w-5 h-5 text-orange-600" /></div>
                             <div>
-                                <p className="text-xs text-amber-600 uppercase tracking-wide font-medium">Menunggu Review</p>
-                                <p className="text-2xl font-bold text-amber-700">{stats.pendingCount}</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Revisi</p>
+                                <p className="text-xl font-bold text-orange-600">{isLoadingStats ? "..." : stats.needsRevisionCount}</p>
                             </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-orange-50 to-white shadow-sm border-orange-200">
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className="p-3 bg-orange-100 rounded-xl">
-                                <FileEdit className="w-6 h-6 text-orange-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-orange-600 uppercase tracking-wide font-medium">Perlu Revisi</p>
-                                <p className="text-2xl font-bold text-orange-700">{stats.needsRevisionCount}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-green-50 to-white shadow-sm border-green-200">
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className="p-3 bg-green-100 rounded-xl">
-                                <CheckCircle2 className="w-6 h-6 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-green-600 uppercase tracking-wide font-medium">Disetujui</p>
-                                <p className="text-2xl font-bold text-green-700">{stats.approvedCount}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
-
-            {/* Filters */}
-            <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm pb-4 pt-2 -mx-4 px-4 md:static md:mx-0 md:px-0 md:bg-transparent">
-                <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="relative flex-1 min-w-[240px]">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Cari karyawan atau isi jurnal..."
-                            className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                        </div>
+                        <div className="w-px h-8 bg-slate-200 shrink-0 hidden md:block" />
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                        {[
-                            { key: 'all', label: 'Semua', icon: BookOpen },
-                            { key: 'submitted', label: 'Menunggu', icon: Send },
-                            { key: 'need_revision', label: 'Perlu Revisi', icon: AlertCircle },
-                            { key: 'approved', label: 'Disetujui', icon: CheckCircle2 },
-                        ].map(btn => {
-                            const IconComponent = btn.icon;
-                            const isActive = filterStatus === btn.key;
-                            return (
-                                <Button
+
+                    {/* Actions Toolbar */}
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                        <div className="relative flex-1 md:w-[280px]">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Cari nama, role, atau isi jurnal..."
+                                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex items-center border border-slate-200 rounded-lg bg-slate-50 p-1">
+                            {[
+                                { key: 'all', label: 'Semua' },
+                                { key: 'submitted', label: 'Baru' },
+                                { key: 'need_revision', label: 'Revisi' },
+                                { key: 'approved', label: 'Selesai' },
+                            ].map(btn => (
+                                <button
                                     key={btn.key}
-                                    variant={isActive ? 'default' : 'outline'}
-                                    size="sm"
                                     onClick={() => setFilterStatus(btn.key)}
-                                    className={`gap-1.5 ${isActive ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'text-slate-600'}`}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${filterStatus === btn.key
+                                        ? 'bg-white text-slate-900 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                        }`}
                                 >
-                                    <IconComponent className="w-4 h-4" />
                                     {btn.label}
-                                </Button>
-                            );
-                        })}
-                    </div>
+                                </button>
+                            ))}
+                        </div>
 
-                    <div className="flex gap-2 ml-auto w-full md:w-auto mt-2 md:mt-0">
-                        <Button
-                            variant="outline"
-                            className="gap-2 border-red-200 text-red-600 hover:bg-red-50 flex-1 md:flex-none"
-                            onClick={() => setIsCleanupOpen(true)}
-                        >
-                            <Trash2 className="w-4 h-4" /> <span className="hidden md:inline">Bersihkan</span>
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 flex-1 md:flex-none"
-                            onClick={() => setIsExportOpen(true)}
-                        >
-                            <Download className="w-4 h-4" /> <span className="hidden md:inline">Export</span>
-                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon" className="shrink-0 border-slate-200">
+                                    <MoreHorizontal className="w-4 h-4 text-slate-600" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setIsExportOpen(true)}>
+                                    <Download className="w-4 h-4 mr-2" /> Export Data
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setIsCleanupOpen(true)} className="text-red-600">
+                                    <Trash2 className="w-4 h-4 mr-2" /> Bersihkan Data Lama
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
             </div>
 
-            {/* Journal List */}
-            <div className="h-[calc(100vh-320px)] overflow-y-auto pr-2 pb-20 custom-scrollbar relative">
+            {/* Journal Feed */}
+            <div className="max-w-5xl mx-auto pb-20 min-h-[500px]">
                 {isLoadingList && journals.length === 0 ? (
                     <JournalSkeleton />
                 ) : journals.length === 0 ? (
-                    <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <BookOpen className="w-8 h-8 text-slate-300" />
+                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
+                            <BookOpen className="w-10 h-10 text-slate-300" />
                         </div>
-                        <h3 className="text-lg font-semibold text-slate-900">Tidak ada jurnal ditemukan</h3>
-                        <p className="text-slate-500 max-w-sm mx-auto mt-1">
-                            Tidak ada data jurnal yang cocok dengan filter pencarian.
+                        <h3 className="text-lg font-semibold text-slate-900">Belum ada jurnal</h3>
+                        <p className="text-slate-500 max-w-sm mx-auto mt-2 text-sm">
+                            Tidak ada data jurnal yang ditemukan untuk filter yang dipilih. Coba ubah kata kunci atau status filter.
                         </p>
                     </div>
                 ) : (
@@ -485,7 +457,7 @@ const JurnalKerja = () => {
                                 >
                                     <JournalCard
                                         journal={journal}
-                                        isAdmin={true}
+                                        isEmployee={false} // Enables Admin View (Profile Header)
                                         showActions={true}
                                         onEdit={() => handleEditJournal(journal)}
                                         onDelete={() => onOpenDelete(journal)}
@@ -496,15 +468,16 @@ const JurnalKerja = () => {
                         })}
 
                         {isLoadingMore && (
-                            <div className="py-4 text-center">
-                                <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
-                                <span className="text-xs text-slate-400 mt-1 block">Memuat lebih banyak...</span>
+                            <div className="py-8 flex justify-center">
+                                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
                             </div>
                         )}
 
                         {!hasMore && journals.length > 0 && (
-                            <div className="py-8 text-center text-slate-400 text-xs border-t border-dashed border-slate-200 mt-4">
-                                — Semua data ditampilkan —
+                            <div className="py-8 text-center">
+                                <span className="px-4 py-1.5 bg-slate-100 text-slate-400 text-[10px] font-medium uppercase tracking-widest rounded-full">
+                                    End of List
+                                </span>
                             </div>
                         )}
                     </div>

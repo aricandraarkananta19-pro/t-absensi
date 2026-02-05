@@ -163,7 +163,8 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
 
         fetchDetail();
 
-        // 3. REAL-TIME SAFETY (Listen for deletes on this specific ID)
+        // Realtime Subscriptions - DISABLED for stability
+        /*
         const channel = supabase
             .channel(`detail-${journalId}`)
             .on('postgres_changes', {
@@ -181,16 +182,14 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                 table: 'work_journals',
                 filter: `id=eq.${journalId}`
             }, (payload) => {
-                // Optional: Auto-update content if changed elsewhere
-                // For now, we respect "DO NOT re-render active detail view" unless we want full sync
-                // But typically detail view SHOULD show latest data.
-                // We will just update status if changed
+                 // @ts-ignore
                 setJournal(prev => prev ? ({ ...prev, ...payload.new } as JournalDetail) : null);
             })
             .subscribe();
+        */
 
         return () => {
-            supabase.removeChannel(channel);
+            // supabase.removeChannel(channel);
             if (abortControllerRef.current) abortControllerRef.current.abort();
         };
     }, [journalId, isOpen]);
@@ -285,7 +284,7 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
             <div className="space-y-8 pb-20"> {/* pb-20 for sticky footer space */}
 
                 {/* HEAD & META */}
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                < div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center" >
                     <div className="flex items-center gap-4">
                         <div className="h-12 w-12 rounded-full bg-white border-2 border-slate-200 overflow-hidden shadow-sm flex items-center justify-center text-slate-400">
                             {journal.profiles.avatar_url
@@ -312,10 +311,10 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                             {format(new Date(journal.date), "d MMM yyyy", { locale: id })}
                         </div>
                     </div>
-                </div>
+                </div >
 
                 {/* SECTION 1: MAIN CONTENT */}
-                <section>
+                < section >
                     <div className="flex items-center gap-2 mb-3">
                         <div className="h-6 w-1 bg-blue-600 rounded-full" />
                         <h4 className="font-bold text-slate-800 text-base">Ringkasan Pekerjaan</h4>
@@ -325,10 +324,10 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                             {journal.content}
                         </p>
                     </div>
-                </section>
+                </section >
 
                 {/* SECTION 2: WORK RESULT & OBSTACLES */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                < div className="grid grid-cols-1 md:grid-cols-2 gap-4" >
                     <div className="bg-white border-2 border-slate-50 rounded-xl p-4 shadow-sm">
                         <h5 className="text-xs font-bold text-slate-400 uppercase mb-2">Hasil Pekerjaan</h5>
                         <div className="flex items-center gap-3">
@@ -345,25 +344,27 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                         </div>
                     </div>
 
-                    {journal.obstacles ? (
-                        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-                            <h5 className="text-xs font-bold text-amber-700 uppercase mb-2 flex items-center gap-2">
-                                <AlertTriangle className="w-3.5 h-3.5" />
-                                Kendala Dihadapi
-                            </h5>
-                            <p className="text-sm text-slate-700">
-                                {journal.obstacles}
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-center justify-center text-slate-400 text-sm italic">
-                            Tidak ada kendala yang dilaporkan.
-                        </div>
-                    )}
-                </div>
+                    {
+                        journal.obstacles ? (
+                            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                                <h5 className="text-xs font-bold text-amber-700 uppercase mb-2 flex items-center gap-2">
+                                    <AlertTriangle className="w-3.5 h-3.5" />
+                                    Kendala Dihadapi
+                                </h5>
+                                <p className="text-sm text-slate-700">
+                                    {journal.obstacles}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-center justify-center text-slate-400 text-sm italic">
+                                Tidak ada kendala yang dilaporkan.
+                            </div>
+                        )
+                    }
+                </div >
 
                 {/* SECTION 3: METADATA & MOOD */}
-                <section className="bg-slate-50/50 rounded-xl p-4 border border-slate-100">
+                < section className="bg-slate-50/50 rounded-xl p-4 border border-slate-100" >
                     <div className="flex flex-wrap gap-6 text-sm text-slate-600">
                         <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-blue-500" />
@@ -377,16 +378,18 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                             </div>
                         )}
                     </div>
-                </section>
+                </section >
 
                 {/* MANAGER NOTES DISPLAY */}
-                {journal.manager_notes && !showRevisionInput && (
-                    <div className={`p-4 rounded-xl border-l-4 ${status === 'need_revision' ? 'bg-orange-50 border-orange-400' : 'bg-blue-50 border-blue-400'}`}>
-                        <h5 className={`font-bold text-sm mb-1 ${status === 'need_revision' ? 'text-orange-900' : 'text-blue-900'}`}>Catatan Manager</h5>
-                        <p className="text-sm text-slate-700">{journal.manager_notes}</p>
-                    </div>
-                )}
-            </div>
+                {
+                    journal.manager_notes && !showRevisionInput && (
+                        <div className={`p-4 rounded-xl border-l-4 ${status === 'need_revision' ? 'bg-orange-50 border-orange-400' : 'bg-blue-50 border-blue-400'}`}>
+                            <h5 className={`font-bold text-sm mb-1 ${status === 'need_revision' ? 'text-orange-900' : 'text-blue-900'}`}>Catatan Manager</h5>
+                            <p className="text-sm text-slate-700">{journal.manager_notes}</p>
+                        </div>
+                    )
+                }
+            </div >
         );
     };
 

@@ -60,6 +60,8 @@ const ManagerLaporan = () => {
     fetchLeaveRequests();
     fetchEmployeeReports();
 
+    // Realtime Subscriptions - DISABLED for stability
+    /*
     const leaveChannel = supabase
       .channel("manager-leave-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "leave_requests" }, () => fetchLeaveRequests())
@@ -74,6 +76,8 @@ const ManagerLaporan = () => {
       supabase.removeChannel(leaveChannel);
       supabase.removeChannel(attendanceChannel);
     };
+    */
+    return () => { };
   }, [reportMonth, settingsLoading, settings]);
 
   const fetchLeaveRequests = async () => {

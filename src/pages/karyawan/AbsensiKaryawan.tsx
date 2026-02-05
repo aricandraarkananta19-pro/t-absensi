@@ -87,7 +87,8 @@ const AbsensiKaryawan = () => {
     if (user) {
       fetchTodayAttendance();
 
-      // Setup realtime subscription
+      // Setup realtime subscription - DISABLED for stability
+      /*
       const channel = supabase
         .channel("my-attendance-changes")
         .on(
@@ -96,9 +97,10 @@ const AbsensiKaryawan = () => {
           () => fetchTodayAttendance()
         )
         .subscribe();
+      */
 
       return () => {
-        supabase.removeChannel(channel);
+        // supabase.removeChannel(channel);
       };
     }
   }, [user]);

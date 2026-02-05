@@ -227,6 +227,8 @@ const ManagerRekapAbsensi = () => {
       fetchAttendance();
     }
 
+    // Realtime Subscriptions - DISABLED for stability
+    /*
     const channel = supabase
       .channel("manager-attendance-changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, () => fetchAttendance())
@@ -235,6 +237,8 @@ const ManagerRekapAbsensi = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+    */
+    return () => { };
   }, [filterDate, settingsLoading, isSearchingData, fetchAttendance]);
 
   // Navigation helpers
@@ -409,7 +413,7 @@ const ManagerRekapAbsensi = () => {
       roleLabel="Manager"
       showRefresh={true}
       onRefresh={fetchAttendance}
-      refreshInterval={60}
+      refreshInterval={0}
     >
       {/* Read-Only Notice */}
       <div

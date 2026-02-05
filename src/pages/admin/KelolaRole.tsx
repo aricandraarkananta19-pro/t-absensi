@@ -48,6 +48,8 @@ const KelolaRole = () => {
   useEffect(() => {
     fetchUsers();
 
+    // Realtime Subscriptions - DISABLED for stability
+    /*
     const channel = supabase
       .channel("role-changes")
       .on(
@@ -60,6 +62,8 @@ const KelolaRole = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+    */
+    return () => { };
   }, []);
 
   const fetchUsers = async () => {

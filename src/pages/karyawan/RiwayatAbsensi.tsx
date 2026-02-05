@@ -54,10 +54,13 @@ const RiwayatAbsensi = () => {
   // Realtime Subscription
   useEffect(() => {
     if (!user) return;
+    /*
     const channel = supabase.channel('realtime-attendance-history')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance', filter: `user_id=eq.${user.id}` }, () => fetchAttendance())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
+    */
+    return () => { };
   }, [user, currentMonth, dateRange, viewMode]);
 
   useEffect(() => {
@@ -301,7 +304,7 @@ const RiwayatAbsensi = () => {
 
           <div className="flex items-center gap-3 bg-slate-50 p-1 rounded-lg border border-slate-200">
             <Button
-              variant={viewMode === 'monthly' ? 'white' : 'ghost'}
+              variant={viewMode === 'monthly' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('monthly')}
               className={viewMode === 'monthly' ? 'shadow-sm text-blue-700' : 'text-slate-500'}
@@ -309,7 +312,7 @@ const RiwayatAbsensi = () => {
               Bulanan
             </Button>
             <Button
-              variant={viewMode === 'range' ? 'white' : 'ghost'}
+              variant={viewMode === 'range' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('range')}
               className={viewMode === 'range' ? 'shadow-sm text-blue-700' : 'text-slate-500'}
