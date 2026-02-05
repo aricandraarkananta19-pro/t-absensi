@@ -172,32 +172,38 @@ const KelolaKaryawan = () => {
       setTotalRecords(count || 0);
       setTotalPages(Math.ceil((count || 0) / pageSize));
 
-      // 4. Fetch Relations (Emails & Roles) for THIS PAGE ONLY
+      // 4. Fetch Relations (Roles) - CRITICAL: Do this effectively
       const userIds = profiles.map(p => p.user_id);
-
-      let emailMap: Record<string, string> = {};
-      try {
-        // Optimized: Only list-employees? Edge function usually returns ALL. 
-        // If it supports ID filter use it, otherwise we accept the overhead or skip for now.
-        // Assuming list-employees is 'cached' or fast enough.
-        const emailResponse = await supabase.functions.invoke("list-employees");
-        if (emailResponse.data?.success) emailMap = emailResponse.data.emails;
-      } catch (e) {
-        console.error("Failed emails", e);
-      }
 
       const { data: allRoles } = await supabase.from("user_roles").select("user_id, role").in("user_id", userIds);
       const roleMap = new Map(allRoles?.map(r => [r.user_id, r.role]) || []);
 
-      const employeesWithRoles = profiles.map((profile) => ({
+      // Initial Render without emails (Fast)
+      const initialEmployees = profiles.map((profile) => ({
         ...profile,
         role: roleMap.get(profile.user_id) || "karyawan",
-        email: emailMap[profile.user_id] || "",
+        email: "", // Placeholder
       }));
 
-      setEmployees(employeesWithRoles);
+      setEmployees(initialEmployees);
+      setIsLoading(false); // Stop spinner immediately
+
+      // 5. Fetch Emails in Background (Non-blocking)
+      try {
+        const emailResponse = await supabase.functions.invoke("list-employees");
+        if (emailResponse.data?.success && emailResponse.data?.emails) {
+          const emailMap = emailResponse.data.emails;
+          setEmployees(prev => prev.map(emp => ({
+            ...emp,
+            email: emailMap[emp.user_id] || emp.email
+          })));
+        }
+      } catch (e) {
+        console.warn("Background email fetch failed:", e);
+      }
+    } else {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleAddNew = () => {
