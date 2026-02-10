@@ -14,6 +14,7 @@ interface EmployeeAttendance {
     lateDates: string[];
     leaveDates: string[];
     remarks: string;
+    dailyStatus: Record<string, string>; // Key: "YYYY-MM-DD", Value: Status Code (H, S, I, A, T, L)
 }
 
 interface AttendanceReportData {
@@ -78,6 +79,7 @@ export const exportAttendanceExcel = (data: AttendanceReportData, filename: stri
         <Style ss:ID="Good"><Font ss:FontName="Arial" ss:Size="9" ss:Color="#047857"/><Alignment ss:Horizontal="Center"/></Style>
         <Style ss:ID="Warning"><Font ss:FontName="Arial" ss:Size="9" ss:Color="#D97706"/><Alignment ss:Horizontal="Center"/></Style>
         <Style ss:ID="Bad"><Font ss:FontName="Arial" ss:Size="9" ss:Color="#DC2626"/><Alignment ss:Horizontal="Center"/></Style>
+        <Style ss:ID="SignatureLabel"><Font ss:FontName="Arial" ss:Bold="1" ss:Size="10"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
     </Styles>`;
 
     // ===== SHEET 1: Ringkasan Kehadiran =====
@@ -117,31 +119,71 @@ export const exportAttendanceExcel = (data: AttendanceReportData, filename: stri
                 <Cell ss:StyleID="${e.late > 0 ? 'Warning' : 'DataCenter'}"><Data ss:Type="Number">${e.late}</Data></Cell>
                 <Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${e.remarks || '-'}</Data></Cell>
             </Row>`).join('')}
+            
+            <Row ss:Height="30"></Row>
+            <Row>
+                <Cell ss:Index="2" ss:StyleID="SignatureLabel"><Data ss:Type="String">Dibuat Oleh,</Data></Cell>
+                <Cell ss:Index="6" ss:StyleID="SignatureLabel"><Data ss:Type="String">Disetujui Oleh,</Data></Cell>
+            </Row>
+            <Row ss:Height="50"></Row>
+            <Row>
+                <Cell ss:Index="2" ss:StyleID="SignatureLabel"><Data ss:Type="String">( HR Manager )</Data></Cell>
+                <Cell ss:Index="6" ss:StyleID="SignatureLabel"><Data ss:Type="String">( Direktur Utama )</Data></Cell>
+            </Row>
         </Table>
     </Worksheet>`;
 
-    // ===== SHEET 2: Detail Kehadiran (Tanggal) =====
+    // ===== SHEET 2: Detail Kehadiran (Matrix View) =====
+    // Generate Header Row for Days 1-31
+    const daysInMonth = new Date(new Date(data.periodEnd).getFullYear(), new Date(data.periodEnd).getMonth() + 1, 0).getDate();
+    let headerRow = `<Row ss:Height="22">
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Nama Karyawan</Data></Cell>
+        <Cell ss:StyleID="Header"><Data ss:Type="String">Departemen</Data></Cell>`;
+
+    // Add columns for each day
+    for (let d = 1; d <= daysInMonth; d++) {
+        headerRow += `<Cell ss:StyleID="Header" ss:Width="25"><Data ss:Type="String">${d}</Data></Cell>`;
+    }
+    headerRow += `</Row>`;
+
+    // Generate Legend
+    const legendRow = `<Row ss:Height="16"><Cell ss:MergeAcross="${daysInMonth + 1}" ss:StyleID="Subtitle"><Data ss:Type="String">Keterangan: H=Hadir, T=Terlambat, A=Alpha, S=Sakit, I=Izin, C=Cuti, L=Libur</Data></Cell></Row>`;
+
     const sheet2 = `
-    <Worksheet ss:Name="Detail Kehadiran">
+    <Worksheet ss:Name="Detail Kehadiran (Matrix)">
         <Table>
-            <Column ss:Width="150"/><Column ss:Width="120"/><Column ss:Width="200"/><Column ss:Width="200"/><Column ss:Width="200"/>
-            <Row ss:Height="22"><Cell ss:StyleID="Title"><Data ss:Type="String">DETAIL KEHADIRAN - ${data.period.toUpperCase()}</Data></Cell></Row>
+            <Column ss:Width="150"/><Column ss:Width="120"/>
+            ${Array(daysInMonth).fill('<Column ss:Width="25"/>').join('')}
+            <Row ss:Height="22"><Cell ss:StyleID="Title"><Data ss:Type="String">DETAIL KEHADIRAN (MATRIX) - ${data.period.toUpperCase()}</Data></Cell></Row>
+            ${legendRow}
             <Row ss:Height="10"></Row>
-            <Row ss:Height="28">
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Nama Karyawan</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Departemen</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Tanggal Tidak Hadir</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Tanggal Cuti</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Tanggal Terlambat</Data></Cell>
-            </Row>
-            ${data.employees.map((e, i) => `
-            <Row>
-                <Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${e.name}</Data></Cell>
-                <Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${e.department}</Data></Cell>
-                <Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${formatDatesDisplay(e.absentDates, data.periodStart) || '—'}</Data></Cell>
-                <Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${formatDatesDisplay(e.leaveDates, data.periodStart) || '—'}</Data></Cell>
-                <Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${formatDatesDisplay(e.lateDates, data.periodStart) || '—'}</Data></Cell>
-            </Row>`).join('')}
+            ${headerRow}
+            ${data.employees.map((e, i) => {
+        let row = `<Row>`;
+        row += `<Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${e.name}</Data></Cell>`;
+        row += `<Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${e.department}</Data></Cell>`;
+
+        // Cells for days
+        for (let d = 1; d <= daysInMonth; d++) {
+            // Construct Date Key YYYY-MM-DD
+            const current = new Date(data.periodStart);
+            current.setDate(d);
+            const dateKey = current.toISOString().split('T')[0];
+            const status = e.dailyStatus[dateKey] || '-';
+
+            let style = "DataCenter";
+            if (status === 'H') style = "Good";
+            if (status === 'T') style = "Warning";
+            if (status === 'A') style = "Bad";
+
+            // Allow alternating background
+            if (i % 2 && style === "DataCenter") style = "DataCenterAlt";
+
+            row += `<Cell ss:StyleID="${style}"><Data ss:Type="String">${status}</Data></Cell>`;
+        }
+        row += `</Row>`;
+        return row;
+    }).join('')}
         </Table>
     </Worksheet>`;
 
@@ -302,6 +344,62 @@ export const exportAttendanceHRPDF = async (data: AttendanceReportData, filename
         }
     });
 
+    // === SIGNATURES ===
+    let finalY = (doc as any).lastAutoTable.finalY + 15 || 65;
+    if (finalY > doc.internal.pageSize.getHeight() - 50) {
+        doc.addPage();
+        finalY = 25;
+    }
+
+    doc.setFontSize(9); doc.setTextColor(0); doc.setFont("helvetica", "bold");
+
+    // Left Signature
+    doc.text("Dibuat Oleh,", margin + 20, finalY);
+    doc.line(margin + 15, finalY + 20, margin + 55, finalY + 20);
+    doc.text("HR Manager", margin + 25, finalY + 25);
+
+    // Right Signature
+    const rightSigX = pageWidth - margin - 50;
+    doc.text("Disetujui Oleh,", rightSigX + 5, finalY);
+    doc.line(rightSigX, finalY + 20, rightSigX + 40, finalY + 20);
+    doc.text("Direktur Utama", rightSigX + 8, finalY + 25);
+
+    // === APPENDIX: ATTENDANCE MATRIX PAGE ===
+    doc.addPage();
+    doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
+    doc.text("APPENDIX: MATRIKS KEHADIRAN HARIAN", pageWidth / 2, 20, { align: "center" });
+
+    const daysInMonth = new Date(new Date(data.periodEnd).getFullYear(), new Date(data.periodEnd).getMonth() + 1, 0).getDate();
+
+    // Matrix Table Data
+    const matrixHead = [['Nama', ...Array.from({ length: daysInMonth }, (_, i) => String(i + 1))]];
+    const matrixBody = data.employees.map(e => {
+        const row = [e.name];
+        for (let d = 1; d <= daysInMonth; d++) {
+            // Construct Date Key YYYY-MM-DD
+            const current = new Date(data.periodStart);
+            current.setDate(d);
+            const dateKey = current.toISOString().split('T')[0];
+            row.push(e.dailyStatus[dateKey] || '-');
+        }
+        return row;
+    });
+
+    autoTable(doc, {
+        head: matrixHead,
+        body: matrixBody,
+        startY: 25,
+        theme: "grid",
+        styles: { fontSize: 6, cellPadding: 1, halign: 'center' },
+        headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: "bold" },
+        columnStyles: { 0: { cellWidth: 30, halign: 'left' } }, // Name column wider
+        margin: { top: 25, left: 10, right: 10 },
+        tableWidth: 'auto'
+    });
+
+    doc.setFontSize(8);
+    doc.text("Ket: H=Hadir, T=Terlambat, A=Alpha, S=Sakit, I=Izin, C=Cuti, L=Libur", 10, doc.internal.pageSize.getHeight() - 10);
+
     doc.save(`${filename}.pdf`);
 };
 
@@ -402,11 +500,25 @@ export const exportAttendanceManagementPDF = async (data: AttendanceReportData, 
         });
     }
 
-    // === FOOTER ===
-    const footerY = doc.internal.pageSize.getHeight() - 20;
+    // === FOOTER (Signatures) ===
+    const signatureY = doc.internal.pageSize.getHeight() - 50;
+
+    doc.setFontSize(10); doc.setTextColor(0);
+    // Left Signature (HR Manager)
+    doc.text("Dibuat Oleh,", margin + 10, signatureY);
+    doc.line(margin, signatureY + 25, margin + 40, signatureY + 25);
+    doc.text("HR Manager", margin + 10, signatureY + 30);
+
+    // Right Signature (Director)
+    doc.text("Disetujui Oleh,", pageWidth - margin - 35, signatureY);
+    doc.line(pageWidth - margin - 45, signatureY + 25, pageWidth - margin - 5, signatureY + 25);
+    doc.text("Direktur Utama", pageWidth - margin - 32, signatureY + 30);
+
+    // === PAGE FOOTER ===
+    const footerY = doc.internal.pageSize.getHeight() - 10;
     doc.setDrawColor(200); doc.line(margin, footerY, pageWidth - margin, footerY);
-    doc.setFontSize(8); doc.setTextColor(100);
-    doc.text(`Laporan ini digenerate otomatis oleh T-Absensi System`, margin, footerY + 6);
+    doc.setFontSize(8); doc.setTextColor(150);
+    doc.text(`Dokumen ini digenerate otomatis oleh T-Absensi System`, margin, footerY + 6);
     doc.text(`Dicetak: ${printDate}`, pageWidth - margin, footerY + 6, { align: "right" });
 
     doc.save(`${filename}.pdf`);

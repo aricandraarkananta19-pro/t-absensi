@@ -1,228 +1,315 @@
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
     LayoutDashboard, Clock, BarChart3, FileCheck, BookOpen, Search,
-    CheckCircle2, AlertCircle, FileEdit, Send, Loader2
+    Filter, AlertCircle, CheckCircle2, FileEdit, Ghost, Calendar, Briefcase, List
 } from "lucide-react";
-import {
-    Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { JournalCard, JournalCardData, JournalStatusBadge } from "@/components/journal/JournalCard";
-import { JournalSkeleton, JournalStatsSkeleton } from "@/components/journal/JournalSkeleton";
-import { JournalDetailView } from "@/components/journal/JournalDetailView";
+import { JournalReviewDetail } from "@/components/journal/JournalReviewDetail";
+import { formatDistanceToNow } from "date-fns";
+import { id } from "date-fns/locale";
 
-// Interfaces
-interface JournalStats {
-    total_entries: number;
-    pending_review: number;
-    need_revision: number;
-    approved: number;
+// --- Types ---
+type TabType = 'all' | 'pending' | 'urgent' | 'recent';
+
+interface JournalProfile {
+    full_name: string | null;
+    avatar_url: string | null;
+    department: string | null;
+    position: string | null;
 }
 
-const ITEMS_PER_PAGE = 15;
+interface JournalData {
+    id: string;
+    user_id: string;
+    content: string;
+    work_result: string | null;
+    status: string;
+    verification_status: string;
+    created_at: string;
+    date: string;
+    profiles: JournalProfile;
+}
 
-const journalQueryKeys = {
-    managerList: (status: string, search: string) =>
-        ['journals', 'manager', 'list', status, search] as const,
-    managerStats: () => ['journals', 'manager', 'stats'] as const,
-};
+// --- Fetcher Functions ---
 
-async function fetchManagerStats() {
-    const { data, error } = await supabase.rpc('get_manager_journal_stats');
-    if (!error && data && data.length > 0) {
-        return data[0];
-    }
-    // Fallback
-    const { count: total } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).is('deleted_at', null);
-    const { count: pending } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('verification_status', 'submitted');
-    const { count: revision } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('verification_status', 'need_revision');
-    const { count: approved } = await supabase.from('work_journals').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('verification_status', 'approved');
+// 1. Fetch Counts for Badges
+async function fetchCounts(managerId: string) {
+    if (!managerId) return { all: 0, pending: 0, urgent: 0, recent: 0 };
+
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
+
+    // All: All journals
+    const allQuery = supabase
+        .from('work_journals')
+        .select('id', { count: 'exact', head: true })
+        .is('deleted_at', null);
+
+    // Urgent: Pending AND > 24h ago
+    const urgentQuery = supabase
+        .from('work_journals')
+        .select('id', { count: 'exact', head: true })
+        .eq('verification_status', 'pending')
+        .lt('created_at', twentyFourHoursAgo)
+        .is('deleted_at', null);
+
+    // Pending: All 'pending'
+    const pendingQuery = supabase
+        .from('work_journals')
+        .select('id', { count: 'exact', head: true })
+        .in('verification_status', ['pending'])
+        .is('deleted_at', null);
+
+    // Recent: Created > 48h ago (Newest)
+    const recentQuery = supabase
+        .from('work_journals')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', fortyEightHoursAgo)
+        .is('deleted_at', null);
+
+    const [all, urgent, pending, recent] = await Promise.all([
+        allQuery, urgentQuery, pendingQuery, recentQuery
+    ]);
 
     return {
-        total_entries: total || 0,
-        pending_review: pending || 0,
-        need_revision: revision || 0,
-        approved: approved || 0
+        all: all.count || 0,
+        urgent: urgent.count || 0,
+        pending: pending.count || 0,
+        recent: recent.count || 0
     };
 }
 
-async function fetchManagerJournals({ pageParam = 0, status, search }: { pageParam: number, status: string, search: string }) {
-    const from = pageParam * ITEMS_PER_PAGE;
-    const to = from + ITEMS_PER_PAGE - 1;
+// 2. Fetch Journal List
+async function fetchJournalPage(
+    managerId: string,
+    page: number,
+    pageSize: number,
+    search: string,
+    tab: TabType
+) {
+    if (!managerId) return { data: [], count: 0 };
 
     let query = supabase
         .from('work_journals')
-        .select('*')
-        .is('deleted_at', null)
-        .order('date', { ascending: false })
-        .range(from, to);
+        .select('*', { count: 'exact' })
+        .is('deleted_at', null);
 
-    // Apply Filters
-    if (status !== 'all') {
-        query = query.eq('verification_status', status);
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
+
+    // Apply Tab Filters
+    if (tab === 'urgent') {
+        // Urgent: Pending AND older than 24h
+        query = query.eq('verification_status', 'pending').lt('created_at', twentyFourHoursAgo);
+    } else if (tab === 'recent') {
+        // Recent: All journals created in last 48h
+        query = query.gte('created_at', fortyEightHoursAgo);
+    } else if (tab === 'pending') {
+        // Pending
+        query = query.in('verification_status', ['pending']);
     }
+    // tab === 'all' -> No filter on verification_status
 
+    // Filter by Search (Content)
     if (search) {
         query = query.ilike('content', `%${search}%`);
     }
 
-    const { data: journalData, error } = await query;
+    // Pagination
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+
+    // Order
+    if (tab === 'recent' || tab === 'all') {
+        query = query.order('created_at', { ascending: false });
+    } else {
+        query = query.order('created_at', { ascending: true }); // Process oldest first for pending/urgent
+    }
+
+    const { data: journals, error, count } = await query.range(from, to);
 
     if (error) throw error;
-    if (!journalData || journalData.length === 0) return [];
+    if (!journals || journals.length === 0) return { data: [], count: 0 };
 
-    // Efficiently join profiles manually
-    const userIds = [...new Set(journalData.map(j => j.user_id))];
-    const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, avatar_url, department, position')
-        .in('user_id', userIds);
+    // Fetch Profiles
+    const userIds = [...new Set(journals.map(j => j.user_id))];
+    const profileMap = new Map<string, JournalProfile>();
 
-    const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+    if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, full_name, avatar_url, department, position')
+            .in('user_id', userIds);
 
-    return journalData.map(journal => ({
-        ...journal,
-        profiles: profileMap.get(journal.user_id) || {
+        if (profiles) {
+            profiles.forEach(p => profileMap.set(p.user_id, p));
+        }
+    }
+
+    // Merge
+    const formattedData: JournalData[] = journals.map(j => {
+        const profile = profileMap.get(j.user_id) || {
             full_name: 'Unknown User',
             avatar_url: null,
-            department: null,
-            position: null
-        }
-    })) as unknown as JournalCardData[];
+            department: '-',
+            position: '-'
+        };
+        return { ...j, profiles: profile };
+    });
+
+    return { data: formattedData, count: count || 0 };
 }
 
 const ManagerJurnal = () => {
     const { user } = useAuth();
-    const queryClient = useQueryClient();
 
-    // Filter
-    const [searchTerm, setSearchTerm] = useState("");
+    // State
+    const [activeTab, setActiveTab] = useState<TabType>('all');
+    const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [filterStatus, setFilterStatus] = useState("all");
+    const [selectedJournalId, setSelectedJournalId] = useState<string | null>(null);
 
-    // ========== REACT QUERY HOOKS ==========
+    // Counts State
+    const [counts, setCounts] = useState({ all: 0, urgent: 0, pending: 0, recent: 0 });
 
-    // Stats
-    const {
-        data: stats = { total_entries: 0, pending_review: 0, need_revision: 0, approved: 0 },
-        isLoading: isLoadingStats,
-        isFetching: isFetchingStats
-    } = useQuery({
-        queryKey: journalQueryKeys.managerStats(),
-        queryFn: fetchManagerStats,
-        staleTime: 10 * 60 * 1000,
-    });
+    // Pagination/Data State
+    const [journals, setJournals] = useState<JournalData[]>([]);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+    const PAGE_SIZE = 20;
 
-    // Infinite List
-    const {
-        data: infiniteData,
-        fetchNextPage,
-        hasNextPage,
-        isFetchingNextPage,
-        isLoading: isLoadingList,
-        isFetching: isFetchingList
-    } = useInfiniteQuery({
-        queryKey: journalQueryKeys.managerList(filterStatus, debouncedSearch),
-        queryFn: ({ pageParam }) => fetchManagerJournals({ pageParam, status: filterStatus, search: debouncedSearch }),
-        initialPageParam: 0,
-        getNextPageParam: (lastPage, allPages) => {
-            return lastPage.length === ITEMS_PER_PAGE ? allPages.length : undefined;
-        },
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const journals = infiniteData?.pages.flatMap(page => page) || [];
-    const hasMore = !!hasNextPage;
-    const isLoadingMore = isFetchingNextPage;
-    const isRefreshing = isFetchingStats || (isFetchingList && !isFetchingNextPage);
-
-    // Actions States
-    const [viewJournalId, setViewJournalId] = useState<string | null>(null);
-    const [isDetailOpen, setIsDetailOpen] = useState(false);
-
-    // Edit Content State
-    const [editingJournal, setEditingJournal] = useState<JournalCardData | null>(null);
-    const [editContent, setEditContent] = useState("");
-    const [isEditOpen, setIsEditOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false); // For edits
-
-    // Refs for Infinite Scroll
-    const observer = useRef<IntersectionObserver | null>(null);
-    const lastJournalElementRef = useCallback((node: HTMLDivElement) => {
-        if (isLoadingList || isLoadingMore) return;
-        if (observer.current) observer.current.disconnect();
-        observer.current = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && hasNextPage) {
-                fetchNextPage();
-            }
-        });
-        if (node) observer.current.observe(node);
-    }, [isLoadingList, isLoadingMore, hasNextPage, fetchNextPage]);
-
-    // Handle Search Debounce
+    // Debounce Search
     useEffect(() => {
         const timer = setTimeout(() => {
-            setDebouncedSearch(searchTerm);
+            setDebouncedSearch(search);
+            setPage(0);
+            setJournals([]);
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, [search]);
 
-    const handleRefresh = async () => {
-        await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['journals', 'manager'] })
-        ]);
-        toast({ title: "Updated", description: "Data terbaru berhasil diambil." });
-    };
+    // Reset on Tab Change
+    useEffect(() => {
+        setPage(0);
+        setJournals([]);
+        setHasMore(true);
+        setSelectedJournalId(null);
+    }, [activeTab]);
 
-    // --- Actions ---
+    // Data Fetching
+    const loadJournals = async (isRefresh = false) => {
+        if (!user?.id) return;
+        if (isRefresh) setIsLoading(true);
 
-    // VIEW / REVIEW (Opens Detail View)
-    const handleViewJournal = (journal: JournalCardData) => {
-        setViewJournalId(journal.id);
-        setIsDetailOpen(true);
-    };
-
-    // EDIT CONTENT
-    const handleEditJournal = (journal: JournalCardData) => {
-        setEditingJournal(journal);
-        setEditContent(journal.content);
-        setIsEditOpen(true);
-    };
-
-    const handleSaveEdit = async () => {
-        if (!editingJournal || !editContent.trim()) return;
-        setIsSubmitting(true);
         try {
+            // 1. Fetch Counts (Always update)
+            const countData = await fetchCounts(user.id);
+            setCounts(countData);
+
+            // 2. Fetch Page
+            const { data, count } = await fetchJournalPage(
+                user.id,
+                page,
+                PAGE_SIZE,
+                debouncedSearch,
+                activeTab
+            );
+
+            setJournals(prev => {
+                if (page === 0) return data;
+                // De-dupe
+                const existingIds = new Set(prev.map(p => p.id));
+                const uniqueNew = data.filter(d => !existingIds.has(d.id));
+                return [...prev, ...uniqueNew];
+            });
+
+            setHasMore(data.length === PAGE_SIZE);
+
+            // Auto-select first item if none selected and we have data
+            if ((page === 0 || isRefresh) && data.length > 0 && !selectedJournalId) {
+                setSelectedJournalId(data[0].id);
+            }
+        } catch (error: any) {
+            console.error("Fetch error:", error);
+            toast({ variant: "destructive", title: "Error", description: "Failed to load journals" });
+        } finally {
+            if (isRefresh) setIsLoading(false);
+        }
+    };
+
+    // Initial Load & Page Change
+    useEffect(() => {
+        loadJournals(page === 0);
+    }, [user?.id, page, debouncedSearch, activeTab]);
+
+    // Realtime Subscription
+    useEffect(() => {
+        const channel = supabase
+            .channel('manager-journal-list-realtime')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'work_journals' },
+                () => {
+
+                    // Refresh counts and list (resetting list to page 0 to avoid holes)
+                    setPage(0);
+                    // Slight delay to ensure DB is consistent
+                    setTimeout(() => loadJournals(true), 500);
+                }
+            )
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, []);
+
+    const selectedJournal = useMemo(() =>
+        journals.find(j => j.id === selectedJournalId),
+        [journals, selectedJournalId]
+    );
+
+    const handleAction = async (id: string, action: 'approve' | 'reject', reason?: string) => {
+        try {
+            const status = action === 'approve' ? 'approved' : 'rejected';
+            // Optimistic update
+            // Only convert status in list, do not remove if tab is 'all' or 'recent'
+            // But if pending/urgent, we might want to remove
+            if (activeTab === 'pending' || activeTab === 'urgent') {
+                setJournals(prev => prev.filter(j => j.id !== id));
+                if (selectedJournalId === id) setSelectedJournalId(null);
+            } else {
+                setJournals(prev => prev.map(j => j.id === id ? { ...j, verification_status: status, status: status } : j));
+            }
+
             const { error } = await supabase
                 .from('work_journals')
                 .update({
-                    content: editContent,
-                    updated_at: new Date().toISOString()
+                    verification_status: status,
+                    status: status,
+                    manager_notes: reason
                 })
-                .eq('id', editingJournal.id);
+                .eq('id', id);
 
             if (error) throw error;
 
-            toast({ title: "Berhasil", description: "Konten diperbarui." });
-
-            await queryClient.invalidateQueries({ queryKey: journalQueryKeys.managerList(filterStatus, debouncedSearch) });
-
-            setIsEditOpen(false);
-            setEditingJournal(null);
+            toast({ title: "Success", description: `Journal ${status}.` });
+            loadJournals(false); // Background refresh counts
         } catch (e: any) {
-            toast({ variant: "destructive", title: "Gagal", description: e.message });
-        } finally {
-            setIsSubmitting(false);
+            toast({ variant: "destructive", title: "Error", description: e.message });
+            loadJournals(true); // Revert/Reload on error
         }
     };
 
@@ -241,177 +328,212 @@ const ManagerJurnal = () => {
 
     return (
         <EnterpriseLayout
-            title="Jurnal Tim"
-            subtitle="Monitoring & Review Aktivitas"
+            title="Journal Reviews"
+            subtitle="Review and manage team activities."
             menuSections={menuSections}
             roleLabel="Manager"
-            showRefresh={false}
-            onRefresh={handleRefresh}
+            showRefresh={true}
+            onRefresh={() => { setPage(0); loadJournals(true); }}
         >
-            {/* 1. Stats Area */}
-            {isLoadingStats && !stats ? (
-                <JournalStatsSkeleton />
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <Card className="bg-white shadow-sm border-slate-200">
-                        <CardContent className="p-4 flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-slate-500 font-medium">Total Entri</p>
-                                <p className="text-2xl font-bold text-slate-800">{stats?.total_entries || 0}</p>
-                            </div>
-                            <div className="p-3 bg-slate-50 rounded-lg">
-                                <BookOpen className="w-5 h-5 text-slate-600" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-amber-50 to-white shadow-sm border-amber-200">
-                        <CardContent className="p-4 flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-amber-600 font-medium">Perlu Review</p>
-                                <p className="text-2xl font-bold text-amber-700">{stats?.pending_review || 0}</p>
-                            </div>
-                            <div className="p-3 bg-amber-100 rounded-lg">
-                                <AlertCircle className="w-5 h-5 text-amber-600" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-orange-50 to-white shadow-sm border-orange-200">
-                        <CardContent className="p-4 flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-orange-600 font-medium">Revisi</p>
-                                <p className="text-2xl font-bold text-orange-700">{stats?.need_revision || 0}</p>
-                            </div>
-                            <div className="p-3 bg-orange-100 rounded-lg">
-                                <FileEdit className="w-5 h-5 text-orange-600" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-gradient-to-br from-green-50 to-white shadow-sm border-green-200">
-                        <CardContent className="p-4 flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-green-600 font-medium">Disetujui</p>
-                                <p className="text-2xl font-bold text-green-700">{stats?.approved || 0}</p>
-                            </div>
-                            <div className="p-3 bg-green-100 rounded-lg">
-                                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
+            <div className="flex h-[calc(100vh-140px)] -mt-4 gap-6">
 
-            {/* 2. Navigation & Filters */}
-            <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm pb-4 pt-2 -mx-4 px-4 md:static md:mx-0 md:px-0 md:bg-transparent">
-                <div className="bg-white rounded-xl border border-slate-200 p-2 mb-4 shadow-sm">
-                    <div className="flex flex-col md:flex-row gap-4 items-center justify-between p-2">
-                        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto scrollbar-hide">
-                            {[
-                                { key: 'all', label: 'Semua', className: 'bg-slate-800' },
-                                { key: 'submitted', label: 'Perlu Review', className: 'bg-amber-600 hover:bg-amber-700 border-amber-600' },
-                                { key: 'need_revision', label: 'Revisi', className: 'bg-orange-600 hover:bg-orange-700 border-orange-600' },
-                                { key: 'approved', label: 'Disetujui', className: 'bg-green-600 hover:bg-green-700 border-green-600' }
-                            ].map(btn => (
-                                <Button
-                                    key={btn.key}
-                                    variant={filterStatus === btn.key ? 'default' : 'outline'}
-                                    size="sm"
-                                    onClick={() => setFilterStatus(btn.key)}
-                                    className={`whitespace-nowrap ${filterStatus === btn.key ? btn.className : "text-slate-600"}`}
-                                >
-                                    {btn.label}
-                                </Button>
-                            ))}
-                        </div>
-                        <div className="relative w-full md:w-64">
+                {/* LEFT SIDEBAR - LIST */}
+                <div className="w-[420px] flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm shrink-0 overflow-hidden">
+                    {/* Header/Tabs */}
+                    <div className="p-4 border-b border-slate-100 bg-white z-10 space-y-4">
+                        {/* Search */}
+                        <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <Input
-                                placeholder="Cari isi jurnal..."
-                                className="pl-9 h-9 bg-slate-50"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Cari nama karyawan atau isi jurnal..."
+                                className="pl-9 bg-slate-50 border-slate-200 h-10"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
                             />
                         </div>
+
+                        {/* Summary Badges Tabs */}
+                        <div className="flex p-1 bg-slate-100 rounded-lg gap-1">
+                            <button
+                                onClick={() => setActiveTab('all')}
+                                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-md transition-all border border-transparent ${activeTab === 'all'
+                                    ? 'bg-white text-slate-800 shadow-sm border-slate-200'
+                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                                    }`}
+                            >
+                                <div className="text-[10px] uppercase font-bold tracking-wider mb-0.5">All</div>
+                                <div className="flex items-center gap-1.5">
+                                    <List className="h-3 w-3 text-slate-500" />
+                                    <span className="text-lg font-bold leading-none">{counts.all}</span>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => setActiveTab('urgent')}
+                                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-md transition-all border border-transparent ${activeTab === 'urgent'
+                                    ? 'bg-white text-red-600 shadow-sm border-slate-200'
+                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                                    }`}
+                            >
+                                <div className="text-[10px] uppercase font-bold tracking-wider mb-0.5">Urgent</div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></div>
+                                    <span className="text-lg font-bold leading-none">{counts.urgent}</span>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => setActiveTab('pending')}
+                                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-md transition-all border border-transparent ${activeTab === 'pending'
+                                    ? 'bg-white text-amber-600 shadow-sm border-slate-200'
+                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                                    }`}
+                            >
+                                <div className="text-[10px] uppercase font-bold tracking-wider mb-0.5">Pending</div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="h-2 w-2 rounded-full bg-amber-500"></div>
+                                    <span className="text-lg font-bold leading-none">{counts.pending}</span>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => setActiveTab('recent')}
+                                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-md transition-all border border-transparent ${activeTab === 'recent'
+                                    ? 'bg-white text-blue-600 shadow-sm border-slate-200'
+                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                                    }`}
+                            >
+                                <div className="text-[10px] uppercase font-bold tracking-wider mb-0.5">Recent</div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                                    <span className="text-lg font-bold leading-none">{counts.recent}</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Scrollable List */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 p-3 space-y-3">
+                        {isLoading && journals.length === 0 ? (
+                            // SKELETON
+                            [1, 2, 3].map(i => (
+                                <div key={i} className="flex gap-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
+                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                    <div className="space-y-2 flex-1">
+                                        <Skeleton className="h-4 w-3/4" />
+                                        <Skeleton className="h-3 w-1/2" />
+                                    </div>
+                                </div>
+                            ))
+                        ) : journals.length === 0 ? (
+                            // EMPTY STATE
+                            <div className="flex flex-col items-center justify-center h-full py-10 opacity-60">
+                                <div className="bg-slate-100 p-4 rounded-full mb-4">
+                                    {activeTab === 'urgent' ? <AlertCircle className="h-8 w-8 text-slate-400" /> :
+                                        activeTab === 'recent' ? <Clock className="h-8 w-8 text-slate-400" /> :
+                                            <FileCheck className="h-8 w-8 text-slate-400" />}
+                                </div>
+                                <p className="text-sm font-medium text-slate-900 text-center px-6">
+                                    {activeTab === 'urgent' ? "Bagus! Tidak ada jurnal urgent." :
+                                        activeTab === 'recent' ? "Belum ada jurnal baru 48 jam terakhir." :
+                                            "Tidak ada jurnal."}
+                                </p>
+                            </div>
+                        ) : (
+                            // LIST
+                            journals.map((journal) => (
+                                <div
+                                    key={journal.id}
+                                    onClick={() => setSelectedJournalId(journal.id)}
+                                    className={`relative group cursor-pointer transition-all duration-200 rounded-xl border p-3 hover:shadow-md ${selectedJournalId === journal.id
+                                        ? 'bg-white border-blue-500 shadow-md ring-1 ring-blue-500/20'
+                                        : 'bg-white border-slate-200 hover:border-blue-300'
+                                        }`}
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <Avatar className="h-10 w-10 border border-slate-100">
+                                            <AvatarImage src={journal.profiles.avatar_url || ""} />
+                                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-bold text-xs">
+                                                {journal.profiles.full_name?.charAt(0).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-start">
+                                                <h4 className={`text-sm font-bold truncate pr-2 ${selectedJournalId === journal.id ? 'text-blue-700' : 'text-slate-900'
+                                                    }`}>
+                                                    {journal.profiles.full_name || "Unknown User"}
+                                                </h4>
+                                                <span className="text-[10px] text-slate-400 shrink-0 flex items-center gap-1">
+                                                    {formatDistanceToNow(new Date(journal.created_at), { addSuffix: true, locale: id })}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 mt-0.5 mb-2">
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="h-5 px-1.5 text-[10px] font-medium bg-slate-100 text-slate-600 border-slate-200"
+                                                >
+                                                    {journal.profiles.department || "-"}
+                                                </Badge>
+                                                {journal.verification_status === 'pending' && (
+                                                    <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-amber-200 text-amber-600 bg-amber-50">
+                                                        Review Needed
+                                                    </Badge>
+                                                )}
+                                                {journal.verification_status === 'approved' && (
+                                                    <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-emerald-200 text-emerald-600 bg-emerald-50">
+                                                        Approved
+                                                    </Badge>
+                                                )}
+                                                {journal.verification_status === 'rejected' && (
+                                                    <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-red-200 text-red-600 bg-red-50">
+                                                        Rejected
+                                                    </Badge>
+                                                )}
+                                            </div>
+
+                                            <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                                {journal.content}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                        {hasMore && journals.length > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full text-xs text-slate-500"
+                                onClick={() => setPage(p => p + 1)}
+                            >
+                                Load more...
+                            </Button>
+                        )}
                     </div>
                 </div>
-            </div>
 
-            {/* 3. Journal List */}
-            <div className="h-[calc(100vh-320px)] overflow-y-auto pr-2 pb-20 custom-scrollbar relative">
-                {isLoadingList && journals.length === 0 ? (
-                    <JournalSkeleton />
-                ) : journals.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                            <FileCheck className="w-8 h-8 text-slate-400" />
+                {/* RIGHT SIDE - DETAIL VIEW */}
+                <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col items-center justify-center">
+                    {selectedJournal ? (
+                        <div className="w-full h-full flex flex-col">
+                            <JournalReviewDetail
+                                journal={selectedJournal}
+                                onApprove={async (id) => handleAction(id, 'approve')}
+                                onReject={async (id, reason) => handleAction(id, 'reject', reason)}
+                                onRequestRevision={async (id, reason) => handleAction(id, 'reject', reason)}
+                            />
                         </div>
-                        <h3 className="text-lg font-semibold text-slate-700">Tidak ada jurnal</h3>
-                        <p className="text-slate-500 max-w-sm">
-                            {filterStatus !== 'all' ? 'Coba ubah filter atau status pencarian Anda.' : 'Belum ada data jurnal yang masuk hari ini.'}
-                        </p>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {journals.map((journal, index) => {
-                            const isLast = index === journals.length - 1;
-                            return (
-                                <div
-                                    key={`${journal.id}-${index}`}
-                                    ref={isLast ? lastJournalElementRef : null}
-                                >
-                                    <JournalCard
-                                        journal={journal}
-                                        isEmployee={false} // Enable Manager mode (Edit content possible)
-                                        showActions={true}
-                                        onView={() => handleViewJournal(journal)} // Opens Review/Detail View
-                                        onEdit={() => handleEditJournal(journal)} // Opens Content Edit Dialog
-                                    />
-                                </div>
-                            );
-                        })}
+                    ) : (
+                        <div className="flex flex-col items-center justify-center text-slate-300 p-8">
+                            <Ghost className="h-24 w-24 mb-4 opacity-20" />
+                            <p className="text-lg font-medium text-slate-400">Pilih jurnal untuk melihat detail</p>
+                        </div>
+                    )}
+                </div>
 
-                        {isLoadingMore && (
-                            <div className="py-4 text-center">
-                                <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
-                                <span className="text-xs text-slate-400 mt-1 block">Memuat lebih banyak...</span>
-                            </div>
-                        )}
-
-                        {!isLoadingMore && !hasMore && journals.length > 0 && (
-                            <div className="py-8 text-center text-slate-400 text-xs border-t border-dashed border-slate-200 mt-4">
-                                — Semua data ditampilkan —
-                            </div>
-                        )}
-
-                        <div className="h-10 md:h-0"></div>
-                    </div>
-                )}
             </div>
-
-            {/* Manager Journal Detail & Review View */}
-            <JournalDetailView
-                journalId={viewJournalId}
-                isOpen={isDetailOpen}
-                onClose={() => setIsDetailOpen(false)}
-                onUpdate={() => {
-                    // Refresh data after update
-                    queryClient.invalidateQueries({ queryKey: ['journals', 'manager'] });
-                    setIsDetailOpen(false);
-                }}
-            />
-
-            {/* Content Edit Dialog */}
-            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent>
-                    <DialogHeader><DialogTitle>Edit Jurnal</DialogTitle></DialogHeader>
-                    <Textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="min-h-[150px]" />
-                    <DialogFooter>
-                        <Button onClick={handleSaveEdit} disabled={isSubmitting}>
-                            {isSubmitting ? <Loader2 className="animate-spin w-4 h-4" /> : "Simpan Perubahan"}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
         </EnterpriseLayout>
     );
 };

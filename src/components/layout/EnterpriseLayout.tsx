@@ -34,6 +34,7 @@ interface EnterpriseLayoutProps {
     showRefresh?: boolean;
     onRefresh?: () => void;
     refreshInterval?: number;
+    showExport?: boolean;
 }
 
 // Talenta Brand Colors
@@ -52,6 +53,7 @@ const EnterpriseLayout = ({
     showRefresh = true,
     onRefresh,
     refreshInterval = 60,
+    showExport = true,
 }: EnterpriseLayoutProps) => {
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
@@ -223,9 +225,11 @@ const EnterpriseLayout = ({
                                     <span className="hidden md:inline">Auto: {nextRefresh}s</span>
                                 </div>
                             )}
-                            <Button size="sm" className="h-9 gap-2 text-white shadow-sm bg-gradient-to-r from-blue-700 to-sky-600 hover:to-sky-700 hidden sm:flex">
-                                <Download className="h-4 w-4" /> Export
-                            </Button>
+                            {showExport && (
+                                <Button size="sm" className="h-9 gap-2 text-white shadow-sm bg-gradient-to-r from-blue-700 to-sky-600 hover:to-sky-700 hidden sm:flex">
+                                    <Download className="h-4 w-4" /> Export
+                                </Button>
+                            )}
 
                             {/* Mobile User Menu Trigger */}
                             <Button variant="ghost" size="icon" className="md:hidden text-slate-500" onClick={handleLogout}>
@@ -241,9 +245,9 @@ const EnterpriseLayout = ({
                 </div>
             </main>
 
-            {/* ADMIN MOBILE BOTTOM NAV (iOS Style) - Hidden on Tablet (md) */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-200 pb-[env(safe-area-inset-bottom)] shadow-[0_-5px_20px_rgba(0,0,0,0.03)]">
-                <div className="flex items-center justify-around h-[64px] px-2 bg-gradient-to-t from-white/50 to-transparent">
+            {/* ADMIN MOBILE BOTTOM NAV (iOS Style Premium) - Hidden on Tablet (md) upwards */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-slate-200 shadow-[0_-5px_20px_rgba(0,0,0,0.03)] pb-[env(safe-area-inset-bottom)]">
+                <div className="flex items-center justify-around h-[70px] px-4">
                     {adminMobileNav.map((item) => {
                         const isActive = location.pathname === item.href || (item.href !== "/dashboard" && location.pathname.startsWith(item.href) && item.href !== "#menu");
 
@@ -251,39 +255,51 @@ const EnterpriseLayout = ({
                             return (
                                 <Sheet key={item.label} open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                                     <SheetTrigger asChild>
-                                        <button className="flex flex-col items-center justify-center w-full h-full gap-1 text-slate-400 active:scale-95 transition-transform group">
-                                            <div className="p-1.5 rounded-2xl group-active:bg-slate-100"><item.icon className="w-5 h-5 stroke-2" /></div>
-                                            <span className="text-[10px] font-medium tracking-tight">Menu</span>
+                                        <button className="flex flex-col items-center justify-center gap-1 text-slate-400 active:scale-95 transition-all outline-none">
+                                            <div className="p-2 rounded-2xl bg-slate-50 text-slate-500"><item.icon className="w-5 h-5" /></div>
+                                            <span className="text-[10px] font-medium">Menu</span>
                                         </button>
                                     </SheetTrigger>
-                                    <SheetContent side="bottom" className="h-[85vh] rounded-t-[20px] p-0 flex flex-col">
-                                        <div className="p-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50 rounded-t-[20px] shrink-0">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center text-white font-bold shadow-md">{getInitials(userName)}</div>
-                                            <div><p className="font-bold text-slate-800">{userName}</p><p className="text-xs text-slate-500 uppercase tracking-wide">{roleLabel}</p></div>
+                                    <SheetContent side="bottom" className="h-[85vh] rounded-t-[24px] p-0 flex flex-col border-0 shadow-2xl">
+                                        {/* Header */}
+                                        <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-4 bg-slate-50/50 rounded-t-[24px]">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center text-white font-bold text-lg shadow-blue-200 shadow-lg">
+                                                {getInitials(userName)}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-800 text-lg">{userName}</p>
+                                                <Badge variant="secondary" className="mt-1 bg-white text-slate-500 shadow-sm border-slate-100">{roleLabel}</Badge>
+                                            </div>
                                         </div>
-                                        <div className="flex-1 overflow-y-auto p-4 pb-20 grid grid-cols-2 gap-3 content-start">
+
+                                        {/* Grid Menu */}
+                                        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-2 gap-4 content-start bg-white">
                                             {menuSections.flatMap(s => s.items).map((menuItem) => (
                                                 <Button
                                                     key={menuItem.title}
-                                                    variant="outline"
-                                                    className="h-auto py-5 flex flex-col gap-3 items-center justify-center bg-white border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all rounded-2xl"
+                                                    variant="ghost"
+                                                    className="h-auto py-4 flex flex-col gap-3 items-center justify-center bg-slate-50 border border-slate-100 shadow-sm hover:bg-blue-50 hover:border-blue-100 active:scale-[0.98] transition-all rounded-2xl group"
                                                     onClick={() => {
                                                         navigate(menuItem.href);
                                                         setIsMobileMenuOpen(false);
                                                     }}
                                                 >
-                                                    <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                                                        <menuItem.icon className="w-6 h-6" />
+                                                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-500 group-hover:text-blue-600 group-hover:bg-blue-100 transition-colors shadow-sm">
+                                                        <menuItem.icon className="w-5 h-5" />
                                                     </div>
-                                                    <span className="text-xs font-semibold text-slate-700">{menuItem.title}</span>
+                                                    <span className="text-xs font-semibold text-slate-600 group-hover:text-blue-700">{menuItem.title}</span>
                                                 </Button>
                                             ))}
+                                        </div>
+
+                                        {/* Logout Button */}
+                                        <div className="p-6 border-t border-slate-50 bg-white pb-[calc(24px+env(safe-area-inset-bottom))]">
                                             <Button
                                                 variant="destructive"
-                                                className="col-span-2 mt-4 bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 shadow-none h-12 rounded-xl"
+                                                className="w-full bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 shadow-none h-12 rounded-xl font-semibold"
                                                 onClick={handleLogout}
                                             >
-                                                <LogOut className="w-4 h-4 mr-2" /> Logout
+                                                <LogOut className="w-4 h-4 mr-2" /> Keluar Aplikasi
                                             </Button>
                                         </div>
                                     </SheetContent>
@@ -296,14 +312,25 @@ const EnterpriseLayout = ({
                                 key={item.label}
                                 to={item.href}
                                 className={cn(
-                                    "flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-200 active:scale-95 group",
-                                    isActive ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
+                                    "flex flex-col items-center justify-center gap-1 transition-all duration-300 active:scale-95",
+                                    isActive ? "text-blue-600" : "text-slate-400"
                                 )}
                             >
-                                <div className={cn("relative p-1.5 rounded-2xl transition-colors", isActive && "bg-blue-50/80 shadow-sm")}>
-                                    <item.icon className={cn("w-5 h-5 transition-transform", isActive ? "scale-105 stroke-[2.5px]" : "stroke-2 group-hover:scale-105")} />
+                                <div className={cn(
+                                    "relative p-2 rounded-2xl transition-all duration-300",
+                                    isActive ? "bg-blue-50 text-blue-600 shadow-sm" : "hover:bg-slate-50"
+                                )}>
+                                    <item.icon className={cn("w-5 h-5 transition-transform", isActive && "scale-105 stroke-[2.5px]")} />
+                                    {isActive && (
+                                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+                                    )}
                                 </div>
-                                <span className={cn("text-[10px] font-medium tracking-tight transition-colors", isActive ? "text-blue-700 font-semibold" : "text-slate-500")}>{item.label}</span>
+                                <span className={cn(
+                                    "text-[10px] font-medium tracking-tight transition-all",
+                                    isActive ? "text-blue-700 font-semibold" : "text-slate-500"
+                                )}>
+                                    {item.label}
+                                </span>
                             </Link>
                         );
                     })}

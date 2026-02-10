@@ -18,6 +18,8 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
+import { ADMIN_MENU_SECTIONS } from "@/config/menu";
 
 // Brand Colors
 const BRAND_COLORS = {
@@ -187,156 +189,148 @@ const Departemen = () => {
   }), [departments]);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 md:pb-8">
-      {/* Header */}
-      <header className="sticky top-0 z-40 shadow-sm transition-all duration-300 bg-white"
-        style={{ background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`, paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-3 text-white">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="rounded-xl bg-white/10 hover:bg-white/20 text-white shrink-0">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-lg font-bold">Struktur Organisasi</h1>
-              <p className="text-xs text-white/80">Departemen & Divisi</p>
+    <EnterpriseLayout
+      title="Struktur Organisasi"
+      subtitle="Departemen & Divisi"
+      roleLabel="Administrator"
+      menuSections={ADMIN_MENU_SECTIONS}
+    >
+      <div className="pb-20 md:pb-8">
+
+        <main className="container mx-auto px-4 py-6 space-y-6">
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-3 gap-3">
+            <Card className="border-none shadow-sm bg-white"><CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-slate-800">{stats.totalDepts}</div>
+              <div className="text-[10px] uppercase font-bold text-slate-400 mt-1">Departemen</div>
+            </CardContent></Card>
+            <Card className="border-none shadow-sm bg-white"><CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600">{stats.totalManagers}</div>
+              <div className="text-[10px] uppercase font-bold text-blue-400 mt-1">Manager</div>
+            </CardContent></Card>
+            <Card className="border-none shadow-sm bg-white"><CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-emerald-600">{stats.totalEmployees}</div>
+              <div className="text-[10px] uppercase font-bold text-emerald-400 mt-1">Total Staff</div>
+            </CardContent></Card>
+          </div>
+
+          {/* Controls */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Cari departemen..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-white border-slate-200"
+              />
             </div>
+            <Button onClick={handleAddNew} className="w-full sm:w-auto bg-blue-700 hover:bg-blue-800 gap-2">
+              <Plus className="h-4 w-4" /> Departemen Baru
+            </Button>
           </div>
-        </div>
-      </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-3">
-          <Card className="border-none shadow-sm bg-white"><CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-slate-800">{stats.totalDepts}</div>
-            <div className="text-[10px] uppercase font-bold text-slate-400 mt-1">Departemen</div>
-          </CardContent></Card>
-          <Card className="border-none shadow-sm bg-white"><CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats.totalManagers}</div>
-            <div className="text-[10px] uppercase font-bold text-blue-400 mt-1">Manager</div>
-          </CardContent></Card>
-          <Card className="border-none shadow-sm bg-white"><CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-emerald-600">{stats.totalEmployees}</div>
-            <div className="text-[10px] uppercase font-bold text-emerald-400 mt-1">Total Staff</div>
-          </CardContent></Card>
-        </div>
-
-        {/* Controls */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Cari departemen..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-white border-slate-200"
-            />
-          </div>
-          <Button onClick={handleAddNew} className="w-full sm:w-auto bg-blue-700 hover:bg-blue-800 gap-2">
-            <Plus className="h-4 w-4" /> Departemen Baru
-          </Button>
-        </div>
-
-        {/* Grid Content */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-          </div>
-        ) : filteredDepartments.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">
-            <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-lg font-medium text-slate-900">Belum Ada Departemen</h3>
-            <p className="text-slate-500 max-w-xs mx-auto mt-1">Tambahkan departemen baru untuk mulai mengorganisir karyawan anda.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDepartments.map((dept) => (
-              <Card key={dept.name} className="hover:shadow-md transition-shadow border-slate-200 group">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                    <Building2 className="h-5 w-5" />
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-slate-400 hover:text-slate-600">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEdit(dept.name)}><Edit className="h-4 w-4 mr-2" /> Ubah Nama</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleDelete(dept.name)} className="text-red-600"><Trash2 className="h-4 w-4 mr-2" /> Hapus</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </CardHeader>
-                <CardContent>
-                  <h3 className="font-bold text-lg text-slate-800 mb-1">{dept.name}</h3>
-                  <div className="flex items-center gap-4 text-sm text-slate-500 mb-4">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-4 w-4" /> {dept.employeeCount} Staff
+          {/* Grid Content */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+            </div>
+          ) : filteredDepartments.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">
+              <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-slate-900">Belum Ada Departemen</h3>
+              <p className="text-slate-500 max-w-xs mx-auto mt-1">Tambahkan departemen baru untuk mulai mengorganisir karyawan anda.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredDepartments.map((dept) => (
+                <Card key={dept.name} className="hover:shadow-md transition-shadow border-slate-200 group">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                      <Building2 className="h-5 w-5" />
                     </div>
-                    {dept.managerCount > 0 && (
-                      <div className="flex items-center gap-1.5 text-blue-600 font-medium">
-                        <Briefcase className="h-4 w-4" /> {dept.managerCount} Manager
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-slate-400 hover:text-slate-600">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEdit(dept.name)}><Edit className="h-4 w-4 mr-2" /> Ubah Nama</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleDelete(dept.name)} className="text-red-600"><Trash2 className="h-4 w-4 mr-2" /> Hapus</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </CardHeader>
+                  <CardContent>
+                    <h3 className="font-bold text-lg text-slate-800 mb-1">{dept.name}</h3>
+                    <div className="flex items-center gap-4 text-sm text-slate-500 mb-4">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-4 w-4" /> {dept.employeeCount} Staff
                       </div>
-                    )}
-                  </div>
-
-                  {/* Staff Preview Pile */}
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <div className="flex -space-x-2">
-                      {dept.employees.map((name, i) => (
-                        <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600" title={name}>
-                          {name.charAt(0)}
-                        </div>
-                      ))}
-                      {dept.employeeCount > 3 && (
-                        <div className="h-8 w-8 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center text-[10px] text-slate-500">
-                          +{dept.employeeCount - 3}
+                      {dept.managerCount > 0 && (
+                        <div className="flex items-center gap-1.5 text-blue-600 font-medium">
+                          <Briefcase className="h-4 w-4" /> {dept.managerCount} Manager
                         </div>
                       )}
                     </div>
-                    <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => navigate(`/admin/karyawan?dept=${encodeURIComponent(dept.name)}`)}>
-                      Lihat Detail <ArrowLeft className="h-3 w-3 ml-1 rotate-180" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </main>
 
-      {/* Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editingDepartment ? "Ubah Nama Departemen" : "Departemen Baru"}</DialogTitle>
-            <DialogDescription>
-              {editingDepartment ? "Perubahan akan diterapkan ke seluruh karyawan di departemen ini." : "Buat departemen baru untuk struktur organisasi."}
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nama Departemen / Divisi</FormLabel>
-                  <FormControl><Input {...field} placeholder="Contoh: Engineering, Marketing..." /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <div className="flex gap-2 justify-end pt-2">
-                <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>Batal</Button>
-                <Button type="submit" className="bg-blue-700 hover:bg-blue-800" disabled={isSubmitting}>
-                  {isSubmitting ? "Menyimpan..." : "Simpan"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </div>
+                    {/* Staff Preview Pile */}
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                      <div className="flex -space-x-2">
+                        {dept.employees.map((name, i) => (
+                          <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600" title={name}>
+                            {name.charAt(0)}
+                          </div>
+                        ))}
+                        {dept.employeeCount > 3 && (
+                          <div className="h-8 w-8 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center text-[10px] text-slate-500">
+                            +{dept.employeeCount - 3}
+                          </div>
+                        )}
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => navigate(`/admin/karyawan?dept=${encodeURIComponent(dept.name)}`)}>
+                        Lihat Detail <ArrowLeft className="h-3 w-3 ml-1 rotate-180" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </main>
+
+        {/* Dialog */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingDepartment ? "Ubah Nama Departemen" : "Departemen Baru"}</DialogTitle>
+              <DialogDescription>
+                {editingDepartment ? "Perubahan akan diterapkan ke seluruh karyawan di departemen ini." : "Buat departemen baru untuk struktur organisasi."}
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField control={form.control} name="name" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nama Departemen / Divisi</FormLabel>
+                    <FormControl><Input {...field} placeholder="Contoh: Engineering, Marketing..." /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <div className="flex gap-2 justify-end pt-2">
+                  <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>Batal</Button>
+                  <Button type="submit" className="bg-blue-700 hover:bg-blue-800" disabled={isSubmitting}>
+                    {isSubmitting ? "Menyimpan..." : "Simpan"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </EnterpriseLayout>
   );
 };
 

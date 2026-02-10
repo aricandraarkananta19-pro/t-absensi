@@ -34,6 +34,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
+import { MANAGER_MENU_SECTIONS } from "@/config/menu";
 
 interface LeaveRequest {
   id: string;
@@ -158,7 +160,8 @@ const ManagerCuti = () => {
       });
 
       fetchLeaveRequests();
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as Error;
       console.error("Error approving leave:", error);
       toast({
         variant: "destructive",
@@ -204,7 +207,8 @@ const ManagerCuti = () => {
       });
 
       fetchLeaveRequests();
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as Error;
       console.error("Error rejecting leave:", error);
       toast({
         variant: "destructive",
@@ -274,37 +278,17 @@ const ManagerCuti = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="rounded-full">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                  <Calendar className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-semibold text-foreground">Kelola Cuti</h1>
-                  <p className="text-sm text-muted-foreground">Approve/reject pengajuan cuti</p>
-                </div>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" onClick={fetchLeaveRequests} className="gap-2">
-              <RefreshCw className="h-4 w-4" />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+    <EnterpriseLayout
+      title="Kelola Cuti"
+      subtitle="Approve/reject pengajuan cuti"
+      roleLabel="Manager"
+      menuSections={MANAGER_MENU_SECTIONS}
+      showRefresh={true}
+      onRefresh={fetchLeaveRequests}
+    >
+      <div className="space-y-6 pb-20">
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Card className="border-border">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
@@ -360,7 +344,7 @@ const ManagerCuti = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -474,7 +458,7 @@ const ManagerCuti = () => {
             )}
           </div>
         </Card>
-      </main>
+      </div>
 
       {/* Approve Dialog */}
       <AlertDialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
@@ -535,7 +519,7 @@ const ManagerCuti = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </EnterpriseLayout>
   );
 };
 

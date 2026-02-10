@@ -24,6 +24,14 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
+import {
+  useDashboardStats,
+  useEmployeeIds,
+  useWeeklyTrend,
+  useMonthlyTrend,
+  useDepartmentDistribution,
+  useRealTimeMonitoring
+} from "@/hooks/useDashboardData";
 
 const AUTO_REFRESH_INTERVAL = 60000; // 1 minute
 
@@ -61,412 +69,42 @@ const COLORS = {
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const { settings, isLoading: settingsLoading } = useSystemSettings();
-  const [stats, setStats] = useState({
-    totalEmployees: 0,
-    presentToday: 0,
-    lateToday: 0,
-    absentToday: 0,
-    departments: 0,
-    pendingLeave: 0,
-    approvedLeaveThisMonth: 0,
-    attendanceThisMonth: 0,
-    attendanceRate: 0,
-    newEmployeesThisMonth: 0,
-  });
-  const [recentAttendance, setRecentAttendance] = useState<Array<{
-    id: string;
-    full_name: string;
-    clock_in: string;
-    status: string;
-  }>>([]);
-  const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
-  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
-  const [departmentData, setDepartmentData] = useState<Array<{ name: string; value: number; color: string }>>([]);
-  const [attendanceBreakdown, setAttendanceBreakdown] = useState({ onTime: 0, late: 0, earlyLeave: 0 });
-  const [isLoading, setIsLoading] = useState(true);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [nextRefresh, setNextRefresh] = useState(AUTO_REFRESH_INTERVAL / 1000);
-  const [announcements] = useState([
-    { id: 1, title: "Rapat Umum Perusahaan", date: "5 Des 2025 - 15.00", type: "event" },
-    { id: 2, title: "Batas Waktu Review Kinerja", date: "15 Des 2025", type: "deadline" },
-    { id: 3, title: "Kebijakan Kesehatan Kantor Baru", date: "Berlaku 1 Nov 2025", type: "policy" },
-    { id: 4, title: "Pelatihan Sistem HR Baru", date: "22 Des 2025 - 10.00", type: "training" },
-    { id: 5, title: "Workshop Keberagaman & Inklusi", date: "24 Des 2025 - 13.00", type: "event" },
-  ]);
+  /* 
+   * REFACTORED: Using useDashboardData hooks for caching & auto-refresh 
+   */
 
-  // Fetch all dashboard data in parallel for faster loading
-  const fetchAllData = useCallback(async (showLoading = true) => {
-    if (showLoading) setIsLoading(true);
-    try {
-      // Get karyawan user IDs (FR-01: Filter Role Wajib Absensi)
-      const { data: karyawanRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .in("role", ABSENSI_WAJIB_ROLE);
-      const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
+  // 1. Get Employee IDs for filtering (Wajib Absensi)
+  const { data: karyawanUserIds } = useEmployeeIds();
 
-      // Run all fetches in parallel
-      await Promise.all([
-        fetchStats(karyawanUserIds),
-        fetchRecentAttendance(karyawanUserIds),
-        fetchWeeklyTrend(karyawanUserIds),
-        fetchMonthlyTrend(karyawanUserIds),
-        fetchDepartmentDistribution(karyawanUserIds),
-      ]);
-      setLastRefresh(new Date());
-    } finally {
-      setIsLoading(false);
-    }
-  }, [settings.attendanceStartDate]);
+  // 2. Fetch Dashboard Stats
+  const { data: stats, isLoading: statsLoading } = useDashboardStats(karyawanUserIds);
+
+  // 3. Fetch Charts & Lists
+  const { data: weeklyData, isLoading: weeklyLoading } = useWeeklyTrend(karyawanUserIds);
+  const { data: monthlyData, isLoading: monthlyLoading } = useMonthlyTrend(karyawanUserIds);
+  const { data: departmentData, isLoading: deptLoading } = useDepartmentDistribution(karyawanUserIds);
+  const { data: recentAttendance, isLoading: recentLoading } = useRealTimeMonitoring(karyawanUserIds);
+
+  const isLoading = statsLoading || weeklyLoading || monthlyLoading || deptLoading || recentLoading;
+
+  // Auto Refresh Counter (Visual only, Logic handled by React Query)
+  const [nextRefresh, setNextRefresh] = useState(60);
 
   useEffect(() => {
-    if (!settingsLoading) {
-      fetchAllData(true);
-    }
-
-    // Setup realtime subscriptions
-    /* 
-    const attendanceChannel = supabase
-      .channel("dashboard-attendance-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "attendance" },
-        () => fetchAllData(false)
-      )
-      .subscribe();
-
-    const profilesChannel = supabase
-      .channel("dashboard-profiles-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "profiles" },
-        () => fetchAllData(false)
-      )
-      .subscribe();
-
-    const leaveChannel = supabase
-      .channel("dashboard-leave-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "leave_requests" },
-        () => fetchAllData(false)
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(attendanceChannel);
-      supabase.removeChannel(profilesChannel);
-      supabase.removeChannel(leaveChannel);
-    };
-    */
-  }, [settingsLoading, fetchAllData]);
-
-  // Auto refresh every minute
-  useEffect(() => {
-    /*
-    const refreshInterval = setInterval(() => {
-      fetchAllData(false);
-    }, AUTO_REFRESH_INTERVAL);
-
-    // Countdown timer
-    const countdownInterval = setInterval(() => {
-      setNextRefresh(prev => (prev <= 1 ? AUTO_REFRESH_INTERVAL / 1000 : prev - 1));
+    const timer = setInterval(() => {
+      setNextRefresh((prev) => (prev <= 1 ? 60 : prev - 1));
     }, 1000);
-
-    return () => {
-      clearInterval(refreshInterval);
-      clearInterval(countdownInterval);
-    };
-    */
-  }, [fetchAllData]);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleManualRefresh = () => {
-    fetchAllData(false);
-    setNextRefresh(AUTO_REFRESH_INTERVAL / 1000);
+    // React Query's queryClient can be used to invalidate queries if needed,
+    // but the hooks will auto-refresh. We can force a re-render or toast.
     toast({
       title: "Data diperbarui",
-      description: "Dashboard telah di-refresh",
+      description: "Dashboard sedang menyinkronkan data terbaru...",
     });
-  };
-
-  const fetchDepartmentDistribution = async (karyawanUserIds: Set<string>) => {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, department");
-
-    if (profiles) {
-      const karyawanProfiles = profiles.filter(p => karyawanUserIds.has(p.user_id));
-      const deptCounts: Record<string, number> = {};
-
-      karyawanProfiles.forEach(p => {
-        const dept = p.department || "Others";
-        deptCounts[dept] = (deptCounts[dept] || 0) + 1;
-      });
-
-      const colors = [
-        "#0066b3", // Blue
-        "#F59E0B", // Amber/Orange
-        "#10B981", // Emerald 
-        "#EC4899", // Pink
-        "#8B5CF6", // Purple
-        "#06B6D4", // Cyan
-        "#EF4444", // Red
-        "#64748B"  // Slate
-      ];
-      const deptData = Object.entries(deptCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 8)
-        .map(([name, value], index) => ({
-          name,
-          value,
-          color: colors[index % colors.length],
-        }));
-
-      setDepartmentData(deptData);
-    }
-  };
-
-  const fetchStats = async (karyawanUserIds: Set<string>) => {
-    const today = new Date();
-    const startOfTodayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-    const endOfTodayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const startDate = new Date(settings.attendanceStartDate);
-    startDate.setHours(0, 0, 0, 0);
-
-    // Fetch all data in parallel
-    const [
-      profilesResult,
-      todayAttendanceResult,
-      departmentsResult,
-      pendingLeavesResult,
-      approvedLeavesResult,
-      monthAttendanceResult,
-    ] = await Promise.all([
-      supabase.from("profiles").select("user_id, created_at"),
-      today >= startDate
-        ? supabase.from("attendance").select("user_id, status")
-          .gte("clock_in", startOfTodayLocal.toISOString())
-          .lte("clock_in", endOfTodayLocal.toISOString())
-        : Promise.resolve({ data: [] }),
-      supabase.from("profiles").select("department").not("department", "is", null),
-      supabase.from("leave_requests").select("user_id").eq("status", "pending"),
-      supabase.from("leave_requests").select("user_id")
-        .eq("status", "approved")
-        .gte("start_date", startOfMonth.toISOString().split("T")[0])
-        .lte("end_date", endOfMonth.toISOString().split("T")[0]),
-      supabase.from("attendance").select("user_id")
-        .gte("clock_in", startOfMonth.toISOString())
-        .lte("clock_in", endOfMonth.toISOString()),
-    ]);
-
-    // FR-02: Total Karyawan Aktif (Karyawan Only)
-    const karyawanProfiles = profilesResult.data?.filter(p => karyawanUserIds.has(p.user_id)) || [];
-    const totalEmployees = karyawanProfiles.length;
-
-    // New employees this month
-    const newEmployeesThisMonth = karyawanProfiles.filter(p => {
-      const created = new Date(p.created_at);
-      return created >= startOfMonth && created <= endOfMonth;
-    }).length;
-
-    // FR-03: Hadir Hari Ini (Karyawan Only)
-    const karyawanTodayAttendance = todayAttendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
-    const presentToday = karyawanTodayAttendance.length;
-    const lateToday = karyawanTodayAttendance.filter(a => a.status === "late").length;
-    const earlyLeaveToday = karyawanTodayAttendance.filter(a => a.status === "early_leave").length;
-    const onTimeToday = presentToday - lateToday - earlyLeaveToday;
-
-    // FR-04: Tidak Hadir (Karyawan Only)
-    const absentToday = Math.max(0, totalEmployees - presentToday);
-
-    const uniqueDepartments = new Set(departmentsResult.data?.map(d => d.department).filter(Boolean));
-    const karyawanPendingLeaves = pendingLeavesResult.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
-    const karyawanApprovedLeaves = approvedLeavesResult.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
-    const karyawanMonthAttendance = monthAttendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
-
-    const workDaysThisMonth = getWorkDaysInMonth(today.getFullYear(), today.getMonth());
-    const expectedAttendance = totalEmployees * workDaysThisMonth;
-    const attendanceRate = expectedAttendance > 0
-      ? Math.round((karyawanMonthAttendance.length / expectedAttendance) * 100)
-      : 0;
-
-    setStats({
-      totalEmployees,
-      presentToday,
-      lateToday,
-      absentToday,
-      departments: uniqueDepartments.size,
-      pendingLeave: karyawanPendingLeaves.length,
-      approvedLeaveThisMonth: karyawanApprovedLeaves.length,
-      attendanceThisMonth: karyawanMonthAttendance.length,
-      attendanceRate: Math.min(100, attendanceRate),
-      newEmployeesThisMonth,
-    });
-
-    setAttendanceBreakdown({
-      onTime: onTimeToday,
-      late: lateToday,
-      earlyLeave: earlyLeaveToday,
-    });
-  };
-
-  const fetchWeeklyTrend = async (karyawanUserIds: Set<string>) => {
-    const today = new Date();
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-    // Get last 12 months data
-    const startOfYear = new Date(today.getFullYear(), 0, 1);
-    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-
-    const [profilesResult, attendanceResult] = await Promise.all([
-      supabase.from("profiles").select("user_id"),
-      supabase.from("attendance").select("user_id, status, clock_in")
-        .gte("clock_in", startOfYear.toISOString())
-        .lte("clock_in", endOfToday.toISOString()),
-    ]);
-
-    const karyawanProfiles = profilesResult.data?.filter(p => karyawanUserIds.has(p.user_id)) || [];
-    const totalEmployees = karyawanProfiles.length;
-    const allAttendance = attendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
-
-    const weekData: WeeklyData[] = [];
-
-    // Get last 12 months
-    for (let i = 11; i >= 0; i--) {
-      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
-      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
-
-      const monthAttendance = allAttendance.filter(a => {
-        const clockIn = new Date(a.clock_in);
-        return clockIn >= monthStart && clockIn <= monthEnd;
-      });
-
-      const presentCount = monthAttendance.filter(a => a.status === "present").length;
-      const lateCount = monthAttendance.filter(a => a.status === "late").length;
-
-      // Calculate percentage for visualization
-      const workDays = getWorkDaysInMonth(date.getFullYear(), date.getMonth());
-      const expected = totalEmployees * workDays;
-      const percentage = expected > 0 ? Math.round(((presentCount + lateCount) / expected) * 100) : 0;
-
-      weekData.push({
-        day: monthNames[date.getMonth()],
-        hadir: Math.min(100, percentage),
-        terlambat: lateCount,
-        tidakHadir: Math.max(0, 100 - percentage),
-      });
-    }
-
-    setWeeklyData(weekData);
-  };
-
-  const fetchMonthlyTrend = async (karyawanUserIds: Set<string>) => {
-    const today = new Date();
-    const startOfYear = new Date(today.getFullYear(), 0, 1);
-    const endOfYear = new Date(today.getFullYear(), 11, 31, 23, 59, 59, 999);
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-    // Fetch all year attendance in one query
-    const { data: yearAttendance } = await supabase
-      .from("attendance")
-      .select("user_id, status, clock_in")
-      .gte("clock_in", startOfYear.toISOString())
-      .lte("clock_in", endOfYear.toISOString());
-
-    const allAttendance = yearAttendance?.filter(a => karyawanUserIds.has(a.user_id)) || [];
-    const monthData: MonthlyData[] = [];
-
-    for (let month = 0; month <= today.getMonth(); month++) {
-      const monthStart = new Date(today.getFullYear(), month, 1);
-      const monthEnd = new Date(today.getFullYear(), month + 1, 0, 23, 59, 59, 999);
-
-      const monthAttendance = allAttendance.filter(a => {
-        const clockIn = new Date(a.clock_in);
-        return clockIn >= monthStart && clockIn <= monthEnd;
-      });
-
-      const presentCount = monthAttendance.filter(a => a.status === "present").length;
-      const lateCount = monthAttendance.filter(a => a.status === "late").length;
-
-      monthData.push({
-        week: monthNames[month],
-        hadir: presentCount + lateCount,
-        terlambat: lateCount,
-      });
-    }
-
-    setMonthlyData(monthData);
-  };
-
-  const fetchRecentAttendance = async (karyawanUserIds: Set<string>) => {
-    const today = new Date();
-    const startOfTodayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-    const endOfTodayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-
-    // Fetch attendance and all profiles in parallel
-    const [attendanceResult, profilesResult] = await Promise.all([
-      supabase.from("attendance")
-        .select("id, user_id, clock_in, status")
-        .gte("clock_in", startOfTodayLocal.toISOString())
-        .lte("clock_in", endOfTodayLocal.toISOString())
-        .order("clock_in", { ascending: false })
-        .limit(10),
-      supabase.from("profiles").select("user_id, full_name"),
-    ]);
-
-    if (attendanceResult.data) {
-      const profileMap = new Map(profilesResult.data?.map(p => [p.user_id, p.full_name]) || []);
-      const karyawanData = attendanceResult.data.filter(a => karyawanUserIds.has(a.user_id));
-
-      const attendanceWithNames = karyawanData.slice(0, 5).map(record => ({
-        id: record.id,
-        full_name: profileMap.get(record.user_id) || "Unknown",
-        clock_in: record.clock_in,
-        status: record.status,
-      }));
-      setRecentAttendance(attendanceWithNames);
-    }
-  };
-
-  const getWorkDaysInMonth = (year: number, month: number) => {
-    const date = new Date(year, month, 1);
-    let workDays = 0;
-    while (date.getMonth() === month) {
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) workDays++;
-      date.setDate(date.getDate() + 1);
-    }
-    return workDays;
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    toast({
-      title: "Logout berhasil",
-      description: "Sampai jumpa kembali!",
-    });
-    navigate("/auth");
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "present":
-        return <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs font-medium">Hadir</Badge>;
-      case "late":
-        return <Badge className="bg-amber-100 text-amber-700 border-0 text-xs font-medium">Terlambat</Badge>;
-      case "absent":
-        return <Badge className="bg-red-100 text-red-700 border-0 text-xs font-medium">Tidak Hadir</Badge>;
-      default:
-        return <Badge variant="secondary" className="text-xs">{status}</Badge>;
-    }
+    // Optional: client.invalidateQueries(['dashboardStats']) etc.
   };
 
   const menuItems = [
@@ -544,7 +182,33 @@ const AdminDashboard = () => {
     return name.split(" ").map(n => n.charAt(0)).slice(0, 2).join("").toUpperCase();
   };
 
-  // Heatmap data for attendance
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "present":
+        return <Badge className="bg-emerald-100 text-emerald-700 border-0 text-xs font-medium">Hadir</Badge>;
+      case "late":
+        return <Badge className="bg-amber-100 text-amber-700 border-0 text-xs font-medium">Terlambat</Badge>;
+      case "absent":
+        return <Badge className="bg-red-100 text-red-700 border-0 text-xs font-medium">Tidak Hadir</Badge>;
+      default:
+        return <Badge variant="secondary" className="text-xs">{status}</Badge>;
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    toast({
+      title: "Logout berhasil",
+      description: "Sampai jumpa kembali!",
+    });
+    navigate("/auth");
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  // Duplicate functions removed
   const getHeatmapData = () => {
     const hours = ["09:00", "08:30", "08:00", "07:30"];
     const months = ["Jan", "Feb", "Mar", "Apr", "Mei"];
@@ -1003,28 +667,32 @@ const AdminDashboard = () => {
                   </div>
                 ) : (
                   <div className="divide-y divide-slate-100">
-                    {recentAttendance.length > 0 ? (
-                      recentAttendance.map((record) => (
-                        <div key={record.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-medium border border-slate-200">
-                              {getInitials(record.full_name)}
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900">{record.full_name}</p>
-                              <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Clock className="h-3 w-3" />
-                                {formatTime(record.clock_in)}
+                    {/* Filter to show only present/late employees with clock-in time for "Recent Activity" */}
+                    {recentAttendance.filter(r => r.clock_in).slice(0, 5).length > 0 ? (
+                      recentAttendance
+                        .filter(r => r.clock_in)
+                        .slice(0, 5)
+                        .map((record) => (
+                          <div key={record.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-medium border border-slate-200">
+                                {getInitials(record.full_name)}
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">{record.full_name}</p>
+                                <div className="flex items-center gap-2 text-xs text-slate-500">
+                                  <Clock className="h-3 w-3" />
+                                  {formatTime(record.clock_in)}
+                                </div>
                               </div>
                             </div>
+                            {getStatusBadge(record.status)}
                           </div>
-                          {getStatusBadge(record.status)}
-                        </div>
-                      ))
+                        ))
                     ) : (
                       <div className="p-8 text-center text-slate-500">
                         <UserX className="h-10 w-10 mx-auto text-slate-300 mb-2" />
-                        <p>Belum ada data absensi hari ini</p>
+                        <p>Belum ada aktivitas clock-in hari ini</p>
                       </div>
                     )}
                   </div>

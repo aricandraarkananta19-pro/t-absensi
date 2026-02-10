@@ -60,7 +60,7 @@ serve(async (req) => {
         const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
         // ============ 1. GET SYSTEM SETTINGS ============
-        let settings: SystemSettings = { ...DEFAULT_SETTINGS };
+        const settings: SystemSettings = { ...DEFAULT_SETTINGS };
 
         const { data: settingsData, error: settingsError } = await supabaseAdmin
             .from("system_settings")

@@ -1,19 +1,22 @@
-
 import { useState, useEffect, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import {
     Users, Clock, Key, Settings, ChevronRight, LogOut, LayoutDashboard,
     BarChart3, FileText, Calendar, Building2, Shield, TrendingUp, TrendingDown,
     CheckCircle2, AlertCircle, UserCheck, UserX, RefreshCw, Download,
     Bell, MoreVertical, ArrowUpRight, Briefcase, FolderOpen, Database,
-    Timer, Zap, Activity, CalendarClock
+    Timer, Zap, Activity, CalendarClock, BookOpen
 } from "lucide-react";
 import {
     AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell
 } from "recharts";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ADMIN_MENU_SECTIONS } from "@/config/menu";
 import logoImage from "@/assets/logo.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -26,6 +29,69 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { ABSENSI_WAJIB_ROLE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { getJakartaDate, getJakartaStartOfDayISO, getJakartaEndOfDayISO } from "@/lib/dateUtils";
+import {
+    useEmployeeIds,
+    useDashboardStats,
+    useLiveStats,
+    useRealTimeMonitoring,
+    useMonthlyTrend,
+    useDepartmentDistribution,
+    useRecentJournals
+} from "@/hooks/useDashboardData";
+
+// Helper for Avatar Colors
+const getAvatarColor = (name: string) => {
+    const colors = [
+        "bg-red-100 text-red-600",
+        "bg-blue-100 text-blue-600",
+        "bg-green-100 text-green-600",
+        "bg-amber-100 text-amber-600",
+        "bg-purple-100 text-purple-600",
+        "bg-pink-100 text-pink-600",
+        "bg-indigo-100 text-indigo-600",
+        "bg-teal-100 text-teal-600"
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+};
+
+// Helper for Department Badge Colors
+const getDeptBadgeColor = (dept: string) => {
+    if (!dept) return "bg-slate-100 text-slate-600 border-slate-200";
+    const colors = [
+        "bg-blue-50 text-blue-700 border-blue-200",
+        "bg-purple-50 text-purple-700 border-purple-200",
+        "bg-green-50 text-green-700 border-green-200",
+        "bg-amber-50 text-amber-700 border-amber-200",
+        "bg-pink-50 text-pink-700 border-pink-200"
+    ];
+    let hash = 0;
+    for (let i = 0; i < dept.length; i++) {
+        hash = dept.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+};
+
+// Helper to render bold markdown
+const renderJournalContent = (content: string) => {
+    if (!content) return "";
+    // Split by **bold**
+    const parts = content.split(/(\*\*.*?\*\*)/g);
+    return (
+        <span>
+            {parts.map((part, index) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                    return <strong key={index} className="font-bold text-slate-800">{part.slice(2, -2)}</strong>;
+                }
+                return <span key={index}>{part}</span>;
+            })}
+        </span>
+    );
+};
 
 const AUTO_REFRESH_INTERVAL = 60000;
 
@@ -58,22 +124,6 @@ interface MonthlyData {
     terlambat: number;
 }
 
-// 1. TIMEZONE & DATE ENGINE
-// Helper to get date in Jakarta Timezone
-const getJakartaDate = (offsetDays = 0) => {
-    // Current UTC time
-    const now = new Date();
-    // Convert to Jakarta Time string
-    const jakartaTimeStr = now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" });
-    const jakartaDate = new Date(jakartaTimeStr);
-
-    if (offsetDays !== 0) {
-        jakartaDate.setDate(jakartaDate.getDate() + offsetDays);
-    }
-
-    return jakartaDate;
-};
-
 // Check if current time is within working hours (Jakarta Time)
 const isWithinWorkingHours = (clockInStart: string, clockOutEnd: string) => {
     const now = getJakartaDate();
@@ -97,7 +147,8 @@ const AdminDashboardNew = () => {
     const [activeDate, setActiveDate] = useState(getJakartaDate());
 
     // Derived Dates
-    const yesterdayDate = getJakartaDate(-1);
+    const yesterdayDate = new Date(activeDate);
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
 
     // Display Strings
     const activeDateDisplay = activeDate.toLocaleDateString("id-ID", {
@@ -107,61 +158,116 @@ const AdminDashboardNew = () => {
         year: "numeric",
     });
 
-    const [stats, setStats] = useState({
-        totalEmployees: 0,
-        presentToday: 0,
-        lateToday: 0,
-        absentToday: 0,
-        departments: 0,
-        pendingLeave: 0,
-        approvedLeaveThisMonth: 0,
+    // 3. REACT QUERY HOOKS
+    // Fetch employee IDs first
+    const { data: karyawanUserIds } = useEmployeeIds();
+
+    // Fetch all other data using the hooks
+    const { data: dashboardStats, isLoading: isLoadingStats } = useDashboardStats(karyawanUserIds);
+    const { data: liveStatsQuery, isLoading: isLoadingLive } = useLiveStats(karyawanUserIds);
+    const { data: realTimeEmployees, isLoading: isLoadingRealTime } = useRealTimeMonitoring(karyawanUserIds);
+    const { data: monthlyTrend, isLoading: isLoadingTrend } = useMonthlyTrend(karyawanUserIds);
+    const { data: deptDistribution, isLoading: isLoadingDept } = useDepartmentDistribution(karyawanUserIds);
+    const { data: journalsData, isLoading: isLoadingJournals } = useRecentJournals(karyawanUserIds);
+
+    const queryClient = useQueryClient();
+
+    // 4. REAL-TIME SUBSCRIPTION
+    useEffect(() => {
+        const channel = supabase
+            .channel('attendance-dashboard-realtime')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*', // Listen for INSERT and UPDATE (clock-out)
+                    schema: 'public',
+                    table: 'attendance'
+                },
+                (payload) => {
+                    // Invalidate all dashboard queries to force immediate refresh
+                    queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
+                    queryClient.invalidateQueries({ queryKey: ["liveStats"] });
+                    queryClient.invalidateQueries({ queryKey: ["realTimeMonitoring"] });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [queryClient]);
+
+    const isLoading = isLoadingStats || isLoadingLive || isLoadingRealTime || isLoadingTrend || isLoadingDept || isLoadingJournals || settingsLoading;
+    const hasDataForToday = true;
+    const lastUpdated = new Date();
+
+    // Map hook data to component state shape
+    const stats = {
+        totalEmployees: dashboardStats?.totalEmployees || 0,
+        presentToday: dashboardStats?.presentToday || 0,
+        lateToday: dashboardStats?.lateToday || 0,
+        absentToday: dashboardStats?.absentToday || 0,
+        departments: dashboardStats?.departments || 0,
+        pendingLeave: dashboardStats?.pendingLeave || 0,
+        approvedLeaveThisMonth: dashboardStats?.approvedLeaveThisMonth || 0,
         attendanceThisMonth: 0,
         attendanceRate: 0,
-        newEmployeesThisMonth: 0,
-    });
+        newEmployeesThisMonth: dashboardStats?.newEmployeesThisMonth || 0,
+    };
 
-    // Validated Live Stats
-    const [liveStats, setLiveStats] = useState({
-        clockedInToday: 0,
-        lateToday: 0,
-        lastClockIn: null as string | null,
-    });
+    // Calculate monthly rate from trend data
+    const currentMonthTrend = monthlyTrend && monthlyTrend.length > 0 ? monthlyTrend[monthlyTrend.length - 1] : null;
+    if (currentMonthTrend) {
+        stats.attendanceRate = currentMonthTrend.attendanceRate;
+        stats.attendanceThisMonth = currentMonthTrend.total;
+    }
 
-    const [recentAttendance, setRecentAttendance] = useState<Array<{
-        id: string;
-        full_name: string;
-        clock_in: string;
-        status: string;
-    }>>([]);
-    const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
-    const [departmentData, setDepartmentData] = useState<Array<{ name: string; value: number; color: string }>>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-    const [hasDataForToday, setHasDataForToday] = useState(true);
+    const liveStats = {
+        clockedInToday: liveStatsQuery?.clockedInToday || 0,
+        lateToday: liveStatsQuery?.lateToday || 0,
+        lastClockIn: liveStatsQuery?.lastClockIn || null,
+    };
+
+    // Map real-time employees to expected format
+    const recentAttendance = realTimeEmployees?.map(emp => ({
+        id: emp.id,
+        user_id: emp.user_id,
+        full_name: emp.full_name,
+        clock_in: emp.clock_in,
+        status: emp.status,
+        shift: emp.shift
+    })) || [];
+
+    // Map journals to expected format
+    const pendingJournalsList = journalsData?.journals.map(j => ({
+        id: j.id,
+        user_id: j.user_id,
+        full_name: j.full_name,
+        title: j.content,
+        created_at: j.created_at,
+        status: j.status,
+        avatar_url: j.avatar_url,
+        department: j.department,
+        duration: j.duration
+    })) || [];
+
+    // Map monthly trend to chart format
+    const weeklyData: WeeklyData[] = monthlyTrend?.map(m => ({
+        day: m.month,
+        hadir: m.attendanceRate,
+        terlambat: m.late,
+        tidakHadir: Math.max(0, 100 - m.attendanceRate)
+    })) || [];
+
+    // Map department data
+    const departmentData = deptDistribution?.map(d => ({
+        name: d.name,
+        value: d.count,
+        color: d.color
+    })) || [];
 
     // Menu sections for sidebar
-    const menuSections = [
-        {
-            title: "Menu Utama",
-            items: [
-                { icon: LayoutDashboard, title: "Dashboard", href: "/dashboard" },
-                { icon: Users, title: "Kelola Karyawan", href: "/admin/karyawan" },
-                { icon: Clock, title: "Rekap Absensi", href: "/admin/absensi" },
-                { icon: Briefcase, title: "Jurnal Kerja", href: "/admin/jurnal" },
-                { icon: BarChart3, title: "Laporan", href: "/admin/laporan" },
-            ],
-        },
-        {
-            title: "Pengaturan",
-            items: [
-                { icon: Building2, title: "Departemen", href: "/admin/departemen" },
-                { icon: Shield, title: "Kelola Role", href: "/admin/role" },
-                { icon: Key, title: "Reset Password", href: "/admin/reset-password" },
-                { icon: Settings, title: "Pengaturan", href: "/admin/pengaturan" },
-                { icon: Database, title: "Export Database", href: "/admin/export-database" },
-            ],
-        },
-    ];
+    const menuSections = ADMIN_MENU_SECTIONS;
 
     // Add pending leave badge to menu items
     const menuWithBadges = menuSections.map(section => ({
@@ -172,9 +278,8 @@ const AdminDashboardNew = () => {
         })),
     }));
 
-    // 3. AUTO-REFRESH & DATE VALIDATION ENGINE
+    // Auto-refresh using React Query managed internally by hooks, but we keep date check
     useEffect(() => {
-        // Function to check if date changed (e.g. passed midnight)
         const checkDateChange = () => {
             const currentJakarta = getJakartaDate();
             if (
@@ -182,311 +287,14 @@ const AdminDashboardNew = () => {
                 currentJakarta.getMonth() !== activeDate.getMonth() ||
                 currentJakarta.getFullYear() !== activeDate.getFullYear()
             ) {
-                console.log("Date changed! Updating active date to:", currentJakarta);
-                setActiveDate(currentJakarta); // Will trigger fetchAllData via dependency
+                setActiveDate(currentJakarta);
             }
         };
-
-        /*
-        const interval = setInterval(() => {
-            checkDateChange();
-            if (!document.hidden) {
-                fetchAllData(false); // Background refresh only if visible
-            }
-        }, AUTO_REFRESH_INTERVAL);
-
+        // Interval if needed, but simple re-render check is often enough if component stays mounted
+        const interval = setInterval(checkDateChange, AUTO_REFRESH_INTERVAL);
         return () => clearInterval(interval);
-        */
     }, [activeDate]);
 
-
-    const fetchAllData = useCallback(async (showLoading = true) => {
-        if (showLoading) setIsLoading(true);
-        try {
-            const { data: karyawanRoles } = await supabase
-                .from("user_roles")
-                .select("user_id")
-                .in("role", ABSENSI_WAJIB_ROLE);
-            const karyawanUserIds = new Set(karyawanRoles?.map(r => r.user_id) || []);
-
-            await Promise.all([
-                fetchStats(karyawanUserIds),
-                fetchLiveStats(karyawanUserIds),
-                fetchRecentAttendance(karyawanUserIds),
-                fetchWeeklyTrend(karyawanUserIds),
-                fetchDepartmentDistribution(karyawanUserIds),
-            ]);
-
-            setLastUpdated(new Date()); // Local machine time for update timestamp
-        } finally {
-            setIsLoading(false);
-        }
-    }, [settings.attendanceStartDate, activeDate]); // Depend on activeDate!
-
-    useEffect(() => {
-        if (!settingsLoading) {
-            fetchAllData(true);
-        }
-
-        /*
-        const attendanceChannel = supabase
-            .channel("dashboard-attendance-changes")
-            .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, () => fetchAllData(false))
-            .subscribe();
-
-        const profilesChannel = supabase
-            .channel("dashboard-profiles-changes")
-            .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => fetchAllData(false))
-            .subscribe();
-
-        const leaveChannel = supabase
-            .channel("dashboard-leave-changes")
-            .on("postgres_changes", { event: "*", schema: "public", table: "leave_requests" }, () => fetchAllData(false))
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(attendanceChannel);
-            supabase.removeChannel(profilesChannel);
-            supabase.removeChannel(leaveChannel);
-        };
-        */
-    }, [settingsLoading, fetchAllData]);
-
-    const fetchLiveStats = async (karyawanUserIds: Set<string>) => {
-        // Use activeDate (Jakarta) for query
-        const startOfToday = new Date(activeDate);
-        startOfToday.setHours(0, 0, 0, 0);
-        const endOfToday = new Date(activeDate);
-        endOfToday.setHours(23, 59, 59, 999);
-
-        const { data: todayAttendance } = await supabase
-            .from("attendance")
-            .select("user_id, status, clock_in")
-            .gte("clock_in", startOfToday.toISOString())
-            .lte("clock_in", endOfToday.toISOString())
-            .order("clock_in", { ascending: false });
-
-        const karyawanTodayAttendance = todayAttendance?.filter(a => karyawanUserIds.has(a.user_id)) || [];
-
-        setLiveStats({
-            clockedInToday: karyawanTodayAttendance.length,
-            lateToday: karyawanTodayAttendance.filter(a => a.status === "late").length,
-            lastClockIn: karyawanTodayAttendance[0]?.clock_in || null,
-        });
-
-        // Update emptiness check
-        setHasDataForToday(karyawanTodayAttendance.length > 0);
-    };
-
-    const fetchDepartmentDistribution = async (karyawanUserIds: Set<string>) => {
-        const { data: profiles } = await supabase
-            .from("profiles")
-            .select("user_id, department");
-
-        if (profiles) {
-            const karyawanProfiles = profiles.filter(p => karyawanUserIds.has(p.user_id));
-            const deptCounts: Record<string, number> = {};
-
-            karyawanProfiles.forEach(p => {
-                const dept = p.department || "Lainnya";
-                deptCounts[dept] = (deptCounts[dept] || 0) + 1;
-            });
-
-            const colors = [BRAND_COLORS.blue, BRAND_COLORS.green, BRAND_COLORS.lightBlue, "#8B5CF6", "#EC4899", "#06B6D4"];
-            const deptData = Object.entries(deptCounts)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 6)
-                .map(([name, value], index) => ({
-                    name: name.length > 12 ? name.substring(0, 12) + "..." : name,
-                    value,
-                    color: colors[index % colors.length],
-                }));
-
-            setDepartmentData(deptData);
-        }
-    };
-
-    const fetchStats = async (karyawanUserIds: Set<string>) => {
-        // Stats based on activeDate (TODAY)
-        const startOfTargetDay = new Date(activeDate);
-        startOfTargetDay.setHours(0, 0, 0, 0);
-        const endOfTargetDay = new Date(activeDate);
-        endOfTargetDay.setHours(23, 59, 59, 999);
-
-        const today = activeDate;
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
-
-        const [
-            profilesResult,
-            targetDayAttendanceResult,
-            departmentsResult,
-            pendingLeavesResult,
-            approvedLeavesResult,
-            monthAttendanceResult,
-            approvedLeavesTodayResult
-        ] = await Promise.all([
-            supabase.from("profiles").select("user_id, created_at"),
-            // Fetch attendance from TODAY (activeDate)
-            supabase.from("attendance").select("user_id, status")
-                .gte("clock_in", startOfTargetDay.toISOString())
-                .lte("clock_in", endOfTargetDay.toISOString()),
-            supabase.from("profiles").select("department").not("department", "is", null),
-            supabase.from("leave_requests").select("user_id").eq("status", "pending"),
-            supabase.from("leave_requests").select("user_id")
-                .eq("status", "approved")
-                .gte("start_date", startOfMonth.toISOString().split("T")[0])
-                .lte("end_date", endOfMonth.toISOString().split("T")[0]),
-            supabase.from("attendance").select("user_id")
-                .gte("clock_in", startOfMonth.toISOString())
-                .lte("clock_in", endOfMonth.toISOString()),
-            // New Query: Leaves for TODAY specifically
-            supabase.from("leave_requests")
-                .select("user_id")
-                .eq("status", "approved")
-                .lte("start_date", activeDate.toISOString())
-                .gte("end_date", activeDate.toISOString()),
-        ]);
-
-        const karyawanProfiles = profilesResult.data?.filter(p => karyawanUserIds.has(p.user_id)) || [];
-        const totalEmployees = karyawanProfiles.length;
-
-        const newEmployeesThisMonth = karyawanProfiles.filter(p => {
-            const created = new Date(p.created_at);
-            return created >= startOfMonth && created <= endOfMonth;
-        }).length;
-
-        const karyawanTargetDayAttendance = targetDayAttendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
-        const presentToday = karyawanTargetDayAttendance.length;
-        const lateToday = karyawanTargetDayAttendance.filter(a => a.status === "late").length;
-        // Absent is implicitly Total - Present for simple summary, but ideally we query 'absent' status.
-        // For Dashboard quick view, Total - Present is a good estimation if we assume working day.
-
-        const karyawanApprovedLeavesToday = approvedLeavesTodayResult?.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
-        const employeesOnLeaveToday = new Set(karyawanApprovedLeavesToday.map(l => l.user_id)).size;
-
-        const absentToday = Math.max(0, totalEmployees - presentToday - employeesOnLeaveToday);
-
-        const uniqueDepartments = new Set(departmentsResult.data?.map(d => d.department).filter(Boolean));
-        const karyawanPendingLeaves = pendingLeavesResult.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
-        const karyawanApprovedLeavesMonth = approvedLeavesResult.data?.filter(l => karyawanUserIds.has(l.user_id)) || [];
-        const karyawanMonthAttendance = monthAttendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
-
-        const workDaysThisMonth = getWorkDaysInMonth(today.getFullYear(), today.getMonth());
-        const expectedAttendance = totalEmployees * workDaysThisMonth;
-        const attendanceRate = expectedAttendance > 0
-            ? Math.round((karyawanMonthAttendance.length / expectedAttendance) * 100)
-            : 0;
-
-        setStats({
-            totalEmployees,
-            presentToday,
-            lateToday,
-            absentToday,
-            departments: uniqueDepartments.size,
-            pendingLeave: karyawanPendingLeaves.length,
-            approvedLeaveThisMonth: karyawanApprovedLeavesMonth.length,
-            attendanceThisMonth: karyawanMonthAttendance.length,
-            attendanceRate: Math.min(100, attendanceRate),
-            newEmployeesThisMonth,
-        });
-    };
-
-    const fetchWeeklyTrend = async (karyawanUserIds: Set<string>) => {
-        const today = activeDate;
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-
-        // OPTIMIZATION: Only fetch last 6 months, not whole year
-        const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 5, 1);
-        const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-
-        const [profilesResult, attendanceResult] = await Promise.all([
-            // Optimization: We already have profile data in fetchAllData parent or unrelated? 
-            // We need count for each month. 
-            // Profiles count can change over time but for trend we usually take current count or snapshot.
-            // Using current active profiles is standard for simple dashboards.
-            supabase.from("profiles").select("user_id"),
-            supabase.from("attendance").select("user_id, status, clock_in")
-                .gte("clock_in", sixMonthsAgo.toISOString())
-                .lte("clock_in", endOfToday.toISOString()),
-        ]);
-
-        const karyawanProfiles = profilesResult.data?.filter(p => karyawanUserIds.has(p.user_id)) || [];
-        const totalEmployees = karyawanProfiles.length;
-        const allAttendance = attendanceResult.data?.filter(a => karyawanUserIds.has(a.user_id)) || [];
-
-        const weekData: WeeklyData[] = [];
-
-        for (let i = 5; i >= 0; i--) {
-            const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-            const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
-            const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
-
-            const monthAttendance = allAttendance.filter(a => {
-                const clockIn = new Date(a.clock_in);
-                return clockIn >= monthStart && clockIn <= monthEnd;
-            });
-
-            const presentCount = monthAttendance.filter(a => a.status === "present").length;
-            const lateCount = monthAttendance.filter(a => a.status === "late").length;
-
-            const workDays = getWorkDaysInMonth(date.getFullYear(), date.getMonth());
-            const expected = totalEmployees * workDays;
-            const percentage = expected > 0 ? Math.round(((presentCount + lateCount) / expected) * 100) : 0;
-
-            weekData.push({
-                day: monthNames[date.getMonth()],
-                hadir: Math.min(100, percentage),
-                terlambat: lateCount,
-                tidakHadir: Math.max(0, 100 - percentage),
-            });
-        }
-
-        setWeeklyData(weekData);
-    };
-
-    const fetchRecentAttendance = async (karyawanUserIds: Set<string>) => {
-        // Fetch attendance from TODAY (activeDate) - because user wants "Dashboard data always matches TODAY'S DATE"
-        const targetDate = activeDate;
-        const startOfTargetDay = new Date(targetDate);
-        startOfTargetDay.setHours(0, 0, 0, 0);
-        const endOfTargetDay = new Date(targetDate);
-        endOfTargetDay.setHours(23, 59, 59, 999);
-
-        const [attendanceResult, profilesResult] = await Promise.all([
-            supabase.from("attendance")
-                .select("id, user_id, clock_in, status")
-                .gte("clock_in", startOfTargetDay.toISOString())
-                .lte("clock_in", endOfTargetDay.toISOString())
-                .order("clock_in", { ascending: false })
-                .limit(10),
-            supabase.from("profiles").select("user_id, full_name"),
-        ]);
-
-        if (attendanceResult.data) {
-            const profileMap = new Map(profilesResult.data?.map(p => [p.user_id, p.full_name]) || []);
-            const karyawanData = attendanceResult.data.filter(a => karyawanUserIds.has(a.user_id));
-
-            const attendanceWithNames = karyawanData.slice(0, 5).map(record => ({
-                id: record.id,
-                full_name: profileMap.get(record.user_id) || "Unknown",
-                clock_in: record.clock_in,
-                status: record.status,
-            }));
-            setRecentAttendance(attendanceWithNames);
-        }
-    };
-
-    const getWorkDaysInMonth = (year: number, month: number) => {
-        const date = new Date(year, month, 1);
-        let workDays = 0;
-        while (date.getMonth() === month) {
-            const dayOfWeek = date.getDay();
-            if (dayOfWeek !== 0 && dayOfWeek !== 6) workDays++;
-            date.setDate(date.getDate() + 1);
-        }
-        return workDays;
-    };
 
     const formatTime = (dateString: string) => {
         return new Date(dateString).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
@@ -535,195 +343,232 @@ const AdminDashboardNew = () => {
             menuSections={menuWithBadges}
             roleLabel="Administrator"
             showRefresh={false}
-            onRefresh={() => fetchAllData(false)}
+            onRefresh={() => { /* Handled by React Query auto-refresh */ }}
             refreshInterval={60}
         >
             <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out space-y-6">
-                {/* Live Status Bar */}
-                <div className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    {/* Today's Live Counter */}
-                    <div
-                        className="p-4 rounded-2xl border flex items-center gap-4"
-                        style={{
-                            backgroundColor: `${BRAND_COLORS.green}08`,
-                            borderColor: `${BRAND_COLORS.green}25`
-                        }}
-                    >
-                        <div
-                            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm relative"
-                            style={{
-                                background: `linear-gradient(135deg, ${BRAND_COLORS.green} 0%, #8BC34A 100%)`
-                            }}
-                        >
-                            <Activity className="h-6 w-6 text-white" />
-                            {liveStats.clockedInToday > 0 && (
-                                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-400 animate-pulse" />
-                            )}
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-sm text-slate-600">Clock-In Hari Ini (Live)</p>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-bold" style={{ color: BRAND_COLORS.green }}>
-                                    {liveStats.clockedInToday}
-                                </span>
-                                <span className="text-sm text-slate-500">
-                                    / {stats.totalEmployees} karyawan
-                                </span>
-                            </div>
-                        </div>
-                        {liveStats.lastClockIn && (
-                            <div className="text-right">
-                                <p className="text-xs text-slate-500">Terakhir</p>
-                                <p className="text-sm font-medium text-slate-700">
-                                    {formatTime(liveStats.lastClockIn)}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Working Hours Status */}
-                    <div
-                        className="p-4 rounded-2xl border flex items-center gap-4"
-                        style={{
-                            backgroundColor: workingHoursActive ? `${BRAND_COLORS.blue}08` : "#F1F5F9",
-                            borderColor: workingHoursActive ? `${BRAND_COLORS.blue}25` : "#E2E8F0"
-                        }}
-                    >
-                        <div
-                            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-                            style={{
-                                background: workingHoursActive
-                                    ? `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`
-                                    : "#94A3B8"
-                            }}
-                        >
-                            <Timer className="h-6 w-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-sm text-slate-600">Jam Kerja</p>
-                            <div className="flex items-center gap-2">
-                                <span className="text-base font-semibold text-slate-800">
-                                    {settings.clockInStart} - {settings.clockOutEnd}
-                                </span>
-                                {workingHoursActive ? (
-                                    <Badge className="text-xs border-0 text-white px-2" style={{ backgroundColor: BRAND_COLORS.green }}>
-                                        Aktif
-                                    </Badge>
-                                ) : (
-                                    <Badge variant="secondary" className="text-xs px-2">
-                                        Tidak Aktif
-                                    </Badge>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Report Date Info */}
-                    <div
-                        className="p-4 rounded-2xl border flex items-center gap-4"
-                        style={{
-                            backgroundColor: `${BRAND_COLORS.lightBlue}08`,
-                            borderColor: `${BRAND_COLORS.lightBlue}25`
-                        }}
-                    >
-                        <div
-                            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-                            style={{
-                                background: `linear-gradient(135deg, ${BRAND_COLORS.lightBlue} 0%, ${BRAND_COLORS.blue} 100%)`
-                            }}
-                        >
-                            <CalendarClock className="h-6 w-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-sm text-slate-600">Terakhir Update</p>
-                            <p className="text-base font-semibold text-slate-800">
-                                {lastUpdated ? lastUpdated.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }) : "-"}
-                            </p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-xs text-slate-500">Status</p>
-                            <Badge variant="outline" className="text-xs border-green-200 text-green-700 bg-green-50">
-                                Sync Aktif
-                            </Badge>
-                        </div>
-                    </div>
-                </div>
-
-                {/* No Data Warning */}
-                {!hasDataForToday && !isLoading && (
-                    <div
-                        className="mb-6 p-4 rounded-2xl border flex items-center gap-4"
-                        style={{
-                            backgroundColor: "#FEF3C7",
-                            borderColor: "#FCD34D"
-                        }}
-                    >
-                        <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                            <AlertCircle className="h-5 w-5 text-amber-600" />
-                        </div>
-                        <div>
-                            <p className="font-semibold text-amber-800">Belum ada absensi hari ini</p>
-                            <p className="text-sm text-amber-700">
-                                Menampilkan data live untuk {activeDateDisplay}. Statistik akan muncul saat karyawan mulai clock-in.
-                            </p>
-                        </div>
-                    </div>
-                )}
-
-                {/* KPI Summary Cards */}
+                {/* KPI Summary Cards - Fixed 4 Cols */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <StatCard
                         title="Total Karyawan"
                         value={stats.totalEmployees}
                         unit="Orang"
                         trend={{
-                            value: `+${stats.newEmployeesThisMonth} bulan ini`,
+                            value: `+${stats.newEmployeesThisMonth}`,
                             direction: "up",
                         }}
-                        subtitle={`Dari ${stats.departments} departemen`}
+                        subtitle="Aktif bekerja"
                         icon={Users}
                         color="primary"
                         isLoading={isLoading}
                     />
                     <StatCard
-                        title="Kehadiran Hari Ini"
-                        value={stats.totalEmployees > 0 ? `${Math.round((stats.presentToday / stats.totalEmployees) * 100)}%` : "0%"}
+                        title="Hadir Hari Ini"
+                        value={stats.presentToday}
+                        unit="Orang"
                         trend={{
-                            value: `${stats.presentToday} dari ${stats.totalEmployees}`,
-                            direction: stats.presentToday >= stats.totalEmployees * 0.8 ? "up" : "down",
+                            value: stats.totalEmployees > 0 ? `${Math.round((stats.presentToday / stats.totalEmployees) * 100)}%` : "0%",
+                            direction: "up",
                         }}
-                        subtitle={`Terlambat: ${stats.lateToday} orang`}
+                        subtitle={`Dari ${stats.totalEmployees} karyawan`}
                         icon={UserCheck}
                         color="success"
                         isLoading={isLoading}
                     />
                     <StatCard
-                        title="Pengajuan Cuti"
-                        value={stats.pendingLeave}
-                        unit="Pengajuan"
-                        subtitle="Menunggu persetujuan"
-                        icon={Calendar}
-                        color="warning"
+                        title="Terlambat"
+                        value={stats.lateToday}
+                        unit="Orang"
+                        trend={{
+                            value: "High Alert",
+                            direction: "down",
+                        }}
+                        subtitle="Butuh perhatian"
+                        icon={Clock}
+                        color="danger" // Changed to danger for visibility
                         isLoading={isLoading}
                     />
                     <StatCard
-                        title="Kehadiran Bulan Ini"
-                        value={`${stats.attendanceRate}%`}
+                        title="Jurnal Pending"
+                        value={pendingJournalsList.length} // Use actual list length or count
+                        unit="Laporan"
                         trend={{
-                            value: stats.attendanceRate >= 80 ? "Di atas target" : "Di bawah target",
-                            direction: stats.attendanceRate >= 80 ? "up" : "down",
+                            value: `${stats.pendingLeave} Cuti`, // Show pending leave context too
+                            direction: "up",
                         }}
-                        subtitle={`${stats.attendanceThisMonth} total absensi`}
-                        icon={BarChart3}
-                        color={stats.attendanceRate >= 80 ? "info" : "danger"}
+                        subtitle="Menunggu review"
+                        icon={BookOpen}
+                        color="warning"
                         isLoading={isLoading}
                     />
                 </div>
 
+                {/* Main Content Grid: Monitoring & Pending Journals */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+                    {/* Left: Real-time Monitoring Table */}
+                    <Card className="xl:col-span-2 border-slate-200 shadow-sm bg-white overflow-hidden">
+                        <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                                    <Activity className="h-4 w-4 text-blue-600" />
+                                    Real-time Monitoring
+                                </CardTitle>
+                                <CardDescription className="text-sm">Pantauan absensi hari ini ({activeDateDisplay})</CardDescription>
+                            </div>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs" asChild>
+                                <Link to="/admin/absensi">Lihat Semua</Link>
+                            </Button>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader className="bg-slate-50">
+                                    <TableRow>
+                                        <TableHead className="w-[40%]">Karyawan</TableHead>
+                                        <TableHead>Jam Masuk</TableHead>
+                                        <TableHead>Shift</TableHead>
+                                        <TableHead className="text-right">Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {recentAttendance.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="h-24 text-center text-slate-500">
+                                                Belum ada data absensi hari ini.
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        recentAttendance.map((record) => (
+                                            <TableRow key={record.id} className="hover:bg-slate-50/50">
+                                                <TableCell className="font-medium">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-600">
+                                                            {getInitials(record.full_name)}
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-medium text-slate-900 line-clamp-1">{record.full_name}</div>
+                                                            <div className="text-xs text-slate-500">ID: {record.user_id ? record.user_id.substring(0, 8) : "N/A"}...</div>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {record.clock_in ? formatTime(record.clock_in) : "-"}
+                                                </TableCell>
+                                                <TableCell>{record.shift}</TableCell>
+                                                <TableCell className="text-right">
+                                                    {getStatusBadge(record.status)}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card >
+
+                    {/* Right: Pending Journals List */}
+                    <Card className="border-slate-200 shadow-sm bg-white flex flex-col h-full">
+                        <CardHeader className="pb-3 border-b border-slate-100">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                                    <Briefcase className="h-4 w-4 text-amber-600" />
+                                    Jurnal Terbaru
+                                </CardTitle>
+                                <Button variant="ghost" size="sm" className="h-6 text-[10px]" asChild>
+                                    <Link to="/admin/jurnal">Lihat Semua</Link>
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="flex-1 p-0 overflow-y-auto max-h-[400px]">
+                            {pendingJournalsList.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-48 text-center p-4">
+                                    <CheckCircle2 className="h-10 w-10 text-green-500 mb-2 opacity-20" />
+                                    <p className="text-sm font-medium text-slate-900">Belum ada jurnal</p>
+                                    <p className="text-xs text-slate-500">Data jurnal hari ini kosong.</p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-slate-50">
+                                    {pendingJournalsList.map((journal) => (
+                                        <div key={journal.id} className="p-4 hover:bg-slate-50/80 transition-all group">
+                                            <div className="flex gap-3">
+                                                {/* Avatar */}
+                                                <Avatar className="h-10 w-10 border border-slate-100">
+                                                    <AvatarImage src={journal.avatar_url || ""} alt={journal.full_name} className="object-cover" />
+                                                    <AvatarFallback className={cn("text-xs font-bold", getAvatarColor(journal.full_name))}>
+                                                        {getInitials(journal.full_name)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+
+                                                <div className="flex-1 min-w-0">
+                                                    {/* Header: Name, Dept, Date */}
+                                                    <div className="flex items-start justify-between mb-1">
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-sm font-bold text-slate-800 line-clamp-1">
+                                                                    {journal.full_name}
+                                                                </p>
+                                                                {journal.department && (
+                                                                    <span className={cn(
+                                                                        "text-[9px] px-1.5 py-0.5 rounded-full font-semibold border whitespace-nowrap hidden sm:inline-block",
+                                                                        getDeptBadgeColor(journal.department)
+                                                                    )}>
+                                                                        {journal.department}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {/* Time Ago */}
+                                                            <span className="text-[10px] text-slate-400 mt-0.5">
+                                                                {new Date(journal.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} • {new Date(journal.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                                            </span>
+                                                        </div>
+                                                        {/* Status Badge - Compact */}
+                                                        <div>
+                                                            {journal.status === 'approved' && <Badge variant="outline" className="text-[10px] px-2 py-0 border-transparent text-green-700 bg-green-50/50">Disetujui</Badge>}
+                                                            {journal.status === 'rejected' && <Badge variant="outline" className="text-[10px] px-2 py-0 border-transparent text-red-700 bg-red-50/50">Ditolak</Badge>}
+                                                            {(journal.status === 'submitted' || journal.status === 'pending') && <Badge variant="outline" className="text-[10px] px-2 py-0 border-transparent text-amber-700 bg-amber-50/50">Menunggu</Badge>}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Content - Markdown parsed + Truncated */}
+                                                    <div className="text-xs text-slate-600 mb-2 leading-relaxed line-clamp-2 break-words">
+                                                        {renderJournalContent(journal.title)}
+                                                    </div>
+
+                                                    {/* Footer: Duration & CTA */}
+                                                    <div className="flex items-center justify-between mt-2">
+                                                        <div className="flex items-center gap-3">
+                                                            {journal.duration !== undefined && journal.duration > 0 && (
+                                                                <div className="flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100/50 px-2 py-1 rounded-md">
+                                                                    <Clock className="w-3 h-3 text-slate-400" />
+                                                                    {journal.duration < 60
+                                                                        ? `${journal.duration}m`
+                                                                        : `${Math.floor(journal.duration / 60)}j ${journal.duration % 60 > 0 ? (journal.duration % 60) + 'm' : ''}`}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <Button size="sm" variant="ghost" className="h-6 text-[10px] text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 opacity-0 group-hover:opacity-100 transition-opacity" asChild>
+                                                            <Link to={`/admin/jurnal?id=${journal.id}`}>Detail &rarr;</Link>
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                        <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+                            <Button variant="outline" size="sm" className="w-full text-xs h-8 border-slate-200" asChild>
+                                <Link to="/admin/jurnal">Buka Semua Jurnal</Link>
+                            </Button>
+                        </div>
+                    </Card >
+                </div >
+
                 {/* Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                < div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6" >
                     {/* Attendance Trend Chart */}
-                    <Card className="lg:col-span-2 border-slate-200 shadow-sm bg-white">
+                    < Card className="lg:col-span-2 border-slate-200 shadow-sm bg-white" >
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -781,10 +626,10 @@ const AdminDashboardNew = () => {
                                 </div>
                             )}
                         </CardContent>
-                    </Card>
+                    </Card >
 
                     {/* Department Distribution */}
-                    <Card className="border-slate-200 shadow-sm bg-white">
+                    < Card className="border-slate-200 shadow-sm bg-white" >
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base font-semibold text-slate-800">Distribusi Departemen</CardTitle>
                             <CardDescription className="text-sm">Jumlah karyawan per departemen</CardDescription>
@@ -840,10 +685,10 @@ const AdminDashboardNew = () => {
                                 </div>
                             )}
                         </CardContent>
-                    </Card>
-                </div>
-            </div>
-        </EnterpriseLayout>
+                    </Card >
+                </div >
+            </div >
+        </EnterpriseLayout >
     );
 };
 

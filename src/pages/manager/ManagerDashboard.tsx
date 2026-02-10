@@ -31,7 +31,6 @@ const ManagerDashboard = () => {
 
     // Realtime subscription - DISABLED for stability (enterprise requirement)
     // Data refreshes only on: page load, manual refresh
-    /*
     // Setup realtime subscription for attendance
     const attendanceChannel = supabase
       .channel("manager-dashboard-attendance-changes")
@@ -56,7 +55,6 @@ const ManagerDashboard = () => {
       supabase.removeChannel(attendanceChannel);
       supabase.removeChannel(profilesChannel);
     };
-    */
   }, [settingsLoading, settings.attendanceStartDate]);
 
   const fetchStats = async () => {
@@ -74,20 +72,28 @@ const ManagerDashboard = () => {
       .select("*", { count: "exact", head: true })
       .in("role", ABSENSI_WAJIB_ROLE);
 
-    // Get today's attendance (karyawan only)
-    const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
+    // Get today's attendance (karyawan only) - Jakarta Timezone
+    const now = new Date();
+    const jakartaDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+    const year = jakartaDate.getFullYear();
+    const month = String(jakartaDate.getMonth() + 1).padStart(2, '0');
+    const day = String(jakartaDate.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+
     const startDate = new Date(settings.attendanceStartDate);
     startDate.setHours(0, 0, 0, 0);
 
     let presentToday = 0;
 
-    if (today >= startDate) {
+    // Compare dates (ignoring time)
+    const isAfterStart = jakartaDate >= startDate;
+
+    if (isAfterStart) {
       const { data: attendanceData } = await supabase
         .from("attendance")
         .select("user_id")
-        .gte("clock_in", `${todayStr}T00:00:00`)
-        .lt("clock_in", `${todayStr}T23:59:59`);
+        .gte("clock_in", `${todayStr}T00:00:00+07:00`)
+        .lte("clock_in", `${todayStr}T23:59:59+07:00`);
 
       // Filter for karyawan only
       const karyawanAttendance = attendanceData?.filter(a => karyawanUserIds.has(a.user_id)) || [];

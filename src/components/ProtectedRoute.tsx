@@ -8,8 +8,9 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading, role } = useAuth();
 
-  // Show loading while checking auth or fetching role
-  if (loading || (user && role === null)) {
+  // Show loading while checking auth
+  // FIX: Removed (user && role === null) condition to prevent infinite loading
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -25,8 +26,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   // User is authenticated - allow access
+  // If role is null, the child component (Index.tsx) will handle the error screen
   return <>{children}</>;
 };
 
 export default ProtectedRoute;
-

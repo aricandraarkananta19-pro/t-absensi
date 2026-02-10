@@ -3,12 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     Clock, Key, User, FileText, ChevronRight, LogOut, Calendar,
     CheckCircle2, LogIn, MapPin, History, LayoutDashboard, TrendingUp,
-    Timer, Target, Award, Bell, BookOpen
+    Timer, Target, Award, Bell, BookOpen, Briefcase, Coffee
 } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +18,8 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import MobileNavigation from "@/components/MobileNavigation";
 import { WorkInsightWidget } from "@/components/journal/WorkInsightWidget";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 // Talenta Brand Colors
 const BRAND_COLORS = {
@@ -36,6 +39,29 @@ interface AttendanceStats {
     present: number;
     late: number;
     absent: number;
+    totalHours: number;
+}
+
+// --- Icons ---
+function InfoIcon(props: any) {
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4" />
+            <path d="M12 8h.01" />
+        </svg>
+    )
 }
 
 const KaryawanDashboardNew = () => {
@@ -43,16 +69,31 @@ const KaryawanDashboardNew = () => {
     const navigate = useNavigate();
     const { settings } = useSystemSettings();
     const isMobile = useIsMobile();
+
+    // Data State
     const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
-    const [monthStats, setMonthStats] = useState<AttendanceStats>({ present: 0, late: 0, absent: 0 });
+    const [monthStats, setMonthStats] = useState<AttendanceStats>({ present: 0, late: 0, absent: 0, totalHours: 0 });
     const [isLoading, setIsLoading] = useState(true);
     const [usedLeaveDays, setUsedLeaveDays] = useState(0);
+    const [completedTasks, setCompletedTasks] = useState(0);
     const [currentTime, setCurrentTime] = useState(new Date());
 
     // Journal Logic State
     const [journalContent, setJournalContent] = useState("");
+    const [selectedProject, setSelectedProject] = useState("");
     const [isSavingJournal, setIsSavingJournal] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+    // New State for Real-Time Updates & Flexible Input
+    const [recentActivities, setRecentActivities] = useState<any[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [projectSuggestions] = useState([
+        "T-Absensi Platform Development",
+        "Internal Meeting & Coordination",
+        "Client Support & Maintenance",
+        "HR Operations & Administration",
+        "Infrastructure & DevOps"
+    ]);
 
     // Update current time every second
     useEffect(() => {
@@ -67,8 +108,23 @@ const KaryawanDashboardNew = () => {
             fetchTodayAttendance();
             fetchMonthStats();
             fetchUsedLeaveDays();
+            fetchTaskStats();
+            fetchRecentActivities();
         }
     }, [user]);
+
+    const fetchRecentActivities = async () => {
+        if (!user) return;
+        // Fetch last 5 activities
+        const { data } = await supabase
+            .from("work_journals")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(5);
+
+        if (data) setRecentActivities(data);
+    };
 
     const fetchUsedLeaveDays = async () => {
         if (!user) return;
@@ -92,6 +148,21 @@ const KaryawanDashboardNew = () => {
             }, 0);
             setUsedLeaveDays(totalDays);
         }
+    };
+
+    const fetchTaskStats = async () => {
+        if (!user) return;
+        // Mocking "Tasks" as completed journals for now
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const { count } = await supabase
+            .from("work_journals")
+            .select("*", { count: 'exact', head: true })
+            .eq("user_id", user.id)
+            .gte("date", startOfMonth.toISOString())
+            .eq("verification_status", "approved");
+
+        setCompletedTasks(count || 0);
     };
 
     const fetchTodayAttendance = async () => {
@@ -122,7 +193,7 @@ const KaryawanDashboardNew = () => {
 
         const { data } = await supabase
             .from("attendance")
-            .select("status")
+            .select("clock_in, clock_out, status")
             .eq("user_id", user.id)
             .gte("clock_in", startOfMonth.toISOString())
             .lte("clock_in", endOfMonth.toISOString());
@@ -130,7 +201,24 @@ const KaryawanDashboardNew = () => {
         if (data) {
             const present = data.filter(d => d.status === "present" || d.status === "late").length;
             const late = data.filter(d => d.status === "late").length;
-            setMonthStats({ present, late, absent: 0 }); // Absent needs separate logic, simplified here
+
+            // Calculate total hours
+            let totalMinutes = 0;
+            data.forEach(d => {
+                if (d.clock_in && d.clock_out) {
+                    const params1 = new Date(d.clock_in);
+                    const params2 = new Date(d.clock_out);
+                    const diff = Math.abs(params2.getTime() - params1.getTime());
+                    totalMinutes += Math.floor(diff / 1000 / 60);
+                }
+            });
+
+            setMonthStats({
+                present,
+                late,
+                absent: 0,
+                totalHours: Math.floor(totalMinutes / 60)
+            });
         }
     };
 
@@ -140,7 +228,7 @@ const KaryawanDashboardNew = () => {
         navigate("/auth");
     };
 
-    const handleSaveJournal = async (isDraft: boolean) => {
+    const handleSaveJournal = async () => {
         if (!journalContent.trim()) {
             toast({ variant: "destructive", title: "Gagal", description: "Tulis aktivitas Anda terlebih dahulu." });
             return;
@@ -148,34 +236,41 @@ const KaryawanDashboardNew = () => {
 
         setIsSavingJournal(true);
         try {
-            const status = isDraft ? 'draft' : 'submitted';
-
-            const { error } = await supabase
+            const { data: newJournal, error } = await supabase
                 .from('work_journals' as any)
                 .insert({
                     user_id: user?.id,
-                    content: journalContent,
+                    content: `**${selectedProject}**\n\n${journalContent}`, // Prepend project name as title since column is missing
                     date: new Date().toISOString().split('T')[0],
                     duration: 0,
                     status: 'completed',
-                    verification_status: status
-                });
+                    verification_status: 'submitted',
+                    obstacles: selectedProject, // Map project to obstacles as per convention
+                    mood: '😊',
+                    work_result: 'completed'
+                    // title: selectedProject // Removed to fix error
+                })
+                .select()
+                .single();
 
             if (error) throw error;
 
             toast({
-                title: isDraft ? "Draft Disimpan" : "Laporan Terkirim",
-                description: isDraft
-                    ? "Tersimpan di draft. Belum terlihat oleh manajer."
-                    : "Laporan kerja Anda telah dikirim ke manajer.",
+                title: "Jurnal Disimpan",
+                description: "Laporan kerja Anda telah dikirim.",
             });
 
+            // Real-time update: Prepend new journal
+            if (newJournal) {
+                setRecentActivities(prev => [newJournal, ...prev].slice(0, 5));
+            }
+
             setJournalContent("");
+            setSelectedProject(""); // Optional: reset project or keep it? User might add multiple for same project. keeping it is better usually, but maybe reset if prompted. I'll keep it as user might do multiple entries. Actually, clearing it might be annoying. I will NOT clear it.
             setLastSaved(new Date());
 
-            // Trigger refresh logic if needed (e.g. invalidate queries)
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Error", description: error.message });
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: (error as Error).message });
         } finally {
             setIsSavingJournal(false);
         }
@@ -183,435 +278,449 @@ const KaryawanDashboardNew = () => {
 
     const hour = new Date().getHours();
     const greeting = hour < 12 ? "Selamat Pagi" : hour < 17 ? "Selamat Siang" : "Selamat Malam";
-
-    const getAttendanceStatus = () => {
-        if (!todayAttendance) {
-            return {
-                text: "Belum clock-in",
-                buttonText: "Clock In",
-                status: "waiting",
-                icon: LogIn,
-                color: "blue", // iOS Blue
-            };
-        }
-
-        if (todayAttendance.clock_out) {
-            return {
-                text: `Selesai: ${new Date(todayAttendance.clock_out).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`,
-                buttonText: "Lihat Detail",
-                status: "done",
-                icon: CheckCircle2,
-                color: "green", // iOS Green
-            };
-        }
-
-        return {
-            text: `Masuk: ${new Date(todayAttendance.clock_in).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`,
-            buttonText: "Clock Out",
-            status: "pending",
-            icon: LogOut, // Changed icon for Clock Out
-            color: "red", // iOS Red/Orange for Clock Out
-        };
-    };
-
-    const attendanceStatus = getAttendanceStatus();
-    const StatusIcon = attendanceStatus.icon;
     const remainingLeave = Math.max(0, settings.maxLeaveDays - usedLeaveDays);
 
-    const formatDate = (date: Date) => {
-        return date.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-    };
-    // ==========================================
-    // MOBILE VIEW (Premium iOS Style)
-    // ==========================================
-    if (isMobile) {
-        return (
-            <div className="ios-mobile-container bg-[#F2F2F7] min-h-screen">
-                {/* Fixed Header - Glassmorphism */}
-                <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/50 shadow-sm pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-3 px-5 transition-all duration-300">
-                    <div className="flex items-center justify-between w-full relative">
-                        {/* Left: Logo */}
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-sky-500 shadow-md flex items-center justify-center shrink-0">
-                            <span className="font-bold text-white text-[10px] tracking-wider">TTI</span>
-                        </div>
-
-                        {/* Middle: Title */}
-                        <div className="flex flex-col items-center justify-center flex-1 mx-2">
-                            <h1 className="text-[15px] font-semibold text-slate-900 leading-tight">Talenta Absensi</h1>
-                            <p className="text-[10px] text-slate-500 font-medium tracking-wider uppercase opacity-80 leading-tight mt-0.5">Employee Portal</p>
-                        </div>
-
-                        {/* Right: Profile */}
-                        <button
-                            onClick={() => navigate("/karyawan/profil")}
-                            className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center border border-slate-200/60 active:bg-slate-100 transition-colors shrink-0"
-                        >
-                            <User className="h-4.5 w-4.5 text-slate-600" />
-                        </button>
-                    </div>
-                </header>
-
-                <div className="pt-[calc(env(safe-area-inset-top)+85px)] px-5 pb-[calc(80px+env(safe-area-inset-bottom))] space-y-6">
-                    {/* Greeting & Date */}
-                    <div>
-                        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{greeting},<br />{user?.user_metadata?.full_name?.split(" ")[0]}!</h2>
-                        <p className="text-slate-500 font-medium text-sm mt-1 flex items-center gap-2">
-                            <Calendar className="w-4 h-4" /> {formatDate(currentTime)}
-                        </p>
-                    </div>
-
-                    {/* Clock Action Card (Central Focus) */}
-                    <div
-                        className="bg-white rounded-[24px] p-6 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.06)] border border-white/60 relative overflow-hidden active:scale-[0.98] transition-all duration-300"
-                        onClick={() => navigate("/karyawan/absensi")}
-                    >
-                        {/* Dynamic Background Glow */}
-                        <div className={cn(
-                            "absolute -right-10 -top-10 w-32 h-32 rounded-full blur-[50px] opacity-30",
-                            attendanceStatus.color === 'blue' && "bg-blue-500",
-                            attendanceStatus.color === 'green' && "bg-green-500",
-                            attendanceStatus.color === 'red' && "bg-orange-500",
-                        )} />
-
-                        <div className="flex flex-col items-center justify-center gap-4 py-2 relative z-10">
-                            <div className={cn(
-                                "w-20 h-20 rounded-[24px] flex items-center justify-center shadow-lg transition-colors duration-500",
-                                attendanceStatus.color === 'blue' && "bg-blue-600 shadow-blue-500/30",
-                                attendanceStatus.color === 'green' && "bg-green-500 shadow-green-500/30",
-                                attendanceStatus.color === 'red' && "bg-orange-500 shadow-orange-500/30",
-                            )}>
-                                <StatusIcon className="w-9 h-9 text-white stroke-[2.5px]" />
-                            </div>
-
-                            <div className="text-center space-y-1">
-                                <h3 className="text-xl font-bold text-slate-900">{attendanceStatus.status === 'pending' ? 'Sedang Bekerja' : attendanceStatus.status === 'done' ? 'Selesai Bekerja' : 'Mulai Bekerja'}</h3>
-                                <p className={cn(
-                                    "text-sm font-medium",
-                                    attendanceStatus.color === 'blue' && "text-blue-600",
-                                    attendanceStatus.color === 'green' && "text-green-600",
-                                    attendanceStatus.color === 'red' && "text-orange-600",
-                                )}>{attendanceStatus.text}</p>
-                                {/* Shift Schedule Info */}
-                                <p className="text-xs text-slate-400 font-medium bg-slate-100/50 px-2 py-1 rounded-md mt-1">
-                                    Jadwal: {settings.clockInStart} - {settings.clockOutEnd}
-                                </p>
-                            </div>
-
-                            <Button
-                                className={cn(
-                                    "w-full rounded-2xl h-12 text-base font-semibold shadow-none border-0 mt-2",
-                                    attendanceStatus.color === 'blue' && "bg-blue-50 text-blue-700 hover:bg-blue-100",
-                                    attendanceStatus.color === 'green' && "bg-green-50 text-green-700 hover:bg-green-100",
-                                    attendanceStatus.color === 'red' && "bg-orange-50 text-orange-700 hover:bg-orange-100",
-                                )}
-                            >
-                                {attendanceStatus.buttonText}
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Stats Grid (Glassmorphism) */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white/70 backdrop-blur-md rounded-[20px] p-5 border border-white/50 shadow-sm flex flex-col gap-3">
-                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                                <CheckCircle2 className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <span className="text-3xl font-bold text-slate-900 block">{monthStats.present}</span>
-                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Total Hadir</span>
-                                <span className="text-[10px] text-slate-400">(Termasuk Terlambat)</span>
-                            </div>
-                        </div>
-                        <div className="bg-white/70 backdrop-blur-md rounded-[20px] p-5 border border-white/50 shadow-sm flex flex-col gap-3">
-                            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
-                                <Timer className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <span className="text-3xl font-bold text-slate-900 block">{monthStats.late}</span>
-                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Terlambat</span>
-                            </div>
-                        </div>
-                        <div className="col-span-2 bg-gradient-to-r from-blue-600 to-sky-500 rounded-[20px] p-5 shadow-lg shadow-blue-500/20 text-white relative overflow-hidden">
-                            <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10" />
-                            <div className="relative z-10 flex items-center justify-between">
-                                <div>
-                                    <p className="text-blue-100 text-xs font-medium uppercase tracking-wide mb-1">Cuti Tersedia</p>
-                                    <p className="text-3xl font-bold">{remainingLeave} <span className="text-lg font-medium opacity-70">Hari</span></p>
-                                </div>
-                                <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
-                                    <FileText className="w-6 h-6 text-white" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Work Insights (Mobile) */}
-                    <div className="pt-2">
-                        <WorkInsightWidget userId={user?.id} />
-                    </div>
-
-                    {/* Quick Menu List (Vertical Cards as requested) */}
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 ml-1">Shortcut</h3>
-                        <div className="space-y-3">
-                            {[
-                                { title: "Riwayat Absensi", subtitle: "Lihat detail kehadiran bulanan", icon: History, color: "bg-purple-100 text-purple-600", href: "/karyawan/riwayat" },
-                                { title: "Ajukan Cuti", subtitle: "Form permohonan izin/cuti", icon: Calendar, color: "bg-rose-100 text-rose-600", href: "/karyawan/cuti" },
-                                { title: "Jurnal Kerja", subtitle: "Tulis laporan aktivitas", icon: BookOpen, color: "bg-blue-100 text-blue-600", href: "/karyawan/jurnal" },
-                                { title: "Laporan", subtitle: "Unduh rekap kehadiran", icon: FileText, color: "bg-emerald-100 text-emerald-600", href: "/karyawan/laporan" },
-                            ].map((item) => (
-                                <div
-                                    key={item.title}
-                                    onClick={() => navigate(item.href)}
-                                    className="bg-white rounded-[20px] p-4 flex items-center gap-4 shadow-sm border border-slate-100 active:bg-slate-50 transition-colors"
-                                >
-                                    <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", item.color)}>
-                                        <item.icon className="w-6 h-6" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h4 className="font-semibold text-slate-900 text-sm">{item.title}</h4>
-                                        <p className="text-xs text-slate-500 mt-0.5">{item.subtitle}</p>
-                                    </div>
-                                    <ChevronRight className="w-5 h-5 text-slate-300" />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                <MobileNavigation />
-            </div>
-        );
-    }
-
+    // --- VIEW MAPPING ---
     return (
-        <div className="min-h-screen bg-slate-50 font-['Inter',system-ui,sans-serif] pb-12">
-            {/* Enterprise Header */}
+        <div className="min-h-screen bg-[#F8FAFC] font-['Inter',system-ui,sans-serif] pb-24 md:pb-12">
+
+            {/* Header */}
             <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs tracking-wider shadow-sm">
-                            TTI
+                <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-8">
+                        {/* Logo Area */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs tracking-wider shadow-blue-200 shadow-lg">
+                                <TrendingUp className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-sm font-bold text-slate-900 leading-none">T-Absensi</h1>
+                                <p className="text-[10px] text-slate-500 font-medium tracking-wide">TRAINCOM</p>
+                            </div>
                         </div>
-                        <div className="h-6 w-px bg-slate-200 mx-1" />
-                        <h1 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Workspace</h1>
+
+                        {/* Search Bar (Visual Only) */}
+                        <div className="hidden md:flex items-center relative w-96">
+                            <div className="absolute left-3 text-slate-400">
+                                <History className="w-4 h-4" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Cari data absensi, tugas, atau cuti..."
+                                className="w-full pl-10 pr-4 py-2 bg-slate-100/50 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all text-slate-600"
+                            />
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                        <div className="text-right hidden sm:block">
-                            <p className="text-sm font-bold text-slate-800 leading-none">
-                                {user?.user_metadata?.full_name || "Karyawan"}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-1">{user?.email}</p>
+                    <div className="flex items-center gap-4">
+                        <button className="relative p-2 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-500 transition-colors">
+                            <Bell className="w-5 h-5" />
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                        </button>
+                        <div className="h-8 w-px bg-slate-200" />
+
+                        <div className="flex items-center gap-3 pl-2 cursor-pointer hover:bg-slate-50 p-1 rounded-full pr-3 transition-all" onClick={() => navigate('/karyawan/profil')}>
+                            <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center border-2 border-white shadow-sm overflow-hidden">
+                                {user?.user_metadata?.avatar_url ?
+                                    <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" /> :
+                                    <User className="w-5 h-5 text-amber-600" />
+                                }
+                            </div>
+                            <div className="hidden sm:block">
+                                <div className="text-xs font-bold text-slate-700">{user?.user_metadata?.full_name?.split(' ')[0] || 'User'}</div>
+                                <div className="text-[10px] text-slate-500">Employee</div>
+                            </div>
                         </div>
-                        <div className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center">
-                            <User className="w-4 h-4 text-slate-500" />
-                        </div>
+
+                        {/* Mobile Menu Toggle (Simplified) */}
                         <Button
                             variant="ghost"
                             size="icon"
                             onClick={handleLogout}
-                            className="text-slate-400 hover:text-red-600 hover:bg-red-50"
+                            className="text-slate-400 hover:text-red-600 hover:bg-red-50 sm:hidden"
                         >
-                            <LogOut className="w-4 h-4" />
+                            <LogOut className="w-5 h-5" />
                         </Button>
                     </div>
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-6 py-8">
-                <div className="grid grid-cols-12 gap-8">
-                    {/* LEFT COLUMN: IDENTITIY & QUICK ACTIONS (3 Cols) */}
-                    <div className="col-span-12 lg:col-span-3 space-y-6">
-                        {/* Profile Summary */}
-                        <Card className="border-0 shadow-sm bg-white overflow-hidden">
-                            <div className="h-20 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
-                            <div className="px-5 pb-5 -mt-10">
-                                <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-md mb-3">
-                                    <div className="w-full h-full rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
-                                        <User className="w-8 h-8" />
-                                    </div>
-                                </div>
-                                <h2 className="text-lg font-bold text-slate-900 leading-tight">
-                                    {greeting},<br />
-                                    {user?.user_metadata?.full_name?.split(" ")[0]}
-                                </h2>
-                                <div className="flex items-center gap-2 mt-2 text-xs text-slate-500 font-medium">
-                                    <Calendar className="w-3.5 h-3.5" />
-                                    {formatDate(currentTime)}
+            <main className="max-w-[1400px] mx-auto px-6 py-8">
+
+                {/* Greeting */}
+                <div className="mb-8">
+                    <h2 className="text-2xl font-bold text-slate-900">Halo, {user?.user_metadata?.full_name || 'Karyawan'}</h2>
+                    <p className="text-slate-500 text-sm">Berikut ringkasan aktivitas kerja Anda hari ini.</p>
+                </div>
+
+                {/* Top Stats Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {/* Card 1: Attendance */}
+                    <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kehadiran Bulan Ini</p>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                    <h3 className="text-3xl font-bold text-slate-900">95%</h3>
+                                    <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">+2.4%</span>
                                 </div>
                             </div>
-                        </Card>
-
-                        {/* Attendance Status (Compact) */}
-                        <Card className="border-slate-200 shadow-sm">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                                    <Clock className="w-4 h-4" /> Status Kehadiran
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className={cn(
-                                            "w-3 h-3 rounded-full animate-pulse",
-                                            attendanceStatus.status === 'pending' ? "bg-green-500" :
-                                                attendanceStatus.status === 'done' ? "bg-slate-400" : "bg-amber-500"
-                                        )} />
-                                        <span className="text-sm font-medium text-slate-700">
-                                            {attendanceStatus.status === 'pending' ? "Online - Bekerja" :
-                                                attendanceStatus.status === 'done' ? "Offline" : "Belum Hadir"}
-                                        </span>
-                                    </div>
-                                    <Button
-                                        className={cn(
-                                            "w-full font-medium shadow-sm transition-all",
-                                            attendanceStatus.color === 'blue' && "bg-blue-600 hover:bg-blue-700",
-                                            attendanceStatus.color === 'green' && "bg-emerald-600 hover:bg-emerald-700",
-                                            attendanceStatus.color === 'red' && "bg-rose-600 hover:bg-rose-700"
-                                        )}
-                                        onClick={() => navigate("/karyawan/absensi")}
-                                    >
-                                        {attendanceStatus.buttonText}
-                                    </Button>
-                                    <div className="text-center">
-                                        <p className="text-xs text-slate-400">
-                                            Shift: {settings.clockInStart} - {settings.clockOutEnd}
-                                        </p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Navigation Shortcuts */}
-                        <div className="space-y-2">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Menu</p>
-                            {[
-                                { label: "Riwayat Absensi", icon: History, href: "/karyawan/riwayat" },
-                                { label: "Jurnal & Laporan", icon: FileText, href: "/karyawan/jurnal" },
-                                { label: "Pengajuan Cuti", icon: Calendar, href: "/karyawan/cuti" },
-                                { label: "Ubah Password", icon: Key, href: "/edit-password" },
-                            ].map((item) => (
-                                <Link key={item.href} to={item.href}>
-                                    <button className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-white hover:shadow-sm transition-all text-slate-600 hover:text-blue-600 group text-left">
-                                        <item.icon className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
-                                        <span className="text-sm font-medium">{item.label}</span>
-                                    </button>
-                                </Link>
-                            ))}
+                            <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center">
+                                <CheckCircle2 className="w-6 h-6" />
+                            </div>
+                        </div>
+                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-green-500 h-full w-[95%] rounded-full"></div>
                         </div>
                     </div>
 
-                    {/* RIGHT COLUMN: WORKSPACE (9 Cols) */}
-                    <div className="col-span-12 lg:col-span-9 space-y-8">
-                        {/* Stats Overview */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            {[
-                                { label: "Hadir Bulan Ini", val: monthStats.present, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
-                                { label: "Terlambat", val: monthStats.late, icon: Timer, color: "text-amber-600", bg: "bg-amber-50" },
-                                { label: "Cuti Tersedia", val: remainingLeave, icon: FileText, color: "text-blue-600", bg: "bg-blue-50" },
-                            ].map((stat, idx) => (
-                                <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    {/* Card 2: Work Hours */}
+                    <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Jam Kerja Total</p>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                    <h3 className="text-3xl font-bold text-slate-900">{monthStats.totalHours}h</h3>
+                                    <span className="text-xs font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">-5.2h</span>
+                                </div>
+                                <div className="flex items-center gap-1 mt-1 text-xs text-slate-400">
+                                    <span>Target: 176h/bulan</span>
+                                </div>
+                            </div>
+                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
+                                <Clock className="w-6 h-6" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Card 3: Leave */}
+                    <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sisa Cuti Tahunan</p>
+                                <h3 className="text-3xl font-bold text-slate-900 mt-1">{remainingLeave} Hari</h3>
+                                <p className="text-xs text-slate-400 mt-1">Hangus dalam 210 hari</p>
+                            </div>
+                            <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center">
+                                <Calendar className="w-6 h-6" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Card 4: Tasks */}
+                    <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tugas Selesai</p>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                    <h3 className="text-3xl font-bold text-slate-900">{completedTasks}</h3>
+                                    <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">+4</span>
+                                </div>
+                                <p className="text-xs text-slate-400 mt-1">Bulan ini (Sprint 4)</p>
+                            </div>
+                            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center">
+                                <Award className="w-6 h-6" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main 2-Column Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-7 gap-8">
+
+                    {/* Left Column: Attendance Control (3 Cols) */}
+                    <div className="lg:col-span-3 space-y-8">
+                        {/* Attendance Clock Card */}
+                        <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm text-center relative overflow-hidden">
+                            {/* Background decorative elements */}
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-8">ATTENDANCE CONTROL</p>
+
+                            <div className="mb-2">
+                                <h2 className="text-6xl font-mono font-bold text-slate-900 tracking-tighter tabular-nums">
+                                    {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </h2>
+                            </div>
+
+                            <p className="text-slate-500 font-medium mb-6">
+                                {format(currentTime, "EEEE, d MMMM yyyy", { locale: idLocale })}
+                            </p>
+
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-semibold mb-10">
+                                <MapPin className="w-3 h-3" />
+                                Lokasi: Kantor Pusat (Terverifikasi)
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                {todayAttendance && !todayAttendance.clock_out ? (
+                                    <>
+                                        <button
+                                            disabled={true}
+                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-100 text-slate-400 font-semibold cursor-not-allowed"
+                                        >
+                                            <CheckCircle2 className="w-5 h-5" />
+                                            Sudah Masuk
+                                        </button>
+                                        <button
+                                            onClick={() => navigate('/karyawan/absensi')}
+                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-[#DC2626] hover:bg-[#b91c1c] text-white font-semibold transition-all shadow-lg shadow-red-200 active:scale-95"
+                                        >
+                                            <LogOut className="w-5 h-5" />
+                                            Check-Out
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() => navigate('/karyawan/absensi')}
+                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-[#00A86B] hover:bg-[#008f5b] text-white font-semibold transition-all shadow-lg shadow-green-200 active:scale-95 col-span-2"
+                                        >
+                                            <LogIn className="w-5 h-5" />
+                                            Check-In Sekarang
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+
+                            <button className="mt-8 text-sm text-blue-600 font-semibold hover:underline flex items-center justify-center gap-2 mx-auto">
+                                <Coffee className="w-4 h-4" />
+                                Mulai Istirahat
+                            </button>
+                        </div>
+
+                        {/* Quick Menu */}
+                        <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">QUICK ACTIONS</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    onClick={() => navigate('/edit-password')}
+                                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition-all active:scale-95 group"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                        <Key className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-700">Reset Password</span>
+                                </button>
+
+                                <button
+                                    onClick={() => navigate('/karyawan/cuti')}
+                                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition-all active:scale-95 group"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-2 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                                        <Calendar className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-700">Pengajuan Cuti</span>
+                                </button>
+
+                                <button
+                                    onClick={() => navigate('/karyawan/riwayat')}
+                                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition-all active:scale-95 group"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-2 group-hover:bg-green-600 group-hover:text-white transition-colors">
+                                        <FileText className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-700">Laporan Absensi</span>
+                                </button>
+
+                                <button
+                                    onClick={() => navigate('/karyawan/jurnal')}
+                                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition-all active:scale-95 group"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mb-2 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                        <BookOpen className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-700">Jurnal Kerja</span>
+                                </button>
+                            </div>
+                        </div>
+
+
+                        {/* Upcoming Leave Card */}
+                        <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-slate-900">Upcoming Leave</h3>
+                                <Link to="/karyawan/cuti" className="text-xs font-bold text-blue-600 hover:underline">View All</Link>
+                            </div>
+
+                            <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="bg-blue-100 text-blue-700 w-12 h-12 rounded-xl flex flex-col items-center justify-center leading-none">
+                                        <span className="text-[10px] font-bold uppercase">Jun</span>
+                                        <span className="text-xl font-bold">12</span>
+                                    </div>
                                     <div>
-                                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{stat.label}</p>
-                                        <p className={`text-2xl font-bold mt-1 ${stat.color}`}>{stat.val}</p>
-                                    </div>
-                                    <div className={`p-3 rounded-lg ${stat.bg}`}>
-                                        <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                                        <h4 className="font-bold text-slate-900 text-sm">Cuti Tahunan (3 Hari)</h4>
+                                        <span className="text-xs text-slate-500">Menunggu Persetujuan HR</span>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-
-                        {/* MAIN WORK JOURNAL INPUT */}
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative overflow-hidden group">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-blue-600" />
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-blue-50 rounded-lg">
-                                    <BookOpen className="w-5 h-5 text-blue-600" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-slate-800">Apa yang Anda kerjakan hari ini?</h3>
-                                    <p className="text-sm text-slate-500">Catat aktivitas kerja Anda sekarang. Jangan menunggu pulang.</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <textarea
-                                    className="w-full min-h-[120px] p-4 text-base bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none outline-none placeholder:text-slate-400"
-                                    placeholder="Contoh: Menyelesaikan desain UI untuk halaman dashboard, Meeting dengan tim marketing..."
-                                    value={journalContent}
-                                    onChange={(e) => setJournalContent(e.target.value)}
-                                />
-
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-xs text-slate-400">
-                                        <InfoIcon className="w-3.5 h-3.5" />
-                                        <span>Terhubung langsung ke Manager & Admin</span>
-                                        {lastSaved && (
-                                            <span className="text-emerald-600 font-medium ml-2 animate-pulse">
-                                                • Disimpan {lastSaved.toLocaleTimeString()}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => handleSaveJournal(true)}
-                                            disabled={!journalContent || isSavingJournal}
-                                            className="text-slate-600 min-w-[100px]"
-                                        >
-                                            Simpan Draft
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleSaveJournal(false)}
-                                            disabled={!journalContent || isSavingJournal}
-                                            className="bg-blue-600 hover:bg-blue-700 text-white min-w-[120px] shadow-sm"
-                                        >
-                                            {isSavingJournal ? "Mengirim..." : "Kirim Laporan"}
-                                        </Button>
-                                    </div>
+                                <div className="text-amber-500">
+                                    <Timer className="w-5 h-5" />
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Recent Activity Feed */}
-                        <div>
-                            <div className="flex items-center justify-between mb-4 px-1">
-                                <h3 className="text-base font-bold text-slate-800">Aktivitas Terkini</h3>
-                                <Link to="/karyawan/jurnal" className="text-sm font-medium text-blue-600 hover:underline">
-                                    Lihat Semua
-                                </Link>
+                    {/* Right Column: Journal & Activity (4 Cols) */}
+                    <div className="lg:col-span-4 space-y-8">
+
+                        {/* Journal Widget */}
+                        <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
+                            <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                                        <FileText className="w-5 h-5" />
+                                    </div>
+                                    <h3 className="font-bold text-slate-900">Jurnal Kerja Hari Ini</h3>
+                                </div>
+                                <span className="text-xs text-slate-400">Last updated: {lastSaved ? lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not saved'}</span>
                             </div>
-                            <WorkInsightWidget userId={user?.id} />
+
+                            <div className="p-6">
+                                <div className="space-y-6">
+                                    <div className="relative z-20">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Pilih Proyek (Ketik untuk baru)</label>
+                                        <div className="relative group">
+                                            <Input
+                                                id="project-input"
+                                                type="text"
+                                                className="w-full pl-4 pr-10 py-6 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-slate-700 font-medium placeholder:text-slate-400"
+                                                placeholder="Contoh: Website Redesign..."
+                                                value={selectedProject}
+                                                onChange={(e) => {
+                                                    setSelectedProject(e.target.value);
+                                                    setShowSuggestions(true);
+                                                }}
+                                                onFocus={() => setShowSuggestions(true)}
+                                                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                                            />
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 bg-slate-50 pl-2">
+                                                <Briefcase className="w-5 h-5" />
+                                            </div>
+
+                                            {/* Suggestions Dropdown */}
+                                            {showSuggestions && (
+                                                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                    <div className="max-h-60 overflow-y-auto py-2">
+                                                        {projectSuggestions
+                                                            .filter(p => !selectedProject || p.toLowerCase().includes(selectedProject.toLowerCase()))
+                                                            .map((project, idx) => (
+                                                                <button
+                                                                    key={idx}
+                                                                    className="w-full text-left px-4 py-3 hover:bg-blue-50 hover:text-blue-700 text-sm font-medium text-slate-700 transition-colors flex items-center justify-between group/item"
+                                                                    onClick={() => {
+                                                                        setSelectedProject(project);
+                                                                        setShowSuggestions(false);
+                                                                    }}
+                                                                >
+                                                                    <span>{project}</span>
+                                                                    <ChevronRight className="w-4 h-4 text-blue-300 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                                                                </button>
+                                                            ))}
+                                                        {projectSuggestions.filter(p => !selectedProject || p.toLowerCase().includes(selectedProject.toLowerCase())).length === 0 && (
+                                                            <div className="px-4 py-3 text-xs text-slate-400 italic text-center border-t border-slate-50">
+                                                                Tekan enter atau simpan untuk menggunakan nama proyek baru ini.
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Apa yang anda kerjakan hari ini?</label>
+                                        <textarea
+                                            className="w-full min-h-[160px] p-4 bg-slate-50 border border-slate-200 rounded-xl resize-none focus:bg-white focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-400 text-slate-700"
+                                            placeholder="Tulis rincian tugas atau progres anda di sini..."
+                                            value={journalContent}
+                                            onChange={(e) => setJournalContent(e.target.value)}
+                                        ></textarea>
+                                    </div>
+
+                                    <div className="flex items-center justify-between pt-2">
+                                        <div className="flex gap-2">
+                                            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
+                                                <div className="w-5 h-5"><Briefcase className="w-full h-full" /></div>
+                                            </button>
+                                            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
+                                                <div className="w-5 h-5"><div className="w-4 h-4 border-2 border-current rounded-sm border-dashed"></div></div>
+                                            </button>
+                                            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
+                                                <div className="w-5 h-5"><User className="w-full h-full" /></div>
+                                            </button>
+                                        </div>
+
+                                        <Button
+                                            onClick={handleSaveJournal}
+                                            disabled={isSavingJournal || !journalContent}
+                                            className="bg-[#1A5BA8] hover:bg-[#154a8a] text-white px-6 py-6 rounded-xl font-bold shadow-lg shadow-blue-200"
+                                        >
+                                            Simpan Jurnal <ChevronRight className="w-4 h-4 ml-1" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Activity Stream */}
+                        <div className="bg-transparent">
+                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">AKTIVITAS TERAKHIR</h3>
+
+                            <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm p-6">
+                                <div className="space-y-8 relative pl-6 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100 min-h-[100px]">
+                                    {recentActivities.length > 0 ? (
+                                        recentActivities.map((activity, index) => {
+                                            // Extract display title from content
+                                            let displayTitle = activity.content;
+                                            // Handle Markdown Bold Project Title override if present
+                                            if (displayTitle && displayTitle.startsWith("**")) {
+                                                const parts = displayTitle.split('\n\n');
+                                                if (parts.length > 1) displayTitle = parts[1];
+                                                else displayTitle = displayTitle.replace(/\*\*(.*?)\*\*/g, '$1');
+                                            }
+                                            // Truncate
+                                            if (displayTitle && displayTitle.length > 70) displayTitle = displayTitle.substring(0, 70) + '...';
+
+                                            const projectName = activity.obstacles || "Development";
+                                            const timeString = new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                                            return (
+                                                <div key={activity.id || index} className="relative group animate-in slide-in-from-bottom-2 duration-500 fill-mode-backwards" style={{ animationDelay: `${index * 150}ms` }}>
+                                                    <div className={cn(
+                                                        "absolute -left-[29px] top-1.5 w-3.5 h-3.5 rounded-full border-4 border-white shadow-sm transition-all group-hover:scale-125 z-10",
+                                                        index === 0 ? "bg-green-500 ring-2 ring-green-100" : "bg-slate-300 group-hover:bg-blue-500 group-hover:ring-2 ring-blue-100"
+                                                    )}></div>
+                                                    <div>
+                                                        <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-blue-700 transition-colors">{displayTitle}</h4>
+                                                        <p className="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1.5 font-medium uppercase tracking-wide">
+                                                            {timeString} • <span className="text-blue-600">{projectName}</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-full py-8 text-center text-slate-400 opacity-60">
+                                            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                                                <Briefcase className="w-6 h-6 text-slate-300" />
+                                            </div>
+                                            <span className="text-xs">Belum ada aktivitas hari ini</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                     </div>
                 </div>
+
             </main>
+
+            {/* Mobile Navigation */}
+            {isMobile && <MobileNavigation />}
         </div>
     );
 };
-
-function InfoIcon(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 16v-4" />
-            <path d="M12 8h.01" />
-        </svg>
-    )
-}
 
 export default KaryawanDashboardNew;

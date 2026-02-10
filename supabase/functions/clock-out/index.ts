@@ -93,7 +93,7 @@ serve(async (req) => {
         const { location, latitude, longitude } = body;
 
         // ============ 4. GET SYSTEM SETTINGS ============
-        let settings: SystemSettings = { ...DEFAULT_SETTINGS };
+        const settings: SystemSettings = { ...DEFAULT_SETTINGS };
 
         const { data: settingsData } = await supabaseAdmin
             .from("system_settings")

@@ -90,7 +90,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         async (event, currentSession) => {
           if (!mounted) return;
 
-          console.log("Auth change:", event);
 
           // If SIGNED_IN or TOKEN_REFRESHED, update state
           if (currentSession?.user) {
@@ -126,10 +125,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // 1. Optimistic clear - clear state IMMEDIATELY
     setUser(null);
     setSession(null);
     setRole(null);
+
+    try {
+      // 2. Call Supabase signout but don't wait indefinitely
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+      ]);
+    } catch (error) {
+      console.error("SignOut error or timeout:", error);
+      // Ensure local storage is cleared even if network fails
+      localStorage.clear();
+      sessionStorage.clear();
+    }
   };
 
   const isAdmin = role === "admin";
