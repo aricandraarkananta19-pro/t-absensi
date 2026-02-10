@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ interface MonitoringRecord {
     clock_in: string;
     clock_out?: string | null;
     status: string;
-    liveStatus: "online" | "present" | "late" | "inactive" | "idle" | "absent";
+    liveStatus: "online" | "present" | "late" | "inactive" | "idle" | "absent" | "leave";
     shift: string;
 }
 
@@ -39,6 +39,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: str
     inactive: { label: "Pulang", color: "text-slate-500", bgColor: "bg-slate-100 border-slate-200", icon: WifiOff },
     idle: { label: "Idle", color: "text-orange-600", bgColor: "bg-orange-50 border-orange-200", icon: Timer },
     absent: { label: "Tidak Hadir", color: "text-red-700", bgColor: "bg-red-50 border-red-200", icon: AlertCircle },
+    leave: { label: "Cuti / Izin", color: "text-purple-700", bgColor: "bg-purple-50 border-purple-200", icon: Clock },
 };
 
 function formatTime(dateString: string): string {
@@ -54,6 +55,43 @@ function getInitials(name: string): string {
         .slice(0, 2);
 }
 
+// Optimized Wrapper for Status Badge
+const StatusBadge = memo(({ status }: { status: string }) => {
+    const config = STATUS_CONFIG[status] || STATUS_CONFIG.present;
+    const Icon = config.icon;
+    return (
+        <Badge
+            variant="outline"
+            className={cn("text-[10px] h-6 px-2 gap-1 border", config.bgColor, config.color)}
+        >
+            <Icon className="h-3 w-3" />
+            {config.label}
+        </Badge>
+    );
+});
+
+// Optimized Timer Component
+const RefreshTimer = memo(({ isRefetching }: { isRefetching: boolean }) => {
+    const [countdown, setCountdown] = useState(60); // 60s default now
+
+    useEffect(() => {
+        if (isRefetching) {
+            setCountdown(60);
+            return;
+        }
+        const interval = setInterval(() => {
+            setCountdown(prev => (prev <= 1 ? 60 : prev - 1));
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [isRefetching]);
+
+    return (
+        <span className="text-slate-400">
+            • Update dalam {countdown}s
+        </span>
+    );
+});
+
 export function RealTimeMonitoringTable({
     data,
     isLoading,
@@ -61,36 +99,6 @@ export function RealTimeMonitoringTable({
     lastUpdated,
     onRefresh
 }: RealTimeMonitoringTableProps) {
-    const [countdown, setCountdown] = useState(30);
-
-    // Countdown timer for next refresh
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setCountdown(prev => (prev <= 1 ? 30 : prev - 1));
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [isRefetching]);
-
-    // Reset countdown when refetching completes
-    useEffect(() => {
-        if (!isRefetching) {
-            setCountdown(30);
-        }
-    }, [isRefetching]);
-
-    const StatusBadge = ({ status }: { status: string }) => {
-        const config = STATUS_CONFIG[status] || STATUS_CONFIG.present;
-        const Icon = config.icon;
-        return (
-            <Badge
-                variant="outline"
-                className={cn("text-[10px] h-6 px-2 gap-1 border", config.bgColor, config.color)}
-            >
-                <Icon className="h-3 w-3" />
-                {config.label}
-            </Badge>
-        );
-    };
 
     if (isLoading) {
         return (
@@ -136,11 +144,7 @@ export function RealTimeMonitoringTable({
                                 )} />
                                 {isRefetching ? "Memperbarui..." : "Live"}
                             </span>
-                            {lastUpdated && (
-                                <span className="text-slate-400">
-                                    • Update dalam {countdown}s
-                                </span>
-                            )}
+                            {lastUpdated && <RefreshTimer isRefetching={isRefetching} />}
                         </CardDescription>
                     </div>
                     <Button
@@ -154,7 +158,7 @@ export function RealTimeMonitoringTable({
                     </Button>
                 </div>
             </CardHeader>
-            <CardContent className="p-0 flex-1">
+            <CardContent className="p-0 flex-1 overflow-auto max-h-[500px]"> {/* Added overflow control */}
                 {(!data || data.length === 0) ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
                         <div
@@ -169,7 +173,7 @@ export function RealTimeMonitoringTable({
                 ) : (
                     <div className="divide-y divide-slate-100">
                         {/* Header Row */}
-                        <div className="hidden md:grid md:grid-cols-12 gap-3 p-3 bg-slate-50 text-xs font-medium text-slate-500 sticky top-0">
+                        <div className="hidden md:grid md:grid-cols-12 gap-3 p-3 bg-slate-50 text-xs font-medium text-slate-500 sticky top-0 z-10 shadow-sm">
                             <div className="col-span-4">Karyawan</div>
                             <div className="col-span-2 text-center">Clock-In</div>
                             <div className="col-span-2 text-center">Clock-Out</div>
@@ -205,7 +209,10 @@ export function RealTimeMonitoringTable({
                                 {/* Clock-In */}
                                 <div className="md:col-span-2 flex items-center md:justify-center">
                                     <span className="md:hidden text-xs text-slate-500 mr-2">Clock-In:</span>
-                                    <span className="text-sm text-slate-700">{record.clock_in ? formatTime(record.clock_in) : "-"}</span>
+                                    <span className="text-sm text-slate-700">
+                                        {/* FIX: If Absent, don't show dash if not clocked in, show specific text or just - */}
+                                        {record.clock_in ? formatTime(record.clock_in) : "-"}
+                                    </span>
                                 </div>
 
                                 {/* Clock-Out */}

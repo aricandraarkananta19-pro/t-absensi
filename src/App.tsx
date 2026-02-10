@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,30 +11,40 @@ import AdminRoute from "@/components/AdminRoute";
 import ManagerRoute from "@/components/ManagerRoute";
 import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import EditPasswordKaryawan from "./pages/EditPasswordKaryawan";
-import AbsensiKaryawan from "./pages/karyawan/AbsensiKaryawan";
-import RiwayatAbsensi from "./pages/karyawan/RiwayatAbsensi";
-import JurnalSaya from "./pages/karyawan/JurnalSaya";
-import ProfilKaryawan from "./pages/karyawan/ProfilKaryawan";
-import PengajuanCuti from "./pages/karyawan/PengajuanCuti";
-import KelolaKaryawan from "./pages/admin/KelolaKaryawan";
-import RekapAbsensi from "./pages/admin/RekapAbsensi";
-import LaporanKehadiran from "./pages/admin/LaporanKehadiran";
-import ResetPassword from "./pages/admin/ResetPassword";
-import Pengaturan from "./pages/admin/Pengaturan";
-import Departemen from "./pages/admin/Departemen";
-import KelolaRole from "./pages/admin/KelolaRole";
-import ManagerDashboard from "./pages/manager/ManagerDashboardNew";
-import ManagerRekapAbsensi from "./pages/manager/ManagerRekapAbsensi";
-import ManagerLaporan from "./pages/manager/ManagerLaporan";
-import ManagerCuti from "./pages/manager/ManagerCuti";
-import ManagerJurnal from "./pages/manager/ManagerJurnal";
-import Dokumentasi from "./pages/admin/Dokumentasi";
-import JurnalKerja from "./pages/admin/JurnalKerja";
-import ExportDatabase from "./pages/admin/ExportDatabase";
-import NotFound from "./pages/NotFound";
+import { Loader2 } from "lucide-react";
+
+// Lazy Imports for Performance Optimization
+const Index = lazy(() => import("./pages/Index"));
+const Auth = lazy(() => import("./pages/Auth"));
+const EditPasswordKaryawan = lazy(() => import("./pages/EditPasswordKaryawan"));
+
+// Karyawan
+const AbsensiKaryawan = lazy(() => import("./pages/karyawan/AbsensiKaryawan"));
+const RiwayatAbsensi = lazy(() => import("./pages/karyawan/RiwayatAbsensi"));
+const JurnalSaya = lazy(() => import("./pages/karyawan/JurnalSaya"));
+const ProfilKaryawan = lazy(() => import("./pages/karyawan/ProfilKaryawan"));
+const PengajuanCuti = lazy(() => import("./pages/karyawan/PengajuanCuti"));
+
+// Admin
+const KelolaKaryawan = lazy(() => import("./pages/admin/KelolaKaryawan"));
+const RekapAbsensi = lazy(() => import("./pages/admin/RekapAbsensi"));
+const LaporanKehadiran = lazy(() => import("./pages/admin/LaporanKehadiran"));
+const ResetPassword = lazy(() => import("./pages/admin/ResetPassword"));
+const Pengaturan = lazy(() => import("./pages/admin/Pengaturan"));
+const Departemen = lazy(() => import("./pages/admin/Departemen"));
+const KelolaRole = lazy(() => import("./pages/admin/KelolaRole"));
+const Dokumentasi = lazy(() => import("./pages/admin/Dokumentasi"));
+const JurnalKerja = lazy(() => import("./pages/admin/JurnalKerja"));
+const ExportDatabase = lazy(() => import("./pages/admin/ExportDatabase"));
+
+// Manager
+const ManagerDashboard = lazy(() => import("./pages/manager/ManagerDashboardNew"));
+const ManagerRekapAbsensi = lazy(() => import("./pages/manager/ManagerRekapAbsensi"));
+const ManagerLaporan = lazy(() => import("./pages/manager/ManagerLaporan"));
+const ManagerCuti = lazy(() => import("./pages/manager/ManagerCuti"));
+const ManagerJurnal = lazy(() => import("./pages/manager/ManagerJurnal"));
+
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,15 +52,10 @@ const queryClient = new QueryClient({
       // CRITICAL: Keep data fresh for 10 minutes - prevents refetch on navigation
       staleTime: 10 * 60 * 1000, // 10 minutes
       // Keep previous data while refetching (no skeleton flash)
-      // gcTime replaces cacheTime in v5
       gcTime: 30 * 60 * 1000, // 30 minutes cache
-      // Don't refetch on window focus (enterprise stability)
       refetchOnWindowFocus: false,
-      // Don't refetch on mount if data is still fresh
       refetchOnMount: false,
-      // Don't refetch on reconnect
       refetchOnReconnect: false,
-      // Retry failed requests only once
       retry: 1,
     },
   },
@@ -62,13 +68,20 @@ const RootRedirect = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
 
   return user ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth" replace />;
 };
+
+// Global Loading Fallback
+const PageLoader = () => (
+  <div className="flex min-h-[50vh] w-full items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
+  </div>
+);
 
 const App = () => (
   <ErrorBoundary>
@@ -80,192 +93,193 @@ const App = () => (
             <Sonner />
             <PWAUpdatePrompt />
             <BrowserRouter>
-              <Routes>
-                {/* ... routes ... */}
-                <Route path="/" element={<RootRedirect />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/edit-password"
-                  element={
-                    <ProtectedRoute>
-                      <EditPasswordKaryawan />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* Karyawan Routes */}
-                <Route
-                  path="/karyawan/absensi"
-                  element={
-                    <ProtectedRoute>
-                      <AbsensiKaryawan />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/karyawan/riwayat"
-                  element={
-                    <ProtectedRoute>
-                      <RiwayatAbsensi />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/karyawan/jurnal"
-                  element={
-                    <ProtectedRoute>
-                      <JurnalSaya />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/karyawan/profil"
-                  element={
-                    <ProtectedRoute>
-                      <ProfilKaryawan />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/karyawan/cuti"
-                  element={
-                    <ProtectedRoute>
-                      <PengajuanCuti />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* Manager Routes - Read Only */}
-                <Route
-                  path="/manager"
-                  element={
-                    <ManagerRoute>
-                      <ManagerDashboard />
-                    </ManagerRoute>
-                  }
-                />
-                <Route
-                  path="/manager/absensi"
-                  element={
-                    <ManagerRoute>
-                      <ManagerRekapAbsensi />
-                    </ManagerRoute>
-                  }
-                />
-                <Route
-                  path="/manager/jurnal"
-                  element={
-                    <ManagerRoute>
-                      <ManagerJurnal />
-                    </ManagerRoute>
-                  }
-                />
-                <Route
-                  path="/manager/laporan"
-                  element={
-                    <ManagerRoute>
-                      <ManagerLaporan />
-                    </ManagerRoute>
-                  }
-                />
-                <Route
-                  path="/manager/cuti"
-                  element={
-                    <ManagerRoute>
-                      <ManagerCuti />
-                    </ManagerRoute>
-                  }
-                />
-                {/* Admin Routes */}
-                <Route
-                  path="/admin/karyawan"
-                  element={
-                    <AdminRoute>
-                      <KelolaKaryawan />
-                    </AdminRoute>
-                  }
-                />
-                <Route
-                  path="/admin/absensi"
-                  element={
-                    <AdminRoute>
-                      <RekapAbsensi />
-                    </AdminRoute>
-                  }
-                />
-                <Route
-                  path="/admin/laporan"
-                  element={
-                    <AdminRoute>
-                      <LaporanKehadiran />
-                    </AdminRoute>
-                  }
-                />
-                <Route
-                  path="/admin/jurnal"
-                  element={
-                    <AdminRoute>
-                      <JurnalKerja />
-                    </AdminRoute>
-                  }
-                />
-                <Route
-                  path="/admin/reset-password"
-                  element={
-                    <AdminRoute>
-                      <ResetPassword />
-                    </AdminRoute>
-                  }
-                />
-                <Route
-                  path="/admin/pengaturan"
-                  element={
-                    <AdminRoute>
-                      <Pengaturan />
-                    </AdminRoute>
-                  }
-                />
-                <Route
-                  path="/admin/departemen"
-                  element={
-                    <AdminRoute>
-                      <Departemen />
-                    </AdminRoute>
-                  }
-                />
-                <Route
-                  path="/admin/role"
-                  element={
-                    <AdminRoute>
-                      <KelolaRole />
-                    </AdminRoute>
-                  }
-                />
-                <Route
-                  path="/admin/dokumentasi"
-                  element={
-                    <AdminRoute>
-                      <Dokumentasi />
-                    </AdminRoute>
-                  }
-                />
-                <Route
-                  path="/admin/export-database"
-                  element={
-                    <AdminRoute>
-                      <ExportDatabase />
-                    </AdminRoute>
-                  }
-                />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<RootRedirect />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Index />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/edit-password"
+                    element={
+                      <ProtectedRoute>
+                        <EditPasswordKaryawan />
+                      </ProtectedRoute>
+                    }
+                  />
+                  {/* Karyawan Routes */}
+                  <Route
+                    path="/karyawan/absensi"
+                    element={
+                      <ProtectedRoute>
+                        <AbsensiKaryawan />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/karyawan/riwayat"
+                    element={
+                      <ProtectedRoute>
+                        <RiwayatAbsensi />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/karyawan/jurnal"
+                    element={
+                      <ProtectedRoute>
+                        <JurnalSaya />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/karyawan/profil"
+                    element={
+                      <ProtectedRoute>
+                        <ProfilKaryawan />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/karyawan/cuti"
+                    element={
+                      <ProtectedRoute>
+                        <PengajuanCuti />
+                      </ProtectedRoute>
+                    }
+                  />
+                  {/* Manager Routes - Read Only */}
+                  <Route
+                    path="/manager"
+                    element={
+                      <ManagerRoute>
+                        <ManagerDashboard />
+                      </ManagerRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/absensi"
+                    element={
+                      <ManagerRoute>
+                        <ManagerRekapAbsensi />
+                      </ManagerRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/jurnal"
+                    element={
+                      <ManagerRoute>
+                        <ManagerJurnal />
+                      </ManagerRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/laporan"
+                    element={
+                      <ManagerRoute>
+                        <ManagerLaporan />
+                      </ManagerRoute>
+                    }
+                  />
+                  <Route
+                    path="/manager/cuti"
+                    element={
+                      <ManagerRoute>
+                        <ManagerCuti />
+                      </ManagerRoute>
+                    }
+                  />
+                  {/* Admin Routes */}
+                  <Route
+                    path="/admin/karyawan"
+                    element={
+                      <AdminRoute>
+                        <KelolaKaryawan />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/absensi"
+                    element={
+                      <AdminRoute>
+                        <RekapAbsensi />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/laporan"
+                    element={
+                      <AdminRoute>
+                        <LaporanKehadiran />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/jurnal"
+                    element={
+                      <AdminRoute>
+                        <JurnalKerja />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/reset-password"
+                    element={
+                      <AdminRoute>
+                        <ResetPassword />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/pengaturan"
+                    element={
+                      <AdminRoute>
+                        <Pengaturan />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/departemen"
+                    element={
+                      <AdminRoute>
+                        <Departemen />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/role"
+                    element={
+                      <AdminRoute>
+                        <KelolaRole />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/dokumentasi"
+                    element={
+                      <AdminRoute>
+                        <Dokumentasi />
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/export-database"
+                    element={
+                      <AdminRoute>
+                        <ExportDatabase />
+                      </AdminRoute>
+                    }
+                  />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
             </BrowserRouter>
           </SystemSettingsProvider>
         </AuthProvider>

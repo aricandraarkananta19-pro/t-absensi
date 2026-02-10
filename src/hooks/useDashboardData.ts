@@ -267,8 +267,8 @@ export const useDashboardStats = (karyawanUserIds: Set<string> | undefined) => {
                 attendanceRate: Math.min(100, attendanceRate)
             };
         },
-        staleTime: 1000 * 60 * 2, // 2 mins
-        refetchInterval: 1000 * 60, // Refresh every minute
+        staleTime: 1000 * 60 * 5, // 5 mins (we rely on realtime subscription for updates)
+        refetchInterval: 1000 * 60 * 5, // Refresh every 5 minutes as backup
     });
 };
 
@@ -303,7 +303,7 @@ export const useLiveStats = (karyawanUserIds: Set<string> | undefined) => {
                 hasData: validData.length > 0
             };
         },
-        refetchInterval: 1000 * 30, // Refresh every 30 seconds
+        refetchInterval: 1000 * 60, // Refresh every 1 minute
     });
 };
 
@@ -509,7 +509,7 @@ export const useRealTimeMonitoring = (karyawanUserIds: Set<string> | undefined) 
             });
         },
         // Keep polling as backup, but less frequent
-        refetchInterval: 1000 * 60, // 1 minute backup
+        refetchInterval: 1000 * 60 * 2, // 2 minute backup
     });
 };
 
