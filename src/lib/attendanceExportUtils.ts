@@ -61,203 +61,256 @@ const formatDatesDisplay = (dates: string[], period: string): string => {
     return days.slice(0, 4).join(", ") + ` (+${days.length - 4}) ${monthName}`;
 };
 
-// ============== MULTI-SHEET EXCEL EXPORT ==============
-export const exportAttendanceExcel = (data: AttendanceReportData, filename: string) => {
+import ExcelJS from "exceljs";
+
+// ============== MULTI-SHEET EXCEL EXPORT (USING EXCELJS) ==============
+export const exportAttendanceExcel = async (data: AttendanceReportData, filename: string) => {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "T-Absensi System";
+    workbook.created = new Date();
+
     const printDate = new Date().toLocaleString("id-ID");
 
-    // Excel XML Styles
-    const styles = `
-    <Styles>
-        <Style ss:ID="Title"><Font ss:FontName="Arial" ss:Bold="1" ss:Size="14" ss:Color="#1E40AF"/><Alignment ss:Horizontal="Left" ss:Vertical="Center"/></Style>
-        <Style ss:ID="Subtitle"><Font ss:FontName="Arial" ss:Size="10" ss:Color="#4A5568"/></Style>
-        <Style ss:ID="Header"><Font ss:FontName="Arial" ss:Bold="1" ss:Size="10" ss:Color="#FFFFFF"/><Interior ss:Color="#1E40AF" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A0AEC0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A0AEC0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A0AEC0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#A0AEC0"/></Borders></Style>
-        <Style ss:ID="Data"><Font ss:FontName="Arial" ss:Size="9"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="0.5" ss:Color="#E2E8F0"/></Borders><Alignment ss:Vertical="Center"/></Style>
-        <Style ss:ID="DataAlt"><Font ss:FontName="Arial" ss:Size="9"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="0.5" ss:Color="#E2E8F0"/></Borders><Alignment ss:Vertical="Center"/></Style>
-        <Style ss:ID="DataCenter"><Font ss:FontName="Arial" ss:Size="9"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="0.5" ss:Color="#E2E8F0"/></Borders></Style>
-        <Style ss:ID="DataCenterAlt"><Font ss:FontName="Arial" ss:Size="9"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="0.5" ss:Color="#E2E8F0"/></Borders></Style>
-        <Style ss:ID="SectionHeader"><Font ss:FontName="Arial" ss:Bold="1" ss:Size="11" ss:Color="#1E40AF"/><Alignment ss:Vertical="Center"/></Style>
-        <Style ss:ID="Good"><Font ss:FontName="Arial" ss:Size="9" ss:Color="#047857"/><Alignment ss:Horizontal="Center"/></Style>
-        <Style ss:ID="Warning"><Font ss:FontName="Arial" ss:Size="9" ss:Color="#D97706"/><Alignment ss:Horizontal="Center"/></Style>
-        <Style ss:ID="Bad"><Font ss:FontName="Arial" ss:Size="9" ss:Color="#DC2626"/><Alignment ss:Horizontal="Center"/></Style>
-        <Style ss:ID="SignatureLabel"><Font ss:FontName="Arial" ss:Bold="1" ss:Size="10"/><Alignment ss:Horizontal="Center" ss:Vertical="Center"/></Style>
-    </Styles>`;
+    // Helper Styles
+    const titleStyle: Partial<ExcelJS.Style> = { font: { name: 'Arial', size: 14, bold: true, color: { argb: 'FF1E40AF' } }, alignment: { vertical: 'middle', horizontal: 'left' } };
+    const subtitleStyle: Partial<ExcelJS.Style> = { font: { name: 'Arial', size: 10, color: { argb: 'FF4A5568' } } };
+    const headerStyle: Partial<ExcelJS.Style> = {
+        font: { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } },
+        fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } },
+        alignment: { vertical: 'middle', horizontal: 'center', wrapText: true },
+        border: { top: { style: 'thin', color: { argb: 'FFA0AEC0' } }, left: { style: 'thin', color: { argb: 'FFA0AEC0' } }, bottom: { style: 'thin', color: { argb: 'FFA0AEC0' } }, right: { style: 'thin', color: { argb: 'FFA0AEC0' } } }
+    };
+    const dataStyle: Partial<ExcelJS.Style> = { font: { name: 'Arial', size: 9 }, border: { bottom: { style: 'hair', color: { argb: 'FFE2E8F0' } } }, alignment: { vertical: 'middle' } };
+    const dataCenterStyle: Partial<ExcelJS.Style> = { ...dataStyle, alignment: { vertical: 'middle', horizontal: 'center' } };
+    const sectionHeaderStyle: Partial<ExcelJS.Style> = { font: { name: 'Arial', size: 11, bold: true, color: { argb: 'FF1E40AF' } }, alignment: { vertical: 'middle' } };
+
+    // Status colors
+    const goodFont = { color: { argb: 'FF047857' } };
+    const badFont = { color: { argb: 'FFDC2626' } };
+    const warningFont = { color: { argb: 'FFD97706' } };
 
     // ===== SHEET 1: Ringkasan Kehadiran =====
-    const sheet1 = `
-    <Worksheet ss:Name="Ringkasan Kehadiran">
-        <Table>
-            <Column ss:Width="150"/><Column ss:Width="120"/><Column ss:Width="60"/><Column ss:Width="70"/><Column ss:Width="50"/><Column ss:Width="60"/><Column ss:Width="150"/>
-            <Row ss:Height="22"><Cell ss:StyleID="Title"><Data ss:Type="String">${COMPANY_NAME}</Data></Cell></Row>
-            <Row ss:Height="20"><Cell ss:StyleID="Title"><Data ss:Type="String">LAPORAN KEHADIRAN KARYAWAN</Data></Cell></Row>
-            <Row ss:Height="16"><Cell ss:StyleID="Subtitle"><Data ss:Type="String">Periode: ${data.period}</Data></Cell></Row>
-            <Row ss:Height="16"><Cell ss:StyleID="Subtitle"><Data ss:Type="String">Dicetak: ${printDate}</Data></Cell></Row>
-            <Row ss:Height="10"></Row>
-            <Row ss:Height="16"><Cell ss:StyleID="SectionHeader"><Data ss:Type="String">STATISTIK KEHADIRAN</Data></Cell></Row>
-            <Row><Cell ss:StyleID="Data"><Data ss:Type="String">Total Karyawan</Data></Cell><Cell ss:StyleID="DataCenter"><Data ss:Type="Number">${data.totalEmployees}</Data></Cell></Row>
-            <Row><Cell ss:StyleID="Data"><Data ss:Type="String">Total Hadir</Data></Cell><Cell ss:StyleID="Good"><Data ss:Type="Number">${data.totalPresent}</Data></Cell></Row>
-            <Row><Cell ss:StyleID="Data"><Data ss:Type="String">Total Tidak Hadir</Data></Cell><Cell ss:StyleID="Bad"><Data ss:Type="Number">${data.totalAbsent}</Data></Cell></Row>
-            <Row><Cell ss:StyleID="Data"><Data ss:Type="String">Total Cuti</Data></Cell><Cell ss:StyleID="DataCenter"><Data ss:Type="Number">${data.totalLeave}</Data></Cell></Row>
-            <Row><Cell ss:StyleID="Data"><Data ss:Type="String">Total Terlambat</Data></Cell><Cell ss:StyleID="Warning"><Data ss:Type="Number">${data.totalLate}</Data></Cell></Row>
-            <Row ss:Height="15"></Row>
-            <Row ss:Height="16"><Cell ss:StyleID="SectionHeader"><Data ss:Type="String">DATA KARYAWAN</Data></Cell></Row>
-            <Row ss:Height="28">
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Nama Karyawan</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Departemen</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Hadir</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Tidak Hadir</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Cuti</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Terlambat</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Keterangan</Data></Cell>
-            </Row>
-            ${data.employees.map((e, i) => `
-            <Row>
-                <Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${e.name}</Data></Cell>
-                <Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${e.department}</Data></Cell>
-                <Cell ss:StyleID="Good"><Data ss:Type="Number">${e.present}</Data></Cell>
-                <Cell ss:StyleID="${e.absent > 0 ? 'Bad' : 'DataCenter'}"><Data ss:Type="Number">${e.absent}</Data></Cell>
-                <Cell ss:StyleID="DataCenter"><Data ss:Type="Number">${e.leave}</Data></Cell>
-                <Cell ss:StyleID="${e.late > 0 ? 'Warning' : 'DataCenter'}"><Data ss:Type="Number">${e.late}</Data></Cell>
-                <Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${e.remarks || '-'}</Data></Cell>
-            </Row>`).join('')}
-            
-            <Row ss:Height="30"></Row>
-            <Row>
-                <Cell ss:Index="2" ss:StyleID="SignatureLabel"><Data ss:Type="String">Dibuat Oleh,</Data></Cell>
-                <Cell ss:Index="6" ss:StyleID="SignatureLabel"><Data ss:Type="String">Disetujui Oleh,</Data></Cell>
-            </Row>
-            <Row ss:Height="50"></Row>
-            <Row>
-                <Cell ss:Index="2" ss:StyleID="SignatureLabel"><Data ss:Type="String">( HR Manager )</Data></Cell>
-                <Cell ss:Index="6" ss:StyleID="SignatureLabel"><Data ss:Type="String">( Direktur Utama )</Data></Cell>
-            </Row>
-        </Table>
-    </Worksheet>`;
+    const sheet1 = workbook.addWorksheet("Ringkasan Kehadiran");
+    sheet1.columns = [
+        { width: 25 }, { width: 20 }, { width: 10 }, { width: 12 }, { width: 10 }, { width: 10 }, { width: 25 }
+    ];
 
-    // ===== SHEET 2: Detail Kehadiran (Matrix View) =====
-    // Generate Header Row for Days 1-31
+    sheet1.addRow([COMPANY_NAME]).font = titleStyle.font as ExcelJS.Font;
+    sheet1.addRow(["LAPORAN KEHADIRAN KARYAWAN"]).font = titleStyle.font as ExcelJS.Font;
+    sheet1.addRow([`Periode: ${data.period}`]).font = subtitleStyle.font as ExcelJS.Font;
+    sheet1.addRow([`Dicetak: ${printDate}`]).font = subtitleStyle.font as ExcelJS.Font;
+    sheet1.addRow([]);
+
+    sheet1.addRow(["STATISTIK KEHADIRAN"]).font = sectionHeaderStyle.font as ExcelJS.Font;
+    sheet1.addRow(["Total Karyawan", data.totalEmployees]);
+    const r7 = sheet1.addRow(["Total Hadir", data.totalPresent]);
+    r7.getCell(2).font = goodFont;
+    const r8 = sheet1.addRow(["Total Tidak Hadir", data.totalAbsent]);
+    r8.getCell(2).font = badFont;
+    const r9 = sheet1.addRow(["Total Cuti", data.totalLeave]);
+    const r10 = sheet1.addRow(["Total Terlambat", data.totalLate]);
+    r10.getCell(2).font = warningFont;
+
+    sheet1.addRow([]);
+    sheet1.addRow(["DATA KARYAWAN"]).font = sectionHeaderStyle.font as ExcelJS.Font;
+
+    // Headers
+    const headers = ["Nama Karyawan", "Departemen", "Hadir", "Tidak Hadir", "Cuti", "Terlambat", "Keterangan"];
+    const headerRow = sheet1.addRow(headers);
+    headerRow.height = 28;
+    headerRow.eachCell((cell) => {
+        cell.style = headerStyle as ExcelJS.Style;
+    });
+
+    // Data Rows
+    data.employees.forEach((e, i) => {
+        const row = sheet1.addRow([
+            e.name,
+            e.department,
+            e.present,
+            e.absent,
+            e.leave,
+            e.late,
+            e.remarks || '-'
+        ]);
+
+        // Apply styling
+        const isAlt = i % 2 !== 0;
+        const fill = isAlt ? { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } } : undefined;
+
+        row.eachCell((cell, colNumber) => {
+            cell.border = dataStyle.border as ExcelJS.Borders;
+            cell.font = dataStyle.font as ExcelJS.Font;
+            cell.alignment = colNumber > 2 && colNumber < 7 ? { horizontal: 'center', vertical: 'middle' } : { vertical: 'middle' };
+            if (fill) cell.fill = fill as ExcelJS.Fill;
+        });
+
+        // Specific column styling
+        if (e.absent > 0) row.getCell(4).font = { ...dataStyle.font, ...badFont };
+        if (e.late > 0) row.getCell(6).font = { ...dataStyle.font, ...warningFont };
+        row.getCell(3).font = { ...dataStyle.font, ...goodFont };
+    });
+
+    // Formatting widths a bit better
+    sheet1.getColumn(1).width = 30;
+    sheet1.getColumn(2).width = 25;
+
+    // Signatures
+    sheet1.addRow([]);
+    sheet1.addRow([]);
+    const sigRow1 = sheet1.addRow(["", "Dibuat Oleh,", "", "", "", "Disetujui Oleh,"]);
+    sigRow1.getCell(2).font = { bold: true }; sigRow1.getCell(2).alignment = { horizontal: 'center' };
+    sigRow1.getCell(6).font = { bold: true }; sigRow1.getCell(6).alignment = { horizontal: 'center' };
+
+    sheet1.addRow([]);
+    sheet1.addRow([]);
+    sheet1.addRow([]);
+
+    const sigRow2 = sheet1.addRow(["", "( HR Manager )", "", "", "", "( Direktur Utama )"]);
+    sigRow2.getCell(2).font = { bold: true }; sigRow2.getCell(2).alignment = { horizontal: 'center' };
+    sigRow2.getCell(6).font = { bold: true }; sigRow2.getCell(6).alignment = { horizontal: 'center' };
+
+
+    // ===== SHEET 2: Detail Matrix =====
+    const sheet2 = workbook.addWorksheet("Detail Kehadiran (Matrix)");
     const daysInMonth = new Date(new Date(data.periodEnd).getFullYear(), new Date(data.periodEnd).getMonth() + 1, 0).getDate();
-    let headerRow = `<Row ss:Height="22">
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Nama Karyawan</Data></Cell>
-        <Cell ss:StyleID="Header"><Data ss:Type="String">Departemen</Data></Cell>`;
 
-    // Add columns for each day
-    for (let d = 1; d <= daysInMonth; d++) {
-        headerRow += `<Cell ss:StyleID="Header" ss:Width="25"><Data ss:Type="String">${d}</Data></Cell>`;
-    }
-    headerRow += `</Row>`;
+    // Header Row construction
+    const matrixHeaders = ["Nama Karyawan", "Departemen"];
+    for (let d = 1; d <= daysInMonth; d++) matrixHeaders.push(String(d));
 
-    // Generate Legend
-    const legendRow = `<Row ss:Height="16"><Cell ss:MergeAcross="${daysInMonth + 1}" ss:StyleID="Subtitle"><Data ss:Type="String">Keterangan: H=Hadir, T=Terlambat, A=Alpha, S=Sakit, I=Izin, C=Cuti, L=Libur</Data></Cell></Row>`;
+    sheet2.addRow([`DETAIL KEHADIRAN (MATRIX) - ${data.period.toUpperCase()}`]).font = titleStyle.font as ExcelJS.Font;
+    sheet2.mergeCells(1, 1, 1, daysInMonth + 2);
 
-    const sheet2 = `
-    <Worksheet ss:Name="Detail Kehadiran (Matrix)">
-        <Table>
-            <Column ss:Width="150"/><Column ss:Width="120"/>
-            ${Array(daysInMonth).fill('<Column ss:Width="25"/>').join('')}
-            <Row ss:Height="22"><Cell ss:StyleID="Title"><Data ss:Type="String">DETAIL KEHADIRAN (MATRIX) - ${data.period.toUpperCase()}</Data></Cell></Row>
-            ${legendRow}
-            <Row ss:Height="10"></Row>
-            ${headerRow}
-            ${data.employees.map((e, i) => {
-        let row = `<Row>`;
-        row += `<Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${e.name}</Data></Cell>`;
-        row += `<Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${e.department}</Data></Cell>`;
+    sheet2.addRow(["Keterangan: H=Hadir, T=Terlambat, A=Alpha, S=Sakit, I=Izin, C=Cuti, L=Libur"]).font = subtitleStyle.font as ExcelJS.Font;
+    sheet2.mergeCells(2, 1, 2, daysInMonth + 2);
 
-        // Cells for days
+    sheet2.addRow([]);
+
+    const matrixHeaderRow = sheet2.addRow(matrixHeaders);
+    matrixHeaderRow.height = 22;
+    matrixHeaderRow.eachCell(cell => {
+        cell.style = headerStyle as ExcelJS.Style;
+        if (Number(cell.text) > 0) cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+
+    // Columns width
+    sheet2.getColumn(1).width = 30;
+    sheet2.getColumn(2).width = 25;
+    for (let i = 3; i <= daysInMonth + 2; i++) sheet2.getColumn(i).width = 4;
+
+    data.employees.forEach((e, i) => {
+        const rowValues = [e.name, e.department];
+        const statusColors: any[] = []; // To store color info for this row
+
         for (let d = 1; d <= daysInMonth; d++) {
-            // Construct Date Key YYYY-MM-DD
             const current = new Date(data.periodStart);
             current.setDate(d);
             const dateKey = current.toISOString().split('T')[0];
             const status = e.dailyStatus[dateKey] || '-';
+            rowValues.push(status);
 
-            let style = "DataCenter";
-            if (status === 'H') style = "Good";
-            if (status === 'T') style = "Warning";
-            if (status === 'A') style = "Bad";
-
-            // Allow alternating background
-            if (i % 2 && style === "DataCenter") style = "DataCenterAlt";
-
-            row += `<Cell ss:StyleID="${style}"><Data ss:Type="String">${status}</Data></Cell>`;
+            if (status === 'H') statusColors.push(goodFont);
+            else if (status === 'T') statusColors.push(warningFont);
+            else if (status === 'A') statusColors.push(badFont);
+            else statusColors.push({});
         }
-        row += `</Row>`;
-        return row;
-    }).join('')}
-        </Table>
-    </Worksheet>`;
 
-    // ===== SHEET 3: Ringkasan Cuti =====
-    const sheet3 = `
-    <Worksheet ss:Name="Ringkasan Cuti">
-        <Table>
-            <Column ss:Width="150"/><Column ss:Width="100"/><Column ss:Width="80"/><Column ss:Width="80"/><Column ss:Width="80"/><Column ss:Width="50"/><Column ss:Width="80"/>
-            <Row ss:Height="22"><Cell ss:StyleID="Title"><Data ss:Type="String">LAPORAN CUTI KARYAWAN - ${data.period.toUpperCase()}</Data></Cell></Row>
-            <Row ss:Height="10"></Row>
-            <Row ss:Height="28">
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Nama Karyawan</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Departemen</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Jenis Cuti</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Tanggal Mulai</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Tanggal Selesai</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Hari</Data></Cell>
-                <Cell ss:StyleID="Header"><Data ss:Type="String">Status</Data></Cell>
-            </Row>
-            ${data.leaveRequests.length > 0 ? data.leaveRequests.map((l, i) => `
-            <Row>
-                <Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${l.name}</Data></Cell>
-                <Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${l.department}</Data></Cell>
-                <Cell ss:StyleID="${i % 2 ? 'DataAlt' : 'Data'}"><Data ss:Type="String">${l.type}</Data></Cell>
-                <Cell ss:StyleID="${i % 2 ? 'DataCenterAlt' : 'DataCenter'}"><Data ss:Type="String">${l.startDate}</Data></Cell>
-                <Cell ss:StyleID="${i % 2 ? 'DataCenterAlt' : 'DataCenter'}"><Data ss:Type="String">${l.endDate}</Data></Cell>
-                <Cell ss:StyleID="${i % 2 ? 'DataCenterAlt' : 'DataCenter'}"><Data ss:Type="Number">${l.days}</Data></Cell>
-                <Cell ss:StyleID="${l.status === 'Disetujui' ? 'Good' : l.status === 'Ditolak' ? 'Bad' : 'Warning'}"><Data ss:Type="String">${l.status}</Data></Cell>
-            </Row>`).join('') : '<Row><Cell ss:StyleID="Data"><Data ss:Type="String">Tidak ada data cuti</Data></Cell></Row>'}
-        </Table>
-    </Worksheet>`;
+        const row = sheet2.addRow(rowValues);
+        const isAlt = i % 2 !== 0;
+        const fill = isAlt ? { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } } : undefined;
 
-    // ===== SHEET 4: Informasi Laporan =====
-    const sheet4 = `
-    <Worksheet ss:Name="Informasi Laporan">
-        <Table>
-            <Column ss:Width="180"/><Column ss:Width="250"/>
-            <Row ss:Height="22"><Cell ss:StyleID="Title"><Data ss:Type="String">INFORMASI LAPORAN</Data></Cell></Row>
-            <Row ss:Height="10"></Row>
-            <Row><Cell ss:StyleID="Data"><Data ss:Type="String">Nama Perusahaan</Data></Cell><Cell ss:StyleID="Data"><Data ss:Type="String">${COMPANY_NAME}</Data></Cell></Row>
-            <Row><Cell ss:StyleID="DataAlt"><Data ss:Type="String">Divisi</Data></Cell><Cell ss:StyleID="DataAlt"><Data ss:Type="String">${COMPANY_DIV}</Data></Cell></Row>
-            <Row><Cell ss:StyleID="Data"><Data ss:Type="String">Periode Laporan</Data></Cell><Cell ss:StyleID="Data"><Data ss:Type="String">${data.period}</Data></Cell></Row>
-            <Row><Cell ss:StyleID="DataAlt"><Data ss:Type="String">Tanggal Cetak</Data></Cell><Cell ss:StyleID="DataAlt"><Data ss:Type="String">${printDate}</Data></Cell></Row>
-            <Row><Cell ss:StyleID="Data"><Data ss:Type="String">Jumlah Karyawan</Data></Cell><Cell ss:StyleID="Data"><Data ss:Type="Number">${data.totalEmployees}</Data></Cell></Row>
-            <Row ss:Height="20"></Row>
-            <Row><Cell ss:StyleID="SectionHeader"><Data ss:Type="String">CATATAN</Data></Cell></Row>
-            <Row><Cell ss:StyleID="Subtitle" ss:MergeAcross="1"><Data ss:Type="String">• Data cuti diambil otomatis dari pengajuan cuti yang telah disetujui</Data></Cell></Row>
-            <Row><Cell ss:StyleID="Subtitle" ss:MergeAcross="1"><Data ss:Type="String">• Hari kerja dihitung berdasarkan hari Senin–Jumat</Data></Cell></Row>
-            <Row><Cell ss:StyleID="Subtitle" ss:MergeAcross="1"><Data ss:Type="String">• Laporan ini digenerate oleh T-Absensi System</Data></Cell></Row>
-        </Table>
-    </Worksheet>`;
+        row.eachCell((cell, colNumber) => {
+            cell.border = dataStyle.border as ExcelJS.Borders;
+            cell.font = dataStyle.font as ExcelJS.Font;
+            if (fill) cell.fill = fill as ExcelJS.Fill;
 
-    // Combine all sheets
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
-    xmlns:x="urn:schemas-microsoft-com:office:excel"
-    xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
-    <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
-        <Author>T-Absensi System</Author>
-        <Title>Laporan Kehadiran - ${data.period}</Title>
-        <Created>${new Date().toISOString()}</Created>
-    </DocumentProperties>
-    ${styles}
-    ${sheet1}
-    ${sheet2}
-    ${sheet3}
-    ${sheet4}
-</Workbook>`;
+            if (colNumber > 2) {
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                const colorStyle = statusColors[colNumber - 3];
+                if (colorStyle && colorStyle.color) cell.font = { ...dataStyle.font, ...colorStyle };
+            }
+        });
+    });
 
-    const blob = new Blob([xml], { type: "application/vnd.ms-excel" });
+    // ===== SHEET 3: Leave =====
+    const sheet3 = workbook.addWorksheet("Ringkasan Cuti");
+    sheet3.columns = [{ width: 25 }, { width: 20 }, { width: 15 }, { width: 15 }, { width: 15 }, { width: 10 }, { width: 15 }];
+
+    sheet3.addRow([`LAPORAN CUTI KARYAWAN - ${data.period.toUpperCase()}`]).font = titleStyle.font as ExcelJS.Font;
+    sheet3.addRow([]);
+
+    const leaveHeaders = ["Nama Karyawan", "Departemen", "Jenis Cuti", "Tanggal Mulai", "Tanggal Selesai", "Hari", "Status"];
+    const leaveHeaderRow = sheet3.addRow(leaveHeaders);
+    leaveHeaderRow.height = 28;
+    leaveHeaderRow.eachCell(cell => cell.style = headerStyle as ExcelJS.Style);
+
+    if (data.leaveRequests.length > 0) {
+        data.leaveRequests.forEach((l, i) => {
+            const row = sheet3.addRow([
+                l.name, l.department, l.type, l.startDate, l.endDate, l.days, l.status
+            ]);
+
+            const isAlt = i % 2 !== 0;
+            const fill = isAlt ? { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } } : undefined;
+
+            row.eachCell((cell, colNumber) => {
+                cell.border = dataStyle.border as ExcelJS.Borders;
+                cell.font = dataStyle.font as ExcelJS.Font;
+                if (fill) cell.fill = fill as ExcelJS.Fill;
+                if (colNumber > 3) cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            });
+
+            const statusCell = row.getCell(7);
+            if (l.status === 'Disetujui') statusCell.font = { ...dataStyle.font, ...goodFont };
+            else if (l.status === 'Ditolak') statusCell.font = { ...dataStyle.font, ...badFont };
+            else statusCell.font = { ...dataStyle.font, ...warningFont };
+        });
+    } else {
+        sheet3.addRow(["Tidak ada data cuti"]);
+    }
+
+
+    // ===== SHEET 4: Info =====
+    const sheet4 = workbook.addWorksheet("Informasi Laporan");
+    sheet4.getColumn(1).width = 25;
+    sheet4.getColumn(2).width = 40;
+
+    sheet4.addRow(["INFORMASI LAPORAN"]).font = titleStyle.font as ExcelJS.Font;
+    sheet4.addRow([]);
+
+    const infoData = [
+        ["Nama Perusahaan", COMPANY_NAME],
+        ["Divisi", COMPANY_DIV],
+        ["Periode Laporan", data.period],
+        ["Tanggal Cetak", printDate],
+        ["Jumlah Karyawan", data.totalEmployees]
+    ];
+
+    infoData.forEach((item, i) => {
+        const row = sheet4.addRow(item);
+        const isAlt = i % 2 !== 0; // consistent with source style which alternated
+        if (isAlt) {
+            row.eachCell(cell => cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } });
+        }
+        row.eachCell(cell => {
+            cell.font = dataStyle.font as ExcelJS.Font;
+            cell.border = dataStyle.border as ExcelJS.Borders;
+        });
+    });
+
+    sheet4.addRow([]);
+    sheet4.addRow(["CATATAN"]).font = sectionHeaderStyle.font as ExcelJS.Font;
+    sheet4.addRow(["• Data cuti diambil otomatis dari pengajuan cuti yang telah disetujui"]).font = subtitleStyle.font as ExcelJS.Font;
+    sheet4.addRow(["• Hari kerja dihitung berdasarkan hari Senin–Jumat"]).font = subtitleStyle.font as ExcelJS.Font;
+    sheet4.addRow(["• Laporan ini digenerate oleh T-Absensi System"]).font = subtitleStyle.font as ExcelJS.Font;
+
+    // Generate Buffer and Download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `${filename}.xls`;
+    link.download = `${filename}.xlsx`;
     link.click();
     URL.revokeObjectURL(link.href);
 };
