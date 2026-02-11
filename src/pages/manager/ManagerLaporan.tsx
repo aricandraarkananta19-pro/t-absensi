@@ -383,8 +383,8 @@ const ManagerLaporan = () => {
               totalLateMinutes += calculateLateMinutes(det.clockIn);
             }
 
-            // Count statuses (Inclusive logic: Late & Early Leave count as Present)
-            if (['present', 'late', 'early_leave'].includes(det.status)) calcPresent++;
+            // Count statuses (Exclusive logic: Late counts ONLY as Late, not Present)
+            if (['present', 'early_leave'].includes(det.status)) calcPresent++;
 
             // Track specific negative statuses separately
             if (det.status === 'late') calcLate++;
@@ -511,11 +511,11 @@ const ManagerLaporan = () => {
 
   const summaryStats = useMemo(() => {
     const totalEmployees = employeeReports.length;
-    const totalPresent = employeeReports.reduce((sum, e) => sum + (isToday(new Date()) ? e.present > 0 ? 1 : 0 : e.present), 0); // Simplified for "Today" Card logic if needed, but here stick to period totals
+
 
     return {
       totalEmployees,
-      totalPresent: employeeReports.reduce((sum, e) => sum + e.present, 0),
+      totalPresent: employeeReports.reduce((sum, e) => sum + e.present + e.late, 0),
       totalAbsent: employeeReports.reduce((sum, e) => sum + e.absent, 0),
       totalLate: employeeReports.reduce((sum, e) => sum + e.late, 0),
       totalLateMinutes: employeeReports.reduce((sum, e) => sum + e.lateMinutes, 0),
