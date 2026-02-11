@@ -228,15 +228,18 @@ const AdminDashboardNew = () => {
         lastClockIn: liveStatsQuery?.lastClockIn || null,
     };
 
-    // Map real-time employees to expected format
+    // 1. In recentAttendance mapping
     const recentAttendance = realTimeEmployees?.map(emp => ({
         id: emp.id,
         user_id: emp.user_id,
         full_name: emp.full_name,
         clock_in: emp.clock_in,
         status: emp.status,
-        shift: emp.shift
+        shift: emp.shift,
+        department: emp.department // Add this line
     })) || [];
+
+
 
     // Map journals to expected format
     const pendingJournalsList = journalsData?.journals.map(j => ({
@@ -446,7 +449,18 @@ const AdminDashboardNew = () => {
                                                         </div>
                                                         <div>
                                                             <div className="text-sm font-medium text-slate-900 line-clamp-1">{record.full_name}</div>
-                                                            <div className="text-xs text-slate-500">ID: {record.user_id ? record.user_id.substring(0, 8) : "N/A"}...</div>
+                                                            <div className="flex items-center gap-1 mt-0.5">
+                                                                {record.department ? (
+                                                                    <span className={cn(
+                                                                        "text-[10px] px-1.5 py-0.5 rounded-full font-medium border",
+                                                                        getDeptBadgeColor(record.department)
+                                                                    )}>
+                                                                        {record.department}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-[10px] text-slate-400 italic"> - </span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </TableCell>

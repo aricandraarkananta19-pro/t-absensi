@@ -315,6 +315,28 @@ export const exportAttendanceExcel = async (data: AttendanceReportData, filename
     URL.revokeObjectURL(link.href);
 };
 
+// Helper to safely parse and format dates
+const safeFormatDate = (dateStr: string): string => {
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "";
+        return d.getDate().toString(); // Return just the day number
+    } catch {
+        return "";
+    }
+};
+
+const safeFormatMonth = (dateStr: string): string => {
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "";
+        return d.toLocaleDateString("id-ID", { month: "short" });
+    } catch {
+        return "";
+    }
+}
+
+
 // ============== HR PDF EXPORT (Detailed) ==============
 export const exportAttendanceHRPDF = async (data: AttendanceReportData, filename: string) => {
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
@@ -353,6 +375,31 @@ export const exportAttendanceHRPDF = async (data: AttendanceReportData, filename
     doc.setTextColor(217, 119, 6); doc.text(`Terlambat: ${data.totalLate}`, margin + 140, statsY);
     doc.setTextColor(0); doc.text(`Cuti: ${data.totalLeave}`, margin + 185, statsY);
 
+    // Helper to group dates by month for cleaner display
+    const groupDatesDisplay = (dates: string[]) => {
+        if (!dates || dates.length === 0) return "";
+        const mapped = dates.map(d => {
+            const dateObj = new Date(d);
+            if (isNaN(dateObj.getTime())) return null;
+            return { day: dateObj.getDate(), month: dateObj.toLocaleDateString('id-ID', { month: 'short' }), full: d };
+        }).filter(Boolean);
+
+        // Sort by date
+        mapped.sort((a, b) => new Date(a!.full).getTime() - new Date(b!.full).getTime());
+
+        // Group by Month
+        const grouped: Record<string, number[]> = {};
+        mapped.forEach(m => {
+            if (!grouped[m!.month]) grouped[m!.month] = [];
+            grouped[m!.month].push(m!.day);
+        });
+
+        // Format: "2, 5 Feb; 1, 12 Mar"
+        return Object.entries(grouped).map(([month, days]) => {
+            return `${days.join(", ")} ${month}`;
+        }).join("; ");
+    };
+
     // === MAIN TABLE ===
     const tableData = data.employees.map((e, i) => [
         i + 1,
@@ -364,16 +411,16 @@ export const exportAttendanceHRPDF = async (data: AttendanceReportData, filename
         e.late,
         e.absentDates.length > 0 || e.lateDates.length > 0 || e.leaveDates.length > 0
             ? [
-                e.absentDates.length > 0 ? `Absen: ${formatDatesDisplay(e.absentDates, data.periodStart)}` : '',
-                e.leaveDates.length > 0 ? `Cuti: ${formatDatesDisplay(e.leaveDates, data.periodStart)}` : '',
-                e.lateDates.length > 0 ? `Telat: ${formatDatesDisplay(e.lateDates, data.periodStart)}` : '',
+                e.absentDates.length > 0 ? `Alpha: ${groupDatesDisplay(e.absentDates)}` : '',
+                e.leaveDates.length > 0 ? `Cuti: ${groupDatesDisplay(e.leaveDates)}` : '',
+                e.lateDates.length > 0 ? `Telat: ${groupDatesDisplay(e.lateDates)}` : '',
             ].filter(Boolean).join('\n')
             : '—',
         e.remarks || '-'
     ]);
 
     autoTable(doc, {
-        head: [['No', 'Nama Karyawan', 'Departemen', 'Hadir', 'Tidak Hadir', 'Cuti', 'Terlambat', 'Detail Kehadiran (Tanggal)', 'Keterangan']],
+        head: [['No', 'Nama Karyawan', 'Departemen', 'Hadir', 'Absen', 'Cuti', 'Telat', 'Detail Tanggal (Tgl & Bulan)', 'Keterangan']],
         body: tableData,
         startY: 58,
         theme: "grid",
@@ -381,13 +428,13 @@ export const exportAttendanceHRPDF = async (data: AttendanceReportData, filename
         bodyStyles: { fontSize: 7, cellPadding: 2, valign: "top" },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
-            0: { halign: "center", cellWidth: 10 },
-            3: { halign: "center", cellWidth: 15 },
-            4: { halign: "center", cellWidth: 20 },
-            5: { halign: "center", cellWidth: 12 },
-            6: { halign: "center", cellWidth: 18 },
-            7: { cellWidth: 70 },
-            8: { cellWidth: 40 },
+            0: { halign: "center", cellWidth: 8 },
+            3: { halign: "center", cellWidth: 10 },
+            4: { halign: "center", cellWidth: 10, fontStyle: 'bold', textColor: [220, 38, 38] }, // Red for Absent
+            5: { halign: "center", cellWidth: 10 },
+            6: { halign: "center", cellWidth: 10, textColor: [217, 119, 6] }, // Orange for Late
+            7: { cellWidth: 85 }, // Wider detail column
+            8: { cellWidth: 35 },
         },
         margin: { left: margin, right: margin, bottom: 18 },
         didDrawPage: (d) => {
@@ -422,19 +469,30 @@ export const exportAttendanceHRPDF = async (data: AttendanceReportData, filename
     doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
     doc.text("APPENDIX: MATRIKS KEHADIRAN HARIAN", pageWidth / 2, 20, { align: "center" });
 
-    const daysInMonth = new Date(new Date(data.periodEnd).getFullYear(), new Date(data.periodEnd).getMonth() + 1, 0).getDate();
+    // Calculate Date Range correctly based on periodStart and periodEnd
+    const startDate = new Date(data.periodStart);
+    const endDate = new Date(data.periodEnd);
+    const dateRange: Date[] = [];
+
+    // Safety break loop to max 31 days to fit A4
+    const tempDate = new Date(startDate);
+    let dayCount = 0;
+    while (tempDate <= endDate && dayCount < 31) {
+        dateRange.push(new Date(tempDate));
+        tempDate.setDate(tempDate.getDate() + 1);
+        dayCount++;
+    }
 
     // Matrix Table Data
-    const matrixHead = [['Nama', ...Array.from({ length: daysInMonth }, (_, i) => String(i + 1))]];
+    // Header includes Dates numbers (1-31) or just date (1, 2, 3...)
+    const matrixHead = [['Nama', ...dateRange.map(d => d.getDate().toString())]];
+
     const matrixBody = data.employees.map(e => {
         const row = [e.name];
-        for (let d = 1; d <= daysInMonth; d++) {
-            // Construct Date Key YYYY-MM-DD
-            const current = new Date(data.periodStart);
-            current.setDate(d);
-            const dateKey = current.toISOString().split('T')[0];
+        dateRange.forEach(d => {
+            const dateKey = d.toISOString().split('T')[0];
             row.push(e.dailyStatus[dateKey] || '-');
-        }
+        });
         return row;
     });
 
@@ -443,14 +501,36 @@ export const exportAttendanceHRPDF = async (data: AttendanceReportData, filename
         body: matrixBody,
         startY: 25,
         theme: "grid",
-        styles: { fontSize: 6, cellPadding: 1, halign: 'center' },
+        styles: { fontSize: 6, cellPadding: 1, halign: 'center', lineWidth: 0.1 },
         headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: "bold" },
-        columnStyles: { 0: { cellWidth: 30, halign: 'left' } }, // Name column wider
+        columnStyles: { 0: { cellWidth: 35, halign: 'left' } }, // Name column wider
         margin: { top: 25, left: 10, right: 10 },
-        tableWidth: 'auto'
+        tableWidth: 'auto',
+        didParseCell: (data) => {
+            // Add color coding to matrix cells
+            if (data.section === 'body' && data.column.index > 0) {
+                const text = data.cell.text[0];
+                if (text === 'H') {
+                    data.cell.styles.fillColor = [220, 252, 231]; // Green light
+                    data.cell.styles.textColor = [22, 101, 52];
+                } else if (text === 'A') {
+                    data.cell.styles.fillColor = [254, 226, 226]; // Red light
+                    data.cell.styles.textColor = [153, 27, 27];
+                } else if (text === 'T') {
+                    data.cell.styles.fillColor = [254, 243, 199]; // Amber light
+                    data.cell.styles.textColor = [146, 64, 14];
+                } else if (text === 'S' || text === 'I' || text === 'C') {
+                    data.cell.styles.fillColor = [219, 234, 254]; // Blue light
+                    data.cell.styles.textColor = [30, 64, 175];
+                }
+            }
+        }
     });
 
     doc.setFontSize(8);
+    // Add Month/Year info if range spans multiple
+    const rangeText = `${startDate.toLocaleDateString('id-ID', { month: 'long' })} - ${endDate.toLocaleDateString('id-ID', { month: 'long' })}`;
+    doc.text(`Range: ${rangeText} (Menampilkan maks 31 hari pertama)`, 10, doc.internal.pageSize.getHeight() - 15);
     doc.text("Ket: H=Hadir, T=Terlambat, A=Alpha, S=Sakit, I=Izin, C=Cuti, L=Libur", 10, doc.internal.pageSize.getHeight() - 10);
 
     doc.save(`${filename}.pdf`);
