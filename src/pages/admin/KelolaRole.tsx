@@ -231,6 +231,7 @@ const KelolaRole = () => {
       title="Kelola Role"
       subtitle="Atur hak akses user"
       roleLabel="Administrator"
+      showExport={false}
       menuSections={ADMIN_MENU_SECTIONS}
     >
       <div className="pb-8">

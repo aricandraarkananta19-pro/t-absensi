@@ -500,18 +500,7 @@ const RekapAbsensi = () => {
                 <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
                 Sync
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 gap-2">
-                    <Download className="w-3.5 h-3.5" /> Export
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => toast({ title: "Coming Soon", description: "Fitur export dalam pengembangan" })}>
-                    <FileSpreadsheet className="w-4 h-4 mr-2" /> Excel
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Export button removed */}
             </div>
           </div>
 

@@ -597,6 +597,7 @@ const LaporanKehadiran = () => {
             subtitle="Professional attendance reporting and analytics"
             menuSections={ADMIN_MENU_SECTIONS}
             roleLabel="Administrator"
+            showExport={false}
         >
             <div className="space-y-8 pb-20">
                 {/* 1. Summary Cards */}

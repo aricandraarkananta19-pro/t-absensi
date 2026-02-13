@@ -234,6 +234,7 @@ const JurnalKerja = () => {
             menuSections={menuSections}
             roleLabel="Administrator"
             showRefresh={true}
+            showExport={false}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ['journals', 'admin'] })}
         >
             <div className="max-w-[1400px] mx-auto pb-20">
@@ -271,10 +272,7 @@ const JurnalKerja = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button variant="outline" className="gap-2 bg-white text-slate-700 border-slate-200">
-                            <FileSpreadsheet className="w-4 h-4" />
-                            Export to Excel
-                        </Button>
+                        {/* Export button removed */}
                     </div>
                 </div>
 

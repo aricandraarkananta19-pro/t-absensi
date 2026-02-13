@@ -139,6 +139,7 @@ const ResetPassword = () => {
       title="Reset Password"
       subtitle="Reset password karyawan"
       roleLabel="Administrator"
+      showExport={false}
       menuSections={ADMIN_MENU_SECTIONS}
     >
       <div className="pb-8">

@@ -309,6 +309,7 @@ const KelolaKaryawan = () => {
       menuSections={menuSections}
       roleLabel="Administrator"
       showRefresh={true}
+      showExport={false}
       onRefresh={fetchEmployees}
     >
       <div className="max-w-[1400px] mx-auto pb-20">

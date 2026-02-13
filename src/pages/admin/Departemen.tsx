@@ -193,6 +193,7 @@ const Departemen = () => {
       title="Struktur Organisasi"
       subtitle="Departemen & Divisi"
       roleLabel="Administrator"
+      showExport={false}
       menuSections={ADMIN_MENU_SECTIONS}
     >
       <div className="pb-20 md:pb-8">
