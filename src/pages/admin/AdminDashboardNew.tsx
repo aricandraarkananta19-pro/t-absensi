@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     Users, Clock, Key, Settings, ChevronRight, LogOut, LayoutDashboard,
     BarChart3, FileText, Calendar, Building2, Shield, TrendingUp, TrendingDown,
-    CheckCircle2, AlertCircle, UserCheck, UserX, RefreshCw, Download,
+    CheckCircle2, AlertCircle, UserCheck, UserX, RefreshCw,
     Bell, MoreVertical, ArrowUpRight, Briefcase, FolderOpen, Database,
     Timer, Zap, Activity, CalendarClock, BookOpen
 } from "lucide-react";
@@ -346,6 +346,7 @@ const AdminDashboardNew = () => {
             menuSections={menuWithBadges}
             roleLabel="Administrator"
             showRefresh={false}
+            showExport={false}
             onRefresh={() => { /* Handled by React Query auto-refresh */ }}
             refreshInterval={60}
         >
@@ -589,14 +590,7 @@ const AdminDashboardNew = () => {
                                     <CardTitle className="text-base font-semibold text-slate-800">Tren Kehadiran</CardTitle>
                                     <CardDescription className="text-sm">Persentase kehadiran 6 bulan terakhir</CardDescription>
                                 </div>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 text-xs gap-1.5 border-slate-200 hover:border-slate-300"
-                                >
-                                    <Download className="h-3.5 w-3.5" />
-                                    Export
-                                </Button>
+                                {/* Export button removed */}
                             </div>
                         </CardHeader>
                         <CardContent>
