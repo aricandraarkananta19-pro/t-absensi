@@ -5,6 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Download, Database, FileCode, Terminal, Shield, Loader2, CheckCircle, Copy } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
+import { ADMIN_MENU_SECTIONS } from "@/config/menu";
 
 const ExportDatabase = () => {
   const [isExporting, setIsExporting] = useState(false);
@@ -17,7 +19,7 @@ const ExportDatabase = () => {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session?.access_token) {
         toast({
           title: "Error",
@@ -45,7 +47,7 @@ const ExportDatabase = () => {
 
       // Get the SQL content
       const sqlContent = await response.text();
-      
+
       // Create blob and download
       const blob = new Blob([sqlContent], { type: 'application/sql' });
       const url = window.URL.createObjectURL(blob);
@@ -245,304 +247,306 @@ curl -X POST \\
   --output database_export.sql`;
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Export Database</h1>
-        <p className="text-muted-foreground">
-          Export seluruh schema dan data database untuk backup atau migrasi ke Laravel
-        </p>
-      </div>
+    <EnterpriseLayout
+      title="Export Database"
+      subtitle="Export seluruh schema dan data database untuk backup atau migrasi ke Laravel"
+      roleLabel="Administrator"
+      showExport={false}
+      menuSections={ADMIN_MENU_SECTIONS}
+    >
+      <div className="max-w-6xl mx-auto py-8">
 
-      {/* Export Card */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
-            Download SQL Dump
-          </CardTitle>
-          <CardDescription>
-            Export semua tabel: profiles, attendance, leave_requests, user_roles, system_settings
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <Button 
-              onClick={handleExport} 
-              disabled={isExporting}
-              size="lg"
-              className="gap-2"
-            >
-              {isExporting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Mengexport...
-                </>
-              ) : exportSuccess ? (
-                <>
+        {/* Export Card */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              Download SQL Dump
+            </CardTitle>
+            <CardDescription>
+              Export semua tabel: profiles, attendance, leave_requests, user_roles, system_settings
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={handleExport}
+                disabled={isExporting}
+                size="lg"
+                className="gap-2"
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Mengexport...
+                  </>
+                ) : exportSuccess ? (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    Export Lagi
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    Export Database
+                  </>
+                )}
+              </Button>
+              {exportSuccess && (
+                <span className="text-sm text-green-600 flex items-center gap-1">
                   <CheckCircle className="h-4 w-4" />
-                  Export Lagi
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4" />
-                  Export Database
-                </>
+                  File SQL berhasil diunduh!
+                </span>
               )}
-            </Button>
-            {exportSuccess && (
-              <span className="text-sm text-green-600 flex items-center gap-1">
-                <CheckCircle className="h-4 w-4" />
-                File SQL berhasil diunduh!
-              </span>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Documentation Tabs */}
-      <Tabs defaultValue="laravel" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="laravel">Laravel Setup</TabsTrigger>
-          <TabsTrigger value="import">Import SQL</TabsTrigger>
-          <TabsTrigger value="models">Models</TabsTrigger>
-          <TabsTrigger value="api">API Usage</TabsTrigger>
-        </TabsList>
+        {/* Documentation Tabs */}
+        <Tabs defaultValue="laravel" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="laravel">Laravel Setup</TabsTrigger>
+            <TabsTrigger value="import">Import SQL</TabsTrigger>
+            <TabsTrigger value="models">Models</TabsTrigger>
+            <TabsTrigger value="api">API Usage</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="laravel" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileCode className="h-5 w-5" />
-                Konfigurasi Laravel .env
-              </CardTitle>
-              <CardDescription>
-                Tambahkan kredensial database ke file .env Laravel Anda
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-                  <code>{envConfig}</code>
-                </pre>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={() => copyToClipboard(envConfig)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  <Shield className="h-4 w-4 inline mr-1" />
-                  <strong>Catatan Keamanan:</strong> Password database dapat ditemukan di 
-                  pengaturan Lovable Cloud. Jangan pernah commit file .env ke Git!
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <TabsContent value="laravel" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileCode className="h-5 w-5" />
+                  Konfigurasi Laravel .env
+                </CardTitle>
+                <CardDescription>
+                  Tambahkan kredensial database ke file .env Laravel Anda
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+                    <code>{envConfig}</code>
+                  </pre>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => copyToClipboard(envConfig)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    <Shield className="h-4 w-4 inline mr-1" />
+                    <strong>Catatan Keamanan:</strong> Password database dapat ditemukan di
+                    pengaturan Lovable Cloud. Jangan pernah commit file .env ke Git!
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Laravel Migration</CardTitle>
-              <CardDescription>
-                Contoh migration file untuk membuat tabel di Laravel
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm max-h-96">
-                  <code>{laravelMigration}</code>
-                </pre>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={() => copyToClipboard(laravelMigration)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            <Card>
+              <CardHeader>
+                <CardTitle>Laravel Migration</CardTitle>
+                <CardDescription>
+                  Contoh migration file untuk membuat tabel di Laravel
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm max-h-96">
+                    <code>{laravelMigration}</code>
+                  </pre>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => copyToClipboard(laravelMigration)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="import" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Terminal className="h-5 w-5" />
-                Import SQL ke PostgreSQL
-              </CardTitle>
-              <CardDescription>
-                Gunakan perintah psql untuk import file SQL yang diexport
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="relative">
-                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-                  <code>{psqlImport}</code>
-                </pre>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={() => copyToClipboard(psqlImport)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
+          <TabsContent value="import" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Terminal className="h-5 w-5" />
+                  Import SQL ke PostgreSQL
+                </CardTitle>
+                <CardDescription>
+                  Gunakan perintah psql untuk import file SQL yang diexport
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative">
+                  <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+                    <code>{psqlImport}</code>
+                  </pre>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => copyToClipboard(psqlImport)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
 
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Langkah-langkah:</h4>
+                  <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                    <li>Install PostgreSQL di komputer lokal Anda</li>
+                    <li>Buat database baru: <code className="bg-muted px-1">createdb your_database</code></li>
+                    <li>Jalankan perintah import di atas</li>
+                    <li>Verifikasi data dengan: <code className="bg-muted px-1">psql -d your_database -c "\dt"</code></li>
+                  </ol>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="models" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Model</CardTitle>
+                <CardDescription>
+                  Contoh Eloquent Model untuk tabel profiles
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm max-h-80">
+                    <code>{profileModel}</code>
+                  </pre>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => copyToClipboard(profileModel)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Controller</CardTitle>
+                <CardDescription>
+                  Contoh Controller untuk CRUD profiles
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm max-h-80">
+                    <code>{profileController}</code>
+                  </pre>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => copyToClipboard(profileController)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="api" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Terminal className="h-5 w-5" />
+                  API Usage (curl)
+                </CardTitle>
+                <CardDescription>
+                  Cara memanggil edge function export langsung via API
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+                    <code>{curlExample}</code>
+                  </pre>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => copyToClipboard(curlExample)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>Catatan:</strong> Access token bisa didapat dari session setelah login.
+                    Hanya admin yang dapat mengakses endpoint ini.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* VS Code Setup Guide */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Setup Laravel di VS Code</CardTitle>
+            <CardDescription>
+              Panduan lengkap untuk memulai project Laravel
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <h4 className="font-semibold">Langkah-langkah:</h4>
-                <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
-                  <li>Install PostgreSQL di komputer lokal Anda</li>
-                  <li>Buat database baru: <code className="bg-muted px-1">createdb your_database</code></li>
-                  <li>Jalankan perintah import di atas</li>
-                  <li>Verifikasi data dengan: <code className="bg-muted px-1">psql -d your_database -c "\dt"</code></li>
-                </ol>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="models" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Model</CardTitle>
-              <CardDescription>
-                Contoh Eloquent Model untuk tabel profiles
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm max-h-80">
-                  <code>{profileModel}</code>
+                <h4 className="font-semibold">1. Install Laravel</h4>
+                <pre className="bg-muted p-3 rounded text-sm">
+                  <code>composer create-project laravel/laravel my-app</code>
                 </pre>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={() => copyToClipboard(profileModel)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Controller</CardTitle>
-              <CardDescription>
-                Contoh Controller untuk CRUD profiles
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm max-h-80">
-                  <code>{profileController}</code>
+              <div className="space-y-2">
+                <h4 className="font-semibold">2. Masuk ke direktori</h4>
+                <pre className="bg-muted p-3 rounded text-sm">
+                  <code>cd my-app && code .</code>
                 </pre>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={() => copyToClipboard(profileController)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="api" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Terminal className="h-5 w-5" />
-                API Usage (curl)
-              </CardTitle>
-              <CardDescription>
-                Cara memanggil edge function export langsung via API
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-                  <code>{curlExample}</code>
+              <div className="space-y-2">
+                <h4 className="font-semibold">3. Install dependencies</h4>
+                <pre className="bg-muted p-3 rounded text-sm">
+                  <code>composer install && npm install</code>
                 </pre>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={() => copyToClipboard(curlExample)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
               </div>
-              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  <strong>Catatan:</strong> Access token bisa didapat dari session setelah login.
-                  Hanya admin yang dapat mengakses endpoint ini.
-                </p>
+              <div className="space-y-2">
+                <h4 className="font-semibold">4. Setup database</h4>
+                <pre className="bg-muted p-3 rounded text-sm">
+                  <code>php artisan migrate</code>
+                </pre>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* VS Code Setup Guide */}
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>Setup Laravel di VS Code</CardTitle>
-          <CardDescription>
-            Panduan lengkap untuk memulai project Laravel
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <h4 className="font-semibold">1. Install Laravel</h4>
-              <pre className="bg-muted p-3 rounded text-sm">
-                <code>composer create-project laravel/laravel my-app</code>
-              </pre>
+              <div className="space-y-2">
+                <h4 className="font-semibold">5. Import SQL dump</h4>
+                <pre className="bg-muted p-3 rounded text-sm">
+                  <code>psql -U postgres -d laravel -f export.sql</code>
+                </pre>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-semibold">6. Jalankan server</h4>
+                <pre className="bg-muted p-3 rounded text-sm">
+                  <code>php artisan serve</code>
+                </pre>
+              </div>
             </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">2. Masuk ke direktori</h4>
-              <pre className="bg-muted p-3 rounded text-sm">
-                <code>cd my-app && code .</code>
-              </pre>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">3. Install dependencies</h4>
-              <pre className="bg-muted p-3 rounded text-sm">
-                <code>composer install && npm install</code>
-              </pre>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">4. Setup database</h4>
-              <pre className="bg-muted p-3 rounded text-sm">
-                <code>php artisan migrate</code>
-              </pre>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">5. Import SQL dump</h4>
-              <pre className="bg-muted p-3 rounded text-sm">
-                <code>psql -U postgres -d laravel -f export.sql</code>
-              </pre>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">6. Jalankan server</h4>
-              <pre className="bg-muted p-3 rounded text-sm">
-                <code>php artisan serve</code>
-              </pre>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </EnterpriseLayout>
   );
 };
 

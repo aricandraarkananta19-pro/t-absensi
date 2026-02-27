@@ -2,15 +2,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FolderOpen, Calendar, Filter, ArrowLeft } from "lucide-react";
+import { FolderOpen, Calendar, Filter, ArrowLeft, PenLine, FileText, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
+import { id as localeId } from "date-fns/locale";
 import MobileNavigation from "@/components/MobileNavigation";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { toast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -19,7 +18,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// New Components
+// Components
 import { JournalHistoryCard, JournalHistoryItem } from "@/components/journal/JournalHistoryCard";
 import { DailyJournalForm, DailyJournalFormData } from "@/components/journal/DailyJournalForm";
 
@@ -28,7 +27,7 @@ export default function JurnalSaya() {
     const isMobile = useIsMobile();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const [filterStatus, setFilterStatus] = useState<string>("This Month");
+    const [filterStatus, setFilterStatus] = useState<string>("Bulan Ini");
 
     // ========== REACT QUERY ==========
     const {
@@ -39,9 +38,8 @@ export default function JurnalSaya() {
         queryFn: async () => {
             if (!user?.id) return [];
 
-            // We select title as well now
             const { data, error } = await supabase
-                .from('work_journals' as any)
+                .from('work_journals')
                 .select('*')
                 .eq('user_id', user.id)
                 .is('deleted_at', null)
@@ -62,22 +60,16 @@ export default function JurnalSaya() {
             // Convert Hours to Minutes for DB
             const durationMinutes = Math.round(formData.duration * 60);
 
-            // Check if journal exists for this date to prevent duplicates (optional, or update?)
-            // For now, we append/create new. 
-            // If strict 1 journal per day:
             const existing = journals.find(j => j.date === formData.date);
+            const finalContent = formData.title ? `**${formData.title}**\n\n${formData.content}` : formData.content;
 
             if (existing) {
-                // Update existing
-                const finalContent = formData.title ? `**${formData.title}**\n\n${formData.content}` : formData.content;
-
+                // Update
                 const { error } = await supabase
-                    .from('work_journals' as any)
+                    .from('work_journals')
                     .update({
-                        // title: formData.title, // Removed
                         content: finalContent,
                         duration: durationMinutes,
-                        // We store category in obstacles for now as metadata or text
                         obstacles: formData.project_category,
                         verification_status: 'submitted',
                         updated_at: new Date().toISOString()
@@ -85,28 +77,24 @@ export default function JurnalSaya() {
                     .eq('id', existing.id);
 
                 if (error) throw error;
-                toast({ title: "Journal Updated", description: "Your daily journal has been updated." });
+                toast({ title: "Berhasil Diperbarui", description: "Jurnal harian Anda telah diperbarui." });
             } else {
-                // Insert New
-                // Title column does not exist in DB, so we prepend it to content to save it.
-                const finalContent = formData.title ? `**${formData.title}**\n\n${formData.content}` : formData.content;
-
+                // Insert
                 const { error } = await supabase
-                    .from('work_journals' as any)
+                    .from('work_journals')
                     .insert({
                         user_id: user?.id,
-                        // title: formData.title, // Removed
                         content: finalContent,
                         duration: durationMinutes,
-                        obstacles: formData.project_category, // Storing category here
+                        obstacles: formData.project_category,
                         date: formData.date,
                         verification_status: 'submitted',
-                        work_result: 'completed', // Default
-                        mood: '😊' // Default
+                        work_result: 'completed',
+                        mood: '😊'
                     });
 
                 if (error) throw error;
-                toast({ title: "Journal Submitted", description: "Your journal has been successfully logged." });
+                toast({ title: "Berhasil Disubmit", description: "Jurnal Anda berhasil dicatat." });
             }
 
             // Refresh Data
@@ -114,15 +102,15 @@ export default function JurnalSaya() {
 
         } catch (error: any) {
             console.error("Submit error:", error);
-            toast({ variant: "destructive", title: "Error", description: error.message || "Failed to submit journal." });
+            toast({ variant: "destructive", title: "Error", description: error.message || "Gagal mengirim jurnal." });
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // Filter Logic (Simple implementation)
+    // Filter Logic
     const filteredJournals = journals.filter(j => {
-        if (filterStatus === "This Month") {
+        if (filterStatus === "Bulan Ini") {
             const date = new Date(j.date);
             const now = new Date();
             return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
@@ -130,24 +118,25 @@ export default function JurnalSaya() {
         return true;
     });
 
-    return (
-        <div className={`min-h-screen pb-24 md:pb-12 ${isMobile ? 'bg-slate-50/50' : 'bg-slate-50/50 relative'} font-['Inter',sans-serif]`}>
+    // Stats
+    const approvedCount = journals.filter(j => j.verification_status === 'approved').length;
+    const pendingCount = journals.filter(j => j.verification_status === 'submitted' || j.verification_status === 'pending').length;
 
-            {/* Background Graphic Abstract - Subtle SaaS Effect */}
+    return (
+        <div className={`min-h-screen pb-24 md:pb-12 ${isMobile ? 'bg-slate-50' : 'bg-slate-50 relative'} font-['Inter',sans-serif]`}>
+
+            {/* Background Graphic */}
             <div className="absolute top-0 right-0 -z-0 w-[60vw] h-[40vh] bg-blue-100/40 rounded-full blur-[100px] pointer-events-none opacity-60 transform translate-x-1/2 -translate-y-1/2"></div>
             <div className="absolute bottom-0 left-0 -z-0 w-[40vw] h-[40vh] bg-purple-100/30 rounded-full blur-[100px] pointer-events-none opacity-60 transform -translate-x-1/2 translate-y-1/2"></div>
 
-            {/* Mobile/Tablet Header Padding */}
-            <div className={`
-                 px-6 py-6 md:py-8 max-w-5xl mx-auto relative z-10
-            `}>
+            <div className="px-6 py-8 max-w-[1000px] mx-auto relative z-10">
                 {/* Back Button */}
                 <div className="mb-6">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => navigate('/dashboard')}
-                        className="text-slate-500 hover:text-slate-800 hover:bg-white/50 border border-transparent hover:border-slate-200/60 rounded-xl transition-all shadow-sm bg-white border-slate-100"
+                        className="text-slate-500 hover:text-slate-800 hover:bg-white bg-white/60 backdrop-blur-md border border-slate-200/60 rounded-xl transition-all shadow-sm"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Kembali ke Dashboard
@@ -155,87 +144,134 @@ export default function JurnalSaya() {
                 </div>
 
                 {/* Page Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
                     <div>
-                        <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-800 tracking-tight">Jurnal Kerja Saya</h1>
-                        <p className="text-slate-500 font-medium text-sm mt-2 max-w-md">Catat dan pantau aktivitas kerjamu. Transparansi adalah kunci kolaborasi yang baik.</p>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white">
+                                <PenLine className="w-5 h-5" />
+                            </div>
+                            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Jurnal Kerja Saya</h1>
+                        </div>
+                        <p className="text-slate-500 font-medium text-sm mt-3 max-w-md leading-relaxed">
+                            Catat aktivitas, progress, dan tantangan yang Anda hadapi hari ini.
+                        </p>
                     </div>
 
-                    <div className="flex items-center gap-4 bg-white/70 backdrop-blur-md px-5 py-3 rounded-2xl shadow-sm border border-white/40">
-                        <div className="text-right">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hari Ini</p>
-                            <p className="text-sm font-extrabold text-slate-700">
-                                {format(new Date(), "MMMM d, yyyy")}
-                            </p>
+                    <div className="flex items-center gap-3 bg-white px-5 py-3.5 rounded-2xl shadow-sm border border-slate-200">
+                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
+                            <Calendar className="w-5 h-5" />
                         </div>
-                        <div className="h-12 w-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100/50">
-                            <Calendar className="w-6 h-6" />
+                        <div className="text-left">
+                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Hari Ini</p>
+                            <p className="text-sm font-bold text-slate-800">
+                                {format(new Date(), "d MMMM yyyy", { locale: localeId })}
+                            </p>
                         </div>
                     </div>
                 </div>
 
-                <div className="space-y-10">
-                    {/* 1. Log Activity Form */}
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <DailyJournalForm
-                            onSubmit={handleSubmit}
-                            isSubmitting={isSubmitting}
-                            // We could pass today's journal if it exists to edit it
-                            initialData={journals.find(j => j.date === format(new Date(), "yyyy-MM-dd")) ? {
-                                title: journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.title,
-                                content: journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.content,
-                                duration: (journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.duration || 0) / 60,
-                                project_category: journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.project_category || journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.obstacles // Map obstacles back to category
-                            } : undefined}
-                        />
+                {/* Stats Row */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
+                            <FileText className="w-5 h-5 text-slate-500" />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-slate-900 leading-none mb-1">{journals.length}</p>
+                            <p className="text-xs font-semibold text-slate-500">Total Jurnal</p>
+                        </div>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-slate-900 leading-none mb-1">{approvedCount}</p>
+                            <p className="text-xs font-semibold text-slate-500">Disetujui</p>
+                        </div>
+                    </div>
+                    <div className="hidden md:flex bg-white p-4 rounded-2xl border border-slate-200 shadow-sm items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                            <Clock className="w-5 h-5 text-amber-600" />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-slate-900 leading-none mb-1">{pendingCount}</p>
+                            <p className="text-xs font-semibold text-slate-500">Menunggu Review</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Left Column: Form */}
+                    <div className="lg:col-span-12 xl:col-span-7">
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <DailyJournalForm
+                                onSubmit={handleSubmit}
+                                isSubmitting={isSubmitting}
+                                initialData={journals.find(j => j.date === format(new Date(), "yyyy-MM-dd")) ? {
+                                    // Parse back title if we prepended it, this is a bit hacky but keeps the old behavior
+                                    // Normally we should add title column to DB
+                                    title: journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.title,
+                                    content: journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.content,
+                                    duration: (journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.duration || 0) / 60,
+                                    project_category: journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.obstacles
+                                } : undefined}
+                            />
+                        </div>
                     </div>
 
-                    {/* 2. History Section */}
-                    <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100 mt-12">
-                        <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-200/50">
-                            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Riwayat Log</h2>
+                    {/* Right Column: History */}
+                    <div className="lg:col-span-12 xl:col-span-5">
+                        <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                            <div className="flex items-center justify-between mb-5">
+                                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                    Riwayat Jurnal
+                                </h2>
 
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="h-10 text-sm gap-2 bg-white/70 backdrop-blur-md border-white/40 shadow-sm hover:bg-white rounded-xl font-semibold text-slate-600 focus:ring-4 focus:ring-slate-100 transition-all">
-                                        <Filter className="w-4 h-4" />
-                                        Periode: <span className="font-extrabold text-slate-800">{filterStatus}</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="rounded-xl border border-slate-100 shadow-xl pb-1">
-                                    <DropdownMenuItem onClick={() => setFilterStatus("This Month")} className="font-medium focus:bg-slate-50 py-2 cursor-pointer">Bulan Ini</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setFilterStatus("All Time")} className="font-medium focus:bg-slate-50 py-2 cursor-pointer">Semua Waktu</DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" className="h-9 gap-2 bg-white rounded-xl border-slate-200 text-slate-600 font-semibold shadow-sm">
+                                            <Filter className="w-3.5 h-3.5" />
+                                            {filterStatus}
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="rounded-xl border-slate-200 shadow-xl min-w-[140px]">
+                                        <DropdownMenuItem onClick={() => setFilterStatus("Bulan Ini")} className="font-medium cursor-pointer rounded-lg">Bulan Ini</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setFilterStatus("Semua")} className="font-medium cursor-pointer rounded-lg">Semua Waktu</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+
+                            <div className="bg-white/40 rounded-2xl p-2 min-h-[400px]">
+                                {isLoading ? (
+                                    <div className="space-y-3">
+                                        {[1, 2, 3].map(i => (
+                                            <div key={i} className="h-32 bg-white rounded-xl border border-slate-100 animate-pulse" />
+                                        ))}
+                                    </div>
+                                ) : filteredJournals.length === 0 ? (
+                                    <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
+                                        <div className="w-16 h-16 bg-slate-50 flex items-center justify-center mx-auto mb-4 rounded-2xl">
+                                            <FolderOpen className="w-8 h-8 text-slate-300" />
+                                        </div>
+                                        <h3 className="text-base font-bold text-slate-700 mb-1">Belum Ada Aktivitas</h3>
+                                        <p className="text-slate-500 text-sm">Jurnal yang dikirim akan muncul di sini.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 pb-4 scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
+                                        {filteredJournals.map((journal) => (
+                                            <JournalHistoryCard
+                                                key={journal.id}
+                                                journal={{
+                                                    ...journal,
+                                                    project_category: journal.project_category || journal.obstacles
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-
-                        {isLoading ? (
-                            <div className="space-y-4">
-                                {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-40 bg-slate-100 rounded-xl animate-pulse" />
-                                ))}
-                            </div>
-                        ) : filteredJournals.length === 0 ? (
-                            <div className="text-center py-16 bg-white/40 backdrop-blur-sm rounded-[24px] border border-dashed border-slate-300 shadow-sm">
-                                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                    <FolderOpen className="w-8 h-8 text-slate-400" />
-                                </div>
-                                <h3 className="text-lg font-bold text-slate-700 mb-1">Belum Ada Catatan</h3>
-                                <p className="text-slate-500 font-medium text-sm">Jurnal yang berhasil dikirim akan muncul di sini.</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {filteredJournals.map((journal) => (
-                                    <JournalHistoryCard
-                                        key={journal.id}
-                                        journal={{
-                                            ...journal,
-                                            project_category: journal.project_category || journal.obstacles // Map obstacles to category for display
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>

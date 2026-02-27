@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
+import { ADMIN_MENU_SECTIONS } from "@/config/menu";
 import { ArrowLeft, Download, FileText, Database, Shield, Server, Layout, Code, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +16,7 @@ const Dokumentasi = () => {
 
   const generatePDF = async () => {
     setIsGenerating(true);
-    
+
     try {
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -69,11 +71,11 @@ const Dokumentasi = () => {
         pdf.setFontSize(8);
         pdf.setFont("courier", "normal");
         const lines = pdf.splitTextToSize(code, contentWidth - 10);
-        
+
         // Background
         pdf.setFillColor(245, 245, 245);
         pdf.rect(margin, yPosition - 3, contentWidth, lines.length * 4 + 6, "F");
-        
+
         pdf.text(lines, margin + 5, yPosition + 2);
         yPosition += lines.length * 4 + 10;
       };
@@ -95,7 +97,7 @@ const Dokumentasi = () => {
       // ========== COVER PAGE ==========
       pdf.setFillColor(59, 130, 246);
       pdf.rect(0, 0, pageWidth, 80, "F");
-      
+
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(28);
       pdf.setFont("helvetica", "bold");
@@ -104,13 +106,13 @@ const Dokumentasi = () => {
       pdf.text("Sistem Absensi & Manajemen Karyawan", margin, 52);
       pdf.setFontSize(10);
       pdf.text("Talenta Digital Indonesia", margin, 65);
-      
+
       pdf.setTextColor(0, 0, 0);
       yPosition = 100;
-      
+
       addParagraph("Dokumen ini berisi penjelasan lengkap tentang arsitektur, teknologi, dan implementasi sistem absensi berbasis web yang dibangun menggunakan React, TypeScript, dan Supabase.");
       addSpacer(10);
-      
+
       addSubtitle("Informasi Dokumen");
       addBullet("Versi: 1.0");
       addBullet("Tanggal: " + new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }));
@@ -121,7 +123,7 @@ const Dokumentasi = () => {
       addNewPage();
       addTitle("DAFTAR ISI", 20);
       addSpacer(10);
-      
+
       const tocItems = [
         "1. Gambaran Umum Sistem",
         "2. Teknologi yang Digunakan",
@@ -136,7 +138,7 @@ const Dokumentasi = () => {
         "11. State Management",
         "12. Panduan Pengembangan",
       ];
-      
+
       tocItems.forEach(item => {
         addBullet(item);
       });
@@ -145,10 +147,10 @@ const Dokumentasi = () => {
       addNewPage();
       addTitle("1. GAMBARAN UMUM SISTEM", 18);
       addSpacer(5);
-      
+
       addParagraph("Sistem Absensi & Manajemen Karyawan adalah aplikasi web fullstack yang dirancang untuk mengelola kehadiran, cuti, dan data karyawan dalam suatu organisasi.");
       addSpacer(3);
-      
+
       addSubtitle("1.1 Fitur Utama");
       addBullet("Absensi harian dengan pencatatan waktu clock-in dan clock-out");
       addBullet("Pengajuan dan persetujuan cuti");
@@ -157,7 +159,7 @@ const Dokumentasi = () => {
       addBullet("Laporan kehadiran (harian, mingguan, bulanan)");
       addBullet("Sistem role-based access control (RBAC)");
       addSpacer(5);
-      
+
       addSubtitle("1.2 Jenis Pengguna (Role)");
       addBullet("Admin: Akses penuh ke semua fitur sistem, kelola karyawan, laporan, pengaturan");
       addBullet("Manager: Lihat laporan tim, kelola persetujuan cuti, monitoring kehadiran");
@@ -167,7 +169,7 @@ const Dokumentasi = () => {
       addNewPage();
       addTitle("2. TEKNOLOGI YANG DIGUNAKAN", 18);
       addSpacer(5);
-      
+
       addSubtitle("2.1 Frontend");
       addBullet("React 18 - Library JavaScript untuk membangun user interface");
       addBullet("TypeScript - Superset JavaScript dengan static typing");
@@ -178,7 +180,7 @@ const Dokumentasi = () => {
       addBullet("React Query (TanStack) - Server state management");
       addBullet("Recharts - Library untuk visualisasi data (grafik)");
       addSpacer(5);
-      
+
       addSubtitle("2.2 Backend (Supabase/Lovable Cloud)");
       addBullet("PostgreSQL - Database relasional");
       addBullet("Supabase Auth - Sistem autentikasi");
@@ -186,7 +188,7 @@ const Dokumentasi = () => {
       addBullet("Edge Functions - Serverless functions untuk logika backend");
       addBullet("Realtime - Websocket untuk update data real-time");
       addSpacer(5);
-      
+
       addSubtitle("2.3 Library Pendukung");
       addBullet("date-fns - Manipulasi tanggal dan waktu");
       addBullet("jsPDF - Generate dokumen PDF");
@@ -198,7 +200,7 @@ const Dokumentasi = () => {
       addNewPage();
       addTitle("3. STRUKTUR FOLDER PROJECT", 18);
       addSpacer(5);
-      
+
       addCode(`project-root/
 ├── src/                      # Source code utama
 │   ├── assets/              # File statis (gambar, logo)
@@ -233,10 +235,10 @@ const Dokumentasi = () => {
       addNewPage();
       addTitle("4. SISTEM ROUTING (App.tsx)", 18);
       addSpacer(5);
-      
+
       addParagraph("File App.tsx adalah pusat konfigurasi routing yang menentukan halaman mana yang ditampilkan berdasarkan URL dan hak akses pengguna.");
       addSpacer(3);
-      
+
       addSubtitle("4.1 Struktur Provider");
       addCode(`<QueryClientProvider>     // Layer 1: Data caching
   <TooltipProvider>       // Layer 2: Tooltips
@@ -256,7 +258,7 @@ const Dokumentasi = () => {
       addBullet("ManagerRoute: /manager/* - Khusus role manager");
       addBullet("AdminRoute: /admin/* - Khusus role admin");
       addSpacer(3);
-      
+
       addSubtitle("4.3 Contoh Kode Route");
       addCode(`// Route publik
 <Route path="/" element={<LandingPage />} />
@@ -279,10 +281,10 @@ const Dokumentasi = () => {
       addNewPage();
       addTitle("5. SISTEM AUTENTIKASI", 18);
       addSpacer(5);
-      
+
       addParagraph("Sistem autentikasi menggunakan Supabase Auth dengan implementasi di file src/hooks/useAuth.tsx. Hook ini menyediakan context untuk seluruh aplikasi.");
       addSpacer(3);
-      
+
       addSubtitle("5.1 AuthContext Interface");
       addCode(`interface AuthContextType {
   user: User | null;        // Data user dari Supabase
@@ -303,7 +305,7 @@ const Dokumentasi = () => {
       addBullet("5. Aplikasi mengambil role user dari tabel user_roles");
       addBullet("6. User diarahkan ke dashboard sesuai role");
       addSpacer(3);
-      
+
       addSubtitle("5.3 Cara Menggunakan useAuth");
       addCode(`import { useAuth } from "@/hooks/useAuth";
 
@@ -321,10 +323,10 @@ function MyComponent() {
       addNewPage();
       addTitle("6. INTEGRASI DATABASE", 18);
       addSpacer(5);
-      
+
       addParagraph("Koneksi ke database dilakukan melalui Supabase client yang dikonfigurasi di src/integrations/supabase/client.ts.");
       addSpacer(3);
-      
+
       addSubtitle("6.1 Konfigurasi Client");
       addCode(`import { createClient } from '@supabase/supabase-js';
 
@@ -383,7 +385,7 @@ const channel = supabase
       addNewPage();
       addTitle("7. STRUKTUR TABEL DATABASE", 18);
       addSpacer(5);
-      
+
       addSubtitle("7.1 Tabel: profiles");
       addParagraph("Menyimpan data profil karyawan.");
       addCode(`Kolom:
@@ -440,10 +442,10 @@ const channel = supabase
       addNewPage();
       addTitle("8. ROW LEVEL SECURITY (RLS)", 18);
       addSpacer(5);
-      
+
       addParagraph("RLS adalah fitur PostgreSQL yang mengontrol akses data di level baris. Setiap tabel memiliki policy yang menentukan siapa yang bisa SELECT, INSERT, UPDATE, atau DELETE.");
       addSpacer(3);
-      
+
       addSubtitle("8.1 Fungsi Helper: has_role");
       addCode(`CREATE FUNCTION public.has_role(_user_id uuid, _role app_role)
 RETURNS boolean
@@ -485,10 +487,10 @@ USING (has_role(auth.uid(), 'manager'));`);
       addNewPage();
       addTitle("9. EDGE FUNCTIONS (BACKEND)", 18);
       addSpacer(5);
-      
+
       addParagraph("Edge Functions adalah serverless functions yang berjalan di server Supabase. Digunakan untuk logika yang membutuhkan akses lebih tinggi atau integrasi dengan API eksternal.");
       addSpacer(3);
-      
+
       addSubtitle("9.1 Lokasi File");
       addCode(`supabase/
 ├── functions/
@@ -556,10 +558,10 @@ const { data, error } = await supabase.functions.invoke(
       addNewPage();
       addTitle("10. KOMPONEN UI (shadcn/ui)", 18);
       addSpacer(5);
-      
+
       addParagraph("Aplikasi menggunakan shadcn/ui sebagai library komponen dasar. Komponen-komponen ini tersedia di folder src/components/ui/.");
       addSpacer(3);
-      
+
       addSubtitle("10.1 Komponen yang Sering Digunakan");
       addBullet("Button - Tombol dengan berbagai variant (default, destructive, outline, ghost)");
       addBullet("Card - Container untuk menampilkan konten dalam kotak");
@@ -572,7 +574,7 @@ const { data, error } = await supabase.functions.invoke(
       addBullet("Tabs - Tab navigation");
       addBullet("Toast - Notifikasi popup");
       addSpacer(5);
-      
+
       addSubtitle("10.2 Contoh Penggunaan");
       addCode(`import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -596,7 +598,7 @@ function MyComponent() {
       addNewPage();
       addTitle("11. STATE MANAGEMENT", 18);
       addSpacer(5);
-      
+
       addSubtitle("11.1 React Query (TanStack Query)");
       addParagraph("Digunakan untuk mengelola server state (data dari database). Menyediakan caching, refetching, dan loading states secara otomatis.");
       addCode(`import { useQuery, useMutation } from "@tanstack/react-query";
@@ -649,20 +651,20 @@ const value = useContext(MyContext);`);
       addNewPage();
       addTitle("12. PANDUAN PENGEMBANGAN", 18);
       addSpacer(5);
-      
+
       addSubtitle("12.1 Menambah Halaman Baru");
       addBullet("1. Buat file di src/pages/ (contoh: src/pages/admin/NewPage.tsx)");
       addBullet("2. Tambahkan route di App.tsx dengan guard yang sesuai");
       addBullet("3. Tambahkan link navigasi di halaman terkait");
       addSpacer(5);
-      
+
       addSubtitle("12.2 Menambah Tabel Database");
       addBullet("1. Buat migrasi SQL dengan CREATE TABLE");
       addBullet("2. Aktifkan RLS: ALTER TABLE x ENABLE ROW LEVEL SECURITY");
       addBullet("3. Buat policy untuk setiap operasi (SELECT, INSERT, UPDATE, DELETE)");
       addBullet("4. Update types.ts akan otomatis ter-generate");
       addSpacer(5);
-      
+
       addSubtitle("12.3 Best Practices");
       addBullet("Selalu gunakan TypeScript untuk type safety");
       addBullet("Pisahkan logika ke dalam custom hooks yang reusable");
@@ -672,7 +674,7 @@ const value = useContext(MyContext);`);
       addBullet("Jangan hardcode warna langsung (text-white, bg-black)");
       addBullet("Test RLS policies sebelum deploy ke production");
       addSpacer(5);
-      
+
       addSubtitle("12.4 Debugging Tips");
       addBullet("Cek Console browser untuk error JavaScript");
       addBullet("Cek Network tab untuk error API");
@@ -683,7 +685,7 @@ const value = useContext(MyContext);`);
       addNewPage();
       pdf.setFillColor(59, 130, 246);
       pdf.rect(0, pageHeight - 60, pageWidth, 60, "F");
-      
+
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(14);
       pdf.text("Terima Kasih", margin, pageHeight - 40);
@@ -693,7 +695,7 @@ const value = useContext(MyContext);`);
 
       // Save PDF
       pdf.save("Dokumentasi_Fullstack_Sistem_Absensi.pdf");
-      
+
       toast({
         title: "PDF Berhasil Dibuat",
         description: "Dokumentasi telah diunduh ke perangkat Anda",
@@ -711,31 +713,20 @@ const value = useContext(MyContext);`);
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/dashboard">
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">Dokumentasi Sistem</h1>
-                <p className="text-sm text-muted-foreground">Penjelasan arsitektur fullstack</p>
-              </div>
-            </div>
-            <Button onClick={generatePDF} disabled={isGenerating}>
-              <Download className="h-4 w-4 mr-2" />
-              {isGenerating ? "Membuat PDF..." : "Download PDF"}
-            </Button>
-          </div>
+    <EnterpriseLayout
+      title="Dokumentasi Sistem"
+      subtitle="Penjelasan arsitektur fullstack"
+      roleLabel="Administrator"
+      showExport={false}
+      menuSections={ADMIN_MENU_SECTIONS}
+    >
+      <main className="max-w-6xl mx-auto py-6">
+        <div className="flex justify-end mb-6">
+          <Button onClick={generatePDF} disabled={isGenerating} className="shadow-sm">
+            <Download className="h-4 w-4 mr-2" />
+            {isGenerating ? "Membuat PDF..." : "Download PDF"}
+          </Button>
         </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-6">
         {/* Quick Overview Cards */}
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6 mb-6">
           <Card>
@@ -806,7 +797,7 @@ const value = useContext(MyContext);`);
                     <div>
                       <h3 className="font-semibold mb-2">Apa itu Sistem Absensi ini?</h3>
                       <p className="text-sm text-muted-foreground">
-                        Sistem berbasis web untuk mengelola kehadiran, cuti, dan data karyawan dengan 
+                        Sistem berbasis web untuk mengelola kehadiran, cuti, dan data karyawan dengan
                         3 jenis role: Admin, Manager, dan Karyawan.
                       </p>
                     </div>
@@ -824,7 +815,7 @@ const value = useContext(MyContext);`);
                     <div>
                       <h3 className="font-semibold mb-2">Struktur Folder</h3>
                       <pre className="bg-muted p-3 rounded-lg text-xs overflow-x-auto">
-{`src/
+                        {`src/
 ├── components/  # Komponen UI
 ├── hooks/       # Custom hooks
 ├── pages/       # Halaman
@@ -856,7 +847,7 @@ const value = useContext(MyContext);`);
                         File App.tsx mendefinisikan semua route dan guard untuk proteksi akses.
                       </p>
                       <pre className="bg-muted p-3 rounded-lg text-xs overflow-x-auto">
-{`// Route publik
+                        {`// Route publik
 <Route path="/" element={<LandingPage />} />
 
 // Route terproteksi
@@ -870,7 +861,7 @@ const value = useContext(MyContext);`);
                     <div>
                       <h3 className="font-semibold mb-2">Autentikasi (useAuth)</h3>
                       <pre className="bg-muted p-3 rounded-lg text-xs overflow-x-auto">
-{`const { user, isAdmin, signOut } = useAuth();
+                        {`const { user, isAdmin, signOut } = useAuth();
 
 if (isAdmin) {
   // Tampilkan menu admin
@@ -919,7 +910,7 @@ if (isAdmin) {
                     <div>
                       <h3 className="font-semibold mb-2">Cara Memanggil</h3>
                       <pre className="bg-muted p-3 rounded-lg text-xs overflow-x-auto">
-{`const { data, error } = await supabase
+                        {`const { data, error } = await supabase
   .functions.invoke('create-employee', {
     body: { email, password, full_name }
   });`}
@@ -967,7 +958,7 @@ if (isAdmin) {
                     <div>
                       <h3 className="font-semibold mb-2">Contoh Query</h3>
                       <pre className="bg-muted p-3 rounded-lg text-xs overflow-x-auto">
-{`// Ambil data
+                        {`// Ambil data
 const { data } = await supabase
   .from('profiles')
   .select('*')
@@ -987,7 +978,7 @@ await supabase.from('attendance').insert({
           </TabsContent>
         </Tabs>
       </main>
-    </div>
+    </EnterpriseLayout>
   );
 };
 

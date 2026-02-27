@@ -1,10 +1,9 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
+import { id as localeId } from "date-fns/locale";
 import {
-    MoreHorizontal, ArrowUpDown, ChevronDown, CheckSquare, Square,
-    ExternalLink, Eye, CheckCircle2, XCircle, AlertCircle
+    MoreHorizontal, Eye, CheckCircle2, XCircle, Calendar, User2
 } from "lucide-react";
 import { JournalCardData } from "@/components/journal/JournalCard";
 import { Button } from "@/components/ui/button";
@@ -23,10 +22,15 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface JournalTableProps {
@@ -38,6 +42,48 @@ interface JournalTableProps {
     onApprove: (id: string) => void;
     onReject: (id: string) => void;
     isLoading?: boolean;
+}
+
+// Status badge config
+const STATUS_MAP: Record<string, { label: string; className: string; dot: string }> = {
+    approved: {
+        label: "Disetujui",
+        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        dot: "bg-emerald-500"
+    },
+    need_revision: {
+        label: "Revisi",
+        className: "bg-orange-50 text-orange-700 border-orange-200",
+        dot: "bg-orange-500"
+    },
+    rejected: {
+        label: "Ditolak",
+        className: "bg-red-50 text-red-700 border-red-200",
+        dot: "bg-red-500"
+    },
+    submitted: {
+        label: "Pending",
+        className: "bg-amber-50 text-amber-700 border-amber-200",
+        dot: "bg-amber-500"
+    },
+    pending: {
+        label: "Pending",
+        className: "bg-amber-50 text-amber-700 border-amber-200",
+        dot: "bg-amber-500"
+    }
+};
+
+function StatusBadge({ status }: { status: string }) {
+    const config = STATUS_MAP[status] || STATUS_MAP.submitted;
+    return (
+        <span className={cn(
+            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border",
+            config.className
+        )}>
+            <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", config.dot)} />
+            {config.label}
+        </span>
+    );
 }
 
 export function JournalTable({
@@ -53,136 +99,170 @@ export function JournalTable({
     const isAllSelected = data.length > 0 && selectedIds.length === data.length;
     const isSomeSelected = selectedIds.length > 0 && selectedIds.length < data.length;
 
-    // Helper for badges
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'approved':
-                return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">Approved</Badge>;
-            case 'need_revision':
-                return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">Revision</Badge>;
-            case 'rejected':
-                return <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200">Rejected</Badge>;
-            default:
-                return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200">Pending</Badge>;
-        }
-    };
-
     if (isLoading) {
         return (
-            <div className="space-y-2 p-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="h-12 w-full bg-slate-50 rounded-lg animate-pulse" />
-                ))}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-6 space-y-4">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="flex items-center gap-4 animate-pulse">
+                            <div className="h-5 w-5 bg-slate-100 rounded" />
+                            <div className="h-8 w-8 bg-slate-100 rounded-full" />
+                            <div className="flex-1 space-y-2">
+                                <div className="h-4 w-1/3 bg-slate-100 rounded" />
+                                <div className="h-3 w-1/5 bg-slate-50 rounded" />
+                            </div>
+                            <div className="h-6 w-20 bg-slate-100 rounded-full" />
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="rounded-[20px] border border-white/60 bg-white/70 backdrop-blur-md overflow-hidden shadow-sm shadow-slate-200/40 vibe-glass-card">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <Table>
-                <TableHeader className="bg-slate-50/50">
-                    <TableRow className="border-b border-slate-100">
-                        <TableHead className="w-[50px]">
+                <TableHeader>
+                    <TableRow className="border-b border-slate-100 bg-slate-50/60 hover:bg-slate-50/60">
+                        <TableHead className="w-[48px] pl-5">
                             <Checkbox
                                 checked={isAllSelected || (isSomeSelected ? "indeterminate" : false)}
                                 onCheckedChange={(checked) => onSelectAll(!!checked)}
+                                className="border-slate-300"
                             />
                         </TableHead>
-                        <TableHead className="min-w-[120px] text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                            Date
+                        <TableHead className="min-w-[200px]">
+                            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Karyawan</span>
                         </TableHead>
-                        <TableHead className="min-w-[200px] text-[10px] font-bold text-slate-400 uppercase tracking-wider">Employee</TableHead>
-                        <TableHead className="min-w-[150px] text-[10px] font-bold text-slate-400 uppercase tracking-wider">Department</TableHead>
-                        <TableHead className="hidden md:table-cell w-full text-[10px] font-bold text-slate-400 uppercase tracking-wider">Activity / Title</TableHead>
-                        <TableHead className="min-w-[100px] text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
+                        <TableHead className="min-w-[120px]">
+                            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Tanggal</span>
+                        </TableHead>
+                        <TableHead className="min-w-[130px]">
+                            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Departemen</span>
+                        </TableHead>
+                        <TableHead className="hidden lg:table-cell">
+                            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Ringkasan Aktivitas</span>
+                        </TableHead>
+                        <TableHead className="min-w-[110px]">
+                            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Status</span>
+                        </TableHead>
+                        <TableHead className="w-[60px]"></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {data.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center text-slate-500">
-                                No journals found.
+                            <TableCell colSpan={7} className="h-40 text-center">
+                                <div className="flex flex-col items-center justify-center gap-3">
+                                    <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center">
+                                        <Calendar className="h-7 w-7 text-slate-300" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-500">Tidak ada jurnal</p>
+                                        <p className="text-xs text-slate-400 mt-0.5">Jurnal yang sesuai filter akan ditampilkan di sini</p>
+                                    </div>
+                                </div>
                             </TableCell>
                         </TableRow>
                     ) : (
-                        data.map((journal) => {
+                        data.map((journal, idx) => {
                             const isSelected = selectedIds.includes(journal.id);
                             const profile = (journal as any).profiles || {};
                             const status = journal.verification_status || 'submitted';
-                            const title = (journal as any).title || (journal.content.length > 50 ? journal.content.substring(0, 50) + "..." : journal.content);
+                            const contentPreview = journal.content.length > 60
+                                ? journal.content.substring(0, 60) + "..."
+                                : journal.content;
 
                             return (
                                 <TableRow
                                     key={journal.id}
                                     className={cn(
-                                        "group hover:bg-slate-50/50 transition-colors cursor-pointer",
-                                        isSelected && "bg-blue-50/30 hover:bg-blue-50/50"
+                                        "group transition-all duration-200 hover:bg-blue-50/40 cursor-pointer border-b border-slate-100 last:border-b-0",
+                                        isSelected && "bg-blue-50/60 hover:bg-blue-50/70"
                                     )}
-                                // Allow row click to view? Maybe just view action.
-                                // onClick={() => onView(journal)}
+                                    onClick={() => onView(journal)}
                                 >
-                                    <TableCell className="py-3">
+                                    <TableCell className="pl-5 py-4" onClick={(e) => e.stopPropagation()}>
                                         <Checkbox
                                             checked={isSelected}
                                             onCheckedChange={(checked) => onSelect(journal.id, !!checked)}
-                                            // Stop propagation to prevent row click if we add it later
-                                            onClick={(e) => e.stopPropagation()}
+                                            className="border-slate-300"
                                         />
                                     </TableCell>
-                                    <TableCell className="font-medium text-slate-700">
-                                        {format(new Date(journal.date), "MMM d, yyyy")}
-                                    </TableCell>
-                                    <TableCell>
+
+                                    {/* Employee */}
+                                    <TableCell className="py-4">
                                         <div className="flex items-center gap-3">
-                                            <Avatar className="h-8 w-8 border border-slate-100">
+                                            <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
                                                 <AvatarImage src={profile.avatar_url} />
-                                                <AvatarFallback className="text-[10px] bg-slate-100 text-slate-600">
-                                                    {profile.full_name?.substring(0, 2).toUpperCase()}
+                                                <AvatarFallback className="text-[11px] font-bold bg-gradient-to-br from-slate-600 to-slate-800 text-white">
+                                                    {profile.full_name?.substring(0, 2).toUpperCase() || "?"}
                                                 </AvatarFallback>
                                             </Avatar>
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-semibold text-slate-900 line-clamp-1">
-                                                    {profile.full_name}
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-sm font-semibold text-slate-900 truncate">
+                                                    {profile.full_name || "Unknown"}
                                                 </span>
-                                                <span className="text-[10px] text-slate-500 font-mono">
-                                                    ID: {journal.user_id.substring(0, 6).toUpperCase()}
+                                                <span className="text-[11px] text-slate-400">
+                                                    {profile.position || "Karyawan"}
                                                 </span>
                                             </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="bg-slate-50 text-slate-600 font-normal border-slate-200">
-                                            {profile.department || "General"}
-                                        </Badge>
+
+                                    {/* Date */}
+                                    <TableCell className="py-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium text-slate-700">
+                                                {format(new Date(journal.date), "d MMM yyyy", { locale: localeId })}
+                                            </span>
+                                            <span className="text-[11px] text-slate-400">
+                                                {format(new Date(journal.date), "EEEE", { locale: localeId })}
+                                            </span>
+                                        </div>
                                     </TableCell>
-                                    <TableCell className="hidden md:table-cell max-w-[300px]">
-                                        <span className="text-sm text-slate-600 line-clamp-1" title={journal.content}>
-                                            {title}
+
+                                    {/* Department */}
+                                    <TableCell className="py-4">
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-medium border border-slate-200/60">
+                                            {profile.department || "General"}
                                         </span>
                                     </TableCell>
-                                    <TableCell>
-                                        {getStatusBadge(status)}
+
+                                    {/* Content */}
+                                    <TableCell className="hidden lg:table-cell py-4 max-w-[300px]">
+                                        <p className="text-sm text-slate-600 truncate leading-relaxed" title={journal.content}>
+                                            {contentPreview}
+                                        </p>
                                     </TableCell>
-                                    <TableCell>
+
+                                    {/* Status */}
+                                    <TableCell className="py-4">
+                                        <StatusBadge status={status} />
+                                    </TableCell>
+
+                                    {/* Actions */}
+                                    <TableCell className="py-4 pr-5" onClick={(e) => e.stopPropagation()}>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <span className="sr-only">Open menu</span>
-                                                    <MoreHorizontal className="h-4 w-4 text-slate-400" />
+                                                <Button
+                                                    variant="ghost"
+                                                    className="h-8 w-8 p-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-100"
+                                                >
+                                                    <span className="sr-only">Menu</span>
+                                                    <MoreHorizontal className="h-4 w-4 text-slate-500" />
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => onView(journal)}>
-                                                    <Eye className="mr-2 h-4 w-4" /> View Details
+                                            <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-slate-200">
+                                                <DropdownMenuItem onClick={() => onView(journal)} className="gap-2 rounded-lg">
+                                                    <Eye className="h-4 w-4 text-slate-500" /> Lihat Detail
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={() => onApprove(journal.id)}>
-                                                    <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" /> Approve
+                                                <DropdownMenuItem onClick={() => onApprove(journal.id)} className="gap-2 rounded-lg text-emerald-600 focus:text-emerald-700">
+                                                    <CheckCircle2 className="h-4 w-4" /> Setujui
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => onReject(journal.id)}>
-                                                    <XCircle className="mr-2 h-4 w-4 text-red-600" /> Reject
+                                                <DropdownMenuItem onClick={() => onReject(journal.id)} className="gap-2 rounded-lg text-red-600 focus:text-red-700">
+                                                    <XCircle className="h-4 w-4" /> Tolak
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -194,13 +274,17 @@ export function JournalTable({
                 </TableBody>
             </Table>
 
-            {/* Pagination Footer - Simplified for now */}
-            <div className="bg-slate-50/50 px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-medium">
-                <div>
-                    Showing {data.length > 0 ? 1 : 0} to {data.length} entries
+            {/* Footer */}
+            {data.length > 0 && (
+                <div className="bg-slate-50/60 px-5 py-3.5 border-t border-slate-100 flex items-center justify-between">
+                    <p className="text-xs text-slate-500 font-medium">
+                        Menampilkan <span className="font-semibold text-slate-700">{data.length}</span> jurnal
+                        {selectedIds.length > 0 && (
+                            <> · <span className="text-blue-600 font-semibold">{selectedIds.length} dipilih</span></>
+                        )}
+                    </p>
                 </div>
-                {/* Add standard navigation if needed */}
-            </div>
+            )}
         </div>
     );
 }

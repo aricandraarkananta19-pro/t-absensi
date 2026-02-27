@@ -1,13 +1,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Clock, AlertCircle, XCircle, CheckCircle } from "lucide-react";
+import {
+    FileText, Clock, AlertCircle, XCircle, CheckCircle,
+    Calendar, Briefcase, User2
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import { JournalCardData } from "./JournalCard";
+import { cn } from "@/lib/utils";
 
 interface JournalReviewDetailProps {
     journal?: JournalCardData | null;
@@ -17,12 +22,58 @@ interface JournalReviewDetailProps {
     isProcessing?: boolean;
 }
 
-// Add History Item Interface
 interface JournalHistoryItem {
     id: string;
     date: string;
     content: string;
     verification_status: string;
+}
+
+// Status config
+const STATUS_MAP: Record<string, { label: string; className: string; dot: string; bg: string }> = {
+    approved: {
+        label: "Disetujui",
+        className: "text-emerald-700",
+        dot: "bg-emerald-500",
+        bg: "bg-emerald-50 border-emerald-200"
+    },
+    need_revision: {
+        label: "Revisi",
+        className: "text-orange-700",
+        dot: "bg-orange-500",
+        bg: "bg-orange-50 border-orange-200"
+    },
+    rejected: {
+        label: "Ditolak",
+        className: "text-red-700",
+        dot: "bg-red-500",
+        bg: "bg-red-50 border-red-200"
+    },
+    submitted: {
+        label: "Menunggu Review",
+        className: "text-amber-700",
+        dot: "bg-amber-500",
+        bg: "bg-amber-50 border-amber-200"
+    },
+    pending: {
+        label: "Menunggu Review",
+        className: "text-amber-700",
+        dot: "bg-amber-500",
+        bg: "bg-amber-50 border-amber-200"
+    }
+};
+
+function StatusBadge({ status }: { status: string }) {
+    const config = STATUS_MAP[status] || STATUS_MAP.submitted;
+    return (
+        <span className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border",
+            config.bg, config.className
+        )}>
+            <span className={cn("w-2 h-2 rounded-full", config.dot)} />
+            {config.label}
+        </span>
+    );
 }
 
 export function JournalReviewDetail({
@@ -44,7 +95,7 @@ export function JournalReviewDetail({
                 .from('work_journals')
                 .select('id, date, content, verification_status')
                 .eq('user_id', journal.user_id)
-                .neq('id', journal.id) // Exclude current
+                .neq('id', journal.id)
                 .is('deleted_at', null)
                 .order('date', { ascending: false })
                 .limit(5);
@@ -53,14 +104,17 @@ export function JournalReviewDetail({
             return data as JournalHistoryItem[];
         },
         enabled: !!journal?.user_id,
-        staleTime: 60000 // 1 min
+        staleTime: 60000
     });
 
     if (!journal) {
         return (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/30">
-                <FileText className="w-16 h-16 mb-4 text-slate-200" />
-                <p>Select a journal to view details</p>
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50">
+                <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-5">
+                    <FileText className="w-10 h-10 text-slate-300" />
+                </div>
+                <p className="text-base font-semibold text-slate-400">Pilih jurnal untuk melihat detail</p>
+                <p className="text-sm text-slate-300 mt-1">Klik pada jurnal di daftar sebelah kiri</p>
             </div>
         );
     }
@@ -73,18 +127,8 @@ export function JournalReviewDetail({
         profiles
     } = journal as any;
 
-    const displayTitle = (journal as any).title || "Daily Activity Report";
+    const displayTitle = (journal as any).title || "Laporan Aktivitas Harian";
     const profile = profiles || {};
-
-    // Status Logic
-    const getStatusBadge = (status: string = verification_status) => {
-        switch (status) {
-            case 'approved': return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">Approved</Badge>;
-            case 'need_revision': return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">Revision</Badge>;
-            case 'rejected': return <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200">Rejected</Badge>;
-            default: return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200">Pending</Badge>;
-        }
-    };
 
     const handleAction = async (action: 'approve' | 'reject' | 'revise') => {
         if (action === 'approve') {
@@ -101,53 +145,69 @@ export function JournalReviewDetail({
     // Duration Formatting
     const hours = Math.floor(duration / 60);
     const minutes = duration % 60;
-    const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    const durationText = hours > 0 ? `${hours} jam ${minutes} menit` : `${minutes} menit`;
+
+    const getHistoryStatusBadge = (status: string) => {
+        const config = STATUS_MAP[status] || STATUS_MAP.submitted;
+        return (
+            <span className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border",
+                config.bg, config.className
+            )}>
+                <span className={cn("w-1.5 h-1.5 rounded-full", config.dot)} />
+                {config.label}
+            </span>
+        );
+    };
 
     return (
         <div className="flex flex-col h-full bg-white">
             {/* Header */}
-            <div className="px-8 py-6 border-b border-slate-100 shrink-0">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        {getStatusBadge()}
-                        <span className="text-xs font-mono text-slate-400">• ID: #{journal.id.substring(0, 8)}</span>
-                    </div>
-                    {/* Dropped Menu for clearer UI */}
+            <div className="px-8 py-7 border-b border-slate-100 shrink-0">
+                {/* Status + ID */}
+                <div className="flex items-center justify-between mb-5">
+                    <StatusBadge status={verification_status} />
+                    <span className="text-[11px] font-mono text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">
+                        ID: #{journal.id.substring(0, 8).toUpperCase()}
+                    </span>
                 </div>
 
-                <h1 className="text-2xl font-bold text-slate-900 mb-6 leading-tight">
+                {/* Title */}
+                <h1 className="text-xl font-bold text-slate-900 mb-6 leading-snug">
                     {displayTitle}
                 </h1>
 
                 {/* User Info Card */}
-                <div className="flex items-center justify-between bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <div className="flex items-center justify-between bg-gradient-to-r from-slate-50 to-white rounded-2xl p-4 border border-slate-100">
                     <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 border border-slate-200 shadow-sm">
+                        <Avatar className="h-11 w-11 border-2 border-white shadow-md">
                             <AvatarImage src={profile.avatar_url || undefined} />
-                            <AvatarFallback>{profile.full_name?.substring(0, 2).toUpperCase() || "UN"}</AvatarFallback>
+                            <AvatarFallback className="bg-gradient-to-br from-slate-600 to-slate-800 text-white font-bold text-sm">
+                                {profile.full_name?.substring(0, 2).toUpperCase() || "?"}
+                            </AvatarFallback>
                         </Avatar>
                         <div>
                             <h3 className="text-sm font-bold text-slate-900">{profile.full_name || "Unknown User"}</h3>
-                            <p className="text-xs text-slate-500 flex items-center gap-1.5">
-                                {profile.position || "Employee"}
-                                <span className="text-slate-300">•</span>
-                                {profile.department || "General"}
+                            <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                <span>{profile.position || "Karyawan"}</span>
+                                <span className="text-slate-200">•</span>
+                                <span>{profile.department || "General"}</span>
                             </p>
                         </div>
                     </div>
 
-                    <div className="hidden sm:flex items-center gap-6 text-right">
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Date</p>
-                            <p className="text-sm font-semibold text-slate-900">
-                                {format(new Date(date), "MMM d, yyyy")}
+                    <div className="hidden sm:flex items-center gap-5">
+                        <div className="text-right">
+                            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Tanggal</p>
+                            <p className="text-sm font-semibold text-slate-800">
+                                {format(new Date(date), "d MMM yyyy", { locale: localeId })}
                             </p>
                         </div>
-                        <div className="w-px h-8 bg-slate-200" />
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Duration</p>
-                            <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
-                                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        <div className="w-px h-10 bg-slate-200/60" />
+                        <div className="text-right">
+                            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Durasi</p>
+                            <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800 justify-end">
+                                <Clock className="w-3.5 h-3.5 text-blue-500" />
                                 {durationText}
                             </div>
                         </div>
@@ -156,41 +216,47 @@ export function JournalReviewDetail({
             </div>
 
             {/* Content Body */}
-            <div className="flex-1 overflow-y-auto px-8 py-6">
+            <div className="flex-1 overflow-y-auto px-8 py-7">
                 <div className="space-y-8 max-w-4xl">
+                    {/* Activity Description */}
                     <section>
-                        <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-blue-500" />
-                            Activity Description
+                        <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
+                                <FileText className="w-3.5 h-3.5 text-blue-600" />
+                            </div>
+                            Deskripsi Aktivitas
                         </h3>
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="p-5 bg-slate-50/70 rounded-xl border border-slate-100">
                             <div className="prose prose-slate text-sm max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap">
                                 {content}
                             </div>
                         </div>
                     </section>
 
-                    {/* HISTORY SECTION */}
+                    {/* History Section */}
                     {history.length > 0 && (
                         <section>
-                            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-slate-400" />
-                                Previous Journals
+                            <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center">
+                                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                                </div>
+                                Jurnal Sebelumnya
                             </h3>
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 {history.map((item) => (
-                                    <div key={item.id} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-white hover:bg-slate-50 transition-colors">
-                                        <div className="flex flex-col gap-1">
+                                    <div
+                                        key={item.id}
+                                        className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/70 transition-all duration-200"
+                                    >
+                                        <div className="flex flex-col gap-1 min-w-0 flex-1 mr-3">
                                             <span className="text-xs font-semibold text-slate-700">
-                                                {format(new Date(item.date), "EEE, MMM d, yyyy")}
+                                                {format(new Date(item.date), "EEEE, d MMM yyyy", { locale: localeId })}
                                             </span>
-                                            <span className="text-xs text-slate-500 line-clamp-1 max-w-[250px]">
+                                            <span className="text-xs text-slate-500 truncate">
                                                 {item.content}
                                             </span>
                                         </div>
-                                        <div className="transform scale-90 origin-right">
-                                            {getStatusBadge(item.verification_status)}
-                                        </div>
+                                        {getHistoryStatusBadge(item.verification_status)}
                                     </div>
                                 ))}
                             </div>
@@ -200,48 +266,48 @@ export function JournalReviewDetail({
             </div>
 
             {/* Footer Action Area */}
-            <div className="p-6 border-t border-slate-100 bg-slate-50/50">
+            <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/40 shrink-0">
                 <div className="max-w-4xl mx-auto space-y-4">
                     <Textarea
-                        placeholder="Add a comment for revision request or rejection note..."
+                        placeholder="Tambahkan catatan untuk karyawan (wajib untuk penolakan/revisi)..."
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        className="bg-white border-slate-200 min-h-[80px] focus:border-blue-500 resize-none rounded-xl"
+                        className="bg-white border-slate-200 min-h-[80px] focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none rounded-xl text-sm"
                     />
 
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <AlertCircle className="w-3.5 h-3.5 text-slate-400" />
-                            Comments are mandatory for Rejection/Revision
+                        <div className="flex items-center gap-2 text-xs text-slate-400">
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            <span>Catatan wajib diisi untuk Penolakan & Revisi</span>
                         </div>
 
-                        <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <div className="flex items-center gap-2.5 w-full sm:w-auto">
                             <Button
-                                variant="ghost"
-                                className="flex-1 sm:flex-none text-red-600 hover:text-red-700 hover:bg-red-50"
+                                variant="outline"
+                                className="flex-1 sm:flex-none text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 rounded-xl h-10 font-semibold gap-1.5 transition-all"
                                 onClick={() => handleAction('reject')}
-                                disabled={isProcessing || (actionMode === 'reject' && !comment) || (!comment && actionMode == null)}
+                                disabled={isProcessing || !comment}
                             >
-                                <XCircle className="w-4 h-4 mr-2" />
-                                Reject
+                                <XCircle className="w-4 h-4" />
+                                Tolak
                             </Button>
 
                             <Button
                                 variant="outline"
-                                className="flex-1 sm:flex-none bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                                className="flex-1 sm:flex-none border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl h-10 font-semibold gap-1.5 transition-all"
                                 onClick={() => handleAction('revise')}
                                 disabled={isProcessing || !comment}
                             >
-                                Request Revision
+                                Minta Revisi
                             </Button>
 
                             <Button
-                                className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-6"
+                                className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-6 rounded-xl h-10 font-semibold gap-1.5 shadow-sm shadow-emerald-200 transition-all"
                                 onClick={() => handleAction('approve')}
                                 disabled={isProcessing}
                             >
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Approve
+                                <CheckCircle className="w-4 h-4" />
+                                Setujui
                             </Button>
                         </div>
                     </div>

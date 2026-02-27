@@ -1,7 +1,7 @@
 
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
-import { Clock, Folder, MessageSquare, AlertCircle, CheckCircle2 } from "lucide-react";
+import { id as localeId } from "date-fns/locale";
+import { Clock, Folder, MessageSquare, AlertCircle, CheckCircle2, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,7 +19,7 @@ export interface JournalHistoryItem {
         avatar_url: string | null;
     };
     project_category?: string;
-    obstacles?: string; // Added to match usage
+    obstacles?: string;
 }
 
 interface JournalHistoryCardProps {
@@ -28,11 +28,46 @@ interface JournalHistoryCardProps {
 }
 
 const STATUS_CONFIG = {
-    draft: { color: "border-slate-400", badgeBg: "bg-slate-100", badgeText: "text-slate-600", label: "Draft" },
-    submitted: { color: "border-amber-400", badgeBg: "bg-amber-100", badgeText: "text-amber-700", label: "Pending" },
-    need_revision: { color: "border-red-500", badgeBg: "bg-red-100", badgeText: "text-red-700", label: "Revision Required" },
-    approved: { color: "border-green-500", badgeBg: "bg-green-100", badgeText: "text-green-700", label: "Approved" },
-    read: { color: "border-blue-400", badgeBg: "bg-blue-100", badgeText: "text-blue-700", label: "Read" },
+    draft: {
+        dot: "bg-slate-400",
+        badge: "bg-slate-50 text-slate-600 border-slate-200",
+        label: "Draft",
+        accent: "border-l-slate-300"
+    },
+    submitted: {
+        dot: "bg-amber-500",
+        badge: "bg-amber-50 text-amber-700 border-amber-200",
+        label: "Menunggu Review",
+        accent: "border-l-amber-400"
+    },
+    need_revision: {
+        dot: "bg-red-500",
+        badge: "bg-red-50 text-red-700 border-red-200",
+        label: "Revisi Diperlukan",
+        accent: "border-l-red-400"
+    },
+    approved: {
+        dot: "bg-emerald-500",
+        badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        label: "Disetujui",
+        accent: "border-l-emerald-400"
+    },
+    read: {
+        dot: "bg-blue-500",
+        badge: "bg-blue-50 text-blue-700 border-blue-200",
+        label: "Dibaca",
+        accent: "border-l-blue-400"
+    },
+};
+
+// Category emoji map
+const CATEGORY_EMOJI: Record<string, string> = {
+    development: "🛠️",
+    meeting: "📋",
+    design: "🎨",
+    research: "🔬",
+    support: "🤝",
+    learning: "📚"
 };
 
 export function JournalHistoryCard({ journal, onClick }: JournalHistoryCardProps) {
@@ -42,69 +77,80 @@ export function JournalHistoryCard({ journal, onClick }: JournalHistoryCardProps
     const hours = Math.floor(journal.duration / 60);
     const minutes = journal.duration % 60;
     const durationString = hours > 0
-        ? `${hours}.${Math.round(minutes / 6)} Hours` // e.g. 4.5 Hours
-        : `${minutes} Mins`;
+        ? `${hours} jam ${minutes > 0 ? `${minutes} menit` : ''}`
+        : `${minutes} menit`;
+
+    const categoryLabel = journal.project_category
+        ? `${CATEGORY_EMOJI[journal.project_category] || '📁'} ${journal.project_category.charAt(0).toUpperCase() + journal.project_category.slice(1)}`
+        : "📁 Umum";
 
     return (
-        <Card
-            className={`relative overflow-hidden border-l-4 border-y border-r border-slate-200/60 bg-gradient-to-br from-white via-slate-50/80 to-slate-100 shadow-[0_0_15px_rgba(0,0,0,0.03)] hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] hover:border-primary/40 transition-all duration-500 cursor-pointer group ${status.color}`}
+        <div
+            className={`relative bg-white rounded-xl border border-slate-200 border-l-4 ${status.accent} hover:shadow-md hover:border-slate-300 transition-all duration-300 cursor-pointer group overflow-hidden`}
             onClick={onClick}
         >
-            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-            <CardContent className="p-5 relative z-10">
+            <div className="p-5">
                 {/* Header: Date & Status */}
                 <div className="flex items-center justify-between mb-3">
-                    <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-medium rounded-md px-2.5 py-1">
-                        {format(new Date(journal.date), "MMM d, yyyy")}
-                    </Badge>
-
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${status.badgeBg} ${status.badgeText}`}>
-                        {journal.verification_status === 'approved' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                        {journal.verification_status === 'need_revision' && <AlertCircle className="w-3.5 h-3.5" />}
-                        {status.label}
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-slate-800">
+                            {format(new Date(journal.date), "EEEE", { locale: localeId })}
+                        </span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-sm text-slate-500">
+                            {format(new Date(journal.date), "d MMMM yyyy", { locale: localeId })}
+                        </span>
                     </div>
+
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${status.badge}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                        {status.label}
+                    </span>
                 </div>
 
-                {/* Content */}
-                <div className="mb-4">
-                    <h3 className="text-lg font-bold text-slate-900 mb-1 line-clamp-1">
-                        {journal.title || "No Title"}
-                    </h3>
-                    <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
-                        {journal.content}
-                    </p>
-                </div>
+                {/* Title */}
+                <h3 className="text-base font-bold text-slate-900 mb-1.5 line-clamp-1 group-hover:text-blue-700 transition-colors">
+                    {journal.title || "Laporan Aktivitas"}
+                </h3>
+
+                {/* Content Preview */}
+                <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-4">
+                    {journal.content}
+                </p>
 
                 {/* Footer Metadata */}
-                <div className="flex items-center gap-4 text-xs text-slate-500 mb-4">
-                    <div className="flex items-center gap-1.5">
-                        <Folder className="w-4 h-4 text-slate-400" />
-                        <span>{journal.project_category || "General Task"}</span>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 text-xs text-slate-500">
+                        <span className="flex items-center gap-1.5">
+                            {categoryLabel}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            {durationString}
+                        </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-slate-400" />
-                        <span>{durationString}</span>
-                    </div>
+
+                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all" />
                 </div>
 
-                {/* Manager Feedback Section */}
+                {/* Manager Feedback */}
                 {journal.manager_notes && (
-                    <div className={`mt-4 pt-4 border-t border-slate-100 flex gap-3 ${journal.verification_status === 'need_revision' ? 'bg-red-50/50 -mx-5 px-5 -mb-5 py-4' : ''}`}>
-                        <Avatar className="w-8 h-8 border border-slate-200">
+                    <div className={`mt-4 pt-4 border-t border-slate-100 flex gap-3 ${journal.verification_status === 'need_revision' ? 'bg-red-50/30 -mx-5 px-5 -mb-5 pb-5 rounded-b-lg' : ''}`}>
+                        <Avatar className="w-7 h-7 border border-slate-200 shrink-0">
                             <AvatarImage src={journal.manager_profile?.avatar_url || undefined} />
-                            <AvatarFallback className="bg-slate-100 text-slate-600 text-xs">M</AvatarFallback>
+                            <AvatarFallback className="bg-slate-100 text-slate-600 text-[10px]">M</AvatarFallback>
                         </Avatar>
-                        <div>
-                            <p className="text-xs font-bold text-slate-900 mb-0.5">
-                                {journal.manager_profile?.full_name || "Manager Feedback"}
+                        <div className="min-w-0">
+                            <p className="text-[11px] font-bold text-slate-700 mb-0.5">
+                                {journal.manager_profile?.full_name || "Catatan Manager"}
                             </p>
-                            <p className="text-xs text-slate-600 italic">
+                            <p className="text-xs text-slate-500 italic line-clamp-2">
                                 "{journal.manager_notes}"
                             </p>
                         </div>
                     </div>
                 )}
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }
