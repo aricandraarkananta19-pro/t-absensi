@@ -160,7 +160,7 @@ const ResetPassword = () => {
           </div>
 
           {/* Table */}
-          <div className="bg-white/70 backdrop-blur-md rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 overflow-hidden">
+          <div className="bg-white/70 backdrop-blur-md rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 overflow-hidden vibe-glass-card">
             <div className="p-0">
               {isLoading ? (
                 <div className="flex items-center justify-center py-16">

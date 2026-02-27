@@ -37,7 +37,7 @@ export function JournalFilters({
     const hasActiveFilters = status !== 'all' || department !== 'all' || date || search;
 
     return (
-        <div className="bg-white/70 backdrop-blur-md p-4 rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 p-4 bg-white/70 backdrop-blur-md rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 vibe-glass-card">
 
             {/* Search */}
             <div className="relative w-full md:w-1/3">

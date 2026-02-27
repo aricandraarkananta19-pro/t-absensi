@@ -288,7 +288,7 @@ const ManagerCuti = () => {
     >
       <div className="space-y-6 pb-20">
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 vibe-stat-grid">
           <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[18px]">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
@@ -368,7 +368,7 @@ const ManagerCuti = () => {
         </div>
 
         {/* Table */}
-        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
           <div className="overflow-x-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-16">

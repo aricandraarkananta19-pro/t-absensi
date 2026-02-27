@@ -338,7 +338,7 @@ const ManagerJurnal = () => {
             <div className="flex h-[calc(100vh-140px)] -mt-4 gap-6">
 
                 {/* LEFT SIDEBAR - LIST */}
-                <div className="w-[420px] flex flex-col bg-white/70 backdrop-blur-md rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 shrink-0 overflow-hidden">
+                <div className="w-[420px] flex flex-col bg-white/70 backdrop-blur-md rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 shrink-0 overflow-hidden vibe-glass-card">
                     {/* Header/Tabs */}
                     <div className="p-4 border-b border-slate-100/80 bg-white/50 z-10 space-y-4">
                         {/* Search */}
@@ -413,7 +413,7 @@ const ManagerJurnal = () => {
                     </div>
 
                     {/* Scrollable List */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 p-3 space-y-3">
+                    <div className="flex-1 overflow-y-auto vibe-scrollbar bg-slate-50/50 p-3 space-y-3">
                         {isLoading && journals.length === 0 ? (
                             // SKELETON
                             [1, 2, 3].map(i => (
@@ -515,7 +515,7 @@ const ManagerJurnal = () => {
                 </div>
 
                 {/* RIGHT SIDE - DETAIL VIEW */}
-                <div className="flex-1 bg-white/70 backdrop-blur-md rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 overflow-hidden flex flex-col items-center justify-center">
+                <div className="flex-1 bg-white/70 backdrop-blur-md rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 overflow-hidden flex flex-col items-center justify-center vibe-glass-card">
                     {selectedJournal ? (
                         <div className="w-full h-full flex flex-col">
                             <JournalReviewDetail

@@ -128,7 +128,7 @@ export function RealTimeMonitoringTable({
     }
 
     return (
-        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md h-full flex flex-col rounded-[20px]">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md h-full flex flex-col rounded-[20px] vibe-glass-card">
             <CardHeader className="pb-3 border-b border-slate-100/80">
                 <div className="flex items-center justify-between">
                     <div>

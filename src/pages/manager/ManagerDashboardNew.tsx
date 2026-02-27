@@ -285,7 +285,7 @@ const ManagerDashboardNew = () => {
                 </div>
 
                 {/* KPI Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 vibe-stat-grid">
                     <StatCard
                         title="Total Karyawan"
                         value={safeStats.totalEmployees}
@@ -326,7 +326,7 @@ const ManagerDashboardNew = () => {
                 {/* Charts Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                     {/* Weekly Attendance Chart */}
-                    <Card className="lg:col-span-2 border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
+                    <Card className="lg:col-span-2 border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>

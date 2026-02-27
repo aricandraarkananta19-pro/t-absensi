@@ -142,7 +142,7 @@ const EnterpriseLayout = ({
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-thin">
+                <nav className="flex-1 px-3 py-4 overflow-y-auto vibe-scrollbar">
                     {menuSections.map((section, sectionIndex) => (
                         <div key={sectionIndex} className="mb-6">
                             {!isCollapsed && (
@@ -165,8 +165,8 @@ const EnterpriseLayout = ({
                                             )}
                                         >
                                             <div className={cn(
-                                                "flex items-center justify-center w-8 h-8 rounded-lg transition-colors",
-                                                isActive ? "bg-slate-900 text-white" : "bg-slate-100/80 text-slate-500 group-hover:bg-slate-200/80 group-hover:text-slate-700"
+                                                "flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200",
+                                                isActive ? "bg-slate-900 text-white" : "bg-slate-100/80 text-slate-500 group-hover:bg-slate-200/80 group-hover:text-slate-700 group-hover:scale-110"
                                             )}>
                                                 <item.icon className="h-4 w-4 flex-shrink-0" />
                                             </div>
@@ -190,7 +190,7 @@ const EnterpriseLayout = ({
                 {/* Collapse Toggle */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-3 top-20 w-6 h-6 bg-white border border-slate-200/60 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all shadow-sm hover:shadow-md"
+                    className="absolute -right-3 top-20 w-6 h-6 bg-white border border-slate-200/60 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-110 active:scale-95"
                 >
                     {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
                 </button>
@@ -267,7 +267,7 @@ const EnterpriseLayout = ({
                 </header>
 
                 {/* Content Container with Safe Area Awareness & Bottom Nav Spacing */}
-                <div className="p-4 lg:p-6 pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-6">
+                <div className="p-4 lg:p-6 pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-6 vibe-page-enter">
                     {children}
                 </div>
             </main>

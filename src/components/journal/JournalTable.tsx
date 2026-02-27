@@ -78,7 +78,7 @@ export function JournalTable({
     }
 
     return (
-        <div className="rounded-[20px] border border-white/60 bg-white/70 backdrop-blur-md overflow-hidden shadow-sm shadow-slate-200/40">
+        <div className="rounded-[20px] border border-white/60 bg-white/70 backdrop-blur-md overflow-hidden shadow-sm shadow-slate-200/40 vibe-glass-card">
             <Table>
                 <TableHeader className="bg-slate-50/50">
                     <TableRow className="border-b border-slate-100">

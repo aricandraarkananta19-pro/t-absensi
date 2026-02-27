@@ -448,7 +448,7 @@ const RekapAbsensi = () => {
       <div className="space-y-6">
 
         {/* 1. Header & Filters Card */}
-        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
           <div className="p-4 flex flex-col lg:flex-row gap-4 justify-between lg:items-center">
 
             {/* View Switcher */}
@@ -529,7 +529,7 @@ const RekapAbsensi = () => {
         </Card>
 
         {/* 2. Stat Cards Summary */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 vibe-stat-grid">
           <Card className="bg-white/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
             <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
               <CheckCircle2 className="w-5 h-5" />
@@ -569,7 +569,7 @@ const RekapAbsensi = () => {
         </div>
 
         {/* 3. Data Table */}
-        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md overflow-hidden rounded-[20px]">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md overflow-hidden rounded-[20px] vibe-glass-card">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-slate-50/50">

@@ -405,7 +405,7 @@ const ManagerRekapAbsensi = () => {
       </div>
 
       {/* Filters & Export */}
-      <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md mb-6 rounded-[20px]">
+      <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md mb-6 rounded-[20px] vibe-glass-card">
         <CardContent className="py-4">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -448,7 +448,7 @@ const ManagerRekapAbsensi = () => {
       </Card>
 
       {/* Table */}
-      <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
+      <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
         <CardContent className="p-0">
           <Table>
             <TableHeader>

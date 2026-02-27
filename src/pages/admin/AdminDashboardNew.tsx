@@ -352,7 +352,7 @@ const AdminDashboardNew = () => {
         >
             <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out space-y-6">
                 {/* KPI Summary Cards - Fixed 4 Cols */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 vibe-stat-grid">
                     <StatCard
                         title="Total Karyawan"
                         value={stats.totalEmployees}
@@ -410,7 +410,7 @@ const AdminDashboardNew = () => {
                 {/* Main Content Grid: Monitoring & Pending Journals */}
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
                     {/* Left: Real-time Monitoring Table */}
-                    <Card className="xl:col-span-2 border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md overflow-hidden rounded-[20px]">
+                    <Card className="xl:col-span-2 border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md overflow-hidden rounded-[20px] vibe-glass-card">
                         <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2 tracking-tight">
@@ -481,7 +481,7 @@ const AdminDashboardNew = () => {
                     </Card >
 
                     {/* Right: Pending Journals List */}
-                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md flex flex-col h-full rounded-[20px]">
+                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md flex flex-col h-full rounded-[20px] vibe-glass-card">
                         <CardHeader className="pb-3 border-b border-slate-100">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2 tracking-tight">
