@@ -372,7 +372,7 @@ const PengajuanCuti = () => {
 
         {/* Stats Section */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 mb-12">
-          <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
+          <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden vibe-glass-card">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Sisa Cuti</p>
             <div className="flex items-baseline gap-2">
               <h3 className="text-4xl font-extrabold text-slate-800">{Math.max(0, settings.maxLeaveDays - usedLeaveDays)}</h3>
@@ -380,7 +380,7 @@ const PengajuanCuti = () => {
             </div>
           </div>
 
-          <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
+          <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden vibe-glass-card">
             <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Disetujui</p>
             <div className="flex items-baseline gap-2">
               <h3 className="text-4xl font-extrabold text-emerald-600">
@@ -390,7 +390,7 @@ const PengajuanCuti = () => {
             </div>
           </div>
 
-          <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
+          <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden vibe-glass-card">
             <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Menunggu</p>
             <div className="flex items-baseline gap-2">
               <h3 className="text-4xl font-extrabold text-amber-600">
@@ -431,7 +431,7 @@ const PengajuanCuti = () => {
               {leaveRequests.map((request, index) => (
                 <div
                   key={request.id}
-                  className="bg-white/70 backdrop-blur-md rounded-[20px] p-5 lg:p-6 border border-white/40 shadow-sm hover:shadow-md transition-all duration-300 group"
+                  className="bg-white/70 backdrop-blur-md rounded-[20px] p-5 lg:p-6 border border-white/40 shadow-sm hover:shadow-md transition-all duration-300 group vibe-glass-card"
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start gap-4 lg:gap-6">

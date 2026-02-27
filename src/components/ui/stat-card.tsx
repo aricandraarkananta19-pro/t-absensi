@@ -39,6 +39,7 @@ const colorStyles = {
         text: "text-blue-700",
         iconBg: "bg-blue-50",
         iconColor: BRAND_COLORS.blue,
+        glow: "vibe-glow-blue",
     },
     success: {
         gradient: `linear-gradient(90deg, ${BRAND_COLORS.green} 0%, #8BC34A 100%)`,
@@ -46,6 +47,7 @@ const colorStyles = {
         text: "text-green-700",
         iconBg: "bg-green-50",
         iconColor: BRAND_COLORS.green,
+        glow: "vibe-glow-emerald",
     },
     warning: {
         gradient: "linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)",
@@ -53,6 +55,7 @@ const colorStyles = {
         text: "text-amber-700",
         iconBg: "bg-amber-50",
         iconColor: "#F59E0B",
+        glow: "vibe-glow-amber",
     },
     danger: {
         gradient: "linear-gradient(90deg, #EF4444 0%, #F87171 100%)",
@@ -60,6 +63,7 @@ const colorStyles = {
         text: "text-red-700",
         iconBg: "bg-red-50",
         iconColor: "#EF4444",
+        glow: "vibe-glow-red",
     },
     info: {
         gradient: `linear-gradient(90deg, ${BRAND_COLORS.lightBlue} 0%, #38BDF8 100%)`,
@@ -67,6 +71,7 @@ const colorStyles = {
         text: "text-cyan-700",
         iconBg: "bg-cyan-50",
         iconColor: BRAND_COLORS.lightBlue,
+        glow: "vibe-glow-blue",
     },
 };
 
@@ -103,13 +108,14 @@ const StatCard = ({
 
     return (
         <div className={cn(
-            "bg-white/70 backdrop-blur-md rounded-2xl border border-white/60 p-5 relative overflow-hidden",
-            "vibe-glass-card cursor-default shadow-sm shadow-slate-200/40 group",
+            "rounded-2xl p-5 relative overflow-hidden",
+            "vibe-glass-card cursor-default group",
+            styles.glow,
             className
         )}>
             {/* Top Border Accent */}
             <div
-                className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl"
+                className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
                 style={{ background: styles.gradient }}
             />
 

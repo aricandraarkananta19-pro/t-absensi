@@ -439,7 +439,7 @@ const KaryawanDashboardNew = () => {
                     {/* Left Column: Attendance Control (3 Cols) */}
                     <div className="lg:col-span-3 space-y-8">
                         {/* Attendance Clock Card */}
-                        <div className="bg-white/70 backdrop-blur-xl rounded-[32px] p-8 border border-white/40 shadow-xl shadow-slate-200/40 text-center relative overflow-hidden transition-all duration-300">
+                        <div className="bg-white/70 backdrop-blur-xl rounded-[32px] p-8 border border-white/40 shadow-xl shadow-slate-200/40 text-center relative overflow-hidden transition-all duration-300 vibe-glass-card">
                             {/* Background decorative elements */}
                             <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -498,7 +498,7 @@ const KaryawanDashboardNew = () => {
                         </div>
 
                         {/* Quick Menu */}
-                        <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm hover:shadow-md transition-all duration-300">
+                        <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm hover:shadow-md transition-all duration-300 vibe-glass-card">
                             <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-5">QUICK ACTIONS</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <button
@@ -544,7 +544,7 @@ const KaryawanDashboardNew = () => {
                         </div>
 
                         {/* Upcoming Leave Card */}
-                        <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm transition-all duration-300">
+                        <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm transition-all duration-300 vibe-glass-card">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-bold text-slate-900">Upcoming Leave</h3>
                                 <Link to="/karyawan/cuti" className="text-xs font-bold text-blue-600 hover:underline">View All</Link>
@@ -572,7 +572,7 @@ const KaryawanDashboardNew = () => {
                     <div className="lg:col-span-4 space-y-8">
 
                         {/* Journal Widget */}
-                        <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white/40 shadow-sm overflow-hidden transition-all duration-300">
+                        <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white/40 shadow-sm overflow-hidden transition-all duration-300 vibe-glass-card">
                             <div className="p-6 border-b border-slate-100/50 flex items-center justify-between bg-white/40">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-slate-900 text-white rounded-xl shadow-sm">
@@ -682,7 +682,7 @@ const KaryawanDashboardNew = () => {
                         <div className="bg-transparent">
                             <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-4 pl-1">AKTIVITAS TERAKHIR</h3>
 
-                            <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white/40 shadow-sm p-6">
+                            <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white/40 shadow-sm p-6 vibe-glass-card">
                                 <div className="space-y-8 relative pl-6 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200/60 min-h-[100px]">
                                     {recentActivities.length > 0 ? (
                                         recentActivities.map((activity, index) => {

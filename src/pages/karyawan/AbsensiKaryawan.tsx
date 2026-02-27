@@ -487,7 +487,7 @@ const AbsensiKaryawan = () => {
           <div className="w-full max-w-md mx-auto flex flex-col gap-6 lg:gap-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
 
             {/* Shift Info Card */}
-            <div className="bg-white/70 backdrop-blur-md border border-white/40 rounded-[24px] p-6 lg:p-8 hover:shadow-md transition-all shadow-sm">
+            <div className="bg-white/70 backdrop-blur-md border border-white/40 rounded-[24px] p-6 lg:p-8 hover:shadow-md transition-all shadow-sm vibe-glass-card">
               <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 Jadwal Shift
@@ -545,13 +545,13 @@ const AbsensiKaryawan = () => {
             {/* Today's Summary */}
             {todayAttendance && (
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 border border-white/40 text-center shadow-sm">
+                <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 border border-white/40 text-center shadow-sm vibe-glass-card">
                   <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest">Waktu Masuk</p>
                   <p className="text-xl sm:text-2xl font-sans tracking-tight font-extrabold text-slate-800">
                     {formatTimeShort(new Date(todayAttendance.clock_in))}
                   </p>
                 </div>
-                <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 border border-white/40 text-center shadow-sm">
+                <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 border border-white/40 text-center shadow-sm vibe-glass-card">
                   <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest">Waktu Pulang</p>
                   <p className="text-xl sm:text-2xl font-sans tracking-tight font-extrabold text-slate-800">
                     {todayAttendance.clock_out ? formatTimeShort(new Date(todayAttendance.clock_out)) : "--:--"}

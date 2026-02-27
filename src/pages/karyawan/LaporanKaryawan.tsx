@@ -33,7 +33,7 @@ const LaporanKaryawan = () => {
 
             {/* Main Content */}
             <main className="max-w-3xl mx-auto px-6 py-4 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white/60 shadow-xl shadow-slate-200/40 p-6 md:p-8 flex flex-col items-center justify-center text-center space-y-6">
+                <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white/60 shadow-xl shadow-slate-200/40 p-6 md:p-8 flex flex-col items-center justify-center text-center space-y-6 vibe-glass-card">
                     <div className="h-20 w-20 rounded-[28px] bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100/50">
                         <FileText className="h-10 w-10" />
                     </div>

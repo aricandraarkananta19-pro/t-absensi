@@ -174,7 +174,7 @@ const RiwayatAbsensi = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 bg-white/70 backdrop-blur-md p-2 rounded-[20px] shadow-sm border border-white/40">
+          <div className="flex flex-wrap items-center gap-3 bg-white/70 backdrop-blur-md p-2 rounded-[20px] shadow-sm border border-white/40 vibe-glass-card">
             {/* View Mode Toggle */}
             <div className="bg-slate-100/50 p-1.5 rounded-xl flex gap-1">
               <button
@@ -214,7 +214,7 @@ const RiwayatAbsensi = () => {
         </header>
 
         {/* Filter Bar */}
-        <div className="bg-white/70 backdrop-blur-md border border-white/60 shadow-lg shadow-slate-200/40 rounded-[24px] p-5 sm:p-6 lg:p-8">
+        <div className="bg-white/70 backdrop-blur-md border border-white/60 shadow-lg shadow-slate-200/40 rounded-[24px] p-5 sm:p-6 lg:p-8 vibe-glass-card">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/50">
 
             {viewMode === 'monthly' ? (

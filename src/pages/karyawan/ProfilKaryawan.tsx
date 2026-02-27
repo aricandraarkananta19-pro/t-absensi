@@ -293,7 +293,7 @@ const ProfilKaryawan = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
 
           {/* Left: Identity Card */}
-          <div className="md:col-span-1 h-fit bg-white/70 backdrop-blur-md rounded-[24px] border border-white/60 shadow-xl shadow-slate-200/40 overflow-hidden">
+          <div className="md:col-span-1 h-fit bg-white/70 backdrop-blur-md rounded-[24px] border border-white/60 shadow-xl shadow-slate-200/40 overflow-hidden vibe-glass-card">
             <div className="bg-gradient-to-br from-blue-600 to-indigo-700 h-28 relative flex justify-center">
               <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 mix-blend-overlay"></div>
               <div className="absolute -bottom-12">
@@ -339,7 +339,7 @@ const ProfilKaryawan = () => {
           </div>
 
           {/* Right: Detailed Form */}
-          <div className="md:col-span-2 bg-white/70 backdrop-blur-md rounded-[24px] border border-white/60 shadow-xl shadow-slate-200/40 p-1">
+          <div className="md:col-span-2 bg-white/70 backdrop-blur-md rounded-[24px] border border-white/60 shadow-xl shadow-slate-200/40 p-1 vibe-glass-card">
             <div className="p-6 pb-4 border-b border-slate-200/50">
               <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Edit Informasi Profil</h2>
               <p className="text-sm text-slate-500 font-medium mt-1">Perbarui informasi kontak dan alamat lengkap Anda.</p>
