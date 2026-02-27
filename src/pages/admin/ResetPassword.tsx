@@ -145,7 +145,7 @@ const ResetPassword = () => {
       <div className="pb-8">
 
         {/* Main Content */}
-        <main className="max-w-6xl mx-auto">
+        <main className="max-w-[1400px] w-full mx-auto">
           {/* Search */}
           <div className="flex gap-4 mb-6">
             <div className="relative flex-1 max-w-md">

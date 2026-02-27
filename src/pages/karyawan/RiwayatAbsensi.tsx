@@ -154,7 +154,7 @@ const RiwayatAbsensi = () => {
       <div className="absolute bottom-0 left-0 -z-0 w-[40vw] h-[40vh] bg-emerald-100/30 rounded-full blur-[100px] pointer-events-none opacity-60 transform -translate-x-1/2 translate-y-1/2"></div>
 
       {/* Main Container */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10 space-y-8">
+      <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10 space-y-8">
 
         {/* Header Section */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">

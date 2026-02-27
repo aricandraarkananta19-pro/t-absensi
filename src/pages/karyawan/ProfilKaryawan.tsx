@@ -273,7 +273,7 @@ const ProfilKaryawan = () => {
       <div className="absolute top-0 right-0 -z-0 w-[60vw] h-[40vh] bg-blue-100/40 rounded-full blur-[100px] pointer-events-none opacity-60 transform translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-0 left-0 -z-0 w-[40vw] h-[40vh] bg-indigo-100/30 rounded-full blur-[100px] pointer-events-none opacity-60 transform -translate-x-1/2 translate-y-1/2"></div>
 
-      <header className="px-6 py-6 md:py-8 max-w-5xl mx-auto relative z-10">
+      <header className="w-full max-w-5xl px-6 py-6 md:py-8 mx-auto relative z-10">
         <div className="mb-6">
           <Button
             variant="ghost"
@@ -289,8 +289,8 @@ const ProfilKaryawan = () => {
         <p className="text-slate-500 font-medium text-sm mt-2 max-w-md">Kelola detail informasi pribadi dan pengaturan akun Anda.</p>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
+      <main className="w-full max-w-5xl mx-auto px-6 py-8 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 w-full mx-auto">
 
           {/* Left: Identity Card */}
           <div className="md:col-span-1 h-fit bg-white/70 backdrop-blur-md rounded-[24px] border border-white/60 shadow-xl shadow-slate-200/40 overflow-hidden vibe-glass-card">

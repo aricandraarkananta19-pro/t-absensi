@@ -34,44 +34,24 @@ interface StatCardProps {
 
 const colorStyles = {
     primary: {
-        gradient: `linear-gradient(90deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.lightBlue} 100%)`,
-        bg: "bg-blue-50",
-        text: "text-blue-700",
-        iconBg: "bg-blue-50",
-        iconColor: BRAND_COLORS.blue,
-        glow: "vibe-glow-blue",
+        bg: "bg-gradient-to-br from-blue-700 to-indigo-700",
+        shadow: "shadow-blue-600/20 hover:shadow-blue-500/40",
     },
     success: {
-        gradient: `linear-gradient(90deg, ${BRAND_COLORS.green} 0%, #8BC34A 100%)`,
-        bg: "bg-green-50",
-        text: "text-green-700",
-        iconBg: "bg-green-50",
-        iconColor: BRAND_COLORS.green,
-        glow: "vibe-glow-emerald",
+        bg: "bg-gradient-to-br from-emerald-600 to-teal-600",
+        shadow: "shadow-emerald-600/20 hover:shadow-emerald-500/40",
     },
     warning: {
-        gradient: "linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)",
-        bg: "bg-amber-50",
-        text: "text-amber-700",
-        iconBg: "bg-amber-50",
-        iconColor: "#F59E0B",
-        glow: "vibe-glow-amber",
+        bg: "bg-gradient-to-br from-amber-600 to-orange-600",
+        shadow: "shadow-amber-600/20 hover:shadow-amber-500/40",
     },
     danger: {
-        gradient: "linear-gradient(90deg, #EF4444 0%, #F87171 100%)",
-        bg: "bg-red-50",
-        text: "text-red-700",
-        iconBg: "bg-red-50",
-        iconColor: "#EF4444",
-        glow: "vibe-glow-red",
+        bg: "bg-gradient-to-br from-red-600 to-rose-600",
+        shadow: "shadow-red-600/20 hover:shadow-red-500/40",
     },
     info: {
-        gradient: `linear-gradient(90deg, ${BRAND_COLORS.lightBlue} 0%, #38BDF8 100%)`,
-        bg: "bg-cyan-50",
-        text: "text-cyan-700",
-        iconBg: "bg-cyan-50",
-        iconColor: BRAND_COLORS.lightBlue,
-        glow: "vibe-glow-blue",
+        bg: "bg-gradient-to-br from-purple-600 to-fuchsia-600",
+        shadow: "shadow-purple-600/20 hover:shadow-purple-500/40",
     },
 };
 
@@ -88,19 +68,20 @@ const StatCard = ({
     onExport,
     className,
 }: StatCardProps) => {
-    const styles = colorStyles[color];
+    const styles = colorStyles[color] || colorStyles.primary;
 
     if (isLoading) {
         return (
             <div className={cn(
-                "bg-white/70 backdrop-blur-md rounded-2xl border border-white/60 p-5 relative overflow-hidden shadow-sm",
+                "rounded-2xl p-6 relative overflow-hidden shadow-lg border border-white/10 transition-all cursor-default",
+                styles.bg,
                 className
             )}>
-                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl" style={{ background: styles.gradient }} />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-white/40 to-transparent" />
                 <div className="animate-pulse">
-                    <div className="h-4 w-24 bg-slate-200/60 rounded-lg mb-3" />
-                    <div className="h-8 w-20 bg-slate-200/60 rounded-lg mb-2" />
-                    <div className="h-3 w-32 bg-slate-200/60 rounded-lg" />
+                    <div className="h-4 w-32 bg-white/20 rounded-md mb-4" />
+                    <div className="h-10 w-24 bg-white/30 rounded-lg mb-3" />
+                    <div className="h-3 w-40 bg-white/20 rounded-md" />
                 </div>
             </div>
         );
@@ -108,47 +89,47 @@ const StatCard = ({
 
     return (
         <div className={cn(
-            "rounded-2xl p-5 relative overflow-hidden",
-            "vibe-glass-card cursor-default group",
-            styles.glow,
+            "relative group rounded-2xl p-6 text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden border border-white/10",
+            styles.bg,
+            styles.shadow,
             className
         )}>
-            {/* Top Border Accent */}
-            <div
-                className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
-                style={{ background: styles.gradient }}
-            />
+            {/* Top Border Gradient Strip */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-white/40 to-transparent" />
 
-            {/* Background Icon */}
+            {/* Glowing orb effect on hover */}
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-0 group-hover:opacity-100" />
+
+            {/* Giant Background Icon with 5% opacity */}
             {Icon && (
                 <Icon
-                    className="absolute right-4 top-1/2 -translate-y-1/2 h-20 w-20 opacity-[0.06] transition-opacity group-hover:opacity-[0.1]"
-                    style={{ color: styles.iconColor }}
+                    className="absolute -bottom-6 -right-4 w-32 h-32 text-white opacity-5 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12 pointer-events-none"
+                    strokeWidth={1.5}
                 />
             )}
 
             <div className="relative z-10">
                 <div className="flex items-start justify-between mb-2">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{title}</p>
+                    <p className="text-white/80 text-xs font-semibold uppercase tracking-widest">{title}</p>
                     {(onViewDetails || onExport) && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-7 w-7 -mr-2 -mt-1 text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="h-7 w-7 -mr-2 -mt-1 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
                                 >
                                     <MoreVertical className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuContent align="end" className="w-40 bg-white/95 backdrop-blur-md border-slate-100 shadow-xl rounded-xl">
                                 {onViewDetails && (
-                                    <DropdownMenuItem onClick={onViewDetails}>
+                                    <DropdownMenuItem onClick={onViewDetails} className="cursor-pointer text-sm font-medium hover:bg-slate-50 text-slate-700">
                                         Lihat Detail
                                     </DropdownMenuItem>
                                 )}
                                 {onExport && (
-                                    <DropdownMenuItem onClick={onExport}>
+                                    <DropdownMenuItem onClick={onExport} className="cursor-pointer text-sm font-medium hover:bg-slate-50 text-slate-700">
                                         Export Data
                                     </DropdownMenuItem>
                                 )}
@@ -157,36 +138,35 @@ const StatCard = ({
                     )}
                 </div>
 
-                <div className="flex items-baseline gap-1.5 mb-1.5">
-                    <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-4xl font-extrabold tracking-tight text-white drop-shadow-sm">
                         {typeof value === "number" ? value.toLocaleString() : value}
                     </span>
                     {unit && (
-                        <span className="text-xs font-medium text-slate-400">{unit}</span>
+                        <span className="text-sm font-medium text-white/70 ml-1">{unit}</span>
                     )}
                 </div>
 
-                {trend && (
-                    <div className={cn(
-                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
-                        trend.direction === "up"
-                            ? "bg-green-50 text-green-600"
-                            : "bg-red-50 text-red-600"
+                <div className="flex items-center gap-3 mt-1">
+                    {trend && (
+                        <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 flex items-center gap-1">
+                            {trend.direction === "up" ? (
+                                <TrendingUp className="h-3 w-3 text-white" />
+                            ) : (
+                                <TrendingDown className="h-3 w-3 text-white" />
+                            )}
+                            <span className="text-[10px] font-bold text-white tracking-widest uppercase">
+                                {trend.value}
+                            </span>
+                        </div>
                     )}
-                        style={trend.direction === "up" ? { color: BRAND_COLORS.green } : undefined}
-                    >
-                        {trend.direction === "up" ? (
-                            <TrendingUp className="h-3 w-3" />
-                        ) : (
-                            <TrendingDown className="h-3 w-3" />
-                        )}
-                        <span>{trend.value}</span>
-                    </div>
-                )}
 
-                {subtitle && (
-                    <p className="text-xs text-slate-400 mt-1.5">{subtitle}</p>
-                )}
+                    {subtitle && (
+                        <p className="text-xs text-white/70 font-semibold uppercase tracking-widest drop-shadow-sm">
+                            {subtitle}
+                        </p>
+                    )}
+                </div>
             </div>
         </div>
     );

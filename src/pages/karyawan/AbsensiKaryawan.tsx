@@ -62,16 +62,43 @@ const AbsensiKaryawan = () => {
   // Get user location
   useEffect(() => {
     if (settings.enableLocationTracking && navigator.geolocation) {
+      setLocation("Mencari lokasi akurat...");
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation(`${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`);
-          setCoordinates({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          setCoordinates({ lat, lng });
+
+          try {
+            // Using reverse geocoding to get human readable address
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+            const data = await res.json();
+
+            if (data && data.address) {
+              const addr = data.address;
+              // Build a decent readable string, e.g., "Mandiri Residence, Sidoarjo, Jawa Timur"
+              const localArea = addr.residential || addr.suburb || addr.village || addr.neighbourhood || addr.road || "";
+              const city = addr.city || addr.town || addr.county || addr.municipality || "";
+              const state = addr.state || "";
+
+              const locationParts = [localArea, city, state].filter(Boolean);
+
+              if (locationParts.length > 0) {
+                setLocation(locationParts.join(", "));
+              } else {
+                setLocation(data.display_name.split(",").slice(0, 3).join(",")); // Fallback to display name short
+              }
+            } else {
+              setLocation(`${lat.toFixed(5)}, ${lng.toFixed(5)}`); // Fallback to coords
+            }
+          } catch (error) {
+            console.error("Geocoding failed:", error);
+            setLocation(`${lat.toFixed(5)}, ${lng.toFixed(5)}`); // Fallback to coords
+          }
         },
         () => {
-          setLocation("Lokasi tidak tersedia");
+          setLocation("Lokasi tidak tersedia (Izin ditolak)");
           setCoordinates(null);
         }
       );
@@ -520,7 +547,15 @@ const AbsensiKaryawan = () => {
                     {isLoading ? <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <LogIn className="h-6 w-6 sm:h-7 sm:w-7 text-white" />}
                   </div>
                 </button>
-              ) : !todayAttendance.clock_out ? (
+              ) : todayAttendance && todayAttendance.clock_out ? (
+                <div className="w-full h-20 sm:h-24 rounded-[24px] bg-gradient-to-r from-emerald-50 to-emerald-100/50 border border-emerald-200 flex flex-col items-center justify-center gap-1 shadow-sm text-emerald-800 pointer-events-none">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+                    <span className="text-lg sm:text-lg font-bold">Kehadiran Berhasil Dicatat</span>
+                  </div>
+                  <span className="text-xs sm:text-sm font-medium text-emerald-600/80">Terima kasih atas kerja keras Anda, sampai jumpa besok! 👋</span>
+                </div>
+              ) : (
                 <button
                   onClick={initiateClockOut}
                   disabled={isLoading}
@@ -534,11 +569,6 @@ const AbsensiKaryawan = () => {
                     {isLoading ? <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" /> : <LogOut className="h-6 w-6 sm:h-7 sm:w-7 text-slate-600" />}
                   </div>
                 </button>
-              ) : (
-                <div className="w-full h-20 sm:h-24 rounded-[24px] bg-white/70 backdrop-blur-md border border-white/40 flex items-center justify-center gap-3 shadow-sm">
-                  <CheckCircle2 className="h-8 w-8 text-slate-400" />
-                  <span className="text-xl font-bold text-slate-600">Terima Kasih, Sampai Jumpa 👋</span>
-                </div>
               )}
             </div>
 

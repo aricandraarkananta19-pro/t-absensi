@@ -12,7 +12,7 @@ export interface JournalHistoryItem {
     content: string;
     date: string;
     duration: number;
-    verification_status: 'draft' | 'submitted' | 'need_revision' | 'approved' | 'read';
+    verification_status: 'draft' | 'submitted' | 'pending' | 'need_revision' | 'approved' | 'read' | 'rejected';
     manager_notes?: string;
     manager_profile?: {
         full_name: string;
@@ -40,10 +40,22 @@ const STATUS_CONFIG = {
         label: "Menunggu Review",
         accent: "border-l-amber-400"
     },
+    pending: {
+        dot: "bg-amber-500",
+        badge: "bg-amber-50 text-amber-700 border-amber-200",
+        label: "Menunggu Review",
+        accent: "border-l-amber-400"
+    },
     need_revision: {
+        dot: "bg-orange-500",
+        badge: "bg-orange-50 text-orange-700 border-orange-200",
+        label: "Revisi Diperlukan",
+        accent: "border-l-orange-400"
+    },
+    rejected: {
         dot: "bg-red-500",
         badge: "bg-red-50 text-red-700 border-red-200",
-        label: "Revisi Diperlukan",
+        label: "Ditolak",
         accent: "border-l-red-400"
     },
     approved: {
@@ -58,6 +70,15 @@ const STATUS_CONFIG = {
         label: "Dibaca",
         accent: "border-l-blue-400"
     },
+};
+
+export const extractTitleAndContent = (rawContent: string) => {
+    if (!rawContent) return { title: "", content: "" };
+    const match = rawContent.match(/^\*\*(.*?)\*\*\n\n([\s\S]*)$/);
+    if (match) {
+        return { title: match[1], content: match[2] };
+    }
+    return { title: "", content: rawContent };
 };
 
 // Category emoji map
@@ -83,6 +104,10 @@ export function JournalHistoryCard({ journal, onClick }: JournalHistoryCardProps
     const categoryLabel = journal.project_category
         ? `${CATEGORY_EMOJI[journal.project_category] || '📁'} ${journal.project_category.charAt(0).toUpperCase() + journal.project_category.slice(1)}`
         : "📁 Umum";
+
+    const { title: extractedTitle, content: extractedContent } = extractTitleAndContent(journal.content);
+    const displayTitle = journal.title || extractedTitle || "Laporan Aktivitas";
+    const displayContent = extractedTitle ? extractedContent : journal.content;
 
     return (
         <div
@@ -110,12 +135,12 @@ export function JournalHistoryCard({ journal, onClick }: JournalHistoryCardProps
 
                 {/* Title */}
                 <h3 className="text-base font-bold text-slate-900 mb-1.5 line-clamp-1 group-hover:text-blue-700 transition-colors">
-                    {journal.title || "Laporan Aktivitas"}
+                    {displayTitle}
                 </h3>
 
                 {/* Content Preview */}
                 <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-4">
-                    {journal.content}
+                    {displayContent}
                 </p>
 
                 {/* Footer Metadata */}

@@ -246,11 +246,13 @@ const PengajuanCuti = () => {
   return (
     <div className="min-h-screen bg-slate-50/50 text-slate-900 font-['Inter',sans-serif] pb-24 lg:pb-12 relative overflow-x-hidden">
       {/* Background Graphic Abstract */}
-      <div className="absolute top-0 right-0 -z-0 w-[60vw] h-[40vh] bg-amber-100/40 rounded-full blur-[100px] pointer-events-none opacity-60 transform translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute top-[20%] left-0 -z-0 w-[40vw] h-[40vh] bg-orange-100/30 rounded-full blur-[100px] pointer-events-none opacity-60 transform -translate-x-1/2 translate-y-1/2"></div>
+      <div className="absolute top-0 right-0 -z-0 w-[60vw] h-[40vh] bg-blue-100/40 rounded-full blur-[100px] pointer-events-none opacity-60 transform translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-0 left-0 -z-0 w-[40vw] h-[40vh] bg-purple-100/30 rounded-full blur-[100px] pointer-events-none opacity-60 transform -translate-x-1/2 translate-y-1/2"></div>
 
-      {/* Header Container */}
-      <div className="px-6 py-6 md:py-8 max-w-5xl mx-auto relative z-10">
+      {/* Container */}
+      <div className="w-full px-6 py-6 md:py-8 max-w-5xl mx-auto relative z-10">
+
+        {/* Back Button */}
         <div className="mb-6">
           <Button
             variant="ghost"
@@ -504,8 +506,6 @@ const PengajuanCuti = () => {
       {isMobile && <MobileNavigation />}
     </div>
   );
-
-
 };
 
 export default PengajuanCuti;

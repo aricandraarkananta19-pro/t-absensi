@@ -181,57 +181,78 @@ export function RealTimeMonitoringTable({
                             <div className="col-span-2 text-center">Status</div>
                         </div>
 
-                        {/* Data Rows */}
                         {data.map((record, index) => (
-                            <div
-                                key={record.id}
-                                className={cn(
-                                    "grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-3 p-3 transition-colors hover:bg-slate-50",
+                            <div key={record.id} className="group">
+                                {/* Desktop Row */}
+                                <div className={cn(
+                                    "hidden md:grid md:grid-cols-12 gap-3 p-3 transition-colors hover:bg-slate-50 border-b border-slate-50",
                                     index === 0 && record.liveStatus === "online" && "bg-gradient-to-r from-green-50/50 to-transparent"
-                                )}
-                            >
-                                {/* Employee Info */}
-                                <div className="md:col-span-4 flex items-center gap-3">
-                                    <div
-                                        className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shadow-sm"
-                                        style={{
-                                            background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.green} 100%)`
-                                        }}
-                                    >
-                                        {getInitials(record.full_name)}
+                                )}>
+                                    {/* Employee Info */}
+                                    <div className="md:col-span-4 flex items-center gap-3 pl-3">
+                                        <div className="flex-shrink-0 w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shadow-sm">
+                                            {getInitials(record.full_name)}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-bold text-slate-800 truncate group-hover:text-blue-600 transition-colors">{record.full_name}</p>
+                                            <p className="text-[10px] uppercase font-bold text-slate-400 truncate tracking-wider">{record.department || "-"}</p>
+                                        </div>
                                     </div>
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-medium text-slate-800 truncate">{record.full_name}</p>
-                                        <p className="text-xs text-slate-500 truncate">{record.department || "-"}</p>
+
+                                    {/* Clock-In */}
+                                    <div className="md:col-span-2 flex items-center justify-center">
+                                        <div className="inline-flex font-mono text-xs font-bold bg-slate-100/50 text-slate-700 px-2 py-1 rounded border border-slate-200 shadow-sm">
+                                            {record.clock_in ? formatTime(record.clock_in) : "--:--"}
+                                        </div>
+                                    </div>
+
+                                    {/* Clock-Out */}
+                                    <div className="md:col-span-2 flex items-center justify-center">
+                                        <div className="inline-flex font-mono text-xs font-bold bg-slate-50 text-slate-500 px-2 py-1 rounded border border-slate-100">
+                                            {record.clock_out ? formatTime(record.clock_out) : "--:--"}
+                                        </div>
+                                    </div>
+
+                                    {/* Shift */}
+                                    <div className="md:col-span-2 flex items-center justify-center">
+                                        <span className="text-xs font-medium text-slate-600">{record.shift}</span>
+                                    </div>
+
+                                    {/* Status */}
+                                    <div className="md:col-span-2 flex items-center justify-center pr-3">
+                                        <StatusBadge status={record.liveStatus} />
                                     </div>
                                 </div>
 
-                                {/* Clock-In */}
-                                <div className="md:col-span-2 flex items-center md:justify-center">
-                                    <span className="md:hidden text-xs text-slate-500 mr-2">Clock-In:</span>
-                                    <span className="text-sm text-slate-700">
-                                        {/* FIX: If Absent, don't show dash if not clocked in, show specific text or just - */}
-                                        {record.clock_in ? formatTime(record.clock_in) : "-"}
-                                    </span>
-                                </div>
+                                {/* Mobile Card View (SaaS App Layout) */}
+                                <div className="md:hidden bg-white/70 backdrop-blur-md rounded-[20px] p-4 border border-slate-100 shadow-sm flex flex-col gap-3 hover:shadow-md transition-all mb-4 mx-4">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shadow-sm">
+                                                {getInitials(record.full_name)}
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-bold text-slate-800 line-clamp-1">{record.full_name}</div>
+                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider mt-1 inline-block bg-slate-100 text-slate-600">
+                                                    {record.department || "Karyawan"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="scale-90 origin-top-right">
+                                            <StatusBadge status={record.liveStatus} />
+                                        </div>
+                                    </div>
 
-                                {/* Clock-Out */}
-                                <div className="md:col-span-2 flex items-center md:justify-center">
-                                    <span className="md:hidden text-xs text-slate-500 mr-2">Clock-Out:</span>
-                                    <span className="text-sm text-slate-500">
-                                        {record.clock_out ? formatTime(record.clock_out) : "-"}
-                                    </span>
-                                </div>
-
-                                {/* Shift */}
-                                <div className="md:col-span-2 flex items-center md:justify-center">
-                                    <span className="md:hidden text-xs text-slate-500 mr-2">Shift:</span>
-                                    <span className="text-xs text-slate-500">{record.shift}</span>
-                                </div>
-
-                                {/* Status */}
-                                <div className="md:col-span-2 flex items-center md:justify-center mt-2 md:mt-0">
-                                    <StatusBadge status={record.liveStatus} />
+                                    <div className="grid grid-cols-2 gap-3 mt-2 bg-slate-50/60 backdrop-blur-sm p-3 rounded-[16px] border border-slate-100">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Clock className="w-3 h-3" /> Masuk</span>
+                                            <span className="font-mono text-sm font-bold text-slate-800">{record.clock_in ? formatTime(record.clock_in) : "--:--"}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Clock className="w-3 h-3" /> Pulang</span>
+                                            <span className="font-mono text-sm font-bold text-slate-800">{record.clock_out ? formatTime(record.clock_out) : "--:--"}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ))}

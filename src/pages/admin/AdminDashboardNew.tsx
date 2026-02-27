@@ -424,59 +424,110 @@ const AdminDashboardNew = () => {
                             </Button>
                         </CardHeader>
                         <CardContent className="p-0">
-                            <Table>
-                                <TableHeader className="bg-slate-50/50">
-                                    <TableRow className="border-b border-slate-100">
-                                        <TableHead className="w-[40%] text-xs font-bold text-slate-400 uppercase tracking-wider">Karyawan</TableHead>
-                                        <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jam Masuk</TableHead>
-                                        <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-wider">Shift</TableHead>
-                                        <TableHead className="text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Status</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {recentAttendance.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="h-24 text-center text-slate-500">
-                                                Belum ada data absensi hari ini.
-                                            </TableCell>
+                            {/* Desktop Table */}
+                            <div className="hidden md:block">
+                                <Table>
+                                    <TableHeader className="bg-slate-50/50">
+                                        <TableRow className="border-b border-slate-100">
+                                            <TableHead className="w-[40%] text-xs font-bold text-slate-400 uppercase tracking-wider pl-6">Karyawan</TableHead>
+                                            <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Jam Masuk</TableHead>
+                                            <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Shift</TableHead>
+                                            <TableHead className="text-right text-xs font-bold text-slate-400 uppercase tracking-wider pr-6">Status</TableHead>
                                         </TableRow>
-                                    ) : (
-                                        recentAttendance.map((record) => (
-                                            <TableRow key={record.id} className="hover:bg-slate-50/50">
-                                                <TableCell className="font-medium">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-600">
-                                                            {getInitials(record.full_name)}
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-sm font-medium text-slate-900 line-clamp-1">{record.full_name}</div>
-                                                            <div className="flex items-center gap-1 mt-0.5">
-                                                                {record.department ? (
-                                                                    <span className={cn(
-                                                                        "text-[10px] px-1.5 py-0.5 rounded-full font-medium border",
-                                                                        getDeptBadgeColor(record.department)
-                                                                    )}>
-                                                                        {record.department}
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="text-[10px] text-slate-400 italic"> - </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {record.clock_in ? formatTime(record.clock_in) : "-"}
-                                                </TableCell>
-                                                <TableCell>{record.shift}</TableCell>
-                                                <TableCell className="text-right">
-                                                    {getStatusBadge(record.status)}
+                                    </TableHeader>
+                                    <TableBody>
+                                        {recentAttendance.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={4} className="h-24 text-center text-slate-500 font-medium">
+                                                    Belum ada data absensi hari ini.
                                                 </TableCell>
                                             </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
+                                        ) : (
+                                            recentAttendance.map((record) => (
+                                                <TableRow key={record.id} className="hover:bg-slate-50/50 border-b border-slate-50 transition-colors">
+                                                    <TableCell className="font-medium pl-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shadow-sm">
+                                                                {getInitials(record.full_name)}
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-blue-600 transition-colors">{record.full_name}</div>
+                                                                <div className="flex items-center gap-1 mt-0.5">
+                                                                    {record.department ? (
+                                                                        <span className={cn(
+                                                                            "text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider",
+                                                                            getDeptBadgeColor(record.department)
+                                                                        )}>
+                                                                            {record.department}
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="text-[10px] text-slate-400 italic"> - </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        {record.clock_in ? (
+                                                            <div className="inline-flex font-mono text-xs font-bold bg-slate-100/50 text-slate-700 px-2 py-1 rounded border border-slate-200 shadow-sm">{formatTime(record.clock_in)}</div>
+                                                        ) : "-"}
+                                                    </TableCell>
+                                                    <TableCell className="text-center font-medium text-slate-600 text-sm">{record.shift}</TableCell>
+                                                    <TableCell className="text-right pr-6">
+                                                        {getStatusBadge(record.status)}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+
+                            {/* Mobile Card Layout */}
+                            <div className="md:hidden space-y-4 p-4">
+                                {recentAttendance.length === 0 ? (
+                                    <div className="h-24 flex items-center justify-center text-slate-500 font-medium px-4 text-center">
+                                        Belum ada data absensi hari ini.
+                                    </div>
+                                ) : (
+                                    recentAttendance.map((record) => (
+                                        <div key={record.id} className="bg-white/70 backdrop-blur-md rounded-[20px] p-4 border border-slate-100 shadow-sm flex flex-col gap-3 hover:shadow-md transition-all">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shadow-sm">
+                                                        {getInitials(record.full_name)}
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-bold text-slate-800 line-clamp-1">{record.full_name}</div>
+                                                        {record.department && (
+                                                            <span className={cn(
+                                                                "text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider mt-1 inline-block",
+                                                                getDeptBadgeColor(record.department)
+                                                            )}>
+                                                                {record.department}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="scale-90 origin-top-right">
+                                                    {getStatusBadge(record.status)}
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3 mt-2 bg-slate-50/60 backdrop-blur-sm p-3 rounded-[16px] border border-slate-100">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Clock className="w-3 h-3" /> Jam Masuk</span>
+                                                    <span className="font-mono text-sm font-bold text-slate-800">{record.clock_in ? formatTime(record.clock_in) : "--:--"}</span>
+                                                </div>
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Shift</span>
+                                                    <span className="text-sm font-bold text-slate-800">{record.shift}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </CardContent>
                     </Card >
 

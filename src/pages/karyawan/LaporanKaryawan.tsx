@@ -15,7 +15,7 @@ const LaporanKaryawan = () => {
             <div className="absolute bottom-0 left-0 -z-0 w-[40vw] h-[40vh] bg-emerald-100/30 rounded-full blur-[100px] pointer-events-none opacity-60 transform -translate-x-1/2 translate-y-1/2"></div>
 
             {/* Header */}
-            <header className="px-6 py-6 md:py-8 max-w-3xl mx-auto relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <header className="w-full max-w-4xl px-6 py-6 md:py-8 mx-auto relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <Button
                         variant="ghost"
@@ -32,7 +32,7 @@ const LaporanKaryawan = () => {
             </header>
 
             {/* Main Content */}
-            <main className="max-w-3xl mx-auto px-6 py-4 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <main className="w-full max-w-4xl mx-auto px-6 py-4 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white/60 shadow-xl shadow-slate-200/40 p-6 md:p-8 flex flex-col items-center justify-center text-center space-y-6 vibe-glass-card">
                     <div className="h-20 w-20 rounded-[28px] bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100/50">
                         <FileText className="h-10 w-10" />

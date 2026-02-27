@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import {
     MapPin, Clock, CalendarOff, CheckCircle2,
     XCircle, FileText, LogOut, AlertCircle,
-    Building2, MoreHorizontal, Eye
+    Building2, MoreHorizontal, Eye, LogIn
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -111,150 +111,211 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
     };
 
     return (
-        <div className="w-full bg-white border-t border-slate-100 shadow-none rounded-none">
-            <Table>
-                <TableHeader className="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-20 border-b border-slate-200 shadow-sm">
-                    <TableRow className="hover:bg-slate-50/80 border-none">
-                        <TableHead className="w-[25%] font-bold text-xs uppercase tracking-wider text-slate-500 pl-6 h-12">Tanggal</TableHead>
-                        <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Jam Masuk</TableHead>
-                        <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Jam Pulang</TableHead>
-                        <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Durasi</TableHead>
-                        <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Status</TableHead>
-                        <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Aksi</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {data.map((row, index) => {
-                        const isWeekend = row.status === 'weekend';
-                        const isWeekendTime = new Date(row.date).getDay() === 0 || new Date(row.date).getDay() === 6;
-                        const finalIsWeekend = row.isWeekend || isWeekendTime;
-                        const isFuture = row.status === 'future';
+        <div className="w-full">
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-white border-t border-slate-100 shadow-none rounded-none w-full">
+                <Table>
+                    <TableHeader className="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-20 border-b border-slate-200 shadow-sm">
+                        <TableRow className="hover:bg-slate-50/80 border-none">
+                            <TableHead className="w-[25%] font-bold text-xs uppercase tracking-wider text-slate-500 pl-6 h-12">Tanggal</TableHead>
+                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Jam Masuk</TableHead>
+                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Jam Pulang</TableHead>
+                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Durasi</TableHead>
+                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Status</TableHead>
+                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Aksi</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {data.map((row, index) => {
+                            const isWeekend = row.status === 'weekend';
+                            const isWeekendTime = new Date(row.date).getDay() === 0 || new Date(row.date).getDay() === 6;
+                            const finalIsWeekend = row.isWeekend || isWeekendTime;
+                            const isFuture = row.status === 'future';
 
-                        // Future Row Style
-                        if (isFuture) {
+                            // Future Row Style
+                            if (isFuture) {
+                                return (
+                                    <TableRow
+                                        key={row.date}
+                                        className="border-b border-slate-50 bg-slate-50/20 opacity-40 hover:opacity-100 transition-opacity duration-300 group"
+                                        style={{ animationDelay: `${index * 30}ms` }}
+                                    >
+                                        <TableCell className="pl-6 py-4">
+                                            <span className="text-sm font-medium text-slate-400 group-hover:text-slate-600 transition-colors">
+                                                {format(new Date(row.date), "EEEE, d MMM yyyy", { locale: id })}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-center py-4 text-slate-300">-</TableCell>
+                                        <TableCell className="text-center py-4 text-slate-300">-</TableCell>
+                                        <TableCell className="text-center py-4 text-slate-300">-</TableCell>
+                                        <TableCell className="text-center py-4">
+                                            <Badge variant="outline" className="border-dashed border-slate-200 text-slate-400 font-normal shadow-none hover:bg-transparent">Belum Berlangsung</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-center py-4 text-slate-200">
+                                            <div className="w-8 h-8 rounded-full bg-slate-50 mx-auto"></div>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            }
+
                             return (
                                 <TableRow
                                     key={row.date}
-                                    className="border-b border-slate-50 bg-slate-50/20 opacity-40 hover:opacity-100 transition-opacity duration-300 group"
+                                    className={cn(
+                                        "border-b border-slate-50 transition-all duration-300 group animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards",
+                                        finalIsWeekend ? "bg-slate-50/50 hover:bg-slate-50" : "hover:bg-slate-50/40",
+                                        (row.status === 'absent' || row.status === 'alpha') && !finalIsWeekend && "bg-red-50/10 hover:bg-red-50/20"
+                                    )}
                                     style={{ animationDelay: `${index * 30}ms` }}
                                 >
                                     <TableCell className="pl-6 py-4">
-                                        <span className="text-sm font-medium text-slate-400 group-hover:text-slate-600 transition-colors">
-                                            {format(new Date(row.date), "EEEE, d MMM yyyy", { locale: id })}
-                                        </span>
+                                        <div className="flex flex-col">
+                                            <span className={cn(
+                                                "font-bold text-sm transition-colors",
+                                                finalIsWeekend ? "text-red-500" : "text-slate-800 group-hover:text-blue-700"
+                                            )}>
+                                                {format(new Date(row.date), "EEEE, d MMM yyyy", { locale: id })}
+                                            </span>
+                                            {finalIsWeekend && (
+                                                <span className="text-[10px] text-red-400 font-medium">Hari Libur</span>
+                                            )}
+                                            {row.notes && (
+                                                <span className="text-[10px] text-slate-400 italic mt-0.5 truncate max-w-[150px] flex items-center gap-1">
+                                                    <FileText className="w-3 h-3" /> {row.notes}
+                                                </span>
+                                            )}
+                                        </div>
                                     </TableCell>
-                                    <TableCell className="text-center py-4 text-slate-300">-</TableCell>
-                                    <TableCell className="text-center py-4 text-slate-300">-</TableCell>
-                                    <TableCell className="text-center py-4 text-slate-300">-</TableCell>
                                     <TableCell className="text-center py-4">
-                                        <Badge variant="outline" className="border-dashed border-slate-200 text-slate-400 font-normal shadow-none hover:bg-transparent">Belum Berlangsung</Badge>
+                                        {row.clockIn ? (
+                                            <div className="inline-flex items-center justify-center bg-white text-slate-700 shadow-sm px-3 py-1.5 rounded-md font-mono text-xs font-bold border border-slate-200 group-hover:border-blue-300 group-hover:shadow-md transition-all group-hover:scale-105">
+                                                {format(new Date(row.clockIn), "HH:mm")}
+                                            </div>
+                                        ) : (
+                                            <span className="text-slate-300 text-lg">·</span>
+                                        )}
                                     </TableCell>
-                                    <TableCell className="text-center py-4 text-slate-200">
-                                        <div className="w-8 h-8 rounded-full bg-slate-50 mx-auto"></div>
+                                    <TableCell className="text-center py-4">
+                                        {row.clockOut ? (
+                                            <div className="inline-flex items-center justify-center bg-white text-slate-700 shadow-sm px-3 py-1.5 rounded-md font-mono text-xs font-bold border border-slate-200 group-hover:border-blue-300 group-hover:shadow-md transition-all group-hover:scale-105">
+                                                {format(new Date(row.clockOut), "HH:mm")}
+                                            </div>
+                                        ) : (
+                                            <span className="text-slate-300 text-lg">·</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-center py-4">
+                                        {getDuration(row.clockIn, row.clockOut, row.date)}
+                                    </TableCell>
+                                    <TableCell className="text-center py-4">
+                                        <div className="flex justify-center scale-95 origin-center group-hover:scale-100 transition-transform">
+                                            {getStatusBadge(row.status, finalIsWeekend)}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-center py-4">
+                                        <div className="flex justify-center items-center">
+                                            {/* Action Button: Visible on Hover */}
+                                            <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-blue-100 hover:text-blue-600 rounded-full focus:ring-0 focus:ring-offset-0">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-sm border-slate-200 shadow-lg">
+                                                        <DropdownMenuLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Aksi</DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem className="cursor-pointer text-sm font-medium focus:bg-slate-100">
+                                                            <Eye className="w-4 h-4 mr-2 text-slate-500" /> Lihat Detail
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem className="cursor-pointer text-sm font-medium focus:bg-slate-100">
+                                                            <MapPin className="w-4 h-4 mr-2 text-slate-500" /> Cek Lokasi
+                                                        </DropdownMenuItem>
+                                                        {row.clockIn && (
+                                                            <DropdownMenuItem className="cursor-pointer text-sm font-medium text-blue-600 focus:text-blue-700 focus:bg-blue-50">
+                                                                <FileText className="w-4 h-4 mr-2" /> Unduh Bukti
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
+
+                                            {/* Default State: Location Icon (Fades out on hover) */}
+                                            <div className="absolute opacity-100 group-hover:opacity-0 transition-opacity duration-300 pointer-events-none">
+                                                {row.clockIn ? (
+                                                    <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+                                                        <Building2 className="h-3.5 w-3.5" />
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-200">-</span>
+                                                )}
+                                            </div>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             );
-                        }
+                        })}
+                    </TableBody>
+                </Table>
+            </div>
 
-                        return (
-                            <TableRow
-                                key={row.date}
-                                className={cn(
-                                    "border-b border-slate-50 transition-all duration-300 group animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards",
-                                    finalIsWeekend ? "bg-slate-50/50 hover:bg-slate-50" : "hover:bg-slate-50/40",
-                                    (row.status === 'absent' || row.status === 'alpha') && !finalIsWeekend && "bg-red-50/10 hover:bg-red-50/20"
-                                )}
-                                style={{ animationDelay: `${index * 30}ms` }}
-                            >
-                                <TableCell className="pl-6 py-4">
+            {/* Mobile Card View (SaaS App Layout) */}
+            <div className="md:hidden space-y-4 p-1">
+                {data.map((row, index) => {
+                    const isWeekend = row.status === 'weekend';
+                    const isWeekendTime = new Date(row.date).getDay() === 0 || new Date(row.date).getDay() === 6;
+                    const finalIsWeekend = row.isWeekend || isWeekendTime;
+                    const isFuture = row.status === 'future';
+
+                    return (
+                        <div
+                            key={row.date}
+                            className={cn(
+                                "bg-white/70 backdrop-blur-md border rounded-[20px] p-4 shadow-sm relative overflow-hidden flex flex-col gap-3 transition-all duration-300 animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards",
+                                finalIsWeekend ? "border-slate-100 bg-slate-50/50" : "border-slate-100 hover:shadow-md hover:border-blue-100",
+                                isFuture && "opacity-60 grayscale-[0.5]"
+                            )}
+                            style={{ animationDelay: `${index * 30}ms` }}
+                        >
+                            {/* Card Header */}
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <span className={cn("font-bold text-sm transition-colors", finalIsWeekend ? "text-red-500" : "text-slate-800")}>
+                                        {format(new Date(row.date), "EEEE, d MMM yyyy", { locale: id })}
+                                    </span>
+                                    {finalIsWeekend && <span className="block text-[10px] text-red-500 font-medium mt-0.5 uppercase tracking-wider">Hari Libur</span>}
+                                    {row.notes && <span className="flex items-center text-[10px] text-slate-400 italic mt-1 line-clamp-1"><FileText className="w-3 h-3 mr-1" />{row.notes}</span>}
+                                </div>
+                                <div className="scale-90 origin-top-right">
+                                    {getStatusBadge(row.status, finalIsWeekend)}
+                                </div>
+                            </div>
+
+                            {/* Card Body - Clock In / Out / Duration */}
+                            {!isFuture ? (
+                                <div className="grid grid-cols-2 gap-3 mt-2 bg-slate-50/60 backdrop-blur-sm p-4 rounded-[16px] border border-slate-100">
                                     <div className="flex flex-col">
-                                        <span className={cn(
-                                            "font-bold text-sm transition-colors",
-                                            finalIsWeekend ? "text-red-500" : "text-slate-800 group-hover:text-blue-700"
-                                        )}>
-                                            {format(new Date(row.date), "EEEE, d MMM yyyy", { locale: id })}
-                                        </span>
-                                        {finalIsWeekend && (
-                                            <span className="text-[10px] text-red-400 font-medium">Hari Libur</span>
-                                        )}
-                                        {row.notes && (
-                                            <span className="text-[10px] text-slate-400 italic mt-0.5 truncate max-w-[150px] flex items-center gap-1">
-                                                <FileText className="w-3 h-3" /> {row.notes}
-                                            </span>
-                                        )}
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><LogIn className="w-3 h-3" /> Masuk</span>
+                                        <span className="font-mono text-base font-bold text-slate-800">{row.clockIn ? format(new Date(row.clockIn), "HH:mm") : "--:--"}</span>
                                     </div>
-                                </TableCell>
-                                <TableCell className="text-center py-4">
-                                    {row.clockIn ? (
-                                        <div className="inline-flex items-center justify-center bg-white text-slate-700 shadow-sm px-3 py-1.5 rounded-md font-mono text-xs font-bold border border-slate-200 group-hover:border-blue-300 group-hover:shadow-md transition-all group-hover:scale-105">
-                                            {format(new Date(row.clockIn), "HH:mm")}
-                                        </div>
-                                    ) : (
-                                        <span className="text-slate-300 text-lg">·</span>
-                                    )}
-                                </TableCell>
-                                <TableCell className="text-center py-4">
-                                    {row.clockOut ? (
-                                        <div className="inline-flex items-center justify-center bg-white text-slate-700 shadow-sm px-3 py-1.5 rounded-md font-mono text-xs font-bold border border-slate-200 group-hover:border-blue-300 group-hover:shadow-md transition-all group-hover:scale-105">
-                                            {format(new Date(row.clockOut), "HH:mm")}
-                                        </div>
-                                    ) : (
-                                        <span className="text-slate-300 text-lg">·</span>
-                                    )}
-                                </TableCell>
-                                <TableCell className="text-center py-4">
-                                    {getDuration(row.clockIn, row.clockOut, row.date)}
-                                </TableCell>
-                                <TableCell className="text-center py-4">
-                                    <div className="flex justify-center scale-95 origin-center group-hover:scale-100 transition-transform">
-                                        {getStatusBadge(row.status, finalIsWeekend)}
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><LogOut className="w-3 h-3" /> Pulang</span>
+                                        <span className="font-mono text-base font-bold text-slate-800">{row.clockOut ? format(new Date(row.clockOut), "HH:mm") : "--:--"}</span>
                                     </div>
-                                </TableCell>
-                                <TableCell className="text-center py-4">
-                                    <div className="flex justify-center items-center">
-                                        {/* Action Button: Visible on Hover */}
-                                        <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-blue-100 hover:text-blue-600 rounded-full focus:ring-0 focus:ring-offset-0">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-sm border-slate-200 shadow-lg">
-                                                    <DropdownMenuLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Aksi</DropdownMenuLabel>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="cursor-pointer text-sm font-medium focus:bg-slate-100">
-                                                        <Eye className="w-4 h-4 mr-2 text-slate-500" /> Lihat Detail
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem className="cursor-pointer text-sm font-medium focus:bg-slate-100">
-                                                        <MapPin className="w-4 h-4 mr-2 text-slate-500" /> Cek Lokasi
-                                                    </DropdownMenuItem>
-                                                    {row.clockIn && (
-                                                        <DropdownMenuItem className="cursor-pointer text-sm font-medium text-blue-600 focus:text-blue-700 focus:bg-blue-50">
-                                                            <FileText className="w-4 h-4 mr-2" /> Unduh Bukti
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-
-                                        {/* Default State: Location Icon (Fades out on hover) */}
-                                        <div className="absolute opacity-100 group-hover:opacity-0 transition-opacity duration-300 pointer-events-none">
-                                            {row.clockIn ? (
-                                                <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
-                                                    <Building2 className="h-3.5 w-3.5" />
-                                                </div>
-                                            ) : (
-                                                <span className="text-slate-200">-</span>
-                                            )}
-                                        </div>
+                                    <div className="col-span-2 mt-1 pt-3 border-t border-slate-100 flex items-center justify-between">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Durasi Total</span>
+                                        <div>{getDuration(row.clockIn, row.clockOut, row.date)}</div>
                                     </div>
-                                </TableCell>
-                            </TableRow>
-                        );
-                    })}
-                </TableBody>
-            </Table>
-        </div >
+                                </div>
+                            ) : (
+                                <div className="mt-2 bg-slate-50/80 border border-slate-100 border-dashed rounded-[16px] p-4 flex justify-center items-center">
+                                    <span className="text-xs text-slate-400 font-semibold tracking-wide flex items-center gap-2"><Clock className="w-4 h-4" /> Belum Berlangsung</span>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
     );
 }

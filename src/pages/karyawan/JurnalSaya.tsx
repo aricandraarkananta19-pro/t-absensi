@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FolderOpen, Calendar, Filter, ArrowLeft, PenLine, FileText, CheckCircle2 } from "lucide-react";
+import { FolderOpen, Calendar, Filter, ArrowLeft, PenLine, FileText, CheckCircle2, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
@@ -21,6 +21,15 @@ import {
 // Components
 import { JournalHistoryCard, JournalHistoryItem } from "@/components/journal/JournalHistoryCard";
 import { DailyJournalForm, DailyJournalFormData } from "@/components/journal/DailyJournalForm";
+
+const extractTitleAndContent = (rawContent: string) => {
+    if (!rawContent) return { title: "", content: "" };
+    const match = rawContent.match(/^\*\*(.*?)\*\*\n\n([\s\S]*)$/);
+    if (match) {
+        return { title: match[1], content: match[2] };
+    }
+    return { title: "", content: rawContent };
+};
 
 export default function JurnalSaya() {
     const { user } = useAuth();
@@ -129,7 +138,7 @@ export default function JurnalSaya() {
             <div className="absolute top-0 right-0 -z-0 w-[60vw] h-[40vh] bg-blue-100/40 rounded-full blur-[100px] pointer-events-none opacity-60 transform translate-x-1/2 -translate-y-1/2"></div>
             <div className="absolute bottom-0 left-0 -z-0 w-[40vw] h-[40vh] bg-purple-100/30 rounded-full blur-[100px] pointer-events-none opacity-60 transform -translate-x-1/2 translate-y-1/2"></div>
 
-            <div className="px-6 py-8 max-w-[1000px] mx-auto relative z-10">
+            <div className="w-full px-6 py-8 max-w-6xl mx-auto relative z-10">
                 {/* Back Button */}
                 <div className="mb-6">
                     <Button
@@ -172,31 +181,36 @@ export default function JurnalSaya() {
 
                 {/* Stats Row */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
-                            <FileText className="w-5 h-5 text-slate-500" />
+                    <div className="bg-white/70 backdrop-blur-md p-5 rounded-[24px] border border-white/40 shadow-sm relative overflow-hidden vibe-glass-card group">
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-5 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12 pointer-events-none">
+                            <FileText className="w-24 h-24 text-blue-600" />
                         </div>
-                        <div>
-                            <p className="text-2xl font-bold text-slate-900 leading-none mb-1">{journals.length}</p>
-                            <p className="text-xs font-semibold text-slate-500">Total Jurnal</p>
-                        </div>
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold text-slate-900 leading-none mb-1">{approvedCount}</p>
-                            <p className="text-xs font-semibold text-slate-500">Disetujui</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Jurnal</p>
+                        <div className="flex items-baseline gap-2">
+                            <h3 className="text-4xl font-extrabold text-slate-800">{journals.length}</h3>
+                            <span className="text-sm font-semibold text-slate-500">Laporan</span>
                         </div>
                     </div>
-                    <div className="hidden md:flex bg-white p-4 rounded-2xl border border-slate-200 shadow-sm items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-                            <Clock className="w-5 h-5 text-amber-600" />
+
+                    <div className="bg-white/70 backdrop-blur-md p-5 rounded-[24px] border border-white/40 shadow-sm relative overflow-hidden vibe-glass-card group">
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-5 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12 pointer-events-none">
+                            <CheckCircle2 className="w-24 h-24 text-emerald-600" />
                         </div>
-                        <div>
-                            <p className="text-2xl font-bold text-slate-900 leading-none mb-1">{pendingCount}</p>
-                            <p className="text-xs font-semibold text-slate-500">Menunggu Review</p>
+                        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Disetujui</p>
+                        <div className="flex items-baseline gap-2">
+                            <h3 className="text-4xl font-extrabold text-emerald-600">{approvedCount}</h3>
+                            <span className="text-sm font-semibold text-emerald-600/60">Laporan</span>
+                        </div>
+                    </div>
+
+                    <div className="hidden md:block bg-white/70 backdrop-blur-md p-5 rounded-[24px] border border-white/40 shadow-sm relative overflow-hidden vibe-glass-card group">
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-5 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12 pointer-events-none">
+                            <Clock className="w-24 h-24 text-amber-600" />
+                        </div>
+                        <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Menunggu Review</p>
+                        <div className="flex items-baseline gap-2">
+                            <h3 className="text-4xl font-extrabold text-amber-600">{pendingCount}</h3>
+                            <span className="text-sm font-semibold text-amber-600/60">Laporan</span>
                         </div>
                     </div>
                 </div>
@@ -208,14 +222,18 @@ export default function JurnalSaya() {
                             <DailyJournalForm
                                 onSubmit={handleSubmit}
                                 isSubmitting={isSubmitting}
-                                initialData={journals.find(j => j.date === format(new Date(), "yyyy-MM-dd")) ? {
-                                    // Parse back title if we prepended it, this is a bit hacky but keeps the old behavior
-                                    // Normally we should add title column to DB
-                                    title: journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.title,
-                                    content: journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.content,
-                                    duration: (journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.duration || 0) / 60,
-                                    project_category: journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"))?.obstacles
-                                } : undefined}
+                                initialData={(() => {
+                                    const todayJournal = journals.find(j => j.date === format(new Date(), "yyyy-MM-dd"));
+                                    if (!todayJournal) return undefined;
+
+                                    const { title, content } = extractTitleAndContent(todayJournal.content);
+                                    return {
+                                        title: title,
+                                        content: content,
+                                        duration: (todayJournal.duration || 0) / 60,
+                                        project_category: todayJournal.obstacles || todayJournal.project_category
+                                    };
+                                })()}
                             />
                         </div>
                     </div>

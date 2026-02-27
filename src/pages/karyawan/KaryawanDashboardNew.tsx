@@ -84,6 +84,9 @@ const KaryawanDashboardNew = () => {
     const [isSavingJournal, setIsSavingJournal] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
+    // Location State
+    const [location, setLocation] = useState<string>("Mengecek lokasi...");
+
     // New State for Real-Time Updates & Flexible Input
     const [recentActivities, setRecentActivities] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -112,6 +115,48 @@ const KaryawanDashboardNew = () => {
             fetchRecentActivities();
         }
     }, [user]);
+
+    // Get user location
+    useEffect(() => {
+        if (settings.enableLocationTracking && navigator.geolocation) {
+            setLocation("Mencari lokasi akurat...");
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    try {
+                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+                        const data = await res.json();
+
+                        if (data && data.address) {
+                            const addr = data.address;
+                            const localArea = addr.residential || addr.suburb || addr.village || addr.neighbourhood || addr.road || "";
+                            const city = addr.city || addr.town || addr.county || addr.municipality || "";
+                            const state = addr.state || "";
+
+                            const locationParts = [localArea, city, state].filter(Boolean);
+
+                            if (locationParts.length > 0) {
+                                setLocation(locationParts.join(", "));
+                            } else {
+                                setLocation(data.display_name.split(",").slice(0, 3).join(","));
+                            }
+                        } else {
+                            setLocation(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                        }
+                    } catch (error) {
+                        setLocation(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                    }
+                },
+                () => {
+                    setLocation("Lokasi tidak tersedia (Izin ditolak)");
+                }
+            );
+        } else if (!settings.enableLocationTracking) {
+            setLocation("Tracking lokasi dinonaktifkan");
+        }
+    }, [settings.enableLocationTracking]);
 
     const fetchRecentActivities = async () => {
         if (!user) return;
@@ -356,18 +401,23 @@ const KaryawanDashboardNew = () => {
                 {/* Top Stats Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     {/* Card 1: Attendance */}
-                    <div className="relative group rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 p-6 text-white shadow-lg shadow-emerald-500/20 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden">
+                    <div className="relative group rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 p-6 text-white shadow-lg shadow-emerald-600/20 hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden border border-white/10">
+                        {/* Gradient header strip */}
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-white/40 to-transparent"></div>
+
+                        {/* 5% Opacity Background Icon */}
+                        <CheckCircle2 className="absolute -bottom-6 -right-4 w-32 h-32 text-white opacity-5 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500" />
+
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-50 group-hover:opacity-100"></div>
                         <div className="relative z-10 flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-white/80 text-xs font-medium uppercase tracking-wider">Kehadiran Bulan Ini</p>
-                                <div className="flex items-baseline gap-2 mt-1">
-                                    <h3 className="text-3xl font-extrabold tracking-tight">95%</h3>
-                                    <span className="text-[10px] font-bold text-emerald-700 bg-white/90 px-1.5 py-0.5 rounded-full">+2.4%</span>
+                                <p className="text-white/80 text-xs font-semibold uppercase tracking-widest mb-1">Kehadiran Bulan Ini</p>
+                                <div className="flex items-center gap-3">
+                                    <h3 className="text-4xl font-extrabold tracking-tight">95%</h3>
+                                    <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 flex items-center">
+                                        <span className="text-[10px] font-bold text-white tracking-widest">+2.4%</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/10">
-                                <CheckCircle2 className="w-5 h-5 text-white" />
                             </div>
                         </div>
                         <div className="relative z-10 w-full bg-black/10 h-1.5 rounded-full overflow-hidden mt-4">
@@ -376,58 +426,62 @@ const KaryawanDashboardNew = () => {
                     </div>
 
                     {/* Card 2: Work Hours */}
-                    <div className="relative group rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 p-6 text-white shadow-lg shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden">
+                    <div className="relative group rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 p-6 text-white shadow-lg shadow-blue-600/20 hover:shadow-blue-500/40 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden border border-white/10">
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-white/40 to-transparent"></div>
+                        <Clock className="absolute -bottom-6 -right-4 w-32 h-32 text-white opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500" />
+
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-50 group-hover:opacity-100"></div>
                         <div className="relative z-10 flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-white/80 text-xs font-medium uppercase tracking-wider">Jam Kerja Total</p>
-                                <div className="flex items-baseline gap-2 mt-1">
-                                    <h3 className="text-3xl font-extrabold tracking-tight">{monthStats.totalHours}h</h3>
-                                    <span className="text-[10px] font-bold text-indigo-700 bg-white/90 px-1.5 py-0.5 rounded-full">-5.2h</span>
+                                <p className="text-white/80 text-xs font-semibold uppercase tracking-widest mb-1">Jam Kerja Total</p>
+                                <div className="flex items-baseline gap-3">
+                                    <h3 className="text-4xl font-extrabold tracking-tight">{monthStats.totalHours}h</h3>
+                                    <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 flex items-center">
+                                        <span className="text-[10px] font-bold text-white tracking-widest">-5.2h</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/10">
-                                <Clock className="w-5 h-5 text-white" />
-                            </div>
                         </div>
-                        <div className="relative z-10 text-xs text-white/70 font-medium">
+                        <div className="relative z-10 text-xs text-white/70 font-semibold uppercase tracking-widest mt-2">
                             Target: 176h/bulan
                         </div>
                     </div>
 
                     {/* Card 3: Leave */}
-                    <div className="relative group rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-white shadow-lg shadow-amber-500/20 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden">
+                    <div className="relative group rounded-2xl bg-gradient-to-br from-amber-600 to-orange-600 p-6 text-white shadow-lg shadow-amber-600/20 hover:shadow-amber-500/40 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden border border-white/10">
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-white/40 to-transparent"></div>
+                        <Calendar className="absolute -bottom-6 -right-4 w-32 h-32 text-white opacity-5 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500" />
+
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-50 group-hover:opacity-100"></div>
                         <div className="relative z-10 flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-white/80 text-xs font-medium uppercase tracking-wider">Sisa Cuti Tahunan</p>
-                                <h3 className="text-3xl font-extrabold tracking-tight mt-1">{remainingLeave} Hari</h3>
-                            </div>
-                            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/10">
-                                <Calendar className="w-5 h-5 text-white" />
+                                <p className="text-white/80 text-xs font-semibold uppercase tracking-widest mb-1">Sisa Cuti Tahunan</p>
+                                <h3 className="text-4xl font-extrabold tracking-tight">{remainingLeave} <span className="text-xl">Hari</span></h3>
                             </div>
                         </div>
-                        <div className="relative z-10 text-xs text-white/70 font-medium tracking-wide">
+                        <div className="relative z-10 text-xs text-white/70 font-semibold uppercase tracking-widest mt-2">
                             Hangus dalam 210 hari
                         </div>
                     </div>
 
                     {/* Card 4: Tasks */}
-                    <div className="relative group rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-500 p-6 text-white shadow-lg shadow-purple-500/20 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden">
+                    <div className="relative group rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-600 p-6 text-white shadow-lg shadow-purple-600/20 hover:shadow-purple-500/40 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden border border-white/10">
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-white/40 to-transparent"></div>
+                        <Award className="absolute -bottom-6 -right-4 w-32 h-32 text-white opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500" />
+
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-50 group-hover:opacity-100"></div>
                         <div className="relative z-10 flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-white/80 text-xs font-medium uppercase tracking-wider">Tugas Selesai</p>
-                                <div className="flex items-baseline gap-2 mt-1">
-                                    <h3 className="text-3xl font-extrabold tracking-tight">{completedTasks}</h3>
-                                    <span className="text-[10px] font-bold text-purple-700 bg-white/90 px-1.5 py-0.5 rounded-full">+4</span>
+                                <p className="text-white/80 text-xs font-semibold uppercase tracking-widest mb-1">Tugas Selesai</p>
+                                <div className="flex items-center gap-3">
+                                    <h3 className="text-4xl font-extrabold tracking-tight">{completedTasks}</h3>
+                                    <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 flex items-center">
+                                        <span className="text-[10px] font-bold text-white tracking-widest">+4</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/10">
-                                <Award className="w-5 h-5 text-white" />
-                            </div>
                         </div>
-                        <div className="relative z-10 text-xs text-white/70 font-medium">
+                        <div className="relative z-10 text-xs text-white/70 font-semibold uppercase tracking-widest mt-2">
                             Bulan ini (Sprint 4)
                         </div>
                     </div>
@@ -457,7 +511,7 @@ const KaryawanDashboardNew = () => {
 
                             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-slate-100/80 backdrop-blur-sm text-slate-700 rounded-full text-xs font-semibold mb-10 border border-slate-200/50 relative z-10">
                                 <MapPin className="w-3.5 h-3.5 text-blue-500" />
-                                Lokasi: Kantor Pusat (Terverifikasi)
+                                <span className="max-w-[200px] sm:max-w-xs truncate" title={location}>{location}</span>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4 relative z-10">
@@ -476,6 +530,16 @@ const KaryawanDashboardNew = () => {
                                         >
                                             <LogOut className="w-5 h-5" />
                                             Check-Out
+                                        </button>
+                                    </>
+                                ) : todayAttendance && todayAttendance.clock_out ? (
+                                    <>
+                                        <button
+                                            disabled={true}
+                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 font-semibold cursor-not-allowed shadow-inner col-span-2"
+                                        >
+                                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                            Selesai Bekerja, Sampai Jumpa Besok!
                                         </button>
                                     </>
                                 ) : (
