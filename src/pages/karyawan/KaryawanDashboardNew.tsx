@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     Clock, Key, User, FileText, ChevronRight, LogOut, Calendar,
     CheckCircle2, LogIn, MapPin, History, LayoutDashboard, TrendingUp,
-    Timer, Target, Award, Bell, BookOpen, Briefcase, Coffee
+    Timer, Target, Award, Bell, BookOpen, Briefcase, Coffee, RefreshCw
 } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -285,7 +285,7 @@ const KaryawanDashboardNew = () => {
         <div className="min-h-screen bg-[#F8FAFC] font-['Inter',system-ui,sans-serif] pb-24 md:pb-12">
 
             {/* Header */}
-            <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+            <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40">
                 <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-8">
                         {/* Logo Area */}
@@ -356,71 +356,79 @@ const KaryawanDashboardNew = () => {
                 {/* Top Stats Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     {/* Card 1: Attendance */}
-                    <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="flex justify-between items-start mb-4">
+                    <div className="relative group rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 p-6 text-white shadow-lg shadow-emerald-500/20 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden">
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-50 group-hover:opacity-100"></div>
+                        <div className="relative z-10 flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kehadiran Bulan Ini</p>
+                                <p className="text-white/80 text-xs font-medium uppercase tracking-wider">Kehadiran Bulan Ini</p>
                                 <div className="flex items-baseline gap-2 mt-1">
-                                    <h3 className="text-3xl font-bold text-slate-900">95%</h3>
-                                    <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">+2.4%</span>
+                                    <h3 className="text-3xl font-extrabold tracking-tight">95%</h3>
+                                    <span className="text-[10px] font-bold text-emerald-700 bg-white/90 px-1.5 py-0.5 rounded-full">+2.4%</span>
                                 </div>
                             </div>
-                            <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center">
-                                <CheckCircle2 className="w-6 h-6" />
+                            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/10">
+                                <CheckCircle2 className="w-5 h-5 text-white" />
                             </div>
                         </div>
-                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                            <div className="bg-green-500 h-full w-[95%] rounded-full"></div>
+                        <div className="relative z-10 w-full bg-black/10 h-1.5 rounded-full overflow-hidden mt-4">
+                            <div className="bg-white h-full w-[95%] rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
                         </div>
                     </div>
 
                     {/* Card 2: Work Hours */}
-                    <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="flex justify-between items-start">
+                    <div className="relative group rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 p-6 text-white shadow-lg shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden">
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-50 group-hover:opacity-100"></div>
+                        <div className="relative z-10 flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Jam Kerja Total</p>
+                                <p className="text-white/80 text-xs font-medium uppercase tracking-wider">Jam Kerja Total</p>
                                 <div className="flex items-baseline gap-2 mt-1">
-                                    <h3 className="text-3xl font-bold text-slate-900">{monthStats.totalHours}h</h3>
-                                    <span className="text-xs font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">-5.2h</span>
-                                </div>
-                                <div className="flex items-center gap-1 mt-1 text-xs text-slate-400">
-                                    <span>Target: 176h/bulan</span>
+                                    <h3 className="text-3xl font-extrabold tracking-tight">{monthStats.totalHours}h</h3>
+                                    <span className="text-[10px] font-bold text-indigo-700 bg-white/90 px-1.5 py-0.5 rounded-full">-5.2h</span>
                                 </div>
                             </div>
-                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
-                                <Clock className="w-6 h-6" />
+                            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/10">
+                                <Clock className="w-5 h-5 text-white" />
                             </div>
+                        </div>
+                        <div className="relative z-10 text-xs text-white/70 font-medium">
+                            Target: 176h/bulan
                         </div>
                     </div>
 
                     {/* Card 3: Leave */}
-                    <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="flex justify-between items-start">
+                    <div className="relative group rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-white shadow-lg shadow-amber-500/20 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden">
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-50 group-hover:opacity-100"></div>
+                        <div className="relative z-10 flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sisa Cuti Tahunan</p>
-                                <h3 className="text-3xl font-bold text-slate-900 mt-1">{remainingLeave} Hari</h3>
-                                <p className="text-xs text-slate-400 mt-1">Hangus dalam 210 hari</p>
+                                <p className="text-white/80 text-xs font-medium uppercase tracking-wider">Sisa Cuti Tahunan</p>
+                                <h3 className="text-3xl font-extrabold tracking-tight mt-1">{remainingLeave} Hari</h3>
                             </div>
-                            <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center">
-                                <Calendar className="w-6 h-6" />
+                            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/10">
+                                <Calendar className="w-5 h-5 text-white" />
                             </div>
+                        </div>
+                        <div className="relative z-10 text-xs text-white/70 font-medium tracking-wide">
+                            Hangus dalam 210 hari
                         </div>
                     </div>
 
                     {/* Card 4: Tasks */}
-                    <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="flex justify-between items-start">
+                    <div className="relative group rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-500 p-6 text-white shadow-lg shadow-purple-500/20 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden">
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-50 group-hover:opacity-100"></div>
+                        <div className="relative z-10 flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tugas Selesai</p>
+                                <p className="text-white/80 text-xs font-medium uppercase tracking-wider">Tugas Selesai</p>
                                 <div className="flex items-baseline gap-2 mt-1">
-                                    <h3 className="text-3xl font-bold text-slate-900">{completedTasks}</h3>
-                                    <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">+4</span>
+                                    <h3 className="text-3xl font-extrabold tracking-tight">{completedTasks}</h3>
+                                    <span className="text-[10px] font-bold text-purple-700 bg-white/90 px-1.5 py-0.5 rounded-full">+4</span>
                                 </div>
-                                <p className="text-xs text-slate-400 mt-1">Bulan ini (Sprint 4)</p>
                             </div>
-                            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center">
-                                <Award className="w-6 h-6" />
+                            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm border border-white/10">
+                                <Award className="w-5 h-5 text-white" />
                             </div>
+                        </div>
+                        <div className="relative z-10 text-xs text-white/70 font-medium">
+                            Bulan ini (Sprint 4)
                         </div>
                     </div>
                 </div>
@@ -431,40 +439,40 @@ const KaryawanDashboardNew = () => {
                     {/* Left Column: Attendance Control (3 Cols) */}
                     <div className="lg:col-span-3 space-y-8">
                         {/* Attendance Clock Card */}
-                        <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm text-center relative overflow-hidden">
+                        <div className="bg-white/70 backdrop-blur-xl rounded-[32px] p-8 border border-white/40 shadow-xl shadow-slate-200/40 text-center relative overflow-hidden transition-all duration-300">
                             {/* Background decorative elements */}
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+                            <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-8">ATTENDANCE CONTROL</p>
+                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-8 relative z-10">ATTENDANCE CONTROL</p>
 
-                            <div className="mb-2">
-                                <h2 className="text-6xl font-mono font-bold text-slate-900 tracking-tighter tabular-nums">
+                            <div className="mb-2 relative z-10">
+                                <h2 className="text-6xl font-sans font-extrabold text-slate-800 tracking-tighter tabular-nums drop-shadow-sm">
                                     {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                 </h2>
                             </div>
 
-                            <p className="text-slate-500 font-medium mb-6">
+                            <p className="text-slate-500 text-sm font-medium mb-8 relative z-10">
                                 {format(currentTime, "EEEE, d MMMM yyyy", { locale: idLocale })}
                             </p>
 
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-semibold mb-10">
-                                <MapPin className="w-3 h-3" />
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-slate-100/80 backdrop-blur-sm text-slate-700 rounded-full text-xs font-semibold mb-10 border border-slate-200/50 relative z-10">
+                                <MapPin className="w-3.5 h-3.5 text-blue-500" />
                                 Lokasi: Kantor Pusat (Terverifikasi)
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4 relative z-10">
                                 {todayAttendance && !todayAttendance.clock_out ? (
                                     <>
                                         <button
                                             disabled={true}
-                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-100 text-slate-400 font-semibold cursor-not-allowed"
+                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 font-semibold cursor-not-allowed shadow-inner"
                                         >
                                             <CheckCircle2 className="w-5 h-5" />
                                             Sudah Masuk
                                         </button>
                                         <button
                                             onClick={() => navigate('/karyawan/absensi')}
-                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-[#DC2626] hover:bg-[#b91c1c] text-white font-semibold transition-all shadow-lg shadow-red-200 active:scale-95"
+                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold transition-all duration-300 shadow-lg shadow-slate-900/20 active:scale-95 border border-slate-800"
                                         >
                                             <LogOut className="w-5 h-5" />
                                             Check-Out
@@ -474,10 +482,10 @@ const KaryawanDashboardNew = () => {
                                     <>
                                         <button
                                             onClick={() => navigate('/karyawan/absensi')}
-                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-[#00A86B] hover:bg-[#008f5b] text-white font-semibold transition-all shadow-lg shadow-green-200 active:scale-95 col-span-2"
+                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold transition-all duration-300 shadow-lg shadow-slate-900/20 active:scale-95 col-span-2 border border-slate-800 focus:ring-4 focus:ring-slate-900/10"
                                         >
                                             <LogIn className="w-5 h-5" />
-                                            Check-In Sekarang
+                                            Catat Kehadiran Saya
                                         </button>
                                     </>
                                 )}
@@ -490,54 +498,53 @@ const KaryawanDashboardNew = () => {
                         </div>
 
                         {/* Quick Menu */}
-                        <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">QUICK ACTIONS</h3>
+                        <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm hover:shadow-md transition-all duration-300">
+                            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-5">QUICK ACTIONS</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <button
                                     onClick={() => navigate('/edit-password')}
-                                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition-all active:scale-95 group"
+                                    className="flex flex-col items-center justify-center p-4 rounded-[16px] bg-white hover:bg-slate-50 border border-slate-100/60 shadow-sm hover:shadow transition-all duration-300 active:scale-95 group"
                                 >
-                                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                    <div className="w-10 h-10 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center mb-3 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
                                         <Key className="w-5 h-5" />
                                     </div>
-                                    <span className="text-xs font-bold text-slate-700">Reset Password</span>
+                                    <span className="text-xs font-semibold text-slate-700">Reset Sandi</span>
                                 </button>
 
                                 <button
                                     onClick={() => navigate('/karyawan/cuti')}
-                                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition-all active:scale-95 group"
+                                    className="flex flex-col items-center justify-center p-4 rounded-[16px] bg-white hover:bg-slate-50 border border-slate-100/60 shadow-sm hover:shadow transition-all duration-300 active:scale-95 group"
                                 >
-                                    <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-2 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                                    <div className="w-10 h-10 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center mb-3 group-hover:bg-amber-50 group-hover:text-amber-600 transition-colors">
                                         <Calendar className="w-5 h-5" />
                                     </div>
-                                    <span className="text-xs font-bold text-slate-700">Pengajuan Cuti</span>
+                                    <span className="text-xs font-semibold text-slate-700">Izin & Cuti</span>
                                 </button>
 
                                 <button
                                     onClick={() => navigate('/karyawan/riwayat')}
-                                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition-all active:scale-95 group"
+                                    className="flex flex-col items-center justify-center p-4 rounded-[16px] bg-white hover:bg-slate-50 border border-slate-100/60 shadow-sm hover:shadow transition-all duration-300 active:scale-95 group"
                                 >
-                                    <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-2 group-hover:bg-green-600 group-hover:text-white transition-colors">
+                                    <div className="w-10 h-10 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center mb-3 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
                                         <FileText className="w-5 h-5" />
                                     </div>
-                                    <span className="text-xs font-bold text-slate-700">Laporan Absensi</span>
+                                    <span className="text-xs font-semibold text-slate-700">Riwayat Absen</span>
                                 </button>
 
                                 <button
                                     onClick={() => navigate('/karyawan/jurnal')}
-                                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition-all active:scale-95 group"
+                                    className="flex flex-col items-center justify-center p-4 rounded-[16px] bg-white hover:bg-slate-50 border border-slate-100/60 shadow-sm hover:shadow transition-all duration-300 active:scale-95 group"
                                 >
-                                    <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mb-2 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                    <div className="w-10 h-10 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center mb-3 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
                                         <BookOpen className="w-5 h-5" />
                                     </div>
-                                    <span className="text-xs font-bold text-slate-700">Jurnal Kerja</span>
+                                    <span className="text-xs font-semibold text-slate-700">Jurnal Kerja</span>
                                 </button>
                             </div>
                         </div>
 
-
                         {/* Upcoming Leave Card */}
-                        <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
+                        <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm transition-all duration-300">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-bold text-slate-900">Upcoming Leave</h3>
                                 <Link to="/karyawan/cuti" className="text-xs font-bold text-blue-600 hover:underline">View All</Link>
@@ -565,15 +572,17 @@ const KaryawanDashboardNew = () => {
                     <div className="lg:col-span-4 space-y-8">
 
                         {/* Journal Widget */}
-                        <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+                        <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white/40 shadow-sm overflow-hidden transition-all duration-300">
+                            <div className="p-6 border-b border-slate-100/50 flex items-center justify-between bg-white/40">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-                                        <FileText className="w-5 h-5" />
+                                    <div className="p-2 bg-slate-900 text-white rounded-xl shadow-sm">
+                                        <FileText className="w-4 h-4" />
                                     </div>
-                                    <h3 className="font-bold text-slate-900">Jurnal Kerja Hari Ini</h3>
+                                    <h3 className="font-bold text-slate-800">Jurnal Kerja Cepat</h3>
                                 </div>
-                                <span className="text-xs text-slate-400">Last updated: {lastSaved ? lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not saved'}</span>
+                                <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">
+                                    Last saved: {lastSaved ? lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                </span>
                             </div>
 
                             <div className="p-6">
@@ -654,9 +663,15 @@ const KaryawanDashboardNew = () => {
                                         <Button
                                             onClick={handleSaveJournal}
                                             disabled={isSavingJournal || !journalContent}
-                                            className="bg-[#1A5BA8] hover:bg-[#154a8a] text-white px-6 py-6 rounded-xl font-bold shadow-lg shadow-blue-200"
+                                            className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-6 rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 border border-slate-800"
                                         >
-                                            Simpan Jurnal <ChevronRight className="w-4 h-4 ml-1" />
+                                            {isSavingJournal ? (
+                                                <span className="flex items-center animate-pulse gap-2">
+                                                    <RefreshCw className="w-4 h-4 animate-spin" /> Memproses...
+                                                </span>
+                                            ) : (
+                                                <span>Simpan Log <ChevronRight className="w-4 h-4 ml-1 inline-block" /></span>
+                                            )}
                                         </Button>
                                     </div>
                                 </div>
@@ -665,10 +680,10 @@ const KaryawanDashboardNew = () => {
 
                         {/* Activity Stream */}
                         <div className="bg-transparent">
-                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">AKTIVITAS TERAKHIR</h3>
+                            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-4 pl-1">AKTIVITAS TERAKHIR</h3>
 
-                            <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm p-6">
-                                <div className="space-y-8 relative pl-6 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100 min-h-[100px]">
+                            <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white/40 shadow-sm p-6">
+                                <div className="space-y-8 relative pl-6 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200/60 min-h-[100px]">
                                     {recentActivities.length > 0 ? (
                                         recentActivities.map((activity, index) => {
                                             // Extract display title from content

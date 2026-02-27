@@ -393,23 +393,27 @@ const AbsensiKaryawan = () => {
   // Replaces separate mobile/desktop views with a fluid, adaptive design
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1A5BA8] to-[#0D305A] text-white font-['Inter',sans-serif] flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50/50 text-slate-900 font-['Inter',sans-serif] flex flex-col overflow-x-hidden relative">
+
+      {/* Background Graphic Abstract - Subtle SaaS Effect */}
+      <div className="absolute top-0 right-0 -z-10 w-[80vw] h-[60vh] bg-blue-100/40 rounded-full blur-[100px] pointer-events-none opacity-80 transform translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-0 left-0 -z-10 w-[60vw] h-[50vh] bg-emerald-100/40 rounded-full blur-[100px] pointer-events-none opacity-80 transform -translate-x-1/2 translate-y-1/2"></div>
 
       {/* Header - Non-sticky, spacious, safe-area aware */}
       <header className="relative z-20 w-full px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] flex items-center justify-between">
         <button
           onClick={() => navigate("/dashboard")}
-          className="group flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 transition-all active:scale-95"
+          className="group flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white/70 hover:bg-white backdrop-blur-md border border-white/40 shadow-sm transition-all active:scale-95"
         >
-          <ArrowLeft className="h-5 w-5 text-white/90 group-hover:-translate-x-1 transition-transform" />
-          <span className="text-base font-medium text-white/90 hidden sm:inline">Dashboard</span>
+          <ArrowLeft className="h-5 w-5 text-slate-700 group-hover:-translate-x-1 transition-transform" />
+          <span className="text-sm font-semibold text-slate-700 hidden sm:inline">Kembali</span>
         </button>
 
         {/* Location Badge */}
-        <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 shadow-lg">
-          <MapPin className="h-4 w-4 text-white/90" />
-          <span className="text-sm font-medium text-white/90 max-w-[200px] truncate">
-            {location || "Mencari lokasi..."}
+        <div className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-sm">
+          <MapPin className="h-4 w-4 text-blue-600" />
+          <span className="text-sm font-semibold text-slate-700 max-w-[200px] truncate">
+            {location || "Mengecek lokasi..."}
           </span>
         </div>
       </header>
@@ -422,53 +426,53 @@ const AbsensiKaryawan = () => {
           <div className="flex flex-col items-center justify-center text-center space-y-8 lg:space-y-12 animate-fade-in-up">
 
             {/* Date & Time */}
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/5 backdrop-blur-sm">
-                <Calendar className="h-4 w-4 text-white/80" />
-                <p className="text-sm font-medium text-white/90">
+            <div className="space-y-2 relative z-10 text-slate-900">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-white/40 border border-white/60 backdrop-blur-md shadow-sm">
+                <Calendar className="h-4 w-4 text-slate-600" />
+                <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">
                   {formatDate(currentTime)}
                 </p>
               </div>
               <div className="relative">
-                <h1 className="text-[64px] sm:text-[80px] lg:text-[100px] font-thin tracking-tighter leading-none tabular-nums font-mono drop-shadow-2xl">
+                <h1 className="text-[64px] sm:text-[80px] lg:text-[100px] font-sans font-extrabold tracking-tighter leading-none tabular-nums drop-shadow-sm text-slate-800">
                   {formatTime(currentTime)}
                 </h1>
-                <p className="text-white/50 text-sm sm:text-base font-light tracking-widest uppercase mt-2">Waktu Indonesia Barat</p>
+                <p className="text-slate-500 text-sm sm:text-base font-medium tracking-widest uppercase mt-2">Waktu Indonesia Barat</p>
               </div>
             </div>
 
             {/* Status Visualization */}
             <div className="relative group cursor-default">
               {/* Background Glow */}
-              <div className={`absolute inset-0 rounded-full blur-[60px] opacity-40 transition-colors duration-700
-                ${!todayAttendance ? 'bg-white' : !todayAttendance.clock_out ? 'bg-green-500' : 'bg-blue-500'}
+              <div className={`absolute inset-0 rounded-full blur-[80px] opacity-40 transition-colors duration-700
+                ${!todayAttendance ? 'bg-indigo-500' : !todayAttendance.clock_out ? 'bg-emerald-500' : 'bg-slate-500'}
               `} />
 
               <div className={`
-                relative w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80 rounded-full flex flex-col items-center justify-center gap-4 
-                bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl transition-all duration-500
-                ${!todayAttendance ? 'border-white/20' : !todayAttendance.clock_out ? 'border-green-400/30 bg-green-900/10' : 'border-blue-400/30 bg-blue-900/10'}
+                relative w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80 rounded-[40px] flex flex-col items-center justify-center gap-4 
+                bg-white/70 backdrop-blur-xl border border-white/70 shadow-2xl transition-all duration-500
+                ${!todayAttendance ? 'shadow-indigo-500/10' : !todayAttendance.clock_out ? 'shadow-emerald-500/20' : 'shadow-slate-500/10'}
               `}>
                 {!todayAttendance ? (
                   <>
-                    <LogIn className="h-16 w-16 text-white/80" />
-                    <span className="text-xl sm:text-2xl font-light text-white/90">Belum Masuk</span>
+                    <Fingerprint className="h-16 w-16 text-slate-300" />
+                    <span className="text-xl sm:text-2xl font-bold text-slate-700">Belum Masuk</span>
                   </>
                 ) : !todayAttendance.clock_out ? (
                   <>
-                    <div className="absolute inset-0 border-2 border-green-400/30 rounded-full animate-pulse-slow" />
-                    <Timer className="h-16 w-16 text-green-400" />
+                    <div className="absolute inset-0 border-[3px] border-emerald-400/50 rounded-[40px] animate-pulse-slow" />
+                    <Timer className="h-16 w-16 text-emerald-500" />
                     <div className="text-center">
-                      <span className="block text-xl sm:text-2xl font-bold text-green-100">Sedang Bekerja</span>
-                      <span className="text-sm sm:text-base text-green-200/80 mt-1">{formatTimeShort(new Date(todayAttendance.clock_in))}</span>
+                      <span className="block text-xl sm:text-2xl font-extrabold text-emerald-700">Sedang Bekerja</span>
+                      <span className="text-sm sm:text-base font-semibold text-emerald-600/80 mt-1">{formatTimeShort(new Date(todayAttendance.clock_in))}</span>
                     </div>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="h-16 w-16 text-blue-400" />
+                    <CheckCircle2 className="h-16 w-16 text-slate-400" />
                     <div className="text-center">
-                      <span className="block text-xl sm:text-2xl font-bold text-blue-100">Selesai</span>
-                      <div className="mt-2 text-sm px-4 py-1.5 bg-blue-500/20 rounded-full text-blue-100 border border-blue-400/20">
+                      <span className="block text-xl sm:text-2xl font-extrabold text-slate-700">Selesai</span>
+                      <div className="mt-2 text-sm px-4 py-1.5 bg-slate-100 rounded-full text-slate-600 font-semibold border border-slate-200">
                         {getWorkDuration()} kerja
                       </div>
                     </div>
@@ -483,19 +487,19 @@ const AbsensiKaryawan = () => {
           <div className="w-full max-w-md mx-auto flex flex-col gap-6 lg:gap-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
 
             {/* Shift Info Card */}
-            <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-6 lg:p-8 hover:bg-white/10 transition-colors">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-white/70" />
+            <div className="bg-white/70 backdrop-blur-md border border-white/40 rounded-[24px] p-6 lg:p-8 hover:shadow-md transition-all shadow-sm">
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Clock className="h-4 w-4" />
                 Jadwal Shift
               </h3>
               <div className="space-y-4">
-                <div className="flex justify-between items-center p-4 rounded-2xl bg-white/5 border border-white/5">
-                  <span className="text-white/70">Wajib Masuk</span>
-                  <span className="font-mono font-medium text-white">{settings.clockInStart} - {settings.clockInEnd}</span>
+                <div className="flex justify-between items-center p-4 rounded-xl bg-slate-50/50 border border-slate-100">
+                  <span className="text-slate-500 text-xs font-semibold uppercase tracking-wide">Wajib Masuk</span>
+                  <span className="font-mono font-bold text-slate-800 text-lg">{settings.clockInStart} - {settings.clockInEnd}</span>
                 </div>
-                <div className="flex justify-between items-center p-4 rounded-2xl bg-white/5 border border-white/5">
-                  <span className="text-white/70">Wajib Pulang</span>
-                  <span className="font-mono font-medium text-white">{settings.clockOutStart} - {settings.clockOutEnd}</span>
+                <div className="flex justify-between items-center p-4 rounded-xl bg-slate-50/50 border border-slate-100">
+                  <span className="text-slate-500 text-xs font-semibold uppercase tracking-wide">Wajib Pulang</span>
+                  <span className="font-mono font-bold text-slate-800 text-lg">{settings.clockOutStart} - {settings.clockOutEnd}</span>
                 </div>
               </div>
             </div>
@@ -506,13 +510,13 @@ const AbsensiKaryawan = () => {
                 <button
                   onClick={handleClockIn}
                   disabled={isLoading}
-                  className="w-full h-20 sm:h-24 rounded-3xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] transition-all flex items-center justify-between px-8 shadow-lg shadow-blue-900/50 group"
+                  className="w-full h-20 sm:h-24 rounded-[24px] bg-slate-900 hover:bg-slate-800 active:scale-95 transition-all duration-300 flex items-center justify-between px-8 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] group"
                 >
                   <div className="flex flex-col items-start">
-                    <span className="text-xl sm:text-2xl font-bold text-white">Clock In</span>
-                    <span className="text-blue-100 text-sm sm:text-base">Mulai sesi kerja Anda</span>
+                    <span className="text-xl sm:text-2xl font-extrabold text-white">Clock In</span>
+                    <span className="text-slate-300 text-sm sm:text-base font-medium">Catat kehadiran hari ini</span>
                   </div>
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/10 flex items-center justify-center group-hover:rotate-12 transition-transform border border-white/20">
                     {isLoading ? <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <LogIn className="h-6 w-6 sm:h-7 sm:w-7 text-white" />}
                   </div>
                 </button>
@@ -520,20 +524,20 @@ const AbsensiKaryawan = () => {
                 <button
                   onClick={initiateClockOut}
                   disabled={isLoading}
-                  className="w-full h-20 sm:h-24 rounded-3xl bg-red-600 hover:bg-red-500 active:scale-[0.98] transition-all flex items-center justify-between px-8 shadow-lg shadow-red-900/50 group"
+                  className="w-full h-20 sm:h-24 rounded-[24px] bg-white hover:bg-slate-50 active:scale-95 transition-all duration-300 flex items-center justify-between px-8 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.1)] border border-slate-200 group"
                 >
                   <div className="flex flex-col items-start">
-                    <span className="text-xl sm:text-2xl font-bold text-white">Clock Out</span>
-                    <span className="text-red-100 text-sm sm:text-base">Akhiri sesi kerja Anda</span>
+                    <span className="text-xl sm:text-2xl font-extrabold text-slate-800">Clock Out</span>
+                    <span className="text-slate-500 text-sm sm:text-base font-medium">Akhiri sesi via jurnal</span>
                   </div>
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform">
-                    {isLoading ? <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <LogOut className="h-6 w-6 sm:h-7 sm:w-7 text-white" />}
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-100 flex items-center justify-center group-hover:rotate-12 transition-transform border border-slate-200">
+                    {isLoading ? <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" /> : <LogOut className="h-6 w-6 sm:h-7 sm:w-7 text-slate-600" />}
                   </div>
                 </button>
               ) : (
-                <div className="w-full h-20 sm:h-24 rounded-3xl bg-white/10 border border-white/10 flex items-center justify-center gap-3">
-                  <CheckCircle2 className="h-8 w-8 text-green-400" />
-                  <span className="text-xl font-medium text-white/90">Shift Telah Selesai</span>
+                <div className="w-full h-20 sm:h-24 rounded-[24px] bg-white/70 backdrop-blur-md border border-white/40 flex items-center justify-center gap-3 shadow-sm">
+                  <CheckCircle2 className="h-8 w-8 text-slate-400" />
+                  <span className="text-xl font-bold text-slate-600">Terima Kasih, Sampai Jumpa 👋</span>
                 </div>
               )}
             </div>
@@ -541,15 +545,15 @@ const AbsensiKaryawan = () => {
             {/* Today's Summary */}
             {todayAttendance && (
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/5 text-center">
-                  <p className="text-xs text-white/60 mb-1 uppercase tracking-wide">Waktu Masuk</p>
-                  <p className="text-xl sm:text-2xl font-mono font-bold text-white">
+                <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 border border-white/40 text-center shadow-sm">
+                  <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest">Waktu Masuk</p>
+                  <p className="text-xl sm:text-2xl font-sans tracking-tight font-extrabold text-slate-800">
                     {formatTimeShort(new Date(todayAttendance.clock_in))}
                   </p>
                 </div>
-                <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/5 text-center">
-                  <p className="text-xs text-white/60 mb-1 uppercase tracking-wide">Waktu Pulang</p>
-                  <p className="text-xl sm:text-2xl font-mono font-bold text-white">
+                <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 border border-white/40 text-center shadow-sm">
+                  <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest">Waktu Pulang</p>
+                  <p className="text-xl sm:text-2xl font-sans tracking-tight font-extrabold text-slate-800">
                     {todayAttendance.clock_out ? formatTimeShort(new Date(todayAttendance.clock_out)) : "--:--"}
                   </p>
                 </div>

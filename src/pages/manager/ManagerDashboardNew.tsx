@@ -326,18 +326,18 @@ const ManagerDashboardNew = () => {
                 {/* Charts Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                     {/* Weekly Attendance Chart */}
-                    <Card className="lg:col-span-2 border-slate-200 shadow-sm bg-white">
+                    <Card className="lg:col-span-2 border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-base font-semibold text-slate-800">Kehadiran Minggu Ini</CardTitle>
-                                    <CardDescription className="text-sm">Data 7 hari terakhir</CardDescription>
+                                    <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Kehadiran Minggu Ini</CardTitle>
+                                    <CardDescription className="text-xs text-slate-400 font-medium">Data 7 hari terakhir</CardDescription>
                                 </div>
                                 <Link to="/manager/laporan">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-8 text-xs gap-1.5 border-slate-200"
+                                        className="h-8 text-xs gap-1.5 border-slate-200/60 rounded-xl font-semibold"
                                     >
                                         <BarChart3 className="h-3.5 w-3.5" />
                                         Detail
@@ -389,10 +389,10 @@ const ManagerDashboardNew = () => {
                     </Card>
 
                     {/* Today's Breakdown */}
-                    <Card className="border-slate-200 shadow-sm bg-white">
+                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-semibold text-slate-800">Ringkasan Kemarin</CardTitle>
-                            <CardDescription className="text-sm">Distribusi {reportDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</CardDescription>
+                            <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Ringkasan Kemarin</CardTitle>
+                            <CardDescription className="text-xs text-slate-400 font-medium">Distribusi {reportDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {attendanceBreakdown.length > 0 ? (
@@ -470,7 +470,7 @@ const ManagerDashboardNew = () => {
                     {/* Quick Actions + Journals */}
                     <div className="flex flex-col gap-3">
                         <Link to="/manager/absensi">
-                            <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all group cursor-pointer bg-white">
+                            <div className="flex items-center gap-4 p-4 rounded-[18px] border border-white/60 hover:border-slate-200 hover:shadow-md transition-all group cursor-pointer bg-white/70 backdrop-blur-md">
                                 <div
                                     className="w-12 h-12 rounded-xl flex items-center justify-center transition-all group-hover:shadow-md"
                                     style={{ backgroundColor: `${BRAND_COLORS.blue}15` }}
@@ -485,7 +485,7 @@ const ManagerDashboardNew = () => {
                             </div>
                         </Link>
                         <Link to="/manager/laporan">
-                            <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-green-300 hover:bg-green-50/50 transition-all group cursor-pointer bg-white">
+                            <div className="flex items-center gap-4 p-4 rounded-[18px] border border-white/60 hover:border-slate-200 hover:shadow-md transition-all group cursor-pointer bg-white/70 backdrop-blur-md">
                                 <div
                                     className="w-12 h-12 rounded-xl flex items-center justify-center transition-all group-hover:shadow-md"
                                     style={{ backgroundColor: `${BRAND_COLORS.green}15` }}
@@ -500,7 +500,7 @@ const ManagerDashboardNew = () => {
                             </div>
                         </Link>
                         <Link to="/manager/cuti">
-                            <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-amber-300 hover:bg-amber-50/50 transition-all group cursor-pointer bg-white">
+                            <div className="flex items-center gap-4 p-4 rounded-[18px] border border-white/60 hover:border-slate-200 hover:shadow-md transition-all group cursor-pointer bg-white/70 backdrop-blur-md">
                                 <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center transition-all group-hover:bg-amber-100">
                                     <FileCheck className="h-6 w-6 text-amber-600" />
                                 </div>
@@ -523,11 +523,11 @@ const ManagerDashboardNew = () => {
                         </Link>
 
                         {/* Jurnal Tim Terbaru - Using new React Query hook */}
-                        <Card className="border-slate-200 shadow-sm bg-white">
-                            <CardHeader className="pb-3 border-b border-slate-100">
+                        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
+                            <CardHeader className="pb-3 border-b border-slate-100/80">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                                        <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2 tracking-tight">
                                             <BookOpen className="h-4 w-4 text-amber-600" />
                                             Jurnal Tim Terbaru
                                         </CardTitle>
@@ -584,12 +584,12 @@ const ManagerDashboardNew = () => {
                 {/* Row 4: Monthly Trend + Department Distribution */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* 6-Month Attendance Trend */}
-                    <Card className="border-slate-200 shadow-sm bg-white">
+                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-base font-semibold text-slate-800">Tren Kehadiran 6 Bulan</CardTitle>
-                                    <CardDescription className="text-sm">Persentase kehadiran bulanan</CardDescription>
+                                    <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Tren Kehadiran 6 Bulan</CardTitle>
+                                    <CardDescription className="text-xs text-slate-400 font-medium">Persentase kehadiran bulanan</CardDescription>
                                 </div>
                                 <TrendingUp className="h-5 w-5" style={{ color: BRAND_COLORS.green }} />
                             </div>
@@ -644,12 +644,12 @@ const ManagerDashboardNew = () => {
                     </Card>
 
                     {/* Department Distribution */}
-                    <Card className="border-slate-200 shadow-sm bg-white">
+                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-base font-semibold text-slate-800">Distribusi Departemen</CardTitle>
-                                    <CardDescription className="text-sm">Jumlah karyawan per departemen</CardDescription>
+                                    <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Distribusi Departemen</CardTitle>
+                                    <CardDescription className="text-xs text-slate-400 font-medium">Jumlah karyawan per departemen</CardDescription>
                                 </div>
                                 <Building2 className="h-5 w-5" style={{ color: BRAND_COLORS.blue }} />
                             </div>

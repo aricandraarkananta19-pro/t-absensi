@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Clock, Search, Calendar as CalendarIcon, Users, CheckCircle2,
-  XCircle, AlertCircle, Download, FileSpreadsheet, FileText,
+  XCircle, AlertCircle, FileText,
   LayoutDashboard, BarChart3, Building2, Key, Settings, Shield, Database,
   ChevronLeft, ChevronRight, LogIn, LogOut, Trash2, Filter, RefreshCw
 } from "lucide-react";
@@ -38,8 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { exportToCSV } from "@/lib/exportUtils";
-import { exportAttendanceExcel, exportAttendanceHRPDF, AttendanceReportData } from "@/lib/attendanceExportUtils";
+
 import { generateAttendancePeriod } from "@/lib/attendanceGenerator";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
@@ -443,23 +442,24 @@ const RekapAbsensi = () => {
       menuSections={ADMIN_MENU_SECTIONS}
       roleLabel="Administrator"
       showRefresh={false}
+      showExport={false}
     >
       {/* Main Content */}
       <div className="space-y-6">
 
         {/* 1. Header & Filters Card */}
-        <Card className="border-slate-200 shadow-sm bg-white">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
           <div className="p-4 flex flex-col lg:flex-row gap-4 justify-between lg:items-center">
 
             {/* View Switcher */}
-            <div className="flex bg-slate-100 p-1 rounded-lg shrink-0 w-fit">
+            <div className="flex bg-slate-100/80 p-1 rounded-xl shrink-0 w-fit">
               {(['daily', 'monthly', 'range'] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setViewMode(m)}
                   className={cn(
-                    "px-4 py-2 text-sm font-medium rounded-md transition-all capitalize",
-                    viewMode === m ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                    "px-4 py-2 text-sm font-semibold rounded-lg transition-all capitalize",
+                    viewMode === m ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
                   )}
                 >
                   {m === 'range' ? 'Periode' : (m === 'daily' ? 'Harian' : 'Bulanan')}
@@ -468,7 +468,7 @@ const RekapAbsensi = () => {
             </div>
 
             {/* Date Navigation */}
-            <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+            <div className="flex items-center gap-3 bg-white/50 p-1.5 rounded-xl border border-slate-200/60">
               {viewMode === 'range' ? (
                 <Popover>
                   <PopoverTrigger asChild>
@@ -507,16 +507,16 @@ const RekapAbsensi = () => {
           {/* Filters */}
           <div className="px-4 pb-4 flex flex-col sm:flex-row gap-3 border-t border-slate-50 pt-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Cari karyawan..."
-                className="pl-9 bg-slate-50 border-slate-200"
+                className="pl-10 bg-white/50 border-slate-200/60 rounded-xl h-10 font-medium"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-              <SelectTrigger className="w-[200px] bg-slate-50 border-slate-200">
+              <SelectTrigger className="w-[200px] bg-white/50 border-slate-200/60 rounded-xl h-10 font-medium">
                 <Filter className="w-3.5 h-3.5 mr-2 text-slate-400" />
                 <SelectValue placeholder="Semua Departemen" />
               </SelectTrigger>
@@ -530,68 +530,68 @@ const RekapAbsensi = () => {
 
         {/* 2. Stat Cards Summary */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-          <Card className="bg-white border-slate-200 shadow-sm p-4 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+          <Card className="bg-white/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-medium uppercase">Hadir</p>
-              <p className="text-xl font-bold text-slate-900">{currentStats.totalPresent}</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Hadir</p>
+              <p className="text-xl font-extrabold text-slate-900 tracking-tight">{currentStats.totalPresent}</p>
             </div>
           </Card>
-          <Card className="bg-white border-slate-200 shadow-sm p-4 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+          <Card className="bg-white/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
+            <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
               <AlertCircle className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-medium uppercase">Terlambat</p>
-              <p className="text-xl font-bold text-slate-900">{currentStats.totalLate}</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Terlambat</p>
+              <p className="text-xl font-extrabold text-slate-900 tracking-tight">{currentStats.totalLate}</p>
             </div>
           </Card>
-          <Card className="bg-white border-slate-200 shadow-sm p-4 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-red-50 flex items-center justify-center text-red-600">
+          <Card className="bg-white/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
+            <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
               <XCircle className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-medium uppercase">Alpha</p>
-              <p className="text-xl font-bold text-slate-900">{currentStats.totalAbsent}</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Alpha</p>
+              <p className="text-xl font-extrabold text-slate-900 tracking-tight">{currentStats.totalAbsent}</p>
             </div>
           </Card>
-          <Card className="bg-white border-slate-200 shadow-sm p-4 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+          <Card className="bg-white/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
+            <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-medium uppercase">Cuti / Izin</p>
-              <p className="text-xl font-bold text-slate-900">{currentStats.totalLeave}</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cuti / Izin</p>
+              <p className="text-xl font-extrabold text-slate-900 tracking-tight">{currentStats.totalLeave}</p>
             </div>
           </Card>
         </div>
 
         {/* 3. Data Table */}
-        <Card className="border-slate-200 shadow-sm bg-white overflow-hidden">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md overflow-hidden rounded-[20px]">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow>
-                  <TableHead className="w-[50px] font-bold text-slate-600">No</TableHead>
-                  <TableHead className="font-bold text-slate-600">Karyawan</TableHead>
-                  <TableHead className="font-bold text-slate-600">Departemen</TableHead>
+              <TableHeader className="bg-slate-50/50">
+                <TableRow className="border-b border-slate-100">
+                  <TableHead className="w-[50px] font-bold text-slate-400 text-[10px] uppercase tracking-wider">No</TableHead>
+                  <TableHead className="font-bold text-slate-400 text-[10px] uppercase tracking-wider">Karyawan</TableHead>
+                  <TableHead className="font-bold text-slate-400 text-[10px] uppercase tracking-wider">Departemen</TableHead>
                   {viewMode === 'daily' ? (
                     <>
-                      <TableHead className="font-bold text-slate-600 text-center">Jam Masuk</TableHead>
-                      <TableHead className="font-bold text-slate-600 text-center">Jam Keluar</TableHead>
-                      <TableHead className="font-bold text-slate-600 text-center">Durasi</TableHead>
+                      <TableHead className="font-bold text-slate-400 text-[10px] uppercase tracking-wider text-center">Jam Masuk</TableHead>
+                      <TableHead className="font-bold text-slate-400 text-[10px] uppercase tracking-wider text-center">Jam Keluar</TableHead>
+                      <TableHead className="font-bold text-slate-400 text-[10px] uppercase tracking-wider text-center">Durasi</TableHead>
                     </>
                   ) : (
                     <>
-                      <TableHead className="font-bold text-slate-600 text-center">Hadir</TableHead>
-                      <TableHead className="font-bold text-slate-600 text-center">Terlambat</TableHead>
-                      <TableHead className="font-bold text-slate-600 text-center">Alpha</TableHead>
+                      <TableHead className="font-bold text-slate-400 text-[10px] uppercase tracking-wider text-center">Hadir</TableHead>
+                      <TableHead className="font-bold text-slate-400 text-[10px] uppercase tracking-wider text-center">Terlambat</TableHead>
+                      <TableHead className="font-bold text-slate-400 text-[10px] uppercase tracking-wider text-center">Alpha</TableHead>
                     </>
                   )}
-                  <TableHead className="font-bold text-slate-600 text-center">Status</TableHead>
-                  <TableHead className="font-bold text-slate-600 text-end">Aksi</TableHead>
+                  <TableHead className="font-bold text-slate-400 text-[10px] uppercase tracking-wider text-center">Status</TableHead>
+                  <TableHead className="font-bold text-slate-400 text-[10px] uppercase tracking-wider text-end">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

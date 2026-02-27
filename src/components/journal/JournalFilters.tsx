@@ -37,14 +37,14 @@ export function JournalFilters({
     const hasActiveFilters = status !== 'all' || department !== 'all' || date || search;
 
     return (
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-6">
+        <div className="bg-white/70 backdrop-blur-md p-4 rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-6">
 
             {/* Search */}
             <div className="relative w-full md:w-1/3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                     placeholder="Search by Employee, ID, or Content..."
-                    className="pl-9 bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                    className="pl-10 bg-white/50 border-slate-200/60 rounded-xl h-10 font-medium focus:bg-white transition-all"
                     value={search}
                     onChange={(e) => onSearchChange(e.target.value)}
                 />
@@ -55,7 +55,7 @@ export function JournalFilters({
 
                 {/* Department Filter */}
                 <Select value={department} onValueChange={onDepartmentChange}>
-                    <SelectTrigger className="w-[160px] bg-slate-50 border-slate-200">
+                    <SelectTrigger className="w-[160px] bg-white/50 border-slate-200/60 rounded-xl h-10 font-medium">
                         <SelectValue placeholder="All Departments" />
                     </SelectTrigger>
                     <SelectContent>
@@ -70,7 +70,7 @@ export function JournalFilters({
 
                 {/* Status Filter */}
                 <Select value={status} onValueChange={onStatusChange}>
-                    <SelectTrigger className="w-[140px] bg-slate-50 border-slate-200">
+                    <SelectTrigger className="w-[140px] bg-white/50 border-slate-200/60 rounded-xl h-10 font-medium">
                         <SelectValue placeholder="Status: All" />
                     </SelectTrigger>
                     <SelectContent>
@@ -88,7 +88,7 @@ export function JournalFilters({
                         <Button
                             variant={"outline"}
                             className={cn(
-                                "w-[160px] justify-start text-left font-normal bg-slate-50 border-slate-200",
+                                "w-[160px] justify-start text-left font-medium bg-white/50 border-slate-200/60 rounded-xl h-10",
                                 !date && "text-muted-foreground"
                             )}
                         >

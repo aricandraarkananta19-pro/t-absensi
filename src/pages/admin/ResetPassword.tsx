@@ -145,63 +145,65 @@ const ResetPassword = () => {
       <div className="pb-8">
 
         {/* Main Content */}
-        <main className="container mx-auto px-4 py-8">
+        <main className="max-w-6xl mx-auto">
           {/* Search */}
           <div className="flex gap-4 mb-6">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
                 placeholder="Cari karyawan..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-11 bg-white/70 backdrop-blur-md border-slate-200/60 rounded-xl shadow-sm focus:ring-2 focus:ring-slate-200/50 font-medium text-slate-800"
               />
             </div>
           </div>
 
           {/* Table */}
-          <Card className="border-border">
-            <CardContent className="p-0">
+          <div className="bg-white/70 backdrop-blur-md rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 overflow-hidden">
+            <div className="p-0">
               {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <div className="flex items-center justify-center py-16">
+                  <div className="h-8 w-8 animate-spin rounded-full border-3 border-slate-300 border-t-slate-700" />
                 </div>
               ) : filteredEmployees.length === 0 ? (
-                <div className="py-12 text-center">
-                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-foreground">Tidak Ada Data</h3>
-                  <p className="text-muted-foreground">Belum ada karyawan terdaftar</p>
+                <div className="py-16 text-center">
+                  <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Users className="h-8 w-8 text-slate-400" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-700">Tidak Ada Data</h3>
+                  <p className="text-slate-500 text-sm font-medium mt-1">Belum ada karyawan terdaftar</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Nama</TableHead>
-                      <TableHead className="hidden sm:table-cell">Departemen</TableHead>
-                      <TableHead className="w-[120px]">Aksi</TableHead>
+                    <TableRow className="bg-slate-50/50 border-b border-slate-100">
+                      <TableHead className="font-bold text-slate-500 text-xs uppercase tracking-wider">Nama</TableHead>
+                      <TableHead className="hidden sm:table-cell font-bold text-slate-500 text-xs uppercase tracking-wider">Departemen</TableHead>
+                      <TableHead className="w-[120px] font-bold text-slate-500 text-xs uppercase tracking-wider">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredEmployees.map((employee) => (
-                      <TableRow key={employee.id}>
+                      <TableRow key={employee.id} className="hover:bg-slate-50/50 transition-colors">
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-sm font-medium text-primary">
+                            <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center">
+                              <span className="text-xs font-bold text-slate-600">
                                 {employee.full_name?.charAt(0)?.toUpperCase() || "?"}
                               </span>
                             </div>
-                            <span className="font-medium">{employee.full_name || "-"}</span>
+                            <span className="font-semibold text-slate-800 text-sm">{employee.full_name || "-"}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="hidden sm:table-cell text-muted-foreground">
+                        <TableCell className="hidden sm:table-cell text-slate-500 text-sm">
                           {employee.department || "-"}
                         </TableCell>
                         <TableCell>
                           <Button
                             size="sm"
                             variant="outline"
-                            className="gap-2"
+                            className="gap-2 rounded-xl border-slate-200 hover:bg-slate-50 font-semibold text-xs h-9"
                             onClick={() => {
                               setSelectedEmployee(employee);
                               setDialogOpen(true);
@@ -216,23 +218,23 @@ const ResetPassword = () => {
                   </TableBody>
                 </Table>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Reset Password Dialog */}
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogContent>
+            <DialogContent className="rounded-[20px] border-slate-200/60">
               <DialogHeader>
-                <DialogTitle>Reset Password</DialogTitle>
-                <DialogDescription>
-                  Reset password untuk {selectedEmployee?.full_name}
+                <DialogTitle className="text-lg font-extrabold text-slate-800 tracking-tight">Reset Password</DialogTitle>
+                <DialogDescription className="text-sm text-slate-500 font-medium">
+                  Reset password untuk <span className="font-bold text-slate-700">{selectedEmployee?.full_name}</span>
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <div className="flex gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={generateRandomPassword} className="gap-2">
-                      <RefreshCw className="h-4 w-4" />
+                    <Button type="button" variant="outline" size="sm" onClick={generateRandomPassword} className="gap-2 rounded-xl border-slate-200 font-semibold text-xs">
+                      <RefreshCw className="h-3.5 w-3.5" />
                       Generate Password
                     </Button>
                   </div>
@@ -285,16 +287,16 @@ const ResetPassword = () => {
                     )}
                   />
 
-                  <div className="flex gap-3 pt-2">
-                    <Button type="button" variant="outline" className="flex-1" onClick={() => {
+                  <div className="flex gap-3 pt-4 border-t border-slate-100">
+                    <Button type="button" variant="outline" className="flex-1 h-11 rounded-xl border-slate-200 font-bold" onClick={() => {
                       setDialogOpen(false);
                       form.reset();
                     }}>
                       Batal
                     </Button>
-                    <Button type="submit" className="flex-1" disabled={isResetting}>
+                    <Button type="submit" className="flex-1 h-11 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold shadow-lg shadow-slate-900/20" disabled={isResetting}>
                       {isResetting ? (
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                       ) : (
                         "Reset Password"
                       )}

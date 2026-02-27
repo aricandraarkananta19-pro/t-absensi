@@ -134,7 +134,8 @@ const RiwayatAbsensi = () => {
         absentDates: [],
         lateDates: [],
         leaveDates: [],
-        remarks: "-"
+        remarks: "-",
+        dailyStatus: {}
       }],
       leaveRequests: []
     };
@@ -146,22 +147,36 @@ const RiwayatAbsensi = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="-ml-2 text-slate-500 hover:text-slate-900">
-              <ArrowLeft className="h-5 w-5" />
+    <div className="min-h-screen bg-slate-50/50 pb-20 font-['Inter',sans-serif] relative overflow-x-hidden text-slate-900">
+
+      {/* Background Graphic Abstract */}
+      <div className="absolute top-0 right-0 -z-0 w-[60vw] h-[40vh] bg-blue-100/40 rounded-full blur-[100px] pointer-events-none opacity-60 transform translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-0 left-0 -z-0 w-[40vw] h-[40vh] bg-emerald-100/30 rounded-full blur-[100px] pointer-events-none opacity-60 transform -translate-x-1/2 translate-y-1/2"></div>
+
+      {/* Main Container */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10 space-y-8">
+
+        {/* Header Section */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="flex flex-col items-start gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/dashboard")}
+              className="text-slate-500 hover:text-slate-800 hover:bg-white/50 border border-transparent hover:border-slate-200/60 rounded-xl transition-all shadow-sm bg-white"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Kembali ke Dashboard
             </Button>
             <div>
-              <h1 className="text-xl font-bold text-slate-800">Riwayat Kehadiran</h1>
-              <p className="text-sm text-slate-500">Rekapitulasi absensi bulanan Anda</p>
+              <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-800 tracking-tight">Riwayat Kehadiran</h1>
+              <p className="text-slate-500 font-medium text-sm mt-2 max-w-md">Pantau rekam jejak presensi Anda secara transparan dan real-time.</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 bg-white/70 backdrop-blur-md p-2 rounded-[20px] shadow-sm border border-white/40">
             {/* View Mode Toggle */}
-            <div className="bg-slate-100 p-1 rounded-lg flex">
+            <div className="bg-slate-100/50 p-1.5 rounded-xl flex gap-1">
               <button
                 onClick={() => setViewMode('monthly')}
                 className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-all", viewMode === 'monthly' ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-900")}
@@ -176,12 +191,14 @@ const RiwayatAbsensi = () => {
               </button>
             </div>
 
+            <div className="w-px h-8 bg-slate-200/60 hidden sm:block mx-1"></div>
+
             {/* Export Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 h-9">
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Export</span>
+                <Button variant="outline" size="sm" className="gap-2 h-10 px-4 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold transition-all">
+                  <Download className="w-4 h-4 text-slate-500" />
+                  <span className="hidden sm:inline">Unduh Laporan</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -194,25 +211,24 @@ const RiwayatAbsensi = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-6">
         {/* Filter Bar */}
-        <Card className="border-slate-200 shadow-sm sticky top-[73px] z-20">
-          <CardContent className="p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="bg-white/70 backdrop-blur-md border border-white/60 shadow-lg shadow-slate-200/40 rounded-[24px] p-5 sm:p-6 lg:p-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/50">
+
             {viewMode === 'monthly' ? (
-              <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
-                <Button variant="outline" size="icon" onClick={handlePrevMonth}><ChevronLeft className="w-4 h-4" /></Button>
-                <span className="text-lg font-bold w-48 text-center text-slate-800">{format(currentMonth, "MMMM yyyy", { locale: id })}</span>
-                <Button variant="outline" size="icon" onClick={handleNextMonth}><ChevronRight className="w-4 h-4" /></Button>
+              <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start pt-4 sm:pt-0 pr-0 sm:pr-8">
+                <Button variant="outline" size="icon" onClick={handlePrevMonth} className="rounded-xl border-slate-200 hover:bg-slate-100 bg-white shadow-sm"><ChevronLeft className="w-4 h-4 text-slate-600" /></Button>
+                <span className="text-xl font-extrabold w-48 text-center text-slate-800 tracking-tight">{format(currentMonth, "MMMM yyyy", { locale: id })}</span>
+                <Button variant="outline" size="icon" onClick={handleNextMonth} className="rounded-xl border-slate-200 hover:bg-slate-100 bg-white shadow-sm"><ChevronRight className="w-4 h-4 text-slate-600" /></Button>
               </div>
             ) : (
-              <div className="flex items-center gap-4 w-full">
+              <div className="flex items-center gap-4 w-full pt-4 sm:pt-0 pb-4 sm:pb-0">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full sm:w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                    <Button variant="outline" className={cn("w-full sm:w-[320px] justify-start text-left font-semibold rounded-xl border-slate-200 bg-white h-12 shadow-sm text-slate-700", !dateRange && "text-slate-400")}>
+                      <CalendarIcon className="mr-3 h-5 w-5 text-blue-500" />
                       {dateRange?.from ? (
                         dateRange.to ? (
                           <>{format(dateRange.from, "d MMM yyyy")} - {format(dateRange.to, "d MMM yyyy")}</>
@@ -237,15 +253,26 @@ const RiwayatAbsensi = () => {
                 </Popover>
               </div>
             )}
-          </CardContent>
-        </Card>
+
+            <div className="w-full sm:w-auto flex-1 pl-0 sm:pl-8 pt-4 sm:pt-0">
+              <div className="flex items-center justify-between sm:justify-end gap-3 text-sm font-semibold text-slate-500">
+                <span className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/30"></div> Total: {stats.totalDays} Hari</span>
+                <span className="flex items-center gap-2"><Filter className="w-4 h-4" /> Filter Aktif</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Stats Section */}
-        <AttendanceStats stats={stats} loading={isLoading} />
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <AttendanceStats stats={stats} loading={isLoading} />
+        </div>
 
         {/* Table Section */}
-        <AttendanceHistoryTable data={attendanceList} isLoading={isLoading} />
-      </main>
+        <div className="bg-white/80 backdrop-blur-md rounded-[32px] border border-white shadow-xl shadow-slate-200/40 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100 p-2 sm:p-6">
+          <AttendanceHistoryTable data={attendanceList} isLoading={isLoading} />
+        </div>
+      </div>
 
       {isMobile && <MobileNavigation />}
     </div>

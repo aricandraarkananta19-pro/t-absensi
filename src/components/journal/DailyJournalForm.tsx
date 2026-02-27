@@ -50,17 +50,21 @@ export function DailyJournalForm({
     };
 
     return (
-        <Card className="border border-slate-200 shadow-sm bg-white">
-            <CardHeader className="pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-2 text-blue-600 mb-1">
-                    <Edit3 className="w-5 h-5" />
-                    <h2 className="text-lg font-bold text-slate-900">Log Today's Activity</h2>
+        <Card className="border-0 shadow-xl shadow-slate-200/40 bg-white/70 backdrop-blur-xl rounded-[32px] overflow-hidden">
+            <CardHeader className="pb-6 border-b border-white/60 bg-white/40 pt-8 px-8">
+                <div className="flex items-center gap-4 mb-2">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white">
+                        <Edit3 className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Tulis Jurnal Hari Ini</h2>
+                        <CardDescription className="text-slate-500 font-medium mt-1">
+                            Catat progres pekerjaanmu. Laporan terperinci membantu penilaian performa.
+                        </CardDescription>
+                    </div>
                 </div>
-                <CardDescription>
-                    Catat aktivitas harian Anda untuk pelaporan kinerja.
-                </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-8">
                 <form onSubmit={handleSubmit} className="space-y-5">
 
                     {/* Activity Title */}
@@ -142,17 +146,20 @@ export function DailyJournalForm({
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="pt-2 flex justify-end">
+                    <div className="pt-6 mt-6 border-t border-slate-200/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center sm:text-left">
+                            Jurnal ini akan diteruskan ke manajer Anda.
+                        </p>
                         <Button
                             type="submit"
                             disabled={isSubmitting}
-                            className="bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded-lg px-6 h-11 shadow-sm gap-2"
+                            className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl px-8 h-12 shadow-lg shadow-slate-900/20 gap-2 active:scale-95 transition-all duration-300"
                         >
                             {isSubmitting ? (
-                                <>Processing...</>
+                                <>Memproses...</>
                             ) : (
                                 <>
-                                    Submit Journal <Send className="w-4 h-4" />
+                                    Kirim Laporan <Send className="w-4 h-4 ml-1" />
                                 </>
                             )}
                         </Button>

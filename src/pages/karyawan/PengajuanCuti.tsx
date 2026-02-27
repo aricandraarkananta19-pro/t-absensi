@@ -241,194 +241,218 @@ const PengajuanCuti = () => {
   };
 
   // ==========================================
-  // iOS MOBILE VIEW
+  // UNIFIED RESPONSIVE SAAS VIEW
   // ==========================================
-  if (isMobile) {
-    return (
-      <div className="ios-mobile-container">
-        {/* iOS Header */}
-        <header className="ios-header-slim">
-          {/* Back Button Row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="ios-back-btn"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <div>
-                <h1 className="ios-header-title">Pengajuan Cuti</h1>
-                <p className="ios-header-subtitle">Ajukan izin atau cuti</p>
-              </div>
-            </div>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <button className="p-2 rounded-xl bg-white/20 active:bg-white/30 transition-colors shadow-sm border border-white/10">
-                  <Plus className="h-5 w-5 text-white" />
-                </button>
-              </DialogTrigger>
-              <DialogContent className="mx-4 rounded-2xl max-w-[calc(100vw-32px)]">
-                <DialogHeader>
-                  <DialogTitle>Pengajuan Cuti Baru</DialogTitle>
-                  <DialogDescription>
-                    Isi form di bawah untuk mengajukan cuti atau izin
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="leave_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Jenis Cuti</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Pilih jenis cuti" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="cuti">Cuti Tahunan</SelectItem>
-                              <SelectItem value="sakit">Sakit</SelectItem>
-                              <SelectItem value="izin">Izin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+  return (
+    <div className="min-h-screen bg-slate-50/50 text-slate-900 font-['Inter',sans-serif] pb-24 lg:pb-12 relative overflow-x-hidden">
+      {/* Background Graphic Abstract */}
+      <div className="absolute top-0 right-0 -z-0 w-[60vw] h-[40vh] bg-amber-100/40 rounded-full blur-[100px] pointer-events-none opacity-60 transform translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute top-[20%] left-0 -z-0 w-[40vw] h-[40vh] bg-orange-100/30 rounded-full blur-[100px] pointer-events-none opacity-60 transform -translate-x-1/2 translate-y-1/2"></div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="start_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tanggal Mulai</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="date" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+      {/* Header Container */}
+      <div className="px-6 py-6 md:py-8 max-w-5xl mx-auto relative z-10">
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/dashboard')}
+            className="text-slate-500 hover:text-slate-800 hover:bg-white/50 border border-transparent hover:border-slate-200/60 rounded-xl transition-all shadow-sm bg-white border-slate-100"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Kembali ke Dashboard
+          </Button>
+        </div>
 
-                      <FormField
-                        control={form.control}
-                        name="end_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tanggal Selesai</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="date" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+        {/* Page Title & Action */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+          <div>
+            <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-800 tracking-tight">Izin & Cuti</h1>
+            <p className="text-slate-500 font-medium text-sm mt-2 max-w-md">Ajukan permohonan cuti, sakit, atau izin dengan mudah melalui portal ini.</p>
+          </div>
 
-                    <FormField
-                      control={form.control}
-                      name="reason"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Alasan</FormLabel>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl px-6 h-12 shadow-lg shadow-slate-900/20 gap-2 active:scale-95 transition-all duration-300 w-full sm:w-auto">
+                <Plus className="h-5 w-5 text-white" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="mx-4 rounded-[24px] max-w-md border-0 shadow-2xl p-0 overflow-hidden bg-white/90 backdrop-blur-xl">
+              <DialogHeader className="px-6 py-6 pb-2">
+                <DialogTitle className="text-xl font-extrabold text-slate-800">Form Pengajuan</DialogTitle>
+                <DialogDescription className="text-slate-500 font-medium">
+                  Isi form di bawah untuk mengajukan cuti atau izin.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="px-6 pb-6 space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="leave_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-widest">Jenis Cuti</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <Textarea {...field} placeholder="Jelaskan alasan pengajuan cuti" rows={3} />
+                            <SelectTrigger className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-blue-500/20 font-medium text-slate-700">
+                              <SelectValue placeholder="Pilih jenis" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="rounded-xl border-slate-200 shadow-xl">
+                            <SelectItem value="cuti" className="py-2.5 font-medium cursor-pointer">Cuti Tahunan</SelectItem>
+                            <SelectItem value="sakit" className="py-2.5 font-medium cursor-pointer">Sakit</SelectItem>
+                            <SelectItem value="izin" className="py-2.5 font-medium cursor-pointer">Izin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="start_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-widest">Mulai</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="date" className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-blue-500/20 font-medium text-slate-700" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    <div className="flex gap-3 pt-2">
-                      <Button type="button" variant="outline" className="flex-1" onClick={() => setDialogOpen(false)}>
-                        Batal
-                      </Button>
-                      <Button type="submit" className="flex-1" disabled={isLoading}>
-                        {isLoading ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                        ) : (
-                          "Ajukan"
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </header>
+                    <FormField
+                      control={form.control}
+                      name="end_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-widest">Selesai</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="date" className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-blue-500/20 font-medium text-slate-700" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="reason"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-widest">Keterangan Tambahan</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} placeholder="Berikan alasan atau detail singkat..." rows={3} className="bg-white/50 border-slate-200 rounded-xl focus:ring-blue-500/20 font-medium text-slate-700 resize-none" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex gap-3 pt-4 mt-2 border-t border-slate-100">
+                    <Button type="button" variant="outline" className="flex-1 rounded-xl h-12 font-bold bg-white text-slate-700" onClick={() => setDialogOpen(false)}>
+                      Batal
+                    </Button>
+                    <Button type="submit" className="flex-1 rounded-xl h-12 font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20" disabled={isLoading}>
+                      {isLoading ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      ) : (
+                        "Kirim Pengajuan"
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
 
         {/* Stats Section */}
-        <div className="px-4 py-4">
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            <div className="ios-stats-card">
-              <div className="ios-stats-value blue">{Math.max(0, settings.maxLeaveDays - usedLeaveDays)}</div>
-              <div className="ios-stats-label">Sisa Cuti</div>
-            </div>
-            <div className="ios-stats-card">
-              <div className="ios-stats-value green">
-                {leaveRequests.filter(l => l.status === "approved").length}
-              </div>
-              <div className="ios-stats-label">Disetujui</div>
-            </div>
-            <div className="ios-stats-card">
-              <div className="ios-stats-value orange">
-                {leaveRequests.filter(l => l.status === "pending").length}
-              </div>
-              <div className="ios-stats-label">Menunggu</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 mb-12">
+          <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Sisa Cuti</p>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-4xl font-extrabold text-slate-800">{Math.max(0, settings.maxLeaveDays - usedLeaveDays)}</h3>
+              <span className="text-sm font-semibold text-slate-500">Hari</span>
             </div>
           </div>
 
-          {/* Leave Requests List */}
-          <h3 className="ios-section-header">Riwayat Pengajuan</h3>
+          <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
+            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Disetujui</p>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-4xl font-extrabold text-emerald-600">
+                {leaveRequests.filter(l => l.status === "approved").length}
+              </h3>
+              <span className="text-sm font-semibold text-emerald-600/60">Pengajuan</span>
+            </div>
+          </div>
 
-          {
-            isFetching ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
+            <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Menunggu</p>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-4xl font-extrabold text-amber-600">
+                {leaveRequests.filter(l => l.status === "pending").length}
+              </h3>
+              <span className="text-sm font-semibold text-amber-600/60">Pengajuan</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Leave Requests List */}
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-200/50">
+          <h3 className="text-xl font-bold text-slate-800 tracking-tight">Riwayat Pengajuan</h3>
+        </div>
+
+        {
+          isFetching ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-400 border-t-transparent" />
+            </div>
+          ) : leaveRequests.length === 0 ? (
+            <div className="text-center py-16 bg-white/40 backdrop-blur-sm rounded-[24px] border border-dashed border-slate-300 shadow-sm">
+              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-8 h-8 text-slate-400" />
               </div>
-            ) : leaveRequests.length === 0 ? (
-              <div className="ios-card p-8 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground">Belum Ada Pengajuan</h3>
-                <p className="text-muted-foreground mb-4">Anda belum mengajukan cuti atau izin</p>
-                <button
-                  onClick={() => setDialogOpen(true)}
-                  className="ios-btn-primary flex items-center justify-center gap-2 mx-auto"
-                  style={{ maxWidth: "200px", background: "linear-gradient(180deg, hsl(211 100% 55%) 0%, hsl(211 100% 50%) 100%)", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)" }}
+              <h3 className="text-lg font-bold text-slate-700 mb-1">Belum Ada Pengajuan</h3>
+              <p className="text-slate-500 font-medium text-sm mb-6">Anda belum pernah mengajukan cuti atau izin sebelumnya.</p>
+              <Button
+                onClick={() => setDialogOpen(true)}
+                className="bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl px-6 h-12 shadow-md gap-2 active:scale-95"
+              >
+                <Plus className="h-5 w-5" />
+                Buat Pengajuan Baru
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {leaveRequests.map((request, index) => (
+                <div
+                  key={request.id}
+                  className="bg-white/70 backdrop-blur-md rounded-[20px] p-5 lg:p-6 border border-white/40 shadow-sm hover:shadow-md transition-all duration-300 group"
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
-                  <Plus className="h-5 w-5" />
-                  Ajukan Cuti
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {leaveRequests.map((request, index) => (
-                  <div
-                    key={request.id}
-                    className="ios-card p-4"
-                    style={{ animationDelay: `${index * 0.05}s` }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`ios-list-icon flex-shrink-0 ${getLeaveTypeIcon(request.leave_type)}`}>
-                        <FileText className={`h-4 w-4 ${request.leave_type === "cuti" ? "text-blue-500" :
-                          request.leave_type === "sakit" ? "text-red-500" : "text-purple-500"
-                          }`} />
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-4 lg:gap-6">
+
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${getLeaveTypeIcon(request.leave_type)} border border-white/50 backdrop-blur-sm shadow-sm`}>
+                      <FileText className={`h-5 w-5 ${request.leave_type === "cuti" ? "text-blue-600" :
+                        request.leave_type === "sakit" ? "text-red-600" : "text-purple-600"
+                        }`} />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                        <span className="font-extrabold text-slate-800 text-lg">
+                          {getLeaveTypeLabel(request.leave_type)}
+                        </span>
+                        {getStatusBadge(request.status)}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <span className="font-semibold text-foreground text-sm">
-                            {getLeaveTypeLabel(request.leave_type)}
-                          </span>
-                          {getIOSStatusBadge(request.status)}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                          <Calendar className="h-3 w-3" />
+
+                      <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500 mb-3">
+                        <div className="flex items-center gap-1.5 bg-slate-100/50 px-2 py-1 rounded-lg">
+                          <Calendar className="h-4 w-4" />
                           <span>
                             {new Date(request.start_date).toLocaleDateString("id-ID", {
                               day: "numeric",
@@ -441,304 +465,47 @@ const PengajuanCuti = () => {
                               year: "numeric"
                             })}
                           </span>
-                          <span className="px-2 py-0.5 bg-gray-100 rounded-full ml-1">
-                            {calculateDays(request.start_date, request.end_date)} hari
-                          </span>
                         </div>
-                        {request.reason && (
-                          <p className="text-xs text-muted-foreground line-clamp-2">{request.reason}</p>
-                        )}
-                        {request.status === "rejected" && request.rejection_reason && (
-                          <div className="mt-2 p-2 rounded-lg bg-red-50 text-xs text-red-600">
-                            <strong>Alasan ditolak:</strong> {request.rejection_reason}
-                          </div>
-                        )}
+                        <span className="px-2 py-1 bg-white border border-slate-200 shadow-sm rounded-lg text-slate-600">
+                          {calculateDays(request.start_date, request.end_date)} hari kerja
+                        </span>
                       </div>
-                      {request.status === "pending" && (
-                        <button
-                          onClick={() => handleDelete(request.id)}
-                          className="p-2 rounded-full hover:bg-red-50 active:bg-red-100 transition-colors flex-shrink-0"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </button>
+
+                      {request.reason && (
+                        <p className="text-sm font-medium text-slate-600 pl-1 border-l-2 border-slate-200">{request.reason}</p>
                       )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )
-          }
-        </div >
 
-        {/* Floating Action Button - Positioned above bottom nav */}
-        < button
-          onClick={() => setDialogOpen(true)}
-          className="fixed right-4 w-14 h-14 rounded-full flex items-center justify-center shadow-lg z-50"
-          style={{
-            bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
-            background: "linear-gradient(135deg, #FF9500 0%, #FF6B00 100%)",
-            boxShadow: "0 4px 16px rgba(255, 149, 0, 0.4)"
-          }}
-        >
-          <Plus className="h-6 w-6 text-white" />
-        </button >
-
-        {/* iOS Bottom Navigation */}
-        < MobileNavigation />
-      </div >
-    );
-  }
-
-  // ==========================================
-  // DESKTOP VIEW (Original - Unchanged)
-  // ==========================================
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/dashboard")}
-                className="rounded-full"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/20">
-                  <FileText className="h-5 w-5 text-warning" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-semibold text-foreground">Pengajuan Cuti</h1>
-                  <p className="text-sm text-muted-foreground">Ajukan izin atau cuti</p>
-                </div>
-              </div>
-            </div>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Ajukan Cuti</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Pengajuan Cuti Baru</DialogTitle>
-                  <DialogDescription>
-                    Isi form di bawah untuk mengajukan cuti atau izin
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="leave_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Jenis Cuti</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Pilih jenis cuti" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="cuti">Cuti Tahunan</SelectItem>
-                              <SelectItem value="sakit">Sakit</SelectItem>
-                              <SelectItem value="izin">Izin</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="start_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tanggal Mulai</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="date" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="end_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tanggal Selesai</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="date" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="reason"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Alasan</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} placeholder="Jelaskan alasan pengajuan cuti" rows={3} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="flex gap-3 pt-2">
-                      <Button type="button" variant="outline" className="flex-1" onClick={() => setDialogOpen(false)}>
-                        Batal
-                      </Button>
-                      <Button type="submit" className="flex-1" disabled={isLoading}>
-                        {isLoading ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                        ) : (
-                          "Ajukan"
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="mx-auto max-w-2xl">
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <Card className="border-border animate-fade-in">
-              <CardContent className="pt-4 pb-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-info">{Math.max(0, settings.maxLeaveDays - usedLeaveDays)}</div>
-                  <p className="text-xs text-muted-foreground">Sisa Cuti</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border animate-fade-in" style={{ animationDelay: "0.1s" }}>
-              <CardContent className="pt-4 pb-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-success">
-                    {leaveRequests.filter(l => l.status === "approved").length}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Disetujui</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border animate-fade-in" style={{ animationDelay: "0.2s" }}>
-              <CardContent className="pt-4 pb-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-warning">
-                    {leaveRequests.filter(l => l.status === "pending").length}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Menunggu</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Leave Requests List */}
-          <h2 className="text-lg font-semibold text-foreground mb-4">Riwayat Pengajuan</h2>
-
-          {isFetching ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            </div>
-          ) : leaveRequests.length === 0 ? (
-            <Card className="border-border">
-              <CardContent className="py-12 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground">Belum Ada Pengajuan</h3>
-                <p className="text-muted-foreground mb-4">Anda belum mengajukan cuti atau izin</p>
-                <Button onClick={() => setDialogOpen(true)} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Ajukan Cuti Pertama
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {leaveRequests.map((request, index) => (
-                <Card
-                  key={request.id}
-                  className="border-border animate-fade-in hover:shadow-md transition-shadow"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <CardContent className="py-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium text-foreground">
-                            {getLeaveTypeLabel(request.leave_type)}
-                          </span>
-                          {getStatusBadge(request.status)}
+                      {request.status === "rejected" && request.rejection_reason && (
+                        <div className="mt-3 p-3 rounded-xl bg-red-50/50 border border-red-100 text-sm font-medium text-red-600 flex gap-2 items-start">
+                          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                          <p><strong>Ditolak:</strong> {request.rejection_reason}</p>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span>
-                            {new Date(request.start_date).toLocaleDateString("id-ID", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric"
-                            })}
-                            {" - "}
-                            {new Date(request.end_date).toLocaleDateString("id-ID", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric"
-                            })}
-                          </span>
-                          <Badge variant="outline" className="text-xs">
-                            {calculateDays(request.start_date, request.end_date)} hari
-                          </Badge>
-                        </div>
-                        {request.reason && (
-                          <p className="text-sm text-muted-foreground">{request.reason}</p>
-                        )}
-                        {request.status === "rejected" && request.rejection_reason && (
-                          <div className="mt-2 p-2 rounded bg-destructive/10 text-sm text-destructive">
-                            <strong>Alasan ditolak:</strong> {request.rejection_reason}
-                          </div>
-                        )}
-                      </div>
-                      {request.status === "pending" && (
+                      )}
+                    </div>
+
+                    {request.status === "pending" && (
+                      <div className="pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 mt-2 sm:mt-0 flex justify-end">
                         <Button
                           variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => handleDelete(request.id)}
+                          className="bg-red-50 hover:bg-red-100 text-red-600 rounded-xl h-10 w-10 p-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                      </div>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
-          )}
-        </div>
-      </main>
+          )
+        }
+      </div>
+      {isMobile && <MobileNavigation />}
     </div>
   );
+
+
 };
 
 export default PengajuanCuti;

@@ -289,54 +289,54 @@ const ManagerCuti = () => {
       <div className="space-y-6 pb-20">
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Card className="border-border">
+          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[18px]">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-primary" />
+                <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-                  <p className="text-xs text-muted-foreground">Total</p>
+                  <p className="text-2xl font-extrabold text-slate-800 tracking-tight">{stats.total}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-border">
+          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[18px]">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-warning" />
+                <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-warning">{stats.pending}</p>
-                  <p className="text-xs text-muted-foreground">Pending</p>
+                  <p className="text-2xl font-extrabold text-amber-600 tracking-tight">{stats.pending}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pending</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-border">
+          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[18px]">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
-                  <Check className="h-5 w-5 text-success" />
+                <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                  <Check className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-success">{stats.approved}</p>
-                  <p className="text-xs text-muted-foreground">Disetujui</p>
+                  <p className="text-2xl font-extrabold text-emerald-600 tracking-tight">{stats.approved}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Disetujui</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-border">
+          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[18px]">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-                  <X className="h-5 w-5 text-destructive" />
+                <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center">
+                  <X className="h-5 w-5 text-red-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-destructive">{stats.rejected}</p>
-                  <p className="text-xs text-muted-foreground">Ditolak</p>
+                  <p className="text-2xl font-extrabold text-red-600 tracking-tight">{stats.rejected}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ditolak</p>
                 </div>
               </div>
             </CardContent>
@@ -346,16 +346,16 @@ const ManagerCuti = () => {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               placeholder="Cari nama, departemen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 h-11 bg-white/70 backdrop-blur-md border-slate-200/60 rounded-xl shadow-sm font-medium text-slate-800"
             />
           </div>
           <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px] h-11 border-slate-200/60 rounded-xl bg-white/70 backdrop-blur-md font-medium">
               <SelectValue placeholder="Filter status" />
             </SelectTrigger>
             <SelectContent>
@@ -368,28 +368,30 @@ const ManagerCuti = () => {
         </div>
 
         {/* Table */}
-        <Card className="border-border">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
           <div className="overflow-x-auto">
             {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <div className="flex items-center justify-center py-16">
+                <div className="h-8 w-8 animate-spin rounded-full border-3 border-slate-300 border-t-slate-700" />
               </div>
             ) : filteredRequests.length === 0 ? (
-              <div className="py-12 text-center">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground">Tidak Ada Data</h3>
-                <p className="text-muted-foreground">Tidak ada pengajuan cuti dengan kriteria tersebut</p>
+              <div className="py-16 text-center">
+                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="h-8 w-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-700">Tidak Ada Data</h3>
+                <p className="text-slate-500 text-sm font-medium mt-1">Tidak ada pengajuan cuti dengan kriteria tersebut</p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Karyawan</TableHead>
-                    <TableHead className="hidden sm:table-cell">Jenis Cuti</TableHead>
-                    <TableHead className="hidden md:table-cell">Tanggal</TableHead>
-                    <TableHead className="hidden lg:table-cell">Durasi</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Aksi</TableHead>
+                  <TableRow className="bg-slate-50/50 border-b border-slate-100">
+                    <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Karyawan</TableHead>
+                    <TableHead className="hidden sm:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Jenis Cuti</TableHead>
+                    <TableHead className="hidden md:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Tanggal</TableHead>
+                    <TableHead className="hidden lg:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Durasi</TableHead>
+                    <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Status</TableHead>
+                    <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -399,12 +401,12 @@ const ManagerCuti = () => {
                       <TableRow key={request.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                              <User className="h-4 w-4 text-primary" />
+                            <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center">
+                              <User className="h-4 w-4 text-slate-500" />
                             </div>
                             <div>
-                              <p className="font-medium">{request.profile?.full_name || "Tanpa Nama"}</p>
-                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <p className="font-semibold text-slate-800 text-sm">{request.profile?.full_name || "Tanpa Nama"}</p>
+                              <p className="text-xs text-slate-400 flex items-center gap-1 font-medium">
                                 <Building2 className="h-3 w-3" />
                                 {request.profile?.department || "-"}
                               </p>

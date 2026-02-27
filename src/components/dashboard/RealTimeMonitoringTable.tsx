@@ -102,9 +102,9 @@ export function RealTimeMonitoringTable({
 
     if (isLoading) {
         return (
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
                 <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                    <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2 tracking-tight">
                         <Users className="h-4 w-4" style={{ color: BRAND_COLORS.blue }} />
                         Monitoring Real-Time
                     </CardTitle>
@@ -128,11 +128,11 @@ export function RealTimeMonitoringTable({
     }
 
     return (
-        <Card className="border-slate-200 shadow-sm bg-white h-full flex flex-col">
-            <CardHeader className="pb-3 border-b border-slate-100">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md h-full flex flex-col rounded-[20px]">
+            <CardHeader className="pb-3 border-b border-slate-100/80">
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                        <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2 tracking-tight">
                             <Users className="h-4 w-4" style={{ color: BRAND_COLORS.blue }} />
                             Monitoring Real-Time
                         </CardTitle>
@@ -173,7 +173,7 @@ export function RealTimeMonitoringTable({
                 ) : (
                     <div className="divide-y divide-slate-100">
                         {/* Header Row */}
-                        <div className="hidden md:grid md:grid-cols-12 gap-3 p-3 bg-slate-50 text-xs font-medium text-slate-500 sticky top-0 z-10 shadow-sm">
+                        <div className="hidden md:grid md:grid-cols-12 gap-3 p-3 bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10 border-b border-slate-100">
                             <div className="col-span-4">Karyawan</div>
                             <div className="col-span-2 text-center">Clock-In</div>
                             <div className="col-span-2 text-center">Clock-Out</div>
@@ -193,7 +193,7 @@ export function RealTimeMonitoringTable({
                                 {/* Employee Info */}
                                 <div className="md:col-span-4 flex items-center gap-3">
                                     <div
-                                        className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold text-white shadow-sm"
+                                        className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shadow-sm"
                                         style={{
                                             background: `linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.green} 100%)`
                                         }}

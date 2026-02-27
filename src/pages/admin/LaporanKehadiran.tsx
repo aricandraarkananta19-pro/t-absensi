@@ -27,7 +27,9 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToPDF, exportToExcel } from "@/lib/exportUtils";
+import { generateAttendanceExcel } from "@/lib/excelExport";
 import { exportAttendanceExcel, exportAttendanceHRPDF, exportAttendanceManagementPDF, AttendanceReportData, AttendanceReportEmployee } from "@/lib/attendanceExportUtils";
+import { ReportService } from "@/services/reportService";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { ABSENSI_WAJIB_ROLE, EXCLUDED_USER_NAMES } from "@/lib/constants";
@@ -115,6 +117,14 @@ interface EmployeeReport extends AttendanceReportEmployee {
     details: DailyAttendanceStatus[];
     lateMinutes: number; // Add total late minutes
     dailyStatus: Record<string, string>; // Key: "YYYY-MM-DD", Value: Status Code
+    present: number;
+    late: number;
+    absent: number;
+    leave: number;
+    absentDates: string[];
+    lateDates: string[];
+    leaveDates: string[];
+    remarks: string;
 }
 
 interface AttendanceReportRpcDetail {
@@ -160,7 +170,7 @@ const LaporanKehadiran = () => {
         const fromParam = searchParams.get("from");
         const toParam = searchParams.get("to");
         if (fromParam && toParam) {
-            return { from: new Date(fromParam), to: new Date(toParam) };
+            return { from: new Date(`${fromParam}T00:00:00`), to: new Date(`${toParam}T23:59:59`) };
         }
         return undefined; // Will be set by effect
     });
@@ -173,6 +183,10 @@ const LaporanKehadiran = () => {
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<EmployeeReport | null>(null);
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+
+    const [exportModalOpen, setExportModalOpen] = useState(false);
+    const [exportFormat, setExportFormat] = useState("excel");
+    const [exportPeriodVal, setExportPeriodVal] = useState("");
 
     // ==========================================
     // DATE RANGE LOGIC (PERSISTENT & AUTO)
@@ -227,7 +241,7 @@ const LaporanKehadiran = () => {
     const handlePeriodChange = (val: string) => {
         if (val === "custom") return;
         const [startStr, endStr] = val.split("_");
-        const newRange = { from: new Date(startStr), to: new Date(endStr) };
+        const newRange = { from: new Date(`${startStr}T00:00:00`), to: new Date(`${endStr}T23:59:59`) };
         handleDateRangeChange(newRange);
     };
 
@@ -558,6 +572,8 @@ const LaporanKehadiran = () => {
         else { toast({ title: "Berhasil", description: "Pengajuan cuti ditolak" }); setDialogOpen(false); setSelectedRequest(null); setRejectionReason(""); fetchLeaveRequests(); }
     };
 
+    const [isExportingExcel, setIsExportingExcel] = useState(false);
+
     const buildExportData = (): AttendanceReportData => ({
         period: dateRange?.from ? `${format(dateRange.from, 'd MMM yyyy')} - ${format(dateRange.to || dateRange.from, 'd MMM yyyy')}` : "Periode Custom",
         periodStart: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : "",
@@ -579,9 +595,115 @@ const LaporanKehadiran = () => {
         }))
     });
 
-    const handleExportMultiSheetExcel = () => { exportAttendanceExcel(buildExportData(), `laporan-kehadiran-${format(new Date(), 'yyyy-MM-dd')}`); toast({ title: "Berhasil", description: "Excel diunduh" }); };
-    const handleExportHRPDF = () => { exportAttendanceHRPDF(buildExportData(), `laporan-hr-${format(new Date(), 'yyyy-MM-dd')}`); toast({ title: "Berhasil", description: "PDF HR diunduh" }); };
-    const handleExportManagementPDF = () => { exportAttendanceManagementPDF(buildExportData(), `laporan-manajemen-${format(new Date(), 'yyyy-MM-dd')}`); toast({ title: "Berhasil", description: "PDF Manajemen diunduh" }); };
+    const openExportSettings = () => {
+        const currentPeriodVal = dateRange?.from && dateRange?.to ? `${format(dateRange.from, 'yyyy-MM-dd')}_${format(dateRange.to, 'yyyy-MM-dd')}` : "custom";
+        const exists = availablePeriods.some(p => p.value === currentPeriodVal);
+        setExportPeriodVal(exists ? currentPeriodVal : availablePeriods[0]?.value || "");
+        setExportFormat("excel");
+        setExportModalOpen(true);
+    };
+
+    const executeExport = async () => {
+        if (!exportPeriodVal || exportPeriodVal === "custom") {
+            toast({ variant: "destructive", title: "Gagal", description: "Pilih periode terlebih dahulu" });
+            return;
+        }
+
+        const [startD, endD] = exportPeriodVal.split("_");
+        // Get the accurate label from availablePeriods to avoid timezone shifts
+        const selectedPeriodInfo = availablePeriods.find(p => p.value === exportPeriodVal);
+        const periodStr = selectedPeriodInfo ? selectedPeriodInfo.label : format(new Date(`${startD}T12:00:00`), 'MMMM yyyy', { locale: id });
+
+        if (exportFormat === "excel") {
+            setIsExportingExcel(true);
+            try {
+                // Build dataset matching EXACTLY with the UI screen data
+                const summaries = filteredReports.map(emp => {
+                    const totalWorkHours = emp.details.reduce((sum, d) => {
+                        if (!d.clockIn || !d.clockOut) return sum;
+                        const [ih, im] = d.clockIn.split(':').map(Number);
+                        const [oh, om] = d.clockOut.split(':').map(Number);
+                        const diffMins = (oh * 60 + om) - (ih * 60 + im);
+                        return diffMins > 0 ? sum + (diffMins / 60) : sum;
+                    }, 0);
+
+                    return {
+                        employeeName: emp.full_name || 'Unknown',
+                        department: emp.department || '-',
+                        totalPresent: emp.present,
+                        totalLate: emp.late,
+                        totalAbsent: emp.absent,
+                        totalLeave: emp.leave,
+                        totalMonthlyWorkHours: totalWorkHours,
+                        totalMonthlyOvertimeMins: 0
+                    };
+                });
+
+                const details = filteredReports.flatMap(emp =>
+                    emp.details.map(d => {
+                        let ExcelStatus = '-';
+                        if (['leave', 'sick', 'permission'].includes(d.status)) ExcelStatus = 'Cuti';
+                        else if (['absent', 'alpha'].includes(d.status)) ExcelStatus = 'Alpha';
+                        else if (d.status === 'late') ExcelStatus = 'Terlambat';
+                        else if (d.status === 'present' || d.status === 'early_leave') ExcelStatus = 'Hadir';
+
+                        if (d.isWeekend && !d.clockIn) ExcelStatus = 'Libur';
+
+                        let workHours = 0;
+                        if (d.clockIn && d.clockOut) {
+                            const [ih, im] = d.clockIn.split(':').map(Number);
+                            const [oh, om] = d.clockOut.split(':').map(Number);
+                            const diffMins = (oh * 60 + om) - (ih * 60 + im);
+                            workHours = diffMins > 0 ? diffMins / 60 : 0;
+                        }
+
+                        let lateMins = 0;
+                        if (d.status === 'late' && d.clockIn) {
+                            const [ih, im] = d.clockIn.split(':').map(Number);
+                            lateMins = Math.max(0, (ih * 60 + im) - (8 * 60 + 0));
+                        }
+
+                        return {
+                            employeeName: emp.full_name || 'Unknown',
+                            department: emp.department || '-',
+                            date: d.formattedDate,
+                            clockIn: d.clockIn || '-',
+                            clockOut: d.clockOut || '-',
+                            shift: 'Reguler 08:00 - 17:00',
+                            status: ExcelStatus as any,
+                            totalWorkHours: workHours,
+                            totalLateMins: lateMins,
+                            earlyLeaveMins: 0,
+                            overtimeMins: 0,
+                            device: 'Sistem' // General label for device
+                        };
+                    })
+                );
+
+                await generateAttendanceExcel({
+                    month: periodStr,
+                    companyName: 'PT. TALENTA TRAINCOM INDONESIA',
+                    summaries,
+                    details
+                });
+
+                toast({ title: "Berhasil", description: "Laporan Excel sinkron UI berhasil diunduh" });
+                setExportModalOpen(false);
+            } catch (error: any) {
+                toast({ variant: "destructive", title: "Gagal", description: error.message || "Gagal mengunduh laporan Excel" });
+            } finally {
+                setIsExportingExcel(false);
+            }
+        } else if (exportFormat === "pdf_hr") {
+            exportAttendanceHRPDF(buildExportData(), `laporan-hr-${format(new Date(), 'yyyy-MM-dd')}`);
+            toast({ title: "Berhasil", description: "PDF HR diunduh" });
+            setExportModalOpen(false);
+        } else if (exportFormat === "pdf_manajemen") {
+            exportAttendanceManagementPDF(buildExportData(), `laporan-manajemen-${format(new Date(), 'yyyy-MM-dd')}`);
+            toast({ title: "Berhasil", description: "PDF Manajemen diunduh" });
+            setExportModalOpen(false);
+        }
+    };
 
     const getStatusBadge = (status: string) => {
         if (status === "approved") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200"><CheckCircle2 className="h-3 w-3 mr-1" />Disetujui</Badge>;
@@ -591,13 +713,86 @@ const LaporanKehadiran = () => {
 
     const getLeaveTypeLabel = (type: string) => type === "cuti" ? "Cuti Tahunan" : type === "sakit" ? "Sakit" : type === "izin" ? "Izin" : type;
 
+    const customExportNode = (
+        <Popover open={exportModalOpen} onOpenChange={setExportModalOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    size="sm"
+                    className="h-9 gap-2 text-white shadow-sm bg-gradient-to-r from-blue-700 to-sky-600 hover:to-sky-700 hidden sm:flex border border-blue-600/50"
+                    onClick={() => {
+                        const currentPeriodVal = dateRange?.from && dateRange?.to ? `${format(dateRange.from, 'yyyy-MM-dd')}_${format(dateRange.to, 'yyyy-MM-dd')}` : "custom";
+                        const exists = availablePeriods.some(p => p.value === currentPeriodVal);
+                        setExportPeriodVal(exists ? currentPeriodVal : availablePeriods[0]?.value || "");
+                        setExportFormat("excel");
+                    }}
+                >
+                    {isExportingExcel || isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    {isExportingExcel || isLoading ? "Mengekspor..." : "Export Laporan"}
+                    <ChevronDown className="h-4 w-4 opacity-70 ml-1" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[280px] p-4 bg-white rounded-xl shadow-xl border-slate-100 z-[100]">
+                <div className="space-y-4">
+                    <div className="space-y-1">
+                        <h4 className="font-semibold text-sm text-slate-800">Cetak Laporan</h4>
+                        <p className="text-[11px] text-slate-500 leading-tight">Pilih format laporan dan sinkronkan dengan periode yang Anda inginkan.</p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs font-semibold text-slate-700">Pilih Format</label>
+                        <select
+                            className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-600 outline-none"
+                            value={exportFormat}
+                            onChange={(e) => setExportFormat(e.target.value)}
+                        >
+                            <option value="excel">Microsoft Excel (.xlsx)</option>
+                            <option value="pdf_hr">PDF - Rekap HR</option>
+                            <option value="pdf_manajemen">PDF - Manajemen</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs font-semibold text-slate-700">Pilih Periode</label>
+                        <select
+                            className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-600 outline-none"
+                            value={exportPeriodVal}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setExportPeriodVal(val);
+                                handlePeriodChange(val); // Sync data globally immediately
+                            }}
+                        >
+                            {availablePeriods.map(p => (
+                                <option key={p.value} value={p.value}>
+                                    {p.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <Button
+                        className="w-full h-8 text-xs mt-2 bg-gradient-to-r from-blue-700 to-sky-600 hover:to-sky-700 font-semibold"
+                        onClick={executeExport}
+                        disabled={isExportingExcel || isLoading}
+                    >
+                        {isExportingExcel || isLoading ? <RefreshCw className="w-3 h-3 mr-2 animate-spin" /> : <Download className="w-3 h-3 mr-2" />}
+                        Mulai Unduh
+                    </Button>
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+
     return (
         <EnterpriseLayout
             title="Laporan & Rekapitulasi Absensi"
             subtitle="Professional attendance reporting and analytics"
             menuSections={ADMIN_MENU_SECTIONS}
             roleLabel="Administrator"
-            showExport={false}
+            showExport={true}
+            onExport={openExportSettings}
+            isExporting={isExportingExcel}
+            customExportNode={customExportNode}
         >
             <div className="space-y-8 pb-20">
                 {/* 1. Summary Cards */}

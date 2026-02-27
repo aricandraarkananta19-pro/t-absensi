@@ -131,41 +131,45 @@ export default function JurnalSaya() {
     });
 
     return (
-        <div className={`min-h-screen pb-24 md:pb-12 ${isMobile ? 'bg-white' : 'bg-slate-50/50'}`}>
+        <div className={`min-h-screen pb-24 md:pb-12 ${isMobile ? 'bg-slate-50/50' : 'bg-slate-50/50 relative'} font-['Inter',sans-serif]`}>
+
+            {/* Background Graphic Abstract - Subtle SaaS Effect */}
+            <div className="absolute top-0 right-0 -z-0 w-[60vw] h-[40vh] bg-blue-100/40 rounded-full blur-[100px] pointer-events-none opacity-60 transform translate-x-1/2 -translate-y-1/2"></div>
+            <div className="absolute bottom-0 left-0 -z-0 w-[40vw] h-[40vh] bg-purple-100/30 rounded-full blur-[100px] pointer-events-none opacity-60 transform -translate-x-1/2 translate-y-1/2"></div>
 
             {/* Mobile/Tablet Header Padding */}
             <div className={`
-                 px-6 py-6 md:py-8 max-w-5xl mx-auto
+                 px-6 py-6 md:py-8 max-w-5xl mx-auto relative z-10
             `}>
                 {/* Back Button */}
-                <div className="mb-4">
+                <div className="mb-6">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => navigate('/dashboard')}
-                        className="text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 pl-0 -ml-3"
+                        className="text-slate-500 hover:text-slate-800 hover:bg-white/50 border border-transparent hover:border-slate-200/60 rounded-xl transition-all shadow-sm bg-white border-slate-100"
                     >
-                        <ArrowLeft className="w-4 h-4 mr-1" />
-                        Back to Dashboard
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Kembali ke Dashboard
                     </Button>
                 </div>
 
                 {/* Page Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Daily Journal</h1>
-                        <p className="text-slate-500 mt-1">Track your progress and log your daily contributions.</p>
+                        <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-800 tracking-tight">Jurnal Kerja Saya</h1>
+                        <p className="text-slate-500 font-medium text-sm mt-2 max-w-md">Catat dan pantau aktivitas kerjamu. Transparansi adalah kunci kolaborasi yang baik.</p>
                     </div>
 
-                    <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100">
+                    <div className="flex items-center gap-4 bg-white/70 backdrop-blur-md px-5 py-3 rounded-2xl shadow-sm border border-white/40">
                         <div className="text-right">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Today's Date</p>
-                            <p className="text-sm font-semibold text-slate-900">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hari Ini</p>
+                            <p className="text-sm font-extrabold text-slate-700">
                                 {format(new Date(), "MMMM d, yyyy")}
                             </p>
                         </div>
-                        <div className="h-10 w-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
-                            <Calendar className="w-5 h-5" />
+                        <div className="h-12 w-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100/50">
+                            <Calendar className="w-6 h-6" />
                         </div>
                     </div>
                 </div>
@@ -187,20 +191,20 @@ export default function JurnalSaya() {
                     </div>
 
                     {/* 2. History Section */}
-                    <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-slate-900">My Journal History</h2>
+                    <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100 mt-12">
+                        <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-200/50">
+                            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Riwayat Log</h2>
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="h-9 text-sm gap-2 bg-white border-slate-200">
-                                        <Filter className="w-3.5 h-3.5" />
-                                        Filter by: <span className="font-semibold text-slate-900">{filterStatus}</span>
+                                    <Button variant="outline" className="h-10 text-sm gap-2 bg-white/70 backdrop-blur-md border-white/40 shadow-sm hover:bg-white rounded-xl font-semibold text-slate-600 focus:ring-4 focus:ring-slate-100 transition-all">
+                                        <Filter className="w-4 h-4" />
+                                        Periode: <span className="font-extrabold text-slate-800">{filterStatus}</span>
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => setFilterStatus("This Month")}>This Month</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setFilterStatus("All Time")}>All Time</DropdownMenuItem>
+                                <DropdownMenuContent align="end" className="rounded-xl border border-slate-100 shadow-xl pb-1">
+                                    <DropdownMenuItem onClick={() => setFilterStatus("This Month")} className="font-medium focus:bg-slate-50 py-2 cursor-pointer">Bulan Ini</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setFilterStatus("All Time")} className="font-medium focus:bg-slate-50 py-2 cursor-pointer">Semua Waktu</DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
@@ -212,9 +216,12 @@ export default function JurnalSaya() {
                                 ))}
                             </div>
                         ) : filteredJournals.length === 0 ? (
-                            <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                                <FolderOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                                <p className="text-slate-500 font-medium">No journals found for this period.</p>
+                            <div className="text-center py-16 bg-white/40 backdrop-blur-sm rounded-[24px] border border-dashed border-slate-300 shadow-sm">
+                                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <FolderOpen className="w-8 h-8 text-slate-400" />
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-700 mb-1">Belum Ada Catatan</h3>
+                                <p className="text-slate-500 font-medium text-sm">Jurnal yang berhasil dikirim akan muncul di sini.</p>
                             </div>
                         ) : (
                             <div className="space-y-4">

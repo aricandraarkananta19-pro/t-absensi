@@ -202,54 +202,58 @@ const ManagerDashboard = () => {
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card className="border-border animate-fade-in">
-            <CardContent className="pt-6">
+          <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-background via-background/90 to-primary/10 shadow-[0_0_15px_hsl(var(--primary)/0.15)] hover:shadow-[0_0_25px_hsl(var(--primary)/0.3)] hover:border-primary/50 transition-all duration-500 animate-fade-in group">
+            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <CardContent className="pt-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Karyawan (Wajib Absensi)</p>
-                  <div className="text-3xl font-bold text-foreground">{stats.totalEmployees}</div>
+                  <p className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">Total Karyawan (Wajib Absensi)</p>
+                  <div className="text-3xl font-bold text-foreground drop-shadow-sm">{stats.totalEmployees}</div>
                 </div>
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-primary" />
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-[0_0_10px_hsl(var(--primary)/0.2)]">
+                  <Users className="h-6 w-6 text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-border animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            <CardContent className="pt-6">
+          <Card className="relative overflow-hidden border-success/20 bg-gradient-to-br from-background via-background/90 to-success/10 shadow-[0_0_15px_hsl(var(--success)/0.15)] hover:shadow-[0_0_25px_hsl(var(--success)/0.3)] hover:border-success/50 transition-all duration-500 animate-fade-in group" style={{ animationDelay: "0.1s" }}>
+            <div className="absolute inset-0 bg-success/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <CardContent className="pt-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Hadir Hari Ini</p>
-                  <div className="text-3xl font-bold text-success">{stats.presentToday}</div>
+                  <p className="text-sm font-medium text-muted-foreground group-hover:text-success transition-colors">Hadir Hari Ini</p>
+                  <div className="text-3xl font-bold text-success drop-shadow-sm">{stats.presentToday}</div>
                 </div>
-                <div className="h-12 w-12 rounded-lg bg-success/10 flex items-center justify-center">
-                  <Clock className="h-6 w-6 text-success" />
+                <div className="h-12 w-12 rounded-xl bg-success/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-[0_0_10px_hsl(var(--success)/0.2)]">
+                  <Clock className="h-6 w-6 text-success drop-shadow-[0_0_8px_hsl(var(--success)/0.5)]" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-border animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <CardContent className="pt-6">
+          <Card className="relative overflow-hidden border-warning/20 bg-gradient-to-br from-background via-background/90 to-warning/10 shadow-[0_0_15px_hsl(var(--warning)/0.15)] hover:shadow-[0_0_25px_hsl(var(--warning)/0.3)] hover:border-warning/50 transition-all duration-500 animate-fade-in group" style={{ animationDelay: "0.2s" }}>
+            <div className="absolute inset-0 bg-warning/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <CardContent className="pt-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Tidak Hadir</p>
-                  <div className="text-3xl font-bold text-warning">{stats.absentToday}</div>
+                  <p className="text-sm font-medium text-muted-foreground group-hover:text-warning transition-colors">Tidak Hadir</p>
+                  <div className="text-3xl font-bold text-warning drop-shadow-sm">{stats.absentToday}</div>
                 </div>
-                <div className="h-12 w-12 rounded-lg bg-warning/10 flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-warning" />
+                <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-[0_0_10px_hsl(var(--warning)/0.2)]">
+                  <Calendar className="h-6 w-6 text-warning drop-shadow-[0_0_8px_hsl(var(--warning)/0.5)]" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-border animate-fade-in" style={{ animationDelay: "0.3s" }}>
-            <CardContent className="pt-6">
+          <Card className="relative overflow-hidden border-info/20 bg-gradient-to-br from-background via-background/90 to-info/10 shadow-[0_0_15px_hsl(var(--info)/0.15)] hover:shadow-[0_0_25px_hsl(var(--info)/0.3)] hover:border-info/50 transition-all duration-500 animate-fade-in group" style={{ animationDelay: "0.3s" }}>
+            <div className="absolute inset-0 bg-info/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <CardContent className="pt-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Departemen</p>
-                  <div className="text-3xl font-bold text-info">{stats.departments}</div>
+                  <p className="text-sm font-medium text-muted-foreground group-hover:text-info transition-colors">Departemen</p>
+                  <div className="text-3xl font-bold text-info drop-shadow-sm">{stats.departments}</div>
                 </div>
-                <div className="h-12 w-12 rounded-lg bg-info/10 flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-info" />
+                <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-[0_0_10px_hsl(var(--info)/0.2)]">
+                  <Building2 className="h-6 w-6 text-info drop-shadow-[0_0_8px_hsl(var(--info)/0.5)]" />
                 </div>
               </div>
             </CardContent>
@@ -273,15 +277,16 @@ const ManagerDashboard = () => {
               className="block animate-fade-in"
               style={{ animationDelay: `${(index + 4) * 0.1}s` }}
             >
-              <Card className="group h-full border-border transition-all duration-300 hover:border-info/30 hover:shadow-lg">
-                <CardHeader className="pb-3">
-                  <div className={`mb-3 flex h-12 w-12 items-center justify-center rounded-lg ${item.color}`}>
-                    <item.icon className="h-6 w-6" />
+              <Card className="group h-full relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-muted/30 transition-all duration-500 hover:border-primary/50 hover:shadow-[0_0_25px_hsl(var(--primary)/0.15)] hover:-translate-y-1">
+                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <CardHeader className="pb-3 relative z-10">
+                  <div className={`mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-background border border-border shadow-sm group-hover:scale-110 transition-all duration-500 ${item.color}`}>
+                    <item.icon className="h-7 w-7 drop-shadow-sm" />
                   </div>
-                  <CardTitle className="flex items-center justify-between text-lg">
+                  <CardTitle className="flex items-center justify-between text-xl font-bold group-hover:text-primary transition-colors">
                     {item.title}
                   </CardTitle>
-                  <CardDescription>{item.description}</CardDescription>
+                  <CardDescription className="text-sm mt-1">{item.description}</CardDescription>
                 </CardHeader>
               </Card>
             </Link>

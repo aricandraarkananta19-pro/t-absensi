@@ -47,10 +47,11 @@ export function JournalHistoryCard({ journal, onClick }: JournalHistoryCardProps
 
     return (
         <Card
-            className={`overflow-hidden border-l-4 border-y border-r border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer bg-white ${status.color}`}
+            className={`relative overflow-hidden border-l-4 border-y border-r border-slate-200/60 bg-gradient-to-br from-white via-slate-50/80 to-slate-100 shadow-[0_0_15px_rgba(0,0,0,0.03)] hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] hover:border-primary/40 transition-all duration-500 cursor-pointer group ${status.color}`}
             onClick={onClick}
         >
-            <CardContent className="p-5">
+            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            <CardContent className="p-5 relative z-10">
                 {/* Header: Date & Status */}
                 <div className="flex items-center justify-between mb-3">
                     <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-medium rounded-md px-2.5 py-1">

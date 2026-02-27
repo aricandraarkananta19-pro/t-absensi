@@ -36,6 +36,9 @@ interface EnterpriseLayoutProps {
     onRefresh?: () => void;
     refreshInterval?: number;
     showExport?: boolean;
+    isExporting?: boolean;
+    onExport?: () => void;
+    customExportNode?: React.ReactNode;
 }
 
 // Talenta Brand Colors
@@ -55,6 +58,9 @@ const EnterpriseLayout = ({
     onRefresh,
     refreshInterval = 60,
     showExport = true,
+    isExporting = false,
+    onExport,
+    customExportNode
 }: EnterpriseLayoutProps) => {
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
@@ -106,42 +112,45 @@ const EnterpriseLayout = ({
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50 font-['Inter',system-ui,sans-serif] pb-24 lg:pb-0">
+        <div className="min-h-screen bg-slate-50/80 font-['Inter',system-ui,sans-serif] pb-24 lg:pb-0 relative overflow-x-hidden">
+            {/* Background Graphic Abstract - Subtle SaaS Effect */}
+            <div className="fixed top-0 right-0 -z-10 w-[50vw] h-[40vh] bg-blue-100/30 rounded-full blur-[120px] pointer-events-none opacity-60 transform translate-x-1/3 -translate-y-1/4"></div>
+            <div className="fixed bottom-0 left-0 -z-10 w-[40vw] h-[35vh] bg-indigo-100/20 rounded-full blur-[120px] pointer-events-none opacity-50 transform -translate-x-1/3 translate-y-1/4"></div>
             {/* LIGHT SIDEBAR - DESKTOP ONLY */}
             <aside
                 className={cn(
                     "hidden md:flex fixed left-0 top-0 bottom-0 z-50 flex-col transition-all duration-300 ease-out",
-                    "bg-white border-r border-slate-200 shadow-sm",
+                    "bg-white/80 backdrop-blur-xl border-r border-slate-200/60 shadow-sm",
                     isCollapsed ? "w-[72px]" : "w-[260px]"
                 )}
             >
                 {/* Logo - Added Safe Area Support */}
-                <div className="flex items-center h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-4 border-b border-slate-100 bg-white">
+                <div className="flex items-center h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-4 border-b border-slate-100/80 bg-white/50">
                     <div className="flex items-center gap-3 min-w-0">
                         <div
-                            className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-md bg-gradient-to-br from-blue-700 to-sky-500"
+                            className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-md bg-gradient-to-br from-slate-800 to-slate-600"
                         >
                             <img src={logoImage} alt="Logo" className="h-6 w-6 object-contain" />
                         </div>
                         {!isCollapsed && (
                             <div className="min-w-0 overflow-hidden">
-                                <h1 className="font-bold text-slate-800 text-base leading-none truncate">Talenta Traincom</h1>
-                                <p className="text-xs text-slate-500 leading-tight mt-0.5">Enterprise HRIS</p>
+                                <h1 className="font-extrabold text-slate-800 text-sm leading-none truncate tracking-tight">Talenta Traincom</h1>
+                                <p className="text-[10px] text-slate-400 leading-tight mt-1 font-medium tracking-wider uppercase">Enterprise HRIS</p>
                             </div>
                         )}
                     </div>
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-3 py-4 overflow-y-auto bg-slate-50/50 scrollbar-thin">
+                <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-thin">
                     {menuSections.map((section, sectionIndex) => (
                         <div key={sectionIndex} className="mb-6">
                             {!isCollapsed && (
-                                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">
                                     {section.title}
                                 </p>
                             )}
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                                 {section.items.map((item) => {
                                     const isActive = location.pathname === item.href || (item.href !== "/dashboard" && location.pathname.startsWith(item.href));
                                     return (
@@ -150,13 +159,23 @@ const EnterpriseLayout = ({
                                             to={item.href}
                                             className={cn(
                                                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative",
-                                                isActive ? "text-white shadow-md bg-gradient-to-br from-blue-700 to-sky-500" : "text-slate-600 hover:text-slate-800 hover:bg-white hover:shadow-sm"
+                                                isActive
+                                                    ? "text-slate-900 bg-white shadow-sm border border-slate-200/60 font-semibold"
+                                                    : "text-slate-500 hover:text-slate-800 hover:bg-white/60"
                                             )}
                                         >
-                                            <item.icon className={cn("h-5 w-5 flex-shrink-0 transition-colors", isActive ? "text-white" : "text-slate-500 group-hover:text-slate-700")} />
+                                            <div className={cn(
+                                                "flex items-center justify-center w-8 h-8 rounded-lg transition-colors",
+                                                isActive ? "bg-slate-900 text-white" : "bg-slate-100/80 text-slate-500 group-hover:bg-slate-200/80 group-hover:text-slate-700"
+                                            )}>
+                                                <item.icon className="h-4 w-4 flex-shrink-0" />
+                                            </div>
                                             {!isCollapsed && <span className="truncate">{item.title}</span>}
+                                            {!isCollapsed && item.badge && item.badge > 0 && (
+                                                <span className="ml-auto text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">{item.badge}</span>
+                                            )}
                                             {isCollapsed && (
-                                                <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-sm rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                                <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 shadow-lg">
                                                     {item.title}
                                                 </div>
                                             )}
@@ -171,24 +190,24 @@ const EnterpriseLayout = ({
                 {/* Collapse Toggle */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-3 top-20 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors shadow-sm"
+                    className="absolute -right-3 top-20 w-6 h-6 bg-white border border-slate-200/60 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all shadow-sm hover:shadow-md"
                 >
                     {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
                 </button>
 
                 {/* Profile */}
-                <div className="p-3 border-t border-slate-100 bg-white">
+                <div className="p-3 border-t border-slate-100/80 bg-white/50">
                     <div className={cn("flex items-center gap-3", isCollapsed && "justify-center")}>
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-blue-700 via-sky-500 to-green-500 text-white font-semibold">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-slate-700 to-slate-500 text-white font-bold text-sm">
                             {getInitials(userName)}
                         </div>
                         {!isCollapsed && (
                             <>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-slate-800 truncate">{userName}</p>
-                                    <p className="text-xs text-slate-500">{roleLabel}</p>
+                                    <p className="text-sm font-bold text-slate-800 truncate">{userName}</p>
+                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{roleLabel}</p>
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={handleLogout} className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50">
+                                <Button variant="ghost" size="icon" onClick={handleLogout} className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
                                     <LogOut className="h-4 w-4" />
                                 </Button>
                             </>
@@ -203,37 +222,44 @@ const EnterpriseLayout = ({
                 isCollapsed ? "md:ml-[72px]" : "md:ml-[260px]"
             )}>
                 {/* Header - Relative (Non-Sticky) for Tablet/Desktop */}
-                <header className="relative z-30 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 lg:bg-white/95 transition-all pt-[env(safe-area-inset-top)]">
+                <header className="relative z-30 w-full bg-white/70 backdrop-blur-xl border-b border-slate-200/50 transition-all pt-[env(safe-area-inset-top)]">
                     <div className="flex items-center h-16 px-4 lg:px-6 gap-4">
                         {/* Mobile Logo Only (Show on Mobile < md) */}
                         <div className="md:hidden flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center shadow-sm">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-800 to-slate-600 flex items-center justify-center shadow-sm">
                                 <img src={logoImage} alt="Logo" className="h-5 w-5 object-contain" />
                             </div>
                         </div>
 
                         {/* Title */}
                         <div className="flex-1 min-w-0">
-                            <h1 className="text-lg lg:text-xl font-bold text-slate-800 truncate">{title}</h1>
-                            {subtitle && <p className="text-xs lg:text-sm text-slate-500 truncate hidden sm:block">{subtitle}</p>}
+                            <h1 className="text-lg lg:text-xl font-extrabold text-slate-800 truncate tracking-tight">{title}</h1>
+                            {subtitle && <p className="text-[11px] lg:text-xs text-slate-400 truncate hidden sm:block font-medium">{subtitle}</p>}
                         </div>
 
                         {/* Actions */}
                         <div className="flex items-center gap-2">
                             {showRefresh && (
-                                <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg">
+                                <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-slate-100/70 px-3 py-1.5 rounded-xl border border-slate-200/40">
                                     <RefreshCw className="h-3.5 w-3.5" />
-                                    <span className="hidden md:inline">Auto: {nextRefresh}s</span>
+                                    <span className="hidden md:inline font-medium">Auto: {nextRefresh}s</span>
                                 </div>
                             )}
-                            {showExport && (
-                                <Button size="sm" className="h-9 gap-2 text-white shadow-sm bg-gradient-to-r from-blue-700 to-sky-600 hover:to-sky-700 hidden sm:flex">
-                                    <Download className="h-4 w-4" /> Export
+                            {showExport && !customExportNode && (
+                                <Button
+                                    size="sm"
+                                    className="h-9 gap-2 text-white shadow-sm bg-slate-900 hover:bg-slate-800 hidden sm:flex rounded-xl font-semibold"
+                                    onClick={onExport}
+                                    disabled={isExporting}
+                                >
+                                    {isExporting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                                    {isExporting ? "Mengekspor..." : "Export"}
                                 </Button>
                             )}
+                            {customExportNode}
 
                             {/* Mobile User Menu Trigger */}
-                            <Button variant="ghost" size="icon" className="md:hidden text-slate-500" onClick={handleLogout}>
+                            <Button variant="ghost" size="icon" className="md:hidden text-slate-400 hover:text-red-500 rounded-lg" onClick={handleLogout}>
                                 <LogOut className="h-5 w-5" />
                             </Button>
                         </div>
@@ -247,8 +273,8 @@ const EnterpriseLayout = ({
             </main>
 
             {/* ADMIN MOBILE BOTTOM NAV (iOS Style Premium) - Hidden on Tablet (md) upwards */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-slate-200 shadow-[0_-5px_20px_rgba(0,0,0,0.03)] pb-[env(safe-area-inset-bottom)]">
-                <div className="flex items-center justify-around h-[70px] px-4">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-2xl border-t border-slate-200/50 shadow-[0_-4px_16px_rgba(0,0,0,0.04)] pb-[env(safe-area-inset-bottom)]">
+                <div className="flex items-center justify-around h-[66px] px-4">
                     {adminMobileNav.map((item) => {
                         const isActive = location.pathname === item.href || (item.href !== "/dashboard" && location.pathname.startsWith(item.href) && item.href !== "#menu");
 
@@ -261,43 +287,43 @@ const EnterpriseLayout = ({
                                             <span className="text-[10px] font-medium">Menu</span>
                                         </button>
                                     </SheetTrigger>
-                                    <SheetContent side="bottom" className="h-[85vh] rounded-t-[24px] p-0 flex flex-col border-0 shadow-2xl">
+                                    <SheetContent side="bottom" className="h-[85vh] rounded-t-[28px] p-0 flex flex-col border-0 shadow-2xl">
                                         {/* Header */}
-                                        <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-4 bg-slate-50/50 rounded-t-[24px]">
-                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center text-white font-bold text-lg shadow-blue-200 shadow-lg">
+                                        <div className="px-6 py-5 border-b border-slate-100/80 flex items-center gap-4 bg-slate-50/30 rounded-t-[28px]">
+                                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
                                                 {getInitials(userName)}
                                             </div>
                                             <div>
-                                                <p className="font-bold text-slate-800 text-lg">{userName}</p>
-                                                <Badge variant="secondary" className="mt-1 bg-white text-slate-500 shadow-sm border-slate-100">{roleLabel}</Badge>
+                                                <p className="font-extrabold text-slate-800 text-lg tracking-tight">{userName}</p>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{roleLabel}</p>
                                             </div>
                                         </div>
 
                                         {/* Grid Menu */}
-                                        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-2 gap-4 content-start bg-white">
+                                        <div className="flex-1 overflow-y-auto p-5 grid grid-cols-2 gap-3 content-start bg-white">
                                             {menuSections.flatMap(s => s.items).map((menuItem) => (
                                                 <Button
                                                     key={menuItem.title}
                                                     variant="ghost"
-                                                    className="h-auto py-4 flex flex-col gap-3 items-center justify-center bg-slate-50 border border-slate-100 shadow-sm hover:bg-blue-50 hover:border-blue-100 active:scale-[0.98] transition-all rounded-2xl group"
+                                                    className="h-auto py-5 flex flex-col gap-3 items-center justify-center bg-slate-50/70 border border-slate-100/80 shadow-sm hover:bg-white hover:border-slate-200 hover:shadow-md active:scale-[0.97] transition-all rounded-2xl group"
                                                     onClick={() => {
                                                         navigate(menuItem.href);
                                                         setIsMobileMenuOpen(false);
                                                     }}
                                                 >
-                                                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-500 group-hover:text-blue-600 group-hover:bg-blue-100 transition-colors shadow-sm">
+                                                    <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center text-slate-500 group-hover:text-slate-800 group-hover:bg-slate-100 transition-colors shadow-sm border border-slate-100/50">
                                                         <menuItem.icon className="w-5 h-5" />
                                                     </div>
-                                                    <span className="text-xs font-semibold text-slate-600 group-hover:text-blue-700">{menuItem.title}</span>
+                                                    <span className="text-xs font-bold text-slate-600 group-hover:text-slate-800">{menuItem.title}</span>
                                                 </Button>
                                             ))}
                                         </div>
 
                                         {/* Logout Button */}
-                                        <div className="p-6 border-t border-slate-50 bg-white pb-[calc(24px+env(safe-area-inset-bottom))]">
+                                        <div className="p-5 border-t border-slate-100/80 bg-white pb-[calc(24px+env(safe-area-inset-bottom))]">
                                             <Button
                                                 variant="destructive"
-                                                className="w-full bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 shadow-none h-12 rounded-xl font-semibold"
+                                                className="w-full bg-red-50 text-red-600 hover:bg-red-100 border border-red-100/80 shadow-none h-12 rounded-xl font-bold"
                                                 onClick={handleLogout}
                                             >
                                                 <LogOut className="w-4 h-4 mr-2" /> Keluar Aplikasi

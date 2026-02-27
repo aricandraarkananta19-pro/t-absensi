@@ -88,14 +88,14 @@ const StatCard = ({
     if (isLoading) {
         return (
             <div className={cn(
-                "bg-white rounded-2xl border border-slate-200 p-5 relative overflow-hidden shadow-sm",
+                "bg-white/70 backdrop-blur-md rounded-2xl border border-white/60 p-5 relative overflow-hidden shadow-sm",
                 className
             )}>
-                <div className="absolute top-0 left-0 right-0 h-1" style={{ background: styles.gradient }} />
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl" style={{ background: styles.gradient }} />
                 <div className="animate-pulse">
-                    <div className="h-4 w-24 bg-slate-200 rounded mb-3" />
-                    <div className="h-8 w-20 bg-slate-200 rounded mb-2" />
-                    <div className="h-3 w-32 bg-slate-200 rounded" />
+                    <div className="h-4 w-24 bg-slate-200/60 rounded-lg mb-3" />
+                    <div className="h-8 w-20 bg-slate-200/60 rounded-lg mb-2" />
+                    <div className="h-3 w-32 bg-slate-200/60 rounded-lg" />
                 </div>
             </div>
         );
@@ -103,14 +103,14 @@ const StatCard = ({
 
     return (
         <div className={cn(
-            "bg-white rounded-2xl border border-slate-200 p-5 relative overflow-hidden",
-            "hover:shadow-lg hover:border-blue-200/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 ease-out group",
-            "shadow-sm cursor-default",
+            "bg-white/70 backdrop-blur-md rounded-2xl border border-white/60 p-5 relative overflow-hidden",
+            "hover:shadow-lg hover:border-slate-200/80 hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 ease-out group",
+            "shadow-sm shadow-slate-200/40 cursor-default",
             className
         )}>
             {/* Top Border Accent */}
             <div
-                className="absolute top-0 left-0 right-0 h-1"
+                className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl"
                 style={{ background: styles.gradient }}
             />
 
@@ -124,7 +124,7 @@ const StatCard = ({
 
             <div className="relative z-10">
                 <div className="flex items-start justify-between mb-2">
-                    <p className="text-sm font-medium text-slate-500">{title}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{title}</p>
                     {(onViewDetails || onExport) && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -153,11 +153,11 @@ const StatCard = ({
                 </div>
 
                 <div className="flex items-baseline gap-1.5 mb-1.5">
-                    <span className="text-3xl font-bold text-slate-900 tracking-tight">
+                    <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
                         {typeof value === "number" ? value.toLocaleString() : value}
                     </span>
                     {unit && (
-                        <span className="text-sm font-medium text-slate-400">{unit}</span>
+                        <span className="text-xs font-medium text-slate-400">{unit}</span>
                     )}
                 </div>
 

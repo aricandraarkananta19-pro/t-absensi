@@ -338,22 +338,22 @@ const ManagerJurnal = () => {
             <div className="flex h-[calc(100vh-140px)] -mt-4 gap-6">
 
                 {/* LEFT SIDEBAR - LIST */}
-                <div className="w-[420px] flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm shrink-0 overflow-hidden">
+                <div className="w-[420px] flex flex-col bg-white/70 backdrop-blur-md rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 shrink-0 overflow-hidden">
                     {/* Header/Tabs */}
-                    <div className="p-4 border-b border-slate-100 bg-white z-10 space-y-4">
+                    <div className="p-4 border-b border-slate-100/80 bg-white/50 z-10 space-y-4">
                         {/* Search */}
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <Input
                                 placeholder="Cari nama karyawan atau isi jurnal..."
-                                className="pl-9 bg-slate-50 border-slate-200 h-10"
+                                className="pl-10 bg-white/50 border-slate-200/60 h-11 rounded-xl font-medium"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                             />
                         </div>
 
                         {/* Summary Badges Tabs */}
-                        <div className="flex p-1 bg-slate-100 rounded-lg gap-1">
+                        <div className="flex p-1 bg-slate-100/80 rounded-xl gap-1">
                             <button
                                 onClick={() => setActiveTab('all')}
                                 className={`flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-md transition-all border border-transparent ${activeTab === 'all'
@@ -515,7 +515,7 @@ const ManagerJurnal = () => {
                 </div>
 
                 {/* RIGHT SIDE - DETAIL VIEW */}
-                <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col items-center justify-center">
+                <div className="flex-1 bg-white/70 backdrop-blur-md rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 overflow-hidden flex flex-col items-center justify-center">
                     {selectedJournal ? (
                         <div className="w-full h-full flex flex-col">
                             <JournalReviewDetail

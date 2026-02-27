@@ -405,21 +405,21 @@ const ManagerRekapAbsensi = () => {
       </div>
 
       {/* Filters & Export */}
-      <Card className="border-slate-200 shadow-sm bg-white mb-6">
+      <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md mb-6 rounded-[20px]">
         <CardContent className="py-4">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <Input
                   placeholder="Cari nama atau departemen..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 border-slate-200"
+                  className="pl-10 border-slate-200/60 rounded-xl h-11 bg-white/50 font-medium"
                 />
               </div>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-full sm:w-[150px] border-slate-200">
+                <SelectTrigger className="w-full sm:w-[150px] border-slate-200/60 rounded-xl h-11 bg-white/50 font-medium">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -434,7 +434,7 @@ const ManagerRekapAbsensi = () => {
             <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button className="gap-2 text-white" style={{ backgroundColor: BRAND_COLORS.blue }}>
+                  <Button className="gap-2 text-white rounded-xl font-semibold bg-slate-900 hover:bg-slate-800 shadow-lg shadow-slate-900/20">
                     <Download className="h-4 w-4" /> Export
                   </Button>
                 </DropdownMenuTrigger>
@@ -448,17 +448,17 @@ const ManagerRekapAbsensi = () => {
       </Card>
 
       {/* Table */}
-      <Card className="border-slate-200 shadow-sm bg-white">
+      <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-50/50">
-                <TableHead className="font-semibold text-slate-700">Karyawan</TableHead>
-                <TableHead className="font-semibold text-slate-700 hidden sm:table-cell">Departemen</TableHead>
-                <TableHead className="font-semibold text-slate-700 text-center">Clock In</TableHead>
-                <TableHead className="font-semibold text-slate-700 text-center">Clock Out</TableHead>
-                <TableHead className="font-semibold text-slate-700 text-center hidden md:table-cell">Durasi</TableHead>
-                <TableHead className="font-semibold text-slate-700 text-center">Status</TableHead>
+              <TableRow className="bg-slate-50/50 border-b border-slate-100">
+                <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Karyawan</TableHead>
+                <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider hidden sm:table-cell">Departemen</TableHead>
+                <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Clock In</TableHead>
+                <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Clock Out</TableHead>
+                <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center hidden md:table-cell">Durasi</TableHead>
+                <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -494,15 +494,15 @@ const ManagerRekapAbsensi = () => {
 // Simple Stat Card Component inline
 function StatCard({ icon: Icon, label, value, colorClass, bgClass }: any) {
   return (
-    <Card className="border-slate-200 shadow-sm bg-white">
+    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[18px]">
       <CardContent className="pt-4 pb-4">
         <div className="flex items-center gap-3">
           <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", bgClass)}>
             <Icon className={cn("h-5 w-5", colorClass)} />
           </div>
           <div>
-            <p className={cn("text-2xl font-bold", colorClass)}>{value}</p>
-            <p className="text-xs text-slate-500">{label}</p>
+            <p className={cn("text-2xl font-extrabold tracking-tight", colorClass)}>{value}</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{label}</p>
           </div>
         </div>
       </CardContent>

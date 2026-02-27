@@ -410,10 +410,10 @@ const AdminDashboardNew = () => {
                 {/* Main Content Grid: Monitoring & Pending Journals */}
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
                     {/* Left: Real-time Monitoring Table */}
-                    <Card className="xl:col-span-2 border-slate-200 shadow-sm bg-white overflow-hidden">
+                    <Card className="xl:col-span-2 border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md overflow-hidden rounded-[20px]">
                         <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                                <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2 tracking-tight">
                                     <Activity className="h-4 w-4 text-blue-600" />
                                     Real-time Monitoring
                                 </CardTitle>
@@ -425,12 +425,12 @@ const AdminDashboardNew = () => {
                         </CardHeader>
                         <CardContent className="p-0">
                             <Table>
-                                <TableHeader className="bg-slate-50">
-                                    <TableRow>
-                                        <TableHead className="w-[40%]">Karyawan</TableHead>
-                                        <TableHead>Jam Masuk</TableHead>
-                                        <TableHead>Shift</TableHead>
-                                        <TableHead className="text-right">Status</TableHead>
+                                <TableHeader className="bg-slate-50/50">
+                                    <TableRow className="border-b border-slate-100">
+                                        <TableHead className="w-[40%] text-xs font-bold text-slate-400 uppercase tracking-wider">Karyawan</TableHead>
+                                        <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jam Masuk</TableHead>
+                                        <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-wider">Shift</TableHead>
+                                        <TableHead className="text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Status</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -481,10 +481,10 @@ const AdminDashboardNew = () => {
                     </Card >
 
                     {/* Right: Pending Journals List */}
-                    <Card className="border-slate-200 shadow-sm bg-white flex flex-col h-full">
+                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md flex flex-col h-full rounded-[20px]">
                         <CardHeader className="pb-3 border-b border-slate-100">
                             <div className="flex items-center justify-between">
-                                <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                                <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2 tracking-tight">
                                     <Briefcase className="h-4 w-4 text-amber-600" />
                                     Jurnal Terbaru
                                 </CardTitle>
@@ -583,12 +583,12 @@ const AdminDashboardNew = () => {
                 {/* Charts Row */}
                 < div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6" >
                     {/* Attendance Trend Chart */}
-                    < Card className="lg:col-span-2 border-slate-200 shadow-sm bg-white" >
+                    < Card className="lg:col-span-2 border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]" >
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-base font-semibold text-slate-800">Tren Kehadiran</CardTitle>
-                                    <CardDescription className="text-sm">Persentase kehadiran 6 bulan terakhir</CardDescription>
+                                    <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Tren Kehadiran</CardTitle>
+                                    <CardDescription className="text-xs text-slate-400 font-medium">Persentase kehadiran 6 bulan terakhir</CardDescription>
                                 </div>
                                 {/* Export button removed */}
                             </div>
@@ -637,10 +637,10 @@ const AdminDashboardNew = () => {
                     </Card >
 
                     {/* Department Distribution */}
-                    < Card className="border-slate-200 shadow-sm bg-white" >
+                    < Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]" >
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-semibold text-slate-800">Distribusi Departemen</CardTitle>
-                            <CardDescription className="text-sm">Jumlah karyawan per departemen</CardDescription>
+                            <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Distribusi Departemen</CardTitle>
+                            <CardDescription className="text-xs text-slate-400 font-medium">Jumlah karyawan per departemen</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {isLoading ? (

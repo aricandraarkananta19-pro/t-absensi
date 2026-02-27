@@ -78,23 +78,23 @@ export function JournalTable({
     }
 
     return (
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+        <div className="rounded-[20px] border border-white/60 bg-white/70 backdrop-blur-md overflow-hidden shadow-sm shadow-slate-200/40">
             <Table>
-                <TableHeader className="bg-slate-50">
-                    <TableRow>
+                <TableHeader className="bg-slate-50/50">
+                    <TableRow className="border-b border-slate-100">
                         <TableHead className="w-[50px]">
                             <Checkbox
                                 checked={isAllSelected || (isSomeSelected ? "indeterminate" : false)}
                                 onCheckedChange={(checked) => onSelectAll(!!checked)}
                             />
                         </TableHead>
-                        <TableHead className="min-w-[120px]">
+                        <TableHead className="min-w-[120px] text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                             Date
                         </TableHead>
-                        <TableHead className="min-w-[200px]">Employee</TableHead>
-                        <TableHead className="min-w-[150px]">Department</TableHead>
-                        <TableHead className="hidden md:table-cell w-full">Activity / Title</TableHead>
-                        <TableHead className="min-w-[100px]">Status</TableHead>
+                        <TableHead className="min-w-[200px] text-[10px] font-bold text-slate-400 uppercase tracking-wider">Employee</TableHead>
+                        <TableHead className="min-w-[150px] text-[10px] font-bold text-slate-400 uppercase tracking-wider">Department</TableHead>
+                        <TableHead className="hidden md:table-cell w-full text-[10px] font-bold text-slate-400 uppercase tracking-wider">Activity / Title</TableHead>
+                        <TableHead className="min-w-[100px] text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -195,7 +195,7 @@ export function JournalTable({
             </Table>
 
             {/* Pagination Footer - Simplified for now */}
-            <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+            <div className="bg-slate-50/50 px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-medium">
                 <div>
                     Showing {data.length > 0 ? 1 : 0} to {data.length} entries
                 </div>
