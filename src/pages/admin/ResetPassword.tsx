@@ -175,48 +175,84 @@ const ResetPassword = () => {
                   <p className="text-slate-500 text-sm font-medium mt-1">Belum ada karyawan terdaftar</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50/50 border-b border-slate-100">
-                      <TableHead className="font-bold text-slate-500 text-xs uppercase tracking-wider">Nama</TableHead>
-                      <TableHead className="hidden sm:table-cell font-bold text-slate-500 text-xs uppercase tracking-wider">Departemen</TableHead>
-                      <TableHead className="w-[120px] font-bold text-slate-500 text-xs uppercase tracking-wider">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50/50 border-b border-slate-100">
+                          <TableHead className="font-bold text-slate-500 text-xs uppercase tracking-wider">Nama</TableHead>
+                          <TableHead className="font-bold text-slate-500 text-xs uppercase tracking-wider">Departemen</TableHead>
+                          <TableHead className="w-[120px] font-bold text-slate-500 text-xs uppercase tracking-wider">Aksi</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredEmployees.map((employee) => (
+                          <TableRow key={employee.id} className="hover:bg-slate-50/50 transition-colors">
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center">
+                                  <span className="text-xs font-bold text-slate-600">
+                                    {employee.full_name?.charAt(0)?.toUpperCase() || "?"}
+                                  </span>
+                                </div>
+                                <span className="font-semibold text-slate-800 text-sm">{employee.full_name || "-"}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-slate-500 text-sm">
+                              {employee.department || "-"}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-2 rounded-xl border-slate-200 hover:bg-slate-50 font-semibold text-xs h-9"
+                                onClick={() => {
+                                  setSelectedEmployee(employee);
+                                  setDialogOpen(true);
+                                }}
+                              >
+                                <Key className="h-3.5 w-3.5" />
+                                Reset
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Cards */}
+                  <div className="md:hidden flex flex-col p-4 gap-3">
                     {filteredEmployees.map((employee) => (
-                      <TableRow key={employee.id} className="hover:bg-slate-50/50 transition-colors">
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center">
-                              <span className="text-xs font-bold text-slate-600">
-                                {employee.full_name?.charAt(0)?.toUpperCase() || "?"}
-                              </span>
-                            </div>
-                            <span className="font-semibold text-slate-800 text-sm">{employee.full_name || "-"}</span>
+                      <div key={employee.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center justify-between gap-3">
+                        <div className="flex gap-3 items-center min-w-0">
+                          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-slate-600">
+                              {employee.full_name?.charAt(0)?.toUpperCase() || "?"}
+                            </span>
                           </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell text-slate-500 text-sm">
-                          {employee.department || "-"}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-2 rounded-xl border-slate-200 hover:bg-slate-50 font-semibold text-xs h-9"
-                            onClick={() => {
-                              setSelectedEmployee(employee);
-                              setDialogOpen(true);
-                            }}
-                          >
-                            <Key className="h-3.5 w-3.5" />
-                            Reset
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-900 text-sm truncate">{employee.full_name || "-"}</p>
+                            <p className="text-[11px] text-slate-500 font-medium">{employee.department || "-"}</p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 rounded-xl border-slate-200 hover:bg-slate-50 font-semibold text-xs h-9 flex-shrink-0"
+                          onClick={() => {
+                            setSelectedEmployee(employee);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Key className="h-3.5 w-3.5" />
+                          Reset
+                        </Button>
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
+                  </div>
+                </>
               )}
             </div>
           </div>

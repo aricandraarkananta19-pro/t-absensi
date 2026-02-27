@@ -450,40 +450,76 @@ const ManagerRekapAbsensi = () => {
       {/* Table */}
       <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50/50 border-b border-slate-100">
-                <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Karyawan</TableHead>
-                <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider hidden sm:table-cell">Departemen</TableHead>
-                <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Clock In</TableHead>
-                <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Clock Out</TableHead>
-                <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center hidden md:table-cell">Durasi</TableHead>
-                <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                [...Array(5)].map((_, i) => <TableRow key={i}><TableCell colSpan={6}><Skeleton className="h-12 w-full" /></TableCell></TableRow>)
-              ) : filteredAttendance.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-slate-500">Tidak ada data.</TableCell>
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/50 border-b border-slate-100">
+                  <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Karyawan</TableHead>
+                  <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider hidden sm:table-cell">Departemen</TableHead>
+                  <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Clock In</TableHead>
+                  <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Clock Out</TableHead>
+                  <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center hidden md:table-cell">Durasi</TableHead>
+                  <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Status</TableHead>
                 </TableRow>
-              ) : (
-                filteredAttendance.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>
-                      <div className="font-medium">{row.profile.full_name}</div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell text-slate-500">{row.profile.department}</TableCell>
-                    <TableCell className="text-center text-sm font-mono">{formatTime(row.clock_in)}</TableCell>
-                    <TableCell className="text-center text-sm font-mono">{formatTime(row.clock_out)}</TableCell>
-                    <TableCell className="text-center hidden md:table-cell text-sm">{calculateDuration(row.clock_in, row.clock_out)}</TableCell>
-                    <TableCell className="text-center">{getStatusBadge(row.status)}</TableCell>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => <TableRow key={i}><TableCell colSpan={6}><Skeleton className="h-12 w-full" /></TableCell></TableRow>)
+                ) : filteredAttendance.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-10 text-slate-500">Tidak ada data.</TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredAttendance.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell>
+                        <div className="font-medium">{row.profile.full_name}</div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell text-slate-500">{row.profile.department}</TableCell>
+                      <TableCell className="text-center text-sm font-mono">{formatTime(row.clock_in)}</TableCell>
+                      <TableCell className="text-center text-sm font-mono">{formatTime(row.clock_out)}</TableCell>
+                      <TableCell className="text-center hidden md:table-cell text-sm">{calculateDuration(row.clock_in, row.clock_out)}</TableCell>
+                      <TableCell className="text-center">{getStatusBadge(row.status)}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden flex flex-col p-4 gap-3 bg-slate-50/50 rounded-b-[20px]">
+            {isLoading ? (
+              [...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)
+            ) : filteredAttendance.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 text-sm bg-white rounded-xl border border-slate-100">
+                Tidak ada data.
+              </div>
+            ) : (
+              filteredAttendance.map((row) => (
+                <div key={row.id} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex flex-col gap-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">{row.profile.full_name}</h4>
+                      <p className="text-[11px] text-slate-500">{row.profile.department || "Karyawan"}</p>
+                    </div>
+                    <div>{getStatusBadge(row.status)}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="bg-slate-50 rounded-xl p-2.5 flex flex-col">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Masuk</span>
+                      <span className="text-xs font-mono font-semibold text-slate-700">{formatTime(row.clock_in)}</span>
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-2.5 flex flex-col">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Keluar</span>
+                      <span className="text-xs font-mono font-semibold text-slate-700">{formatTime(row.clock_out)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 

@@ -359,80 +359,137 @@ const KelolaRole = () => {
 
           {/* Users Table */}
           <Card className="border-border">
-            <div className="overflow-x-auto">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                </div>
-              ) : filteredUsers.length === 0 ? (
-                <div className="py-12 text-center">
-                  <UserCog className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-foreground">Tidak Ada Data</h3>
-                  <p className="text-muted-foreground">Tidak ditemukan user dengan kriteria tersebut</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nama</TableHead>
-                      <TableHead className="hidden sm:table-cell">Email</TableHead>
-                      <TableHead className="hidden md:table-cell">Departemen</TableHead>
-                      <TableHead>Role Saat Ini</TableHead>
-                      <TableHead>Ubah Role</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.user_id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{user.profile?.full_name || "Tanpa Nama"}</p>
-                            <p className="text-xs text-muted-foreground">{user.profile?.position || "-"}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <span className="text-sm">{user.email || "-"}</span>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {user.profile?.department || "-"}
-                        </TableCell>
-                        <TableCell>{getRoleBadge(user.role)}</TableCell>
-                        <TableCell>
-                          <Select
-                            value={user.role}
-                            onValueChange={(value) => handleChangeRole(user, value)}
-                          >
-                            <SelectTrigger className="w-[130px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="admin">
-                                <div className="flex items-center gap-2">
-                                  <Crown className="h-3 w-3 text-destructive" />
-                                  Admin
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="manager">
-                                <div className="flex items-center gap-2">
-                                  <Eye className="h-3 w-3 text-info" />
-                                  Manager
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="karyawan">
-                                <div className="flex items-center gap-2">
-                                  <CheckCircle2 className="h-3 w-3 text-success" />
-                                  Karyawan
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="py-12 text-center">
+                <UserCog className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground">Tidak Ada Data</h3>
+                <p className="text-muted-foreground">Tidak ditemukan user dengan kriteria tersebut</p>
+              </div>
+            ) : (
+              <>
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nama</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Departemen</TableHead>
+                        <TableHead>Role Saat Ini</TableHead>
+                        <TableHead>Ubah Role</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </div>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.map((user) => (
+                        <TableRow key={user.user_id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{user.profile?.full_name || "Tanpa Nama"}</p>
+                              <p className="text-xs text-muted-foreground">{user.profile?.position || "-"}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm">{user.email || "-"}</span>
+                          </TableCell>
+                          <TableCell>
+                            {user.profile?.department || "-"}
+                          </TableCell>
+                          <TableCell>{getRoleBadge(user.role)}</TableCell>
+                          <TableCell>
+                            <Select
+                              value={user.role}
+                              onValueChange={(value) => handleChangeRole(user, value)}
+                            >
+                              <SelectTrigger className="w-[130px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">
+                                  <div className="flex items-center gap-2">
+                                    <Crown className="h-3 w-3 text-destructive" />
+                                    Admin
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="manager">
+                                  <div className="flex items-center gap-2">
+                                    <Eye className="h-3 w-3 text-info" />
+                                    Manager
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="karyawan">
+                                  <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="h-3 w-3 text-success" />
+                                    Karyawan
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden flex flex-col p-4 gap-3">
+                  {filteredUsers.map((user) => (
+                    <div key={user.user_id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col gap-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-slate-600">
+                              {user.profile?.full_name?.charAt(0)?.toUpperCase() || "?"}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 text-sm">{user.profile?.full_name || "Tanpa Nama"}</p>
+                            <p className="text-[11px] text-slate-500 font-medium">{user.profile?.position || "-"}{user.profile?.department ? ` • ${user.profile.department}` : ""}</p>
+                            {user.email && <p className="text-[10px] text-slate-400 mt-0.5">{user.email}</p>}
+                          </div>
+                        </div>
+                        {getRoleBadge(user.role)}
+                      </div>
+                      <div className="pt-2 border-t border-slate-50">
+                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5 block">Ubah Role</label>
+                        <Select
+                          value={user.role}
+                          onValueChange={(value) => handleChangeRole(user, value)}
+                        >
+                          <SelectTrigger className="w-full h-9 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">
+                              <div className="flex items-center gap-2">
+                                <Crown className="h-3 w-3 text-destructive" />
+                                Admin
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="manager">
+                              <div className="flex items-center gap-2">
+                                <Eye className="h-3 w-3 text-info" />
+                                Manager
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="karyawan">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="h-3 w-3 text-success" />
+                                Karyawan
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </Card>
         </main>
 

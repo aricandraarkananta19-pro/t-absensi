@@ -383,80 +383,149 @@ const ManagerCuti = () => {
                 <p className="text-slate-500 text-sm font-medium mt-1">Tidak ada pengajuan cuti dengan kriteria tersebut</p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50/50 border-b border-slate-100">
-                    <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Karyawan</TableHead>
-                    <TableHead className="hidden sm:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Jenis Cuti</TableHead>
-                    <TableHead className="hidden md:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Tanggal</TableHead>
-                    <TableHead className="hidden lg:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Durasi</TableHead>
-                    <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Status</TableHead>
-                    <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50/50 border-b border-slate-100">
+                        <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Karyawan</TableHead>
+                        <TableHead className="hidden sm:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Jenis Cuti</TableHead>
+                        <TableHead className="hidden md:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Tanggal</TableHead>
+                        <TableHead className="hidden lg:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Durasi</TableHead>
+                        <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Status</TableHead>
+                        <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Aksi</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredRequests.map((request) => {
+                        const duration = differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1;
+                        return (
+                          <TableRow key={request.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center">
+                                  <User className="h-4 w-4 text-slate-500" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-slate-800 text-sm">{request.profile?.full_name || "Tanpa Nama"}</p>
+                                  <p className="text-xs text-slate-400 flex items-center gap-1 font-medium">
+                                    <Building2 className="h-3 w-3" />
+                                    {request.profile?.department || "-"}
+                                  </p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell">
+                              <Badge variant="outline">{getLeaveTypeLabel(request.leave_type)}</Badge>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              <div className="text-sm">
+                                <p>{format(new Date(request.start_date), "dd MMM yyyy", { locale: id })}</p>
+                                <p className="text-muted-foreground">s/d {format(new Date(request.end_date), "dd MMM yyyy", { locale: id })}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="hidden lg:table-cell">
+                              <span className="font-medium">{duration} hari</span>
+                            </TableCell>
+                            <TableCell>{getStatusBadge(request.status)}</TableCell>
+                            <TableCell>
+                              {request.status === "pending" ? (
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-1 text-success hover:text-success hover:bg-success/10"
+                                    onClick={() => handleApprove(request)}
+                                  >
+                                    <Check className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Setujui</span>
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => handleReject(request)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Tolak</span>
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden flex flex-col p-4 gap-3 bg-slate-50/50 rounded-b-[20px]">
                   {filteredRequests.map((request) => {
                     const duration = differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1;
                     return (
-                      <TableRow key={request.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center">
-                              <User className="h-4 w-4 text-slate-500" />
+                      <div key={request.id} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex flex-col gap-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex gap-3">
+                            <div className="h-10 w-10 mt-1 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                              <User className="h-5 w-5 text-slate-500" />
                             </div>
                             <div>
-                              <p className="font-semibold text-slate-800 text-sm">{request.profile?.full_name || "Tanpa Nama"}</p>
-                              <p className="text-xs text-slate-400 flex items-center gap-1 font-medium">
+                              <h4 className="font-bold text-slate-900 text-sm line-clamp-1">{request.profile?.full_name || "Tanpa Nama"}</h4>
+                              <p className="text-[11px] text-slate-500 flex items-center gap-1">
                                 <Building2 className="h-3 w-3" />
-                                {request.profile?.department || "-"}
+                                {request.profile?.department || "Karyawan"}
                               </p>
+                              <div className="mt-1 flex items-center gap-2">
+                                {getStatusBadge(request.status)}
+                                <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 leading-tight">
+                                  {getLeaveTypeLabel(request.leave_type)}
+                                </Badge>
+                              </div>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <Badge variant="outline">{getLeaveTypeLabel(request.leave_type)}</Badge>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <div className="text-sm">
-                            <p>{format(new Date(request.start_date), "dd MMM yyyy", { locale: id })}</p>
-                            <p className="text-muted-foreground">s/d {format(new Date(request.end_date), "dd MMM yyyy", { locale: id })}</p>
+                        </div>
+
+                        <div className="bg-slate-50 rounded-xl p-3 flex justify-between items-center">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Mulai - Selesai</span>
+                            <span className="text-[11px] font-semibold text-slate-700">
+                              {format(new Date(request.start_date), "dd MMM yy")} - {format(new Date(request.end_date), "dd MMM yy")}
+                            </span>
                           </div>
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
-                          <span className="font-medium">{duration} hari</span>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(request.status)}</TableCell>
-                        <TableCell>
-                          {request.status === "pending" ? (
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="gap-1 text-success hover:text-success hover:bg-success/10"
-                                onClick={() => handleApprove(request)}
-                              >
-                                <Check className="h-4 w-4" />
-                                <span className="hidden sm:inline">Setujui</span>
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleReject(request)}
-                              >
-                                <X className="h-4 w-4" />
-                                <span className="hidden sm:inline">Tolak</span>
-                              </Button>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
+                          <div className="flex flex-col text-right">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Durasi</span>
+                            <span className="text-xs font-bold text-slate-800">{duration} hari</span>
+                          </div>
+                        </div>
+
+                        {request.status === "pending" && (
+                          <div className="flex gap-2 w-full pt-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 gap-1 text-success hover:text-success hover:bg-success/10 font-bold tracking-wide"
+                              onClick={() => handleApprove(request)}
+                            >
+                              <Check className="h-4 w-4" /> Setujui
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold tracking-wide"
+                              onClick={() => handleReject(request)}
+                            >
+                              <X className="h-4 w-4" /> Tolak
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
-                </TableBody>
-              </Table>
+                </div>
+              </>
             )}
           </div>
         </Card>

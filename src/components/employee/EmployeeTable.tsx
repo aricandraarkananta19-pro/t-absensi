@@ -112,7 +112,8 @@ export function EmployeeTable({
 
     return (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-            <div className="overflow-x-auto">
+            {/* Desktop View */}
+            <div className="hidden md:block overflow-x-auto">
                 <Table>
                     <TableHeader className="bg-slate-50">
                         <TableRow>
@@ -206,6 +207,81 @@ export function EmployeeTable({
                         )}
                     </TableBody>
                 </Table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden flex flex-col p-4 gap-4 bg-slate-50/30">
+                {data.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500 text-sm bg-white rounded-xl border border-slate-200">
+                        {isArchivedView ? "No archived employees found." : "No employees found."}
+                    </div>
+                ) : (
+                    data.map((employee) => (
+                        <div key={employee.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-start justify-between relative">
+                                <div className="flex gap-3">
+                                    <Avatar className="h-10 w-10 border border-slate-100 shadow-sm mt-0.5">
+                                        <AvatarImage src={employee.avatar_url || undefined} />
+                                        <AvatarFallback className={cn(
+                                            "text-xs font-bold",
+                                            employee.role === 'admin' ? "bg-red-50 text-red-600" :
+                                                employee.role === 'manager' ? "bg-amber-50 text-amber-600" :
+                                                    "bg-blue-50 text-blue-600"
+                                        )}>
+                                            {employee.full_name?.substring(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <h4 className="font-bold text-slate-900 text-sm line-clamp-1">{employee.full_name}</h4>
+                                        <p className="text-[11px] text-slate-500 line-clamp-1">{employee.email || "No Email"}</p>
+                                        <div className="mt-1 flex items-center gap-2">
+                                            {getStatusBadge(employee)}
+                                            <Badge variant="secondary" className="font-mono text-[10px] bg-slate-50 text-slate-500 px-1 border-none font-medium">
+                                                {getNIP(employee)}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="-mt-1 -mr-2">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-[160px]">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            {!isArchivedView ? (
+                                                <>
+                                                    <DropdownMenuItem onClick={() => onEdit(employee)}>
+                                                        <Edit className="mr-2 h-4 w-4" /> Edit Details
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-red-600 focus:text-red-700 focus:bg-red-50" onClick={() => onDelete(employee)}>
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Archive
+                                                    </DropdownMenuItem>
+                                                </>
+                                            ) : (
+                                                <DropdownMenuItem className="text-blue-600 focus:text-blue-700 focus:bg-blue-50" onClick={() => onRestore?.(employee)}>
+                                                    <Edit className="mr-2 h-4 w-4" /> Restore
+                                                </DropdownMenuItem>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </div>
+                            <div className="mt-4 grid grid-cols-2 gap-2">
+                                <div className="bg-slate-50 rounded-xl p-2.5">
+                                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Departemen</p>
+                                    <p className="text-xs font-semibold text-slate-700 truncate">{employee.department || "-"}</p>
+                                </div>
+                                <div className="bg-slate-50 rounded-xl p-2.5">
+                                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Posisi</p>
+                                    <p className="text-xs font-semibold text-slate-700 truncate">{employee.position || "-"}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
 
             {/* Pagination */}

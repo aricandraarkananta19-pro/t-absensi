@@ -570,7 +570,8 @@ const RekapAbsensi = () => {
 
         {/* 3. Data Table */}
         <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md overflow-hidden rounded-[20px] vibe-glass-card">
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow className="border-b border-slate-100">
@@ -666,6 +667,89 @@ const RekapAbsensi = () => {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Mobile Cards View */}
+          <div className="md:hidden flex flex-col p-4 gap-4 bg-slate-50/50">
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-32 bg-white rounded-2xl animate-pulse" />
+              ))
+            ) : currentStats.filtered.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 text-sm bg-white rounded-xl border border-slate-100">
+                Tidak ada data absensi untuk periode ini.
+              </div>
+            ) : (
+              currentStats.filtered.map((row: any) => (
+                <div key={row.user_id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 relative flex flex-col gap-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">{row.name}</h4>
+                      <p className="text-[11px] text-slate-500 font-medium">{row.department}</p>
+                    </div>
+                    {viewMode === 'daily' ? (
+                      getStatusBadge(row.status)
+                    ) : (
+                      <Badge variant="outline" className={cn("text-xs",
+                        (row.present / (row.present + row.absent || 1)) >= 0.9 ? "text-emerald-600 bg-emerald-50" :
+                          (row.present / (row.present + row.absent || 1)) >= 0.7 ? "text-blue-600 bg-blue-50" : "text-amber-600 bg-amber-50"
+                      )}>
+                        {Math.round((row.present / ((row.present + row.absent + row.leave) || 1)) * 100)}%
+                      </Badge>
+                    )}
+                  </div>
+
+                  {viewMode === 'daily' ? (
+                    <div className="grid grid-cols-2 gap-3 bg-slate-50/50 rounded-xl p-3 border border-slate-50">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Jam Masuk</span>
+                        <span className="text-xs font-mono font-semibold text-slate-700">{formatTime(row.clock_in)}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Jam Keluar</span>
+                        <span className="text-xs font-mono font-semibold text-slate-700">{formatTime(row.clock_out)}</span>
+                      </div>
+                      <div className="col-span-2 pt-1 mt-1 border-t border-slate-100 flex justify-between items-center">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Durasi</span>
+                        <span className="text-xs font-bold text-slate-800">{calculateDuration(row.clock_in, row.clock_out)}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2 mt-1">
+                      <div className="flex flex-col items-center justify-center bg-emerald-50/50 rounded-lg p-2">
+                        <span className="text-lg font-bold text-emerald-600">{row.present}</span>
+                        <span className="text-[9px] font-bold text-emerald-600/60 uppercase">Hadir</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center bg-amber-50/50 rounded-lg p-2">
+                        <span className="text-lg font-bold text-amber-600">{row.late}</span>
+                        <span className="text-[9px] font-bold text-amber-600/60 uppercase">Telat</span>
+                      </div>
+                      <div className="flex flex-col items-center justify-center bg-red-50/50 rounded-lg p-2">
+                        <span className="text-lg font-bold text-red-600">{row.absent}</span>
+                        <span className="text-[9px] font-bold text-red-600/60 uppercase">Alpha</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {viewMode === 'daily' ? (
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">
+                      <Button variant="outline" size="sm" className="h-8 gap-1 text-blue-600 text-xs" onClick={() => { setEditingRecord(row); setEditForm({ clock_in: row.clock_in ? new Date(row.clock_in).toISOString().slice(0, 16) : '', clock_out: row.clock_out ? new Date(row.clock_out).toISOString().slice(0, 16) : '', status: row.status || 'present', notes: row.notes || '' }); setIsEditOpen(true); }}>
+                        <Settings className="w-3.5 h-3.5" /> Edit
+                      </Button>
+                      {row.id && !row.id.toString().startsWith('virt') && (
+                        <Button variant="outline" size="sm" className="h-8 gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs" onClick={() => { setRecordToDelete(row); setIsDeleteDialogOpen(true); }}>
+                          <Trash2 className="w-3.5 h-3.5" /> Hapus
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <Button variant="outline" size="sm" className="w-full text-blue-600 h-8 mt-1" onClick={() => navigate(`/admin/laporan`)}>
+                      Lihat Detail
+                    </Button>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </Card>
       </div>

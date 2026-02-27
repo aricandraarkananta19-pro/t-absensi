@@ -941,106 +941,192 @@ const ManagerLaporan = () => {
             ) : filteredReports.length === 0 ? (
               <EmptyState title="No Data Found" description="Try adjusting your filters or date range." icon={Filter} />
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                      <TableHead className="w-12 py-4 font-semibold text-xs uppercase text-slate-500 pl-4">No</TableHead>
-                      <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500">Employee Details</TableHead>
-                      <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-center">Total Hadir</TableHead>
-                      <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-center">Terlambat (Menit)</TableHead>
-                      <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-center">Status Cuti / Izin</TableHead>
-                      <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-right pr-6">Attendance Rate</TableHead>
-                      <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-center">Detail</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredReports.map((emp, index) => {
-                      const totalDays = emp.present + emp.late + emp.absent + emp.leave;
-                      const attendancePercent = totalDays > 0 ? Math.round(((emp.present + emp.late) / totalDays) * 100) : 0;
+              <>
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                        <TableHead className="w-12 py-4 font-semibold text-xs uppercase text-slate-500 pl-4">No</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500">Employee Details</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-center">Total Hadir</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-center">Terlambat (Menit)</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-center">Status Cuti / Izin</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-right pr-6">Attendance Rate</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-center">Detail</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredReports.map((emp, index) => {
+                        const totalDays = emp.present + emp.late + emp.absent + emp.leave;
+                        const attendancePercent = totalDays > 0 ? Math.round(((emp.present + emp.late) / totalDays) * 100) : 0;
 
-                      // Badges logic for Leave/Permit
-                      const sickCount = emp.details.filter(d => d.status === 'sick').length;
-                      const permitCount = emp.details.filter(d => d.status === 'permission').length;
-                      const leaveCount = emp.details.filter(d => d.status === 'leave').length;
+                        // Badges logic for Leave/Permit
+                        const sickCount = emp.details.filter(d => d.status === 'sick').length;
+                        const permitCount = emp.details.filter(d => d.status === 'permission').length;
+                        const leaveCount = emp.details.filter(d => d.status === 'leave').length;
 
-                      return (
-                        <TableRow key={emp.user_id} className="hover:bg-slate-50 border-b border-slate-100 transition-colors">
-                          <TableCell className="text-slate-500 text-xs font-medium pl-4">{index + 1}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-9 w-9 border border-slate-200">
-                                <AvatarImage src="" />
-                                <AvatarFallback className={cn(
-                                  "text-xs font-bold",
-                                  ['A', 'C', 'E'].includes(emp.full_name?.charAt(0) || '') ? "bg-blue-100 text-blue-600" :
-                                    ['B', 'D', 'F'].includes(emp.full_name?.charAt(0) || '') ? "bg-amber-100 text-amber-600" :
-                                      ['G', 'H', 'I'].includes(emp.full_name?.charAt(0) || '') ? "bg-purple-100 text-purple-600" : "bg-slate-100 text-slate-600"
-                                )}>
-                                  {emp.full_name?.charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="font-semibold text-slate-900 text-sm">{emp.full_name}</div>
-                                <div className="text-xs text-slate-500">{emp.department} • {emp.position || "Staff"}</div>
+                        return (
+                          <TableRow key={emp.user_id} className="hover:bg-slate-50 border-b border-slate-100 transition-colors">
+                            <TableCell className="text-slate-500 text-xs font-medium pl-4">{index + 1}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-9 w-9 border border-slate-200">
+                                  <AvatarImage src="" />
+                                  <AvatarFallback className={cn(
+                                    "text-xs font-bold",
+                                    ['A', 'C', 'E'].includes(emp.full_name?.charAt(0) || '') ? "bg-blue-100 text-blue-600" :
+                                      ['B', 'D', 'F'].includes(emp.full_name?.charAt(0) || '') ? "bg-amber-100 text-amber-600" :
+                                        ['G', 'H', 'I'].includes(emp.full_name?.charAt(0) || '') ? "bg-purple-100 text-purple-600" : "bg-slate-100 text-slate-600"
+                                  )}>
+                                    {emp.full_name?.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="font-semibold text-slate-900 text-sm">{emp.full_name}</div>
+                                  <div className="text-xs text-slate-500">{emp.department} • {emp.position || "Staff"}</div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center font-bold text-slate-900">
+                              <Badge variant="outline" className="bg-slate-50 font-mono text-base px-3 py-1">
+                                {emp.present + emp.late}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {emp.lateMinutes > 0 ? (
+                                <div className="inline-flex items-center gap-1 font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded text-xs">
+                                  <Clock className="w-3 h-3" /> {emp.lateMinutes}m
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 text-xs">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex justify-center gap-1 flex-wrap">
+                                {sickCount > 0 && <Badge variant="secondary" className="bg-purple-50 text-purple-600 border-purple-100">{sickCount} Sakit</Badge>}
+                                {permitCount > 0 && <Badge variant="secondary" className="bg-blue-50 text-blue-600 border-blue-100">{permitCount} Izin</Badge>}
+                                {leaveCount > 0 && <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-slate-200">{leaveCount} Cuti</Badge>}
+                                {sickCount === 0 && permitCount === 0 && leaveCount === 0 && <span className="text-slate-300 text-xs">-</span>}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-end gap-3 w-full pr-6 ml-auto">
+                                <div className="flex flex-col items-end">
+                                  <span className={cn(
+                                    "text-sm font-bold",
+                                    attendancePercent >= 90 ? "text-emerald-600" :
+                                      attendancePercent >= 75 ? "text-blue-600" :
+                                        attendancePercent >= 50 ? "text-amber-600" : "text-red-600"
+                                  )}>{attendancePercent}%</span>
+                                </div>
+                                <div className="h-1.5 w-16 bg-slate-100 rounded-full overflow-hidden">
+                                  <div
+                                    className={cn("h-full rounded-full transition-all",
+                                      attendancePercent >= 90 ? "bg-emerald-500" :
+                                        attendancePercent >= 75 ? "bg-blue-500" :
+                                          attendancePercent >= 50 ? "bg-amber-500" : "bg-red-500"
+                                    )}
+                                    style={{ width: `${attendancePercent}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Button variant="ghost" size="sm" onClick={() => { setSelectedEmployee(emp); setDetailModalOpen(true); }}>
+                                <CalendarIcon className="h-4 w-4 text-blue-600" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile Cards View */}
+                <div className="md:hidden flex flex-col p-4 gap-4 bg-slate-50/50">
+                  {filteredReports.map((emp, index) => {
+                    const totalDays = emp.present + emp.late + emp.absent + emp.leave;
+                    const attendancePercent = totalDays > 0 ? Math.round(((emp.present + emp.late) / totalDays) * 100) : 0;
+
+                    const sickCount = emp.details.filter(d => d.status === 'sick').length;
+                    const permitCount = emp.details.filter(d => d.status === 'permission').length;
+                    const leaveCount = emp.details.filter(d => d.status === 'leave').length;
+
+                    return (
+                      <div key={emp.user_id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 relative flex flex-col gap-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex gap-3">
+                            <Avatar className="h-12 w-12 border border-slate-100 shadow-sm">
+                              <AvatarImage src="" />
+                              <AvatarFallback className={cn(
+                                "text-sm font-bold",
+                                ['A', 'C', 'E'].includes(emp.full_name?.charAt(0) || '') ? "bg-blue-100 text-blue-600" :
+                                  ['B', 'D', 'F'].includes(emp.full_name?.charAt(0) || '') ? "bg-amber-100 text-amber-600" :
+                                    ['G', 'H', 'I'].includes(emp.full_name?.charAt(0) || '') ? "bg-purple-100 text-purple-600" : "bg-slate-100 text-slate-600"
+                              )}>
+                                {emp.full_name?.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h4 className="font-bold text-slate-900 text-sm">{emp.full_name}</h4>
+                              <p className="text-[11px] text-slate-500 font-medium pb-1">{emp.department} • {emp.position || "Staff"}</p>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {sickCount > 0 && <Badge variant="secondary" className="bg-purple-50 text-purple-600 border-none text-[9px] h-4 leading-none">{sickCount} Sakit</Badge>}
+                                {permitCount > 0 && <Badge variant="secondary" className="bg-blue-50 text-blue-600 border-none text-[9px] h-4 leading-none">{permitCount} Izin</Badge>}
+                                {leaveCount > 0 && <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-none text-[9px] h-4 leading-none">{leaveCount} Cuti</Badge>}
+                                {sickCount === 0 && permitCount === 0 && leaveCount === 0 && <span className="text-slate-300 text-[10px]">-</span>}
                               </div>
                             </div>
-                          </TableCell>
-                          <TableCell className="text-center font-bold text-slate-900">
-                            <Badge variant="outline" className="bg-slate-50 font-mono text-base px-3 py-1">
-                              {emp.present + emp.late}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => { setSelectedEmployee(emp); setDetailModalOpen(true); }} className="h-8 w-8 p-0 rounded-full hover:bg-blue-50">
+                            <CalendarIcon className="h-4 w-4 text-blue-600" />
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 bg-slate-50/50 rounded-xl p-3 border border-slate-50">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Total Hadir</span>
+                            <span className="text-sm font-bold text-slate-800">{emp.present + emp.late} hari</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Keterlambatan</span>
                             {emp.lateMinutes > 0 ? (
-                              <div className="inline-flex items-center gap-1 font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded text-xs">
-                                <Clock className="w-3 h-3" /> {emp.lateMinutes}m
-                              </div>
+                              <span className="text-sm font-semibold text-amber-600 flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5" />
+                                {emp.lateMinutes} min
+                              </span>
                             ) : (
-                              <span className="text-slate-400 text-xs">-</span>
+                              <span className="text-sm font-semibold text-slate-400">-</span>
                             )}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex justify-center gap-1 flex-wrap">
-                              {sickCount > 0 && <Badge variant="secondary" className="bg-purple-50 text-purple-600 border-purple-100">{sickCount} Sakit</Badge>}
-                              {permitCount > 0 && <Badge variant="secondary" className="bg-blue-50 text-blue-600 border-blue-100">{permitCount} Izin</Badge>}
-                              {leaveCount > 0 && <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-slate-200">{leaveCount} Cuti</Badge>}
-                              {sickCount === 0 && permitCount === 0 && leaveCount === 0 && <span className="text-slate-300 text-xs">-</span>}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-end gap-3 w-full pr-6 ml-auto">
-                              <div className="flex flex-col items-end">
-                                <span className={cn(
-                                  "text-sm font-bold",
-                                  attendancePercent >= 90 ? "text-emerald-600" :
-                                    attendancePercent >= 75 ? "text-blue-600" :
-                                      attendancePercent >= 50 ? "text-amber-600" : "text-red-600"
-                                )}>{attendancePercent}%</span>
-                              </div>
-                              <div className="h-1.5 w-16 bg-slate-100 rounded-full overflow-hidden">
-                                <div
-                                  className={cn("h-full rounded-full transition-all",
-                                    attendancePercent >= 90 ? "bg-emerald-500" :
-                                      attendancePercent >= 75 ? "bg-blue-500" :
-                                        attendancePercent >= 50 ? "bg-amber-500" : "bg-red-500"
-                                  )}
-                                  style={{ width: `${attendancePercent}%` }}
-                                />
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Button variant="ghost" size="sm" onClick={() => { setSelectedEmployee(emp); setDetailModalOpen(true); }}>
-                              <CalendarIcon className="h-4 w-4 text-blue-600" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5 pt-1">
+                          <div className="flex justify-between items-center text-[10px] font-bold tracking-wider">
+                            <span className="text-slate-400">ATTENDANCE RATE</span>
+                            <span className={cn(
+                              attendancePercent >= 90 ? "text-emerald-600" :
+                                attendancePercent >= 75 ? "text-blue-600" :
+                                  attendancePercent >= 50 ? "text-amber-600" : "text-red-600"
+                            )}>{attendancePercent}%</span>
+                          </div>
+                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className={cn("h-full rounded-full transition-all",
+                                attendancePercent >= 90 ? "bg-emerald-500" :
+                                  attendancePercent >= 75 ? "bg-blue-500" :
+                                    attendancePercent >= 50 ? "bg-amber-500" : "bg-red-500"
+                              )}
+                              style={{ width: `${attendancePercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
             <div className="p-4 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
               <span>Showing <strong>1</strong> to <strong>{Math.min(filteredReports.length, 10)}</strong> of <strong>{filteredReports.length}</strong> entries</span>
