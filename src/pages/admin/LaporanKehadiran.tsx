@@ -618,25 +618,32 @@ const LaporanKehadiran = () => {
                         if (d.isWeekend && !d.clockIn) ExcelStatus = 'Libur';
 
                         let workHours = 0;
+                        let clockInStr = '-';
+                        let clockOutStr = '-';
+
+                        if (d.clockIn) clockInStr = format(new Date(d.clockIn), "HH.mm 'WIB'");
+                        if (d.clockOut) clockOutStr = format(new Date(d.clockOut), "HH.mm 'WIB'");
+
                         if (d.clockIn && d.clockOut) {
-                            const [ih, im] = d.clockIn.split(':').map(Number);
-                            const [oh, om] = d.clockOut.split(':').map(Number);
-                            const diffMins = (oh * 60 + om) - (ih * 60 + im);
+                            const diffMins = differenceInMinutes(new Date(d.clockOut), new Date(d.clockIn));
                             workHours = diffMins > 0 ? diffMins / 60 : 0;
                         }
 
                         let lateMins = 0;
                         if (d.status === 'late' && d.clockIn) {
-                            const [ih, im] = d.clockIn.split(':').map(Number);
-                            lateMins = Math.max(0, (ih * 60 + im) - (8 * 60 + 0));
+                            const clockInObj = new Date(d.clockIn);
+                            const targetObj = new Date(d.clockIn);
+                            targetObj.setHours(8, 0, 0, 0); // Asumsi target jam 08:00
+                            const diff = differenceInMinutes(clockInObj, targetObj);
+                            lateMins = Math.max(0, diff);
                         }
 
                         return {
                             employeeName: emp.full_name || 'Unknown',
                             department: emp.department || '-',
                             date: d.formattedDate,
-                            clockIn: d.clockIn || '-',
-                            clockOut: d.clockOut || '-',
+                            clockIn: clockInStr,
+                            clockOut: clockOutStr,
                             shift: 'Reguler 08:00 - 17:00',
                             status: ExcelStatus as any,
                             totalWorkHours: workHours,
@@ -692,7 +699,7 @@ const LaporanKehadiran = () => {
             <PopoverTrigger asChild>
                 <Button
                     size="sm"
-                    className="h-9 gap-2 text-white shadow-sm bg-gradient-to-r from-blue-700 to-sky-600 hover:to-sky-700 hidden sm:flex border border-blue-600/50"
+                    className="h-9 gap-2 text-white shadow-sm bg-gradient-to-r from-blue-700 to-sky-600 hover:to-sky-700 flex border border-blue-600/50"
                     onClick={() => {
                         const currentPeriodVal = dateRange?.from && dateRange?.to ? `${format(dateRange.from, 'yyyy-MM-dd')}_${format(dateRange.to, 'yyyy-MM-dd')}` : "custom";
                         const exists = availablePeriods.some(p => p.value === currentPeriodVal);

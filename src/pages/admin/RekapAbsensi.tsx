@@ -4,7 +4,7 @@ import {
   ArrowLeft, Clock, Search, Calendar as CalendarIcon, Users, CheckCircle2,
   XCircle, AlertCircle, FileText,
   LayoutDashboard, BarChart3, Building2, Key, Settings, Shield, Database,
-  ChevronLeft, ChevronRight, LogIn, LogOut, Trash2, Filter, RefreshCw
+  ChevronLeft, ChevronRight, LogIn, LogOut, Trash2, Filter, RefreshCw, Download
 } from "lucide-react";
 import { ADMIN_MENU_SECTIONS } from "@/config/menu";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,8 @@ import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
 import { ABSENSI_WAJIB_ROLE, EXCLUDED_USER_NAMES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { startOfMonth, endOfMonth, format, addDays, subDays, getDaysInMonth, getDate, isSameMonth, startOfDay, endOfDay } from "date-fns";
+import { startOfMonth, endOfMonth, format, addDays, subDays, getDaysInMonth, getDate, isSameMonth, startOfDay, endOfDay, differenceInMinutes, parseISO, isValid } from "date-fns";
+import * as XLSX from "xlsx";
 import { id } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
 import StatCard from "@/components/ui/stat-card"; // Reusing generic stat card if avail, or build custom
@@ -401,6 +402,89 @@ const RekapAbsensi = () => {
     }
   };
 
+  const handleExportExcel = () => {
+    if (currentStats.filtered.length === 0) {
+      toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diexport" });
+      return;
+    }
+
+    const dataSiapExport = currentStats.filtered.map((row: any) => {
+      // 1. Format Tanggal
+      const formattedDate = row.date && isValid(new Date(row.date))
+        ? format(new Date(row.date), 'dd MMM yyyy', { locale: id })
+        : filterDate ? format(new Date(filterDate), 'dd MMM yyyy', { locale: id }) : '-';
+
+      // 2. Format Jam
+      const clockIn = row.clock_in && isValid(new Date(row.clock_in))
+        ? format(new Date(row.clock_in), 'HH.mm') + ' WIB'
+        : '-';
+
+      const clockOut = row.clock_out && isValid(new Date(row.clock_out))
+        ? format(new Date(row.clock_out), 'HH.mm') + ' WIB'
+        : '-';
+
+      // 3. Kalkulasi Durasi
+      let totalHours = '-';
+      if (row.clock_in && row.clock_out) {
+        const inTime = parseISO(row.clock_in);
+        const outTime = parseISO(row.clock_out);
+
+        if (isValid(inTime) && isValid(outTime)) {
+          const diffMins = differenceInMinutes(outTime, inTime);
+          const hours = Math.floor(diffMins / 60);
+          const minutes = diffMins % 60;
+          totalHours = `${hours}j ${minutes}m`;
+        }
+      }
+
+      // 4. Perapihan Status
+      let cleanStatus = 'Tidak Diketahui';
+      switch (row.status?.toLowerCase()) {
+        case 'present': cleanStatus = 'Hadir'; break;
+        case 'late': cleanStatus = 'Terlambat'; break;
+        case 'early_leave': cleanStatus = 'Pulang Cepat'; break;
+        case 'absent':
+        case 'alpha': cleanStatus = 'Alpha'; break;
+        case 'leave': cleanStatus = 'Cuti'; break;
+        case 'permission': cleanStatus = 'Izin'; break;
+        case 'sick': cleanStatus = 'Sakit'; break;
+        case 'not_clocked_out': cleanStatus = 'Belum Pulang'; break;
+        default:
+          cleanStatus = row.status ? row.status.charAt(0).toUpperCase() + row.status.slice(1) : '-';
+          break;
+      }
+
+      if (viewMode === 'daily') {
+        return {
+          'Nama Karyawan': row.name || '-',
+          'Departemen': row.department || '-',
+          'Tanggal': formattedDate,
+          'Jam Masuk': clockIn,
+          'Jam Keluar': clockOut,
+          'Total Durasi': totalHours,
+          'Status': cleanStatus,
+          'Keterangan': row.notes || '-'
+        };
+      } else {
+        return {
+          'Nama Karyawan': row.name || '-',
+          'Departemen': row.department || '-',
+          'Total Hadir': row.present || 0,
+          'Total Terlambat': row.late || 0,
+          'Total Alpha': row.absent || 0,
+          'Total Cuti/Izin': row.leave || 0,
+        };
+      }
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataSiapExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Absensi");
+    const modeName = viewMode === "daily" ? "Harian" : "Bulanan";
+    XLSX.writeFile(workbook, `Rekap_Absensi_${modeName}.xlsx`);
+    toast({ title: "Berhasil", description: "Laporan Excel berhasil diunduh" });
+  };
+
   // Nav Handlers
   const goToPrevious = () => {
     if (viewMode === "daily") {
@@ -448,7 +532,7 @@ const RekapAbsensi = () => {
       menuSections={ADMIN_MENU_SECTIONS}
       roleLabel="Administrator"
       showRefresh={false}
-      showExport={false}
+      showExport={true}
     >
       {/* Main Content */}
       <div className="space-y-6">
@@ -506,7 +590,10 @@ const RekapAbsensi = () => {
                 <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
                 Sync
               </Button>
-              {/* Export button removed */}
+              <Button size="sm" className="h-9 gap-2 text-white shadow-sm bg-gradient-to-r from-blue-700 to-sky-600 hover:to-sky-700 flex border border-blue-600/50" onClick={handleExportExcel}>
+                <Download className="w-4 h-4" />
+                Export Excel
+              </Button>
             </div>
           </div>
 

@@ -303,6 +303,8 @@ const ManagerRekapAbsensi = () => {
       showRefresh={true}
       onRefresh={fetchAttendance}
       refreshInterval={0}
+      showExport={true}
+      onExport={() => exportToExcel({ title: "Rekap", filename: "rekap", columns: exportColumns, data: getExportData() })}
     >
       {/* Date Navigation Bar */}
       <div className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">

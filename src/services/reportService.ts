@@ -70,14 +70,14 @@ export class ReportService {
             // Parse clock_in which is a full ISO timestamp
             if (req.clock_in) {
                 const clockInDate = new Date(req.clock_in);
-                clockInStr = format(clockInDate, 'HH:mm');
+                clockInStr = format(clockInDate, "HH.mm 'WIB'");
                 dateStr = format(clockInDate, 'dd-MM-yyyy');
             }
 
             // Parse clock_out
             if (req.clock_out) {
                 const clockOutDate = new Date(req.clock_out);
-                clockOutStr = format(clockOutDate, 'HH:mm');
+                clockOutStr = format(clockOutDate, "HH.mm 'WIB'");
             }
 
             let finalStatus: 'Hadir' | 'Terlambat' | 'Alpha' | 'Cuti' = 'Hadir';

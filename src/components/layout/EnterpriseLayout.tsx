@@ -256,12 +256,14 @@ const EnterpriseLayout = ({
                         </div>
 
                         {/* Top Nav Actions */}
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3 sm:gap-4">
                             {showRefresh && (
                                 <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 cursor-pointer transition-colors" onClick={handleManualRefresh}>
                                     <RefreshCw className="h-3.5 w-3.5" />
                                 </div>
                             )}
+
+                            {customExportNode}
 
                             <Button variant="ghost" size="icon" className="relative text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-full h-9 w-9">
                                 <Bell className="h-4 w-4" />

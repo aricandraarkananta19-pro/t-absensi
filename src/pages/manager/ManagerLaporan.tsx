@@ -675,7 +675,7 @@ const ManagerLaporan = () => {
       <PopoverTrigger asChild>
         <Button
           size="sm"
-          className="h-9 gap-2 text-white shadow-sm bg-gradient-to-r from-blue-700 to-sky-600 hover:to-sky-700 hidden sm:flex border border-blue-600/50"
+          className="h-9 gap-2 text-white shadow-sm bg-gradient-to-r from-blue-700 to-sky-600 hover:to-sky-700 flex border border-blue-600/50"
           onClick={() => {
             const currentPeriodVal = dateRange?.from && dateRange?.to ? `${format(dateRange.from, 'yyyy-MM-dd')}_${format(dateRange.to, 'yyyy-MM-dd')}` : "custom";
             const exists = availablePeriods.some(p => p.value === currentPeriodVal);
