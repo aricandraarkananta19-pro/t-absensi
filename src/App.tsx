@@ -24,6 +24,7 @@ const RiwayatAbsensi = lazy(() => import("./pages/karyawan/RiwayatAbsensi"));
 const JurnalSaya = lazy(() => import("./pages/karyawan/JurnalSaya"));
 const ProfilKaryawan = lazy(() => import("./pages/karyawan/ProfilKaryawan"));
 const PengajuanCuti = lazy(() => import("./pages/karyawan/PengajuanCuti"));
+const LaporanKaryawan = lazy(() => import("./pages/karyawan/LaporanKaryawan"));
 
 // Admin
 const KelolaKaryawan = lazy(() => import("./pages/admin/KelolaKaryawan"));
@@ -151,6 +152,14 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <PengajuanCuti />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/karyawan/laporan"
+                    element={
+                      <ProtectedRoute>
+                        <LaporanKaryawan />
                       </ProtectedRoute>
                     }
                   />

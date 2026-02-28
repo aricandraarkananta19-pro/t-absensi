@@ -13,6 +13,15 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface MenuItem {
     icon: React.ElementType;
@@ -121,7 +130,7 @@ const EnterpriseLayout = ({
                 className={cn(
                     "hidden md:flex fixed left-0 top-0 bottom-0 z-50 flex-col transition-all duration-300 ease-out",
                     "bg-white/80 backdrop-blur-xl border-r border-slate-200/60 shadow-sm",
-                    isCollapsed ? "w-[72px]" : "w-[260px]"
+                    isCollapsed ? "w-[72px]" : "w-[240px]"
                 )}
             >
                 {/* Logo - Added Safe Area Support */}
@@ -158,21 +167,26 @@ const EnterpriseLayout = ({
                                             key={item.title}
                                             to={item.href}
                                             className={cn(
-                                                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative",
+                                                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 group relative overflow-hidden",
                                                 isActive
-                                                    ? "text-slate-900 bg-white shadow-sm border border-slate-200/60 font-semibold"
-                                                    : "text-slate-500 hover:text-slate-800 hover:bg-white/60"
+                                                    ? "text-primary bg-primary/5 font-semibold"
+                                                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-medium"
                                             )}
                                         >
+                                            {/* Left Accent Indicator */}
+                                            {isActive && (
+                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/4 bg-primary rounded-r-full" />
+                                            )}
+
                                             <div className={cn(
-                                                "flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200",
-                                                isActive ? "bg-slate-900 text-white" : "bg-slate-100/80 text-slate-500 group-hover:bg-slate-200/80 group-hover:text-slate-700 group-hover:scale-110"
+                                                "flex items-center justify-center w-8 h-8 rounded-md transition-all duration-200",
+                                                isActive ? "text-primary" : "text-slate-400 group-hover:text-slate-600"
                                             )}>
                                                 <item.icon className="h-4 w-4 flex-shrink-0" />
                                             </div>
                                             {!isCollapsed && <span className="truncate">{item.title}</span>}
                                             {!isCollapsed && item.badge && item.badge > 0 && (
-                                                <span className="ml-auto text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">{item.badge}</span>
+                                                <span className="ml-auto text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">{item.badge}</span>
                                             )}
                                             {isCollapsed && (
                                                 <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 shadow-lg">
@@ -195,22 +209,17 @@ const EnterpriseLayout = ({
                     {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
                 </button>
 
-                {/* Profile */}
-                <div className="p-3 border-t border-slate-100/80 bg-white/50">
+                {/* Profile Profile simplified at bottom */}
+                <div className="p-3 border-t border-slate-100 bg-white/50">
                     <div className={cn("flex items-center gap-3", isCollapsed && "justify-center")}>
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-br from-slate-700 to-slate-500 text-white font-bold text-sm">
+                        <div className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-primary/10 text-primary font-bold text-sm">
                             {getInitials(userName)}
                         </div>
                         {!isCollapsed && (
-                            <>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold text-slate-800 truncate">{userName}</p>
-                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{roleLabel}</p>
-                                </div>
-                                <Button variant="ghost" size="icon" onClick={handleLogout} className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg">
-                                    <LogOut className="h-4 w-4" />
-                                </Button>
-                            </>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-slate-800 truncate">{userName}</p>
+                                <p className="text-[11px] text-slate-500 font-medium truncate">{roleLabel}</p>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -219,49 +228,78 @@ const EnterpriseLayout = ({
             {/* MAIN CONTENT */}
             <main className={cn(
                 "transition-all duration-300 ease-out min-h-screen",
-                isCollapsed ? "md:ml-[72px]" : "md:ml-[260px]"
+                isCollapsed ? "md:ml-[72px]" : "md:ml-[240px]"
             )}>
-                {/* Header - Relative (Non-Sticky) for Tablet/Desktop */}
-                <header className="relative z-30 w-full bg-white/70 backdrop-blur-xl border-b border-slate-200/50 transition-all pt-[env(safe-area-inset-top)]">
-                    <div className="flex items-center h-16 px-4 lg:px-6 gap-4">
-                        {/* Mobile Logo Only (Show on Mobile < md) */}
-                        <div className="md:hidden flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-800 to-slate-600 flex items-center justify-center shadow-sm">
-                                <img src={logoImage} alt="Logo" className="h-5 w-5 object-contain" />
+                {/* Header - Modern Top Nav */}
+                <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-slate-200/50 pt-[env(safe-area-inset-top)]">
+                    <div className="flex items-center justify-between h-16 px-4 lg:px-8">
+                        <div className="flex items-center gap-4">
+                            {/* Mobile Logo Only */}
+                            <div className="md:hidden flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-800 to-slate-600 flex items-center justify-center shadow-sm">
+                                    <img src={logoImage} alt="Logo" className="h-5 w-5 object-contain" />
+                                </div>
+                            </div>
+
+                            {/* Global Search */}
+                            <div className="hidden md:flex items-center bg-slate-100/50 rounded-full px-3 py-1.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all border border-transparent focus-within:border-primary/20 w-64">
+                                <Menu className="w-4 h-4 text-slate-400 mr-2" />
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    className="bg-transparent border-none outline-none text-sm text-slate-700 w-full placeholder:text-slate-400 h-6"
+                                />
+                                <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium bg-white px-1.5 py-0.5 rounded border border-slate-200 shadow-sm ml-2">
+                                    <span>⌘</span><span>K</span>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Title */}
-                        <div className="flex-1 min-w-0">
-                            <h1 className="text-lg lg:text-xl font-extrabold text-slate-800 truncate tracking-tight">{title}</h1>
-                            {subtitle && <p className="text-[11px] lg:text-xs text-slate-400 truncate hidden sm:block font-medium">{subtitle}</p>}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-2">
+                        {/* Top Nav Actions */}
+                        <div className="flex items-center gap-4">
                             {showRefresh && (
-                                <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-slate-100/70 px-3 py-1.5 rounded-xl border border-slate-200/40">
+                                <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 cursor-pointer transition-colors" onClick={handleManualRefresh}>
                                     <RefreshCw className="h-3.5 w-3.5" />
-                                    <span className="hidden md:inline font-medium">Auto: {nextRefresh}s</span>
                                 </div>
                             )}
-                            {showExport && !customExportNode && (
-                                <Button
-                                    size="sm"
-                                    className="h-9 gap-2 text-white shadow-sm bg-slate-900 hover:bg-slate-800 hidden sm:flex rounded-xl font-semibold"
-                                    onClick={onExport}
-                                    disabled={isExporting}
-                                >
-                                    {isExporting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                                    {isExporting ? "Mengekspor..." : "Export"}
-                                </Button>
-                            )}
-                            {customExportNode}
 
-                            {/* Mobile User Menu Trigger */}
-                            <Button variant="ghost" size="icon" className="md:hidden text-slate-400 hover:text-red-500 rounded-lg" onClick={handleLogout}>
-                                <LogOut className="h-5 w-5" />
+                            <Button variant="ghost" size="icon" className="relative text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-full h-9 w-9">
+                                <Bell className="h-4 w-4" />
+                                <span className="absolute top-2 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full border border-white"></span>
                             </Button>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="relative h-9 rounded-full pl-2 pr-4 border border-slate-200 hover:bg-slate-50 gap-2">
+                                        <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
+                                            {getInitials(userName)}
+                                        </div>
+                                        <span className="text-xs font-semibold text-slate-700 hidden sm:block">{userName.split(' ')[0]}</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56 font-['Inter'] rounded-xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border-slate-100">
+                                    <DropdownMenuLabel className="font-normal p-2">
+                                        <div className="flex flex-col space-y-1">
+                                            <p className="text-sm font-semibold leading-none">{userName}</p>
+                                            <p className="text-xs text-muted-foreground leading-none">{roleLabel}</p>
+                                        </div>
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator className="bg-slate-100" />
+                                    <DropdownMenuItem className="gap-2 cursor-pointer p-2 rounded-lg text-sm">
+                                        <UserCog className="w-4 h-4 text-slate-500" />
+                                        Profile Settings
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="gap-2 cursor-pointer p-2 rounded-lg text-sm">
+                                        <Settings className="w-4 h-4 text-slate-500" />
+                                        Preferences
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator className="bg-slate-100" />
+                                    <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg text-sm font-medium">
+                                        <LogOut className="w-4 h-4" />
+                                        Log out
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                 </header>

@@ -421,17 +421,23 @@ const RekapAbsensi = () => {
   };
 
   const getStatusBadge = (status: string) => {
+    const pill = (bg: string, text: string, dot: string, label: string) => (
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${bg} ${text}`}>
+        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
+        {label}
+      </span>
+    );
     switch (status) {
-      case "present": return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0"><CheckCircle2 className="w-3 h-3 mr-1" />Hadir</Badge>;
-      case "late": return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-0"><AlertCircle className="w-3 h-3 mr-1" />Terlambat</Badge>;
-      case "early_leave": return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-200 border-0"><Clock className="w-3 h-3 mr-1" />Pulang Cepat</Badge>;
+      case "present": return pill("bg-emerald-50 border-emerald-200", "text-emerald-700", "bg-emerald-500", "Hadir");
+      case "late": return pill("bg-amber-50 border-amber-200", "text-amber-700", "bg-amber-500", "Terlambat");
+      case "early_leave": return pill("bg-orange-50 border-orange-200", "text-orange-700", "bg-orange-500", "Pulang Cepat");
       case "absent":
-      case "alpha": return <Badge className="bg-red-100 text-red-700 hover:bg-red-200 border-0"><XCircle className="w-3 h-3 mr-1" />Alpha</Badge>;
-      case "leave": return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-0"><FileText className="w-3 h-3 mr-1" />Cuti</Badge>;
-      case "permission": return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-0"><FileText className="w-3 h-3 mr-1" />Izin</Badge>;
-      case "sick": return <Badge className="bg-pink-100 text-pink-700 hover:bg-pink-200 border-0"><FileText className="w-3 h-3 mr-1" />Sakit</Badge>;
-      case "not_clocked_out": return <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300 border animate-pulse"><Clock className="w-3 h-3 mr-1" />Belum Pulang</Badge>;
-      default: return <Badge variant="outline" className="text-slate-400 border-slate-200">-</Badge>;
+      case "alpha": return pill("bg-red-50 border-red-200", "text-red-700", "bg-red-500", "Alpha");
+      case "leave": return pill("bg-purple-50 border-purple-200", "text-purple-700", "bg-purple-500", "Cuti");
+      case "permission": return pill("bg-blue-50 border-blue-200", "text-blue-700", "bg-blue-500", "Izin");
+      case "sick": return pill("bg-pink-50 border-pink-200", "text-pink-700", "bg-pink-500", "Sakit");
+      case "not_clocked_out": return pill("bg-slate-50 border-slate-200", "text-slate-600", "bg-slate-400 animate-pulse", "Belum Pulang");
+      default: return <span className="text-[11px] text-slate-400">-</span>;
     }
   };
 

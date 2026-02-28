@@ -10,7 +10,12 @@ import {
     Key,
     Settings,
     Database,
-    FileCheck
+    FileCheck,
+    Fingerprint,
+    History,
+    FileText,
+    CalendarDays,
+    User
 } from "lucide-react";
 
 export const ADMIN_MENU_SECTIONS = [
@@ -45,6 +50,26 @@ export const MANAGER_MENU_SECTIONS = [
             { icon: Briefcase, title: "Jurnal Tim", href: "/manager/jurnal" },
             { icon: BarChart3, title: "Laporan", href: "/manager/laporan" },
             { icon: FileCheck, title: "Kelola Cuti", href: "/manager/cuti" },
+        ],
+    },
+];
+
+export const KARYAWAN_MENU_SECTIONS = [
+    {
+        title: "Menu Utama",
+        items: [
+            { icon: LayoutDashboard, title: "Dashboard", href: "/dashboard" },
+            { icon: Fingerprint, title: "Absensi", href: "/karyawan/absensi" },
+            { icon: History, title: "Riwayat Absensi", href: "/karyawan/riwayat" },
+            { icon: Briefcase, title: "Jurnal Saya", href: "/karyawan/jurnal" },
+        ],
+    },
+    {
+        title: "Lainnya",
+        items: [
+            { icon: CalendarDays, title: "Pengajuan Cuti", href: "/karyawan/cuti" },
+            { icon: BarChart3, title: "Laporan", href: "/karyawan/laporan" },
+            { icon: User, title: "Profil", href: "/karyawan/profil" },
         ],
     },
 ];

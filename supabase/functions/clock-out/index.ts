@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-    "Access-Control-Allow-Origin":  req.headers.get("origin") || "*",
+// SECURE CORS HEADERS — must be built per-request
+const getCorsHeaders = (origin: string) => ({
+    "Access-Control-Allow-Origin": origin || "*",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+});
 
 interface ClockOutRequest {
     location?: string | null;
@@ -51,6 +52,9 @@ function calculateWorkHours(clockIn: Date, clockOut: Date): number {
 }
 
 serve(async (req) => {
+    const origin = req.headers.get("origin") || "";
+    const corsHeaders = getCorsHeaders(origin);
+
     // Handle CORS preflight requests
     if (req.method === "OPTIONS") {
         return new Response(null, { headers: corsHeaders });
@@ -121,16 +125,38 @@ serve(async (req) => {
         const currentMinutes = getJakartaTimeMinutes(now);
 
         // ============ 6. FIND TODAY'S ATTENDANCE RECORD ============
-        const startOfDay = new Date(`${todayJakarta}T00:00:00+07:00`);
-        const endOfDay = new Date(`${todayJakarta}T23:59:59+07:00`);
+        // Try by 'date' column first (used by DB fallback inserts)
+        let todayAttendance: any = null;
+        let findError: any = null;
 
-        const { data: todayAttendance, error: findError } = await supabaseAdmin
+        const { data: byDate, error: byDateErr } = await supabaseAdmin
             .from("attendance")
             .select("*")
             .eq("user_id", user.id)
-            .gte("clock_in", startOfDay.toISOString())
-            .lt("clock_in", endOfDay.toISOString())
+            .eq("date", todayJakarta)
             .maybeSingle();
+
+        if (!byDateErr && byDate) {
+            todayAttendance = byDate;
+        } else {
+            // Fallback: find by clock_in timestamp range (edge function inserts)
+            const startOfDay = new Date(`${todayJakarta}T00:00:00+07:00`);
+            const endOfDay = new Date(`${todayJakarta}T23:59:59+07:00`);
+
+            const { data: byRange, error: byRangeErr } = await supabaseAdmin
+                .from("attendance")
+                .select("*")
+                .eq("user_id", user.id)
+                .gte("clock_in", startOfDay.toISOString())
+                .lt("clock_in", endOfDay.toISOString())
+                .maybeSingle();
+
+            if (byRangeErr) {
+                findError = byRangeErr;
+            } else {
+                todayAttendance = byRange;
+            }
+        }
 
         if (findError) {
             throw new Error(`Database error: ${findError.message}`);
@@ -227,13 +253,14 @@ serve(async (req) => {
         );
 
     } catch (error: unknown) {
+        const origin2 = req.headers.get("origin") || "";
+        const errorCors = getCorsHeaders(origin2);
         const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
         console.error("Clock-out error:", errorMessage);
 
         return new Response(
             JSON.stringify({ success: false, error: errorMessage }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+            { headers: { ...errorCors, "Content-Type": "application/json" }, status: 500 }
         );
     }
 });
-

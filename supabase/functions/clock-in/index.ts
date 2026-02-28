@@ -230,10 +230,16 @@ serve(async (req) => {
         }
 
         // ============ 9. INSERT ATTENDANCE RECORD ============
-        const { data: newRecord, error: insertError } = await supabaseAdmin
+        // Try insert with date field first, fallback without it if schema cache is stale
+        let newRecord: any = null;
+        let insertError: any = null;
+
+        // Attempt 1: With date column
+        const result1 = await supabaseAdmin
             .from("attendance")
             .insert({
                 user_id: user.id,
+                date: todayJakarta,
                 clock_in: now.toISOString(),
                 clock_in_location: location || null,
                 clock_in_lat: latitude || null,
@@ -244,13 +250,40 @@ serve(async (req) => {
             .select()
             .single();
 
+        if (result1.error) {
+            // If error is about missing 'date' column, retry without it
+            if (result1.error.message?.includes("date") && result1.error.message?.includes("schema cache")) {
+                console.warn("Date column not in schema cache, retrying without date...");
+                const result2 = await supabaseAdmin
+                    .from("attendance")
+                    .insert({
+                        user_id: user.id,
+                        clock_in: now.toISOString(),
+                        clock_in_location: location || null,
+                        clock_in_lat: latitude || null,
+                        clock_in_lng: longitude || null,
+                        status: status,
+                        notes: null,
+                    })
+                    .select()
+                    .single();
+
+                newRecord = result2.data;
+                insertError = result2.error;
+            } else {
+                insertError = result1.error;
+            }
+        } else {
+            newRecord = result1.data;
+        }
+
         if (insertError) {
             // Check for unique constraint violation
             if (insertError.code === "23505") {
                 return new Response(
                     JSON.stringify({
                         success: false,
-                        error: "Anda sudah melakukan Clock In hari ini (duplicate detected)",
+                        error: "Anda sudah melakukan Clock In hari ini",
                     }),
                     { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 409 }
                 );

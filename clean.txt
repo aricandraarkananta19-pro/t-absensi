@@ -1,0 +1,42 @@
+﻿node.exe : open 
+supabase\.temp\profile: The 
+system cannot find the file 
+specified.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo           
+   : NotSpecified: (open su  
+  pabase\....file specifie   
+ d.:String) [], RemoteExc    
+eption
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+Using access token for 
+profile: supabase
+Loading project ref from 
+flag: qfpbrislzyjrjyknsqmy
+Supabase CLI 2.76.15
+Using profile: supabase 
+(supabase.co)
+Using access token for 
+profile: supabase
+2026/02/28 02:49:32 HTTP 
+GET: https://api.supabase.com
+/v1/projects/qfpbrislzyjrjykn
+sqmy/functions
+unexpected list functions 
+status 403: {"message":"Your 
+account does not have the 
+necessary privileges to 
+access this endpoint. For 
+more details, refer to our 
+documentation https://supabas
+e.com/docs/guides/platform/ac
+cess-control"}

@@ -3,30 +3,35 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     Clock, Key, User, FileText, ChevronRight, LogOut, Calendar,
     CheckCircle2, LogIn, MapPin, History, LayoutDashboard, TrendingUp,
-    Timer, Target, Award, Bell, BookOpen, Briefcase, Coffee, RefreshCw
+    Timer, Target, Award, Bell, BookOpen, Briefcase, Coffee, RefreshCw,
+    Sparkles, ArrowUpRight, Zap, List
 } from "lucide-react";
-import logoImage from "@/assets/logo.png";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from 'recharts';
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+    DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
-import { useIsMobile } from "@/hooks/useIsMobile";
-import MobileNavigation from "@/components/MobileNavigation";
-import { WorkInsightWidget } from "@/components/journal/WorkInsightWidget";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import KaryawanWorkspaceLayout from "@/components/layout/KaryawanWorkspaceLayout";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import MobileDashboardView from "@/components/MobileDashboardView";
 
-// Talenta Brand Colors
-const BRAND_COLORS = {
-    blue: "#1A5BA8",
-    lightBlue: "#00A0E3",
-    green: "#7DC242",
-};
+// Mock Chart Data for Productivity
+const productivityData = Array.from({ length: 7 }).map((_, i) => ({
+    name: format(subDays(new Date(), 6 - i), 'EEE', { locale: idLocale }),
+    hours: Math.floor(Math.random() * 4) + 6, // 6 to 9 hours
+    tasks: Math.floor(Math.random() * 5) + 2
+}));
 
 interface AttendanceRecord {
     id: string;
@@ -42,35 +47,12 @@ interface AttendanceStats {
     totalHours: number;
 }
 
-// --- Icons ---
-function InfoIcon(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 16v-4" />
-            <path d="M12 8h.01" />
-        </svg>
-    )
-}
-
 const KaryawanDashboardNew = () => {
-    const { user, signOut } = useAuth();
+    const { user } = useAuth();
     const navigate = useNavigate();
     const { settings } = useSystemSettings();
     const isMobile = useIsMobile();
 
-    // Data State
     const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
     const [monthStats, setMonthStats] = useState<AttendanceStats>({ present: 0, late: 0, absent: 0, totalHours: 0 });
     const [isLoading, setIsLoading] = useState(true);
@@ -78,16 +60,12 @@ const KaryawanDashboardNew = () => {
     const [completedTasks, setCompletedTasks] = useState(0);
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    // Journal Logic State
     const [journalContent, setJournalContent] = useState("");
     const [selectedProject, setSelectedProject] = useState("");
     const [isSavingJournal, setIsSavingJournal] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-    // Location State
     const [location, setLocation] = useState<string>("Mengecek lokasi...");
-
-    // New State for Real-Time Updates & Flexible Input
     const [recentActivities, setRecentActivities] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [projectSuggestions] = useState([
@@ -98,11 +76,8 @@ const KaryawanDashboardNew = () => {
         "Infrastructure & DevOps"
     ]);
 
-    // Update current time every second
     useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 1000);
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
 
@@ -116,7 +91,6 @@ const KaryawanDashboardNew = () => {
         }
     }, [user]);
 
-    // Get user location
     useEffect(() => {
         if (settings.enableLocationTracking && navigator.geolocation) {
             setLocation("Mencari lokasi akurat...");
@@ -124,72 +98,58 @@ const KaryawanDashboardNew = () => {
                 async (position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
-
                     try {
                         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
                         const data = await res.json();
-
                         if (data && data.address) {
                             const addr = data.address;
                             const localArea = addr.residential || addr.suburb || addr.village || addr.neighbourhood || addr.road || "";
                             const city = addr.city || addr.town || addr.county || addr.municipality || "";
-                            const state = addr.state || "";
-
-                            const locationParts = [localArea, city, state].filter(Boolean);
-
-                            if (locationParts.length > 0) {
-                                setLocation(locationParts.join(", "));
-                            } else {
-                                setLocation(data.display_name.split(",").slice(0, 3).join(","));
-                            }
+                            const locationParts = [localArea, city].filter(Boolean);
+                            setLocation(locationParts.length > 0 ? locationParts.join(", ") : `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
                         } else {
                             setLocation(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
                         }
-                    } catch (error) {
+                    } catch {
                         setLocation(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
                     }
                 },
-                () => {
-                    setLocation("Lokasi tidak tersedia (Izin ditolak)");
-                }
+                () => setLocation("Lokasi tidak tersedia")
             );
-        } else if (!settings.enableLocationTracking) {
+        } else {
             setLocation("Tracking lokasi dinonaktifkan");
         }
     }, [settings.enableLocationTracking]);
 
     const fetchRecentActivities = async () => {
         if (!user) return;
-        // Fetch last 5 activities
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from("work_journals")
             .select("*")
             .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
+            .is("deleted_at", null)
+            .order("date", { ascending: false })
             .limit(5);
-
-        if (data) setRecentActivities(data);
+        if (!error && data) setRecentActivities(data);
     };
 
     const fetchUsedLeaveDays = async () => {
         if (!user) return;
-        const currentYear = new Date().getFullYear();
+        const year = new Date().getFullYear();
         const { data } = await supabase
             .from("leave_requests")
             .select("start_date, end_date")
             .eq("user_id", user.id)
             .eq("status", "approved")
             .eq("leave_type", "cuti")
-            .gte("start_date", `${currentYear}-01-01`)
-            .lte("end_date", `${currentYear}-12-31`);
+            .gte("start_date", `${year}-01-01`)
+            .lte("end_date", `${year}-12-31`);
 
         if (data) {
             const totalDays = data.reduce((acc, leave) => {
-                const start = new Date(leave.start_date);
-                const end = new Date(leave.end_date);
-                const diffTime = Math.abs(end.getTime() - start.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                return acc + diffDays;
+                const s = new Date(leave.start_date);
+                const e = new Date(leave.end_date);
+                return acc + Math.ceil(Math.abs(e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             }, 0);
             setUsedLeaveDays(totalDays);
         }
@@ -197,33 +157,25 @@ const KaryawanDashboardNew = () => {
 
     const fetchTaskStats = async () => {
         if (!user) return;
-        // Mocking "Tasks" as completed journals for now
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const { count } = await supabase
             .from("work_journals")
             .select("*", { count: 'exact', head: true })
             .eq("user_id", user.id)
-            .gte("date", startOfMonth.toISOString())
-            .eq("verification_status", "approved");
-
+            .gte("date", startOfMonth.toISOString());
         setCompletedTasks(count || 0);
     };
 
     const fetchTodayAttendance = async () => {
         if (!user) return;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const { data } = await supabase
             .from("attendance")
             .select("*")
             .eq("user_id", user.id)
-            .gte("clock_in", today.toISOString())
-            .lt("clock_in", tomorrow.toISOString())
-            .order("clock_in", { ascending: false })
+            .eq("date", todayStr)
             .maybeSingle();
 
         if (data) setTodayAttendance(data);
@@ -233,45 +185,29 @@ const KaryawanDashboardNew = () => {
     const fetchMonthStats = async () => {
         if (!user) return;
         const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
         const { data } = await supabase
             .from("attendance")
             .select("clock_in, clock_out, status")
             .eq("user_id", user.id)
-            .gte("clock_in", startOfMonth.toISOString())
-            .lte("clock_in", endOfMonth.toISOString());
+            .gte("clock_in", startOfMonth)
+            .lte("clock_in", endOfMonth);
 
         if (data) {
             const present = data.filter(d => d.status === "present" || d.status === "late").length;
             const late = data.filter(d => d.status === "late").length;
-
-            // Calculate total hours
             let totalMinutes = 0;
             data.forEach(d => {
                 if (d.clock_in && d.clock_out) {
-                    const params1 = new Date(d.clock_in);
-                    const params2 = new Date(d.clock_out);
-                    const diff = Math.abs(params2.getTime() - params1.getTime());
+                    const diff = Math.abs(new Date(d.clock_out).getTime() - new Date(d.clock_in).getTime());
                     totalMinutes += Math.floor(diff / 1000 / 60);
                 }
             });
-
-            setMonthStats({
-                present,
-                late,
-                absent: 0,
-                totalHours: Math.floor(totalMinutes / 60)
-            });
+            setMonthStats({ present, late, absent: 0, totalHours: Math.floor(totalMinutes / 60) });
         }
     };
 
-    const handleLogout = async () => {
-        await signOut();
-        toast({ title: "Logout berhasil", description: "Sampai jumpa kembali!" });
-        navigate("/auth");
-    };
 
     const handleSaveJournal = async () => {
         if (!journalContent.trim()) {
@@ -285,520 +221,319 @@ const KaryawanDashboardNew = () => {
                 .from('work_journals' as any)
                 .insert({
                     user_id: user?.id,
-                    content: `**${selectedProject}**\n\n${journalContent}`, // Prepend project name as title since column is missing
+                    content: `**${selectedProject || 'Aktivitas Umum'}**\n\n${journalContent}`,
                     date: new Date().toISOString().split('T')[0],
                     duration: 0,
                     status: 'completed',
                     verification_status: 'submitted',
-                    obstacles: selectedProject, // Map project to obstacles as per convention
+                    obstacles: selectedProject || 'Umum',
                     mood: '😊',
                     work_result: 'completed'
-                    // title: selectedProject // Removed to fix error
                 })
                 .select()
                 .single();
 
             if (error) throw error;
-
-            toast({
-                title: "Jurnal Disimpan",
-                description: "Laporan kerja Anda telah dikirim.",
-            });
-
-            // Real-time update: Prepend new journal
-            if (newJournal) {
-                setRecentActivities(prev => [newJournal, ...prev].slice(0, 5));
-            }
-
+            toast({ title: "Berhasil", description: "Jurnal berhasil disimpan." });
+            if (newJournal) setRecentActivities(prev => [newJournal, ...prev].slice(0, 5));
             setJournalContent("");
-            setSelectedProject(""); // Optional: reset project or keep it? User might add multiple for same project. keeping it is better usually, but maybe reset if prompted. I'll keep it as user might do multiple entries. Actually, clearing it might be annoying. I will NOT clear it.
             setLastSaved(new Date());
-
-        } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: (error as Error).message });
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Error", description: error.message });
         } finally {
             setIsSavingJournal(false);
         }
     };
 
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? "Selamat Pagi" : hour < 17 ? "Selamat Siang" : "Selamat Malam";
+    const hour = currentTime.getHours();
+    const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
     const remainingLeave = Math.max(0, settings.maxLeaveDays - usedLeaveDays);
+    const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Karyawan';
 
-    // --- VIEW MAPPING ---
+    if (isMobile) {
+        return <MobileDashboardView role="karyawan" />;
+    }
+
+    // Premium Linear/Notion Style Classes
+    const cardBase = "bg-white rounded-2xl border border-slate-200/60 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.04)]";
+
     return (
-        <div className="min-h-screen bg-[#F8FAFC] font-['Inter',system-ui,sans-serif] pb-24 md:pb-12">
+        <KaryawanWorkspaceLayout>
 
-            {/* Header */}
-            <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40">
-                <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-8">
-                        {/* Logo Area */}
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs tracking-wider shadow-blue-200 shadow-lg">
-                                <TrendingUp className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-sm font-bold text-slate-900 leading-none">T-Absensi</h1>
-                                <p className="text-[10px] text-slate-500 font-medium tracking-wide">TRAINCOM</p>
-                            </div>
-                        </div>
-
-                        {/* Search Bar (Visual Only) */}
-                        <div className="hidden md:flex items-center relative w-96">
-                            <div className="absolute left-3 text-slate-400">
-                                <History className="w-4 h-4" />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Cari data absensi, tugas, atau cuti..."
-                                className="w-full pl-10 pr-4 py-2 bg-slate-100/50 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all text-slate-600"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <button className="relative p-2 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-500 transition-colors">
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                        </button>
-                        <div className="h-8 w-px bg-slate-200" />
-
-                        <div className="flex items-center gap-3 pl-2 cursor-pointer hover:bg-slate-50 p-1 rounded-full pr-3 transition-all" onClick={() => navigate('/karyawan/profil')}>
-                            <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center border-2 border-white shadow-sm overflow-hidden">
-                                {user?.user_metadata?.avatar_url ?
-                                    <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" /> :
-                                    <User className="w-5 h-5 text-amber-600" />
-                                }
-                            </div>
-                            <div className="hidden sm:block">
-                                <div className="text-xs font-bold text-slate-700">{user?.user_metadata?.full_name?.split(' ')[0] || 'User'}</div>
-                                <div className="text-[10px] text-slate-500">Employee</div>
-                            </div>
-                        </div>
-
-                        {/* Mobile Menu Toggle (Simplified) */}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleLogout}
-                            className="text-slate-400 hover:text-red-600 hover:bg-red-50 sm:hidden"
-                        >
-                            <LogOut className="w-5 h-5" />
-                        </Button>
-                    </div>
-                </div>
-            </header>
-
-            <main className="max-w-[1400px] mx-auto px-6 py-8">
-
-                {/* Greeting */}
-                <div className="mb-8">
-                    <h2 className="text-2xl font-bold text-slate-900">Halo, {user?.user_metadata?.full_name || 'Karyawan'}</h2>
-                    <p className="text-slate-500 text-sm">Berikut ringkasan aktivitas kerja Anda hari ini.</p>
+            {/* Greeting & Insight Box */}
+            <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                        {greeting}, {firstName}!
+                    </h1>
+                    <p className="text-slate-500 text-sm mt-1.5 font-medium">Here's a snapshot of your productivity and schedule today.</p>
                 </div>
 
-                {/* Top Stats Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Card 1: Attendance */}
-                    <div className="relative group rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 p-6 text-white shadow-lg shadow-emerald-600/20 hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden border border-white/10">
-                        {/* Gradient header strip */}
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-white/40 to-transparent"></div>
-
-                        {/* 5% Opacity Background Icon */}
-                        <CheckCircle2 className="absolute -bottom-6 -right-4 w-32 h-32 text-white opacity-5 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500" />
-
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-50 group-hover:opacity-100"></div>
-                        <div className="relative z-10 flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-white/80 text-xs font-semibold uppercase tracking-widest mb-1">Kehadiran Bulan Ini</p>
-                                <div className="flex items-center gap-3">
-                                    <h3 className="text-4xl font-extrabold tracking-tight">95%</h3>
-                                    <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 flex items-center">
-                                        <span className="text-[10px] font-bold text-white tracking-widest">+2.4%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="relative z-10 w-full bg-black/10 h-1.5 rounded-full overflow-hidden mt-4">
-                            <div className="bg-white h-full w-[95%] rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
-                        </div>
+                {/* Smart Insight Box */}
+                <div className="flex items-start gap-3 bg-blue-50/50 border border-blue-100/50 p-4 rounded-2xl w-full md:max-w-md shadow-sm">
+                    <div className="mt-0.5 w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                        <Sparkles className="w-4 h-4" />
                     </div>
-
-                    {/* Card 2: Work Hours */}
-                    <div className="relative group rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-700 p-6 text-white shadow-lg shadow-blue-600/20 hover:shadow-blue-500/40 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden border border-white/10">
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-white/40 to-transparent"></div>
-                        <Clock className="absolute -bottom-6 -right-4 w-32 h-32 text-white opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500" />
-
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-50 group-hover:opacity-100"></div>
-                        <div className="relative z-10 flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-white/80 text-xs font-semibold uppercase tracking-widest mb-1">Jam Kerja Total</p>
-                                <div className="flex items-baseline gap-3">
-                                    <h3 className="text-4xl font-extrabold tracking-tight">{monthStats.totalHours}h</h3>
-                                    <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 flex items-center">
-                                        <span className="text-[10px] font-bold text-white tracking-widest">-5.2h</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="relative z-10 text-xs text-white/70 font-semibold uppercase tracking-widest mt-2">
-                            Target: 176h/bulan
-                        </div>
+                    <div>
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Performance Insight</h4>
+                        <p className="text-sm text-slate-600 leading-snug">
+                            Anda stabil mencapai <strong>{monthStats.totalHours} jam kerja</strong> bulan ini. Jangan lupa untuk beristirahat dengan cukup hari ini.
+                        </p>
                     </div>
+                </div>
+            </div>
 
-                    {/* Card 3: Leave */}
-                    <div className="relative group rounded-2xl bg-gradient-to-br from-amber-600 to-orange-600 p-6 text-white shadow-lg shadow-amber-600/20 hover:shadow-amber-500/40 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden border border-white/10">
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-white/40 to-transparent"></div>
-                        <Calendar className="absolute -bottom-6 -right-4 w-32 h-32 text-white opacity-5 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500" />
-
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-50 group-hover:opacity-100"></div>
-                        <div className="relative z-10 flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-white/80 text-xs font-semibold uppercase tracking-widest mb-1">Sisa Cuti Tahunan</p>
-                                <h3 className="text-4xl font-extrabold tracking-tight">{remainingLeave} <span className="text-xl">Hari</span></h3>
-                            </div>
+            {/* 4 Mini Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className={cn(cardBase, "p-5 flex flex-col gap-3 group hover:border-blue-200 transition-colors cursor-pointer")}>
+                    <div className="flex items-center justify-between">
+                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
+                            <Clock className="w-4 h-4 text-slate-600" />
                         </div>
-                        <div className="relative z-10 text-xs text-white/70 font-semibold uppercase tracking-widest mt-2">
-                            Hangus dalam 210 hari
-                        </div>
+                        <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">Healthy</span>
                     </div>
-
-                    {/* Card 4: Tasks */}
-                    <div className="relative group rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-600 p-6 text-white shadow-lg shadow-purple-600/20 hover:shadow-purple-500/40 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 overflow-hidden border border-white/10">
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-white/40 to-transparent"></div>
-                        <Award className="absolute -bottom-6 -right-4 w-32 h-32 text-white opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500" />
-
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 blur-2xl rounded-full transition-opacity opacity-50 group-hover:opacity-100"></div>
-                        <div className="relative z-10 flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-white/80 text-xs font-semibold uppercase tracking-widest mb-1">Tugas Selesai</p>
-                                <div className="flex items-center gap-3">
-                                    <h3 className="text-4xl font-extrabold tracking-tight">{completedTasks}</h3>
-                                    <div className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 flex items-center">
-                                        <span className="text-[10px] font-bold text-white tracking-widest">+4</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="relative z-10 text-xs text-white/70 font-semibold uppercase tracking-widest mt-2">
-                            Bulan ini (Sprint 4)
-                        </div>
+                    <div className="mt-2">
+                        <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Hours Logged</h3>
+                        <div className="text-2xl font-extrabold text-slate-900 tracking-tight">{monthStats.totalHours}<span className="text-sm text-slate-400 font-medium ml-1">hrs</span></div>
                     </div>
                 </div>
 
-                {/* Main 2-Column Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-7 gap-8">
+                <div className={cn(cardBase, "p-5 flex flex-col gap-3 group hover:border-purple-200 transition-colors cursor-pointer")}>
+                    <div className="flex items-center justify-between">
+                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
+                            <CheckCircle2 className="w-4 h-4 text-slate-600" />
+                        </div>
+                        <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">On track</span>
+                    </div>
+                    <div className="mt-2">
+                        <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tasks Completed</h3>
+                        <div className="text-2xl font-extrabold text-slate-900 tracking-tight">{completedTasks}</div>
+                    </div>
+                </div>
 
-                    {/* Left Column: Attendance Control (3 Cols) */}
-                    <div className="lg:col-span-3 space-y-8">
-                        {/* Attendance Clock Card */}
-                        <div className="bg-white/70 backdrop-blur-xl rounded-[32px] p-8 border border-white/40 shadow-xl shadow-slate-200/40 text-center relative overflow-hidden transition-all duration-300 vibe-glass-card">
-                            {/* Background decorative elements */}
-                            <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div className={cn(cardBase, "p-5 flex flex-col gap-3 group hover:border-amber-200 transition-colors cursor-pointer")}>
+                    <div className="flex items-center justify-between">
+                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
+                            <Calendar className="w-4 h-4 text-slate-600" />
+                        </div>
+                    </div>
+                    <div className="mt-2">
+                        <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Time Off Balance</h3>
+                        <div className="text-2xl font-extrabold text-slate-900 tracking-tight">{remainingLeave}<span className="text-sm text-slate-400 font-medium ml-1">days</span></div>
+                    </div>
+                </div>
 
-                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-8 relative z-10">ATTENDANCE CONTROL</p>
+                <div className={cn(cardBase, "p-5 flex flex-col gap-3 group hover:border-emerald-200 transition-colors cursor-pointer")}>
+                    <div className="flex items-center justify-between">
+                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
+                            <Target className="w-4 h-4 text-slate-600" />
+                        </div>
+                        <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">Excellent</span>
+                    </div>
+                    <div className="mt-2">
+                        <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Attendance Rate</h3>
+                        <div className="text-2xl font-extrabold text-slate-900 tracking-tight">96<span className="text-sm text-slate-400 font-medium">%</span></div>
+                    </div>
+                </div>
+            </div>
 
-                            <div className="mb-2 relative z-10">
-                                <h2 className="text-6xl font-sans font-extrabold text-slate-800 tracking-tighter tabular-nums drop-shadow-sm">
-                                    {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                </h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Panel: Time & Attendance + Chart */}
+                <div className="lg:col-span-1 space-y-6">
+
+                    {/* Compact Attendance Control */}
+                    <div className={cn(cardBase, "p-6 relative overflow-hidden bg-slate-900 text-white")}>
+                        {/* Abstract Glow */}
+                        <div className="absolute -right-20 -top-20 w-48 h-48 bg-blue-500/30 rounded-full blur-[60px]" />
+                        <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-purple-500/20 rounded-full blur-[40px]" />
+
+                        <div className="relative z-10 flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-2 text-slate-300">
+                                <Clock className="w-4 h-4" />
+                                <span className="text-xs font-bold uppercase tracking-wider">Live Time</span>
                             </div>
+                            <span className="text-[10px] font-medium px-2 py-1 rounded bg-white/10 text-slate-300">
+                                {format(currentTime, 'dd MMM', { locale: idLocale })}
+                            </span>
+                        </div>
 
-                            <p className="text-slate-500 text-sm font-medium mb-8 relative z-10">
-                                {format(currentTime, "EEEE, d MMMM yyyy", { locale: idLocale })}
+                        <div className="relative z-10 text-center mb-8">
+                            <h2 className="text-5xl font-extrabold tracking-tighter tabular-nums text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-400 font-sans">
+                                {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                            </h2>
+                            <p className="text-xs text-slate-400 font-medium mt-2 max-w-[200px] mx-auto truncate" title={location}>
+                                <MapPin className="w-3 h-3 inline mr-1 text-blue-400" /> {location}
                             </p>
+                        </div>
 
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-slate-100/80 backdrop-blur-sm text-slate-700 rounded-full text-xs font-semibold mb-10 border border-slate-200/50 relative z-10">
-                                <MapPin className="w-3.5 h-3.5 text-blue-500" />
-                                <span className="max-w-[200px] sm:max-w-xs truncate" title={location}>{location}</span>
+                        <div className="relative z-10">
+                            {todayAttendance && !todayAttendance.clock_out ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-center">
+                                        <span className="block text-[10px] uppercase text-emerald-400 font-bold mb-1">In at</span>
+                                        <span className="text-sm font-semibold">{todayAttendance.clock_in.substring(0, 5)}</span>
+                                    </div>
+                                    <button onClick={() => navigate('/karyawan/absensi')}
+                                        className="bg-white hover:bg-slate-100 text-slate-900 rounded-xl font-bold text-sm shadow-lg transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+                                        Clock Out
+                                    </button>
+                                </div>
+                            ) : todayAttendance && todayAttendance.clock_out ? (
+                                <div className="bg-white/10 border border-white/10 rounded-xl p-4 text-center">
+                                    <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto mb-2" />
+                                    <p className="text-sm font-medium">Shift Finished. Great job today!</p>
+                                </div>
+                            ) : (
+                                <button onClick={() => navigate('/karyawan/absensi')}
+                                    className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-4 font-bold shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] flex justify-center items-center gap-2">
+                                    <LogIn className="w-5 h-5" /> Clock In Now
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Productivity Chart (Recharts) */}
+                    <div className={cn(cardBase, "p-6")}>
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="font-bold text-slate-900 text-sm">Productivity Chart</h3>
+                                <p className="text-[11px] text-slate-500 font-medium">Last 7 days active hours</p>
                             </div>
+                            <div className="p-1.5 bg-slate-50 rounded-md border border-slate-100">
+                                <TrendingUp className="w-4 h-4 text-slate-400" />
+                            </div>
+                        </div>
 
-                            <div className="grid grid-cols-2 gap-4 relative z-10">
-                                {todayAttendance && !todayAttendance.clock_out ? (
-                                    <>
-                                        <button
-                                            disabled={true}
-                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 font-semibold cursor-not-allowed shadow-inner"
-                                        >
-                                            <CheckCircle2 className="w-5 h-5" />
-                                            Sudah Masuk
-                                        </button>
-                                        <button
-                                            onClick={() => navigate('/karyawan/absensi')}
-                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold transition-all duration-300 shadow-lg shadow-slate-900/20 active:scale-95 border border-slate-800"
-                                        >
-                                            <LogOut className="w-5 h-5" />
-                                            Check-Out
-                                        </button>
-                                    </>
-                                ) : todayAttendance && todayAttendance.clock_out ? (
-                                    <>
-                                        <button
-                                            disabled={true}
-                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 font-semibold cursor-not-allowed shadow-inner col-span-2"
-                                        >
-                                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                                            Selesai Bekerja, Sampai Jumpa Besok!
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <button
-                                            onClick={() => navigate('/karyawan/absensi')}
-                                            className="flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold transition-all duration-300 shadow-lg shadow-slate-900/20 active:scale-95 col-span-2 border border-slate-800 focus:ring-4 focus:ring-slate-900/10"
-                                        >
-                                            <LogIn className="w-5 h-5" />
-                                            Catat Kehadiran Saya
-                                        </button>
-                                    </>
+                        <div className="h-[180px] w-full mt-2 -ml-2">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={productivityData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                        cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
+                                    />
+                                    <Area type="monotone" dataKey="hours" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorHours)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                </div>
+
+                {/* Middle & Right: Journal & Timeline */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Premium Journal Editor */}
+                    <div className={cn(cardBase, "p-6")}>
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-2 text-slate-800">
+                                <FileText className="w-5 h-5" />
+                                <h3 className="font-bold">Log Your Work</h3>
+                            </div>
+                            {lastSaved && <span className="text-[10px] text-slate-400 font-medium">Saved: {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="relative group">
+                                <Input
+                                    className="w-full text-sm font-semibold h-12 bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-slate-200/50 shadow-none rounded-xl"
+                                    placeholder="Project / Task Name"
+                                    value={selectedProject}
+                                    onChange={(e) => {
+                                        setSelectedProject(e.target.value);
+                                        setShowSuggestions(true);
+                                    }}
+                                    onFocus={() => setShowSuggestions(true)}
+                                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                                />
+                                {showSuggestions && (
+                                    <div className="absolute z-20 top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden text-sm">
+                                        {projectSuggestions.filter(p => p.toLowerCase().includes(selectedProject.toLowerCase())).map((project, idx) => (
+                                            <button
+                                                key={idx}
+                                                className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-slate-700 font-medium transition-colors border-b border-slate-50 last:border-0"
+                                                onClick={() => { setSelectedProject(project); setShowSuggestions(false); }}
+                                            >
+                                                {project}
+                                            </button>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
 
-                            <button className="mt-8 text-sm text-blue-600 font-semibold hover:underline flex items-center justify-center gap-2 mx-auto">
-                                <Coffee className="w-4 h-4" />
-                                Mulai Istirahat
-                            </button>
-                        </div>
-
-                        {/* Quick Menu */}
-                        <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm hover:shadow-md transition-all duration-300 vibe-glass-card">
-                            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-5">QUICK ACTIONS</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <button
-                                    onClick={() => navigate('/edit-password')}
-                                    className="flex flex-col items-center justify-center p-4 rounded-[16px] bg-white hover:bg-slate-50 border border-slate-100/60 shadow-sm hover:shadow transition-all duration-300 active:scale-95 group"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center mb-3 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-                                        <Key className="w-5 h-5" />
-                                    </div>
-                                    <span className="text-xs font-semibold text-slate-700">Reset Sandi</span>
-                                </button>
-
-                                <button
-                                    onClick={() => navigate('/karyawan/cuti')}
-                                    className="flex flex-col items-center justify-center p-4 rounded-[16px] bg-white hover:bg-slate-50 border border-slate-100/60 shadow-sm hover:shadow transition-all duration-300 active:scale-95 group"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center mb-3 group-hover:bg-amber-50 group-hover:text-amber-600 transition-colors">
-                                        <Calendar className="w-5 h-5" />
-                                    </div>
-                                    <span className="text-xs font-semibold text-slate-700">Izin & Cuti</span>
-                                </button>
-
-                                <button
-                                    onClick={() => navigate('/karyawan/riwayat')}
-                                    className="flex flex-col items-center justify-center p-4 rounded-[16px] bg-white hover:bg-slate-50 border border-slate-100/60 shadow-sm hover:shadow transition-all duration-300 active:scale-95 group"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center mb-3 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                                        <FileText className="w-5 h-5" />
-                                    </div>
-                                    <span className="text-xs font-semibold text-slate-700">Riwayat Absen</span>
-                                </button>
-
-                                <button
-                                    onClick={() => navigate('/karyawan/jurnal')}
-                                    className="flex flex-col items-center justify-center p-4 rounded-[16px] bg-white hover:bg-slate-50 border border-slate-100/60 shadow-sm hover:shadow transition-all duration-300 active:scale-95 group"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center mb-3 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
-                                        <BookOpen className="w-5 h-5" />
-                                    </div>
-                                    <span className="text-xs font-semibold text-slate-700">Jurnal Kerja</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Upcoming Leave Card */}
-                        <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm transition-all duration-300 vibe-glass-card">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-bold text-slate-900">Upcoming Leave</h3>
-                                <Link to="/karyawan/cuti" className="text-xs font-bold text-blue-600 hover:underline">View All</Link>
+                            <div>
+                                <textarea
+                                    className="w-full min-h-[120px] p-4 bg-slate-50 border border-slate-200 rounded-xl resize-none text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200/50 transition-all font-medium text-slate-700"
+                                    placeholder="What did you achieve today? Mention challenges and progress..."
+                                    value={journalContent}
+                                    onChange={(e) => setJournalContent(e.target.value)}
+                                />
                             </div>
 
-                            <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="bg-blue-100 text-blue-700 w-12 h-12 rounded-xl flex flex-col items-center justify-center leading-none">
-                                        <span className="text-[10px] font-bold uppercase">Jun</span>
-                                        <span className="text-xl font-bold">12</span>
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-slate-900 text-sm">Cuti Tahunan (3 Hari)</h4>
-                                        <span className="text-xs text-slate-500">Menunggu Persetujuan HR</span>
-                                    </div>
+                            <div className="flex items-center justify-between pt-2">
+                                <div className="flex items-center gap-3">
+                                    <button className="text-slate-400 hover:text-slate-700 transition-colors"><List className="w-4 h-4" /></button>
+                                    <button className="text-slate-400 hover:text-slate-700 transition-colors"><Briefcase className="w-4 h-4" /></button>
                                 </div>
-                                <div className="text-amber-500">
-                                    <Timer className="w-5 h-5" />
-                                </div>
+                                <Button
+                                    onClick={handleSaveJournal}
+                                    disabled={isSavingJournal || !journalContent}
+                                    className="rounded-xl font-bold px-6 bg-slate-900 hover:bg-slate-800 text-white shadow-sm"
+                                >
+                                    {isSavingJournal ? "Saving..." : "Save Log"}
+                                </Button>
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Column: Journal & Activity (4 Cols) */}
-                    <div className="lg:col-span-4 space-y-8">
-
-                        {/* Journal Widget */}
-                        <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white/40 shadow-sm overflow-hidden transition-all duration-300 vibe-glass-card">
-                            <div className="p-6 border-b border-slate-100/50 flex items-center justify-between bg-white/40">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-slate-900 text-white rounded-xl shadow-sm">
-                                        <FileText className="w-4 h-4" />
-                                    </div>
-                                    <h3 className="font-bold text-slate-800">Jurnal Kerja Cepat</h3>
-                                </div>
-                                <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">
-                                    Last saved: {lastSaved ? lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
-                                </span>
-                            </div>
-
-                            <div className="p-6">
-                                <div className="space-y-6">
-                                    <div className="relative z-20">
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Pilih Proyek (Ketik untuk baru)</label>
-                                        <div className="relative group">
-                                            <Input
-                                                id="project-input"
-                                                type="text"
-                                                className="w-full pl-4 pr-10 py-6 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-slate-700 font-medium placeholder:text-slate-400"
-                                                placeholder="Contoh: Website Redesign..."
-                                                value={selectedProject}
-                                                onChange={(e) => {
-                                                    setSelectedProject(e.target.value);
-                                                    setShowSuggestions(true);
-                                                }}
-                                                onFocus={() => setShowSuggestions(true)}
-                                                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                                            />
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 bg-slate-50 pl-2">
-                                                <Briefcase className="w-5 h-5" />
-                                            </div>
-
-                                            {/* Suggestions Dropdown */}
-                                            {showSuggestions && (
-                                                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                                    <div className="max-h-60 overflow-y-auto py-2">
-                                                        {projectSuggestions
-                                                            .filter(p => !selectedProject || p.toLowerCase().includes(selectedProject.toLowerCase()))
-                                                            .map((project, idx) => (
-                                                                <button
-                                                                    key={idx}
-                                                                    className="w-full text-left px-4 py-3 hover:bg-blue-50 hover:text-blue-700 text-sm font-medium text-slate-700 transition-colors flex items-center justify-between group/item"
-                                                                    onClick={() => {
-                                                                        setSelectedProject(project);
-                                                                        setShowSuggestions(false);
-                                                                    }}
-                                                                >
-                                                                    <span>{project}</span>
-                                                                    <ChevronRight className="w-4 h-4 text-blue-300 opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                                                                </button>
-                                                            ))}
-                                                        {projectSuggestions.filter(p => !selectedProject || p.toLowerCase().includes(selectedProject.toLowerCase())).length === 0 && (
-                                                            <div className="px-4 py-3 text-xs text-slate-400 italic text-center border-t border-slate-50">
-                                                                Tekan enter atau simpan untuk menggunakan nama proyek baru ini.
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Apa yang anda kerjakan hari ini?</label>
-                                        <textarea
-                                            className="w-full min-h-[160px] p-4 bg-slate-50 border border-slate-200 rounded-xl resize-none focus:bg-white focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-400 text-slate-700"
-                                            placeholder="Tulis rincian tugas atau progres anda di sini..."
-                                            value={journalContent}
-                                            onChange={(e) => setJournalContent(e.target.value)}
-                                        ></textarea>
-                                    </div>
-
-                                    <div className="flex items-center justify-between pt-2">
-                                        <div className="flex gap-2">
-                                            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
-                                                <div className="w-5 h-5"><Briefcase className="w-full h-full" /></div>
-                                            </button>
-                                            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
-                                                <div className="w-5 h-5"><div className="w-4 h-4 border-2 border-current rounded-sm border-dashed"></div></div>
-                                            </button>
-                                            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
-                                                <div className="w-5 h-5"><User className="w-full h-full" /></div>
-                                            </button>
-                                        </div>
-
-                                        <Button
-                                            onClick={handleSaveJournal}
-                                            disabled={isSavingJournal || !journalContent}
-                                            className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-6 rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 border border-slate-800"
-                                        >
-                                            {isSavingJournal ? (
-                                                <span className="flex items-center animate-pulse gap-2">
-                                                    <RefreshCw className="w-4 h-4 animate-spin" /> Memproses...
-                                                </span>
-                                            ) : (
-                                                <span>Simpan Log <ChevronRight className="w-4 h-4 ml-1 inline-block" /></span>
-                                            )}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
+                    {/* Recent Timeline */}
+                    <div className={cn(cardBase, "p-6")}>
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="font-bold text-slate-900 text-sm">Recent Activity</h3>
+                            <Link to="/karyawan/jurnal" className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
+                                View all <ArrowUpRight className="w-3 h-3" />
+                            </Link>
                         </div>
 
-                        {/* Activity Stream */}
-                        <div className="bg-transparent">
-                            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-4 pl-1">AKTIVITAS TERAKHIR</h3>
+                        <div className="space-y-6 relative before:absolute before:inset-y-2 before:left-[11px] before:w-px before:bg-slate-200">
+                            {recentActivities.length > 0 ? (
+                                recentActivities.map((activity, idx) => {
+                                    let displayTitle = activity.content;
+                                    if (displayTitle && displayTitle.startsWith("**")) {
+                                        const parts = displayTitle.split('\n\n');
+                                        displayTitle = parts.length > 1 ? parts[1] : displayTitle.replace(/\*\*(.*?)\*\*/g, '$1');
+                                    }
 
-                            <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white/40 shadow-sm p-6 vibe-glass-card">
-                                <div className="space-y-8 relative pl-6 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200/60 min-h-[100px]">
-                                    {recentActivities.length > 0 ? (
-                                        recentActivities.map((activity, index) => {
-                                            // Extract display title from content
-                                            let displayTitle = activity.content;
-                                            // Handle Markdown Bold Project Title override if present
-                                            if (displayTitle && displayTitle.startsWith("**")) {
-                                                const parts = displayTitle.split('\n\n');
-                                                if (parts.length > 1) displayTitle = parts[1];
-                                                else displayTitle = displayTitle.replace(/\*\*(.*?)\*\*/g, '$1');
-                                            }
-                                            // Truncate
-                                            if (displayTitle && displayTitle.length > 70) displayTitle = displayTitle.substring(0, 70) + '...';
-
-                                            const projectName = activity.obstacles || "Development";
-                                            const timeString = new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                                            return (
-                                                <div key={activity.id || index} className="relative group animate-in slide-in-from-bottom-2 duration-500 fill-mode-backwards" style={{ animationDelay: `${index * 150}ms` }}>
-                                                    <div className={cn(
-                                                        "absolute -left-[29px] top-1.5 w-3.5 h-3.5 rounded-full border-4 border-white shadow-sm transition-all group-hover:scale-125 z-10",
-                                                        index === 0 ? "bg-green-500 ring-2 ring-green-100" : "bg-slate-300 group-hover:bg-blue-500 group-hover:ring-2 ring-blue-100"
-                                                    )}></div>
-                                                    <div>
-                                                        <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-blue-700 transition-colors">{displayTitle}</h4>
-                                                        <p className="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1.5 font-medium uppercase tracking-wide">
-                                                            {timeString} • <span className="text-blue-600">{projectName}</span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center h-full py-8 text-center text-slate-400 opacity-60">
-                                            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3">
-                                                <Briefcase className="w-6 h-6 text-slate-300" />
+                                    return (
+                                        <div key={idx} className="relative pl-8 group cursor-pointer hover:bg-slate-50 rounded-xl -ml-2 p-2 transition-colors">
+                                            <div className="absolute left-[3px] top-3.5 w-[17px] h-[17px] rounded-full bg-white border-2 border-slate-300 group-hover:border-blue-500 transition-colors flex items-center justify-center">
+                                                <div className="w-1.5 h-1.5 bg-slate-300 group-hover:bg-blue-500 rounded-full transition-colors" />
                                             </div>
-                                            <span className="text-xs">Belum ada aktivitas hari ini</span>
+                                            <div className="flex flex-col gap-0.5">
+                                                <div className="flex items-baseline justify-between">
+                                                    <span className="text-xs font-bold text-slate-800">{activity.obstacles || 'Update'}</span>
+                                                    <span className="text-[10px] text-slate-400 font-semibold">{new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                </div>
+                                                <p className="text-[13px] text-slate-500 line-clamp-2 mt-1 font-medium">{displayTitle}</p>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="pl-6 text-sm text-slate-400 font-medium">No activity recorded today. Begin working to populate timeline.</div>
+                            )}
                         </div>
-
                     </div>
                 </div>
+            </div>
 
-            </main>
-
-            {/* Mobile Navigation */}
-            {isMobile && <MobileNavigation />}
-        </div>
+        </KaryawanWorkspaceLayout>
     );
 };
 

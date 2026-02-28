@@ -155,6 +155,8 @@ const ManagerRekapAbsensi = () => {
           const d = new Date(filterDate);
           const isWeekend = d.getDay() === 0 || d.getDay() === 6;
           if (isWeekend) status = 'weekend';
+          const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+          if (filterDate >= todayStr) status = 'future';
 
           // If joining in future
           if (emp.join_date && emp.join_date > filterDate) status = 'future';
@@ -222,17 +224,23 @@ const ManagerRekapAbsensi = () => {
   const isYesterday = filterDate === getYesterdayDate();
 
   const getStatusBadge = (status: string) => {
+    const pill = (bg: string, text: string, dot: string, label: string) => (
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${bg} ${text}`}>
+        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
+        {label}
+      </span>
+    );
     switch (status) {
-      case "present": return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0"><CheckCircle2 className="w-3 h-3 mr-1" />Hadir</Badge>;
-      case "late": return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-0"><AlertCircle className="w-3 h-3 mr-1" />Terlambat</Badge>;
-      case "early_leave": return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-200 border-0"><Clock className="w-3 h-3 mr-1" />Pulang Cepat</Badge>;
+      case "present": return pill("bg-emerald-50 border-emerald-200", "text-emerald-700", "bg-emerald-500", "Hadir");
+      case "late": return pill("bg-amber-50 border-amber-200", "text-amber-700", "bg-amber-500", "Terlambat");
+      case "early_leave": return pill("bg-orange-50 border-orange-200", "text-orange-700", "bg-orange-500", "Pulang Cepat");
       case "absent":
-      case "alpha": return <Badge className="bg-red-100 text-red-700 hover:bg-red-200 border-0"><XCircle className="w-3 h-3 mr-1" />Alpha</Badge>;
-      case "leave": return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-0"><FileText className="w-3 h-3 mr-1" />Cuti</Badge>;
-      case "sick": return <Badge className="bg-pink-100 text-pink-700 hover:bg-pink-200 border-0"><FileText className="w-3 h-3 mr-1" />Sakit</Badge>;
-      case "weekend": return <Badge variant="outline" className="text-slate-400">Libur</Badge>;
-      case "future": return <Badge variant="outline" className="text-slate-300">-</Badge>;
-      default: return <Badge variant="secondary">{status}</Badge>;
+      case "alpha": return pill("bg-red-50 border-red-200", "text-red-700", "bg-red-500", "Alpha");
+      case "leave": return pill("bg-purple-50 border-purple-200", "text-purple-700", "bg-purple-500", "Cuti");
+      case "sick": return pill("bg-pink-50 border-pink-200", "text-pink-700", "bg-pink-500", "Sakit");
+      case "weekend": return <span className="text-[11px] text-slate-400">Libur</span>;
+      case "future": return <span className="text-[11px] text-slate-300">-</span>;
+      default: return <span className="text-[11px] text-slate-400">{status}</span>;
     }
   };
 

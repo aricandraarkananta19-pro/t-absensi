@@ -14,6 +14,7 @@ import { ADMIN_MENU_SECTIONS } from "@/config/menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+import { cn } from "@/lib/utils";
 // Components
 import { JournalCardData } from "@/components/journal/JournalCard";
 import { JournalTable } from "@/components/journal/JournalTable";
@@ -218,14 +219,22 @@ const JurnalKerja = () => {
 
     const menuSections = ADMIN_MENU_SECTIONS;
 
-    // Stats
+    // Stats for Insight Bar
     const pendingCount = allJournals.filter(j => j.verification_status === 'pending' || j.verification_status === 'submitted').length;
     const approvedCount = allJournals.filter(j => j.verification_status === 'approved').length;
 
+    // Insights Calculations
+    const totalJournals = allJournals.length;
+    const approvalRate = totalJournals > 0 ? Math.round((approvedCount / (totalJournals || 1)) * 100) : 0;
+
+    // Calculate unique users
+    const uniqueUsersCount = new Set(allJournals.map((j: any) => j.user_id)).size;
+    const avgPerUser = uniqueUsersCount > 0 ? Math.round(totalJournals / uniqueUsersCount) : 0;
+
     return (
         <EnterpriseLayout
-            title="Manajemen Jurnal Kerja"
-            subtitle="Tinjau dan kelola jurnal harian karyawan."
+            title="Sistem Jurnal Digital"
+            subtitle="Pusat aktivitas dan transparansi kerja harian departemen."
             menuSections={menuSections}
             roleLabel="Administrator"
             showRefresh={true}
@@ -234,38 +243,46 @@ const JurnalKerja = () => {
         >
             <div className="max-w-[1400px] mx-auto pb-20">
 
-                {/* Page Header Stats */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                                <ClipboardList className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-slate-900">{allJournals.length}</p>
-                                <p className="text-xs text-slate-500 font-medium">Total Jurnal</p>
+                {/* Summary Insight Bar (SaaS Workspace Style) */}
+                <div className="bg-slate-900 text-white rounded-[24px] p-6 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden shadow-xl shadow-slate-900/10">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full blur-[80px] pointer-events-none" />
+                    <div className="absolute bottom-0 left-10 w-48 h-48 bg-purple-500/20 rounded-full blur-[60px] pointer-events-none" />
+
+                    <div className="relative z-10 flex-1">
+                        <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 tracking-tight">
+                            Sekilas Area Kerja
+                        </h2>
+                        <p className="text-slate-400 text-sm mt-1 font-medium max-w-sm">Evaluasi efisiensi tim melalui rasio persetujuan jurnal harian secara real-time.</p>
+                    </div>
+
+                    <div className="relative z-10 flex items-center gap-6 md:gap-12 bg-white/10 backdrop-blur-md rounded-2xl px-8 py-5 border border-white/10">
+                        <div className="flex flex-col">
+                            <span className="text-slate-400 uppercase tracking-widest text-[10px] font-bold mb-1">Vol. Jurnal</span>
+                            <div className="flex items-baseline gap-1.5">
+                                <span className="text-2xl font-extrabold text-white">{totalJournals}</span>
+                                <span className="text-xs text-slate-300 font-semibold">minggu ini</span>
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                                <Clock className="w-5 h-5 text-amber-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-slate-900">{pendingCount}</p>
-                                <p className="text-xs text-slate-500 font-medium">Menunggu Review</p>
+
+                        <div className="w-[1px] h-10 bg-white/20 hidden sm:block" />
+
+                        <div className="flex flex-col">
+                            <span className="text-slate-400 uppercase tracking-widest text-[10px] font-bold mb-1">Approval Rate</span>
+                            <div className="flex items-baseline gap-1.5">
+                                <span className={cn("text-2xl font-extrabold", approvalRate >= 80 ? "text-emerald-400" : "text-amber-400")}>
+                                    {approvalRate}%
+                                </span>
+                                <span className="text-xs text-slate-300 font-semibold">disetujui</span>
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                                <BookOpenCheck className="w-5 h-5 text-emerald-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-slate-900">{approvedCount}</p>
-                                <p className="text-xs text-slate-500 font-medium">Disetujui</p>
+
+                        <div className="w-[1px] h-10 bg-white/20 hidden sm:block" />
+
+                        <div className="flex flex-col">
+                            <span className="text-slate-400 uppercase tracking-widest text-[10px] font-bold mb-1">Produktivitas</span>
+                            <div className="flex items-baseline gap-1.5">
+                                <span className="text-2xl font-extrabold text-blue-400">~{avgPerUser}</span>
+                                <span className="text-xs text-slate-300 font-semibold">/karyawan</span>
                             </div>
                         </div>
                     </div>

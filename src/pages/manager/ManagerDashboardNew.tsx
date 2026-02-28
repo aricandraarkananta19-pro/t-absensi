@@ -33,6 +33,8 @@ import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { MANAGER_MENU_SECTIONS } from "@/config/menu";
 import { RealTimeMonitoringTable } from "@/components/dashboard/RealTimeMonitoringTable";
 import { EMPTY_STATE_MESSAGES } from "@/lib/dashboardTestData";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import MobileDashboardView from "@/components/MobileDashboardView";
 
 // Talenta Brand Colors
 const BRAND_COLORS = {
@@ -70,6 +72,7 @@ const ManagerDashboardNew = () => {
     const navigate = useNavigate();
     const { settings, isLoading: settingsLoading } = useSystemSettings();
     const [lastUpdated, setLastUpdated] = useState<Date | null>(new Date());
+    const isMobile = useIsMobile();
 
     // Use today for live stats, yesterday for report
     const activeDate = getJakartaDate();
@@ -165,7 +168,9 @@ const ManagerDashboardNew = () => {
         );
     }
 
-
+    if (isMobile) {
+        return <MobileDashboardView role="manager" />;
+    }
 
     return (
         <EnterpriseLayout
@@ -563,7 +568,7 @@ const ManagerDashboardNew = () => {
                                                         {new Date(journal.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-slate-600 mb-3 line-clamp-2">{journal.title}</p>
+                                                <p className="text-xs text-slate-600 mb-3 line-clamp-2">{journal.content}</p>
                                                 <div className="flex items-center justify-between">
                                                     {journal.status === 'approved' && <Badge variant="outline" className="text-[10px] h-5 border-green-200 text-green-700 bg-green-50">Disetujui</Badge>}
                                                     {journal.status === 'rejected' && <Badge variant="outline" className="text-[10px] h-5 border-red-200 text-red-700 bg-red-50">Ditolak</Badge>}

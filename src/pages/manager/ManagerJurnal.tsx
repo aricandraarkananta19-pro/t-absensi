@@ -1,363 +1,174 @@
-
-import { useState, useEffect, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
+import { JournalTable } from "@/components/journal/JournalTable";
+import { JournalFilters } from "@/components/journal/JournalFilters";
+import { JournalReviewDetail } from "@/components/journal/JournalReviewDetail";
 import {
-    LayoutDashboard, Clock, BarChart3, FileCheck, BookOpen, Search,
-    Filter, AlertCircle, CheckCircle2, FileEdit, Ghost, Calendar, Briefcase, List,
-    Inbox, Flame, Bell, History
-} from "lucide-react";
+    Sheet,
+    SheetContent,
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, SlidersHorizontal, LayoutDashboard, Clock, BookOpen, BarChart3, FileCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { JournalReviewDetail } from "@/components/journal/JournalReviewDetail";
-import { formatDistanceToNow } from "date-fns";
-import { id } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import { JournalCardData } from "@/components/journal/JournalCard";
 
-// --- Types ---
-type TabType = 'all' | 'pending' | 'urgent' | 'recent';
-
-interface JournalProfile {
-    full_name: string | null;
-    avatar_url: string | null;
-    department: string | null;
-    position: string | null;
-}
-
-interface JournalData {
-    id: string;
-    user_id: string;
-    content: string;
-    work_result: string | null;
-    status: string;
-    verification_status: string;
-    created_at: string;
-    date: string;
-    profiles: JournalProfile;
-}
-
-// --- Tab Config ---
-const TAB_CONFIG: Record<TabType, {
-    label: string;
-    sublabel: string;
-    icon: React.ElementType;
-    activeColor: string;
-    dotColor: string;
-    animate?: boolean;
-}> = {
-    all: {
-        label: "Semua",
-        sublabel: "Total jurnal",
-        icon: List,
-        activeColor: "text-slate-800 bg-white border-slate-200",
-        dotColor: "bg-slate-400"
-    },
-    urgent: {
-        label: "Urgent",
-        sublabel: "> 24 jam",
-        icon: Flame,
-        activeColor: "text-red-700 bg-red-50 border-red-200",
-        dotColor: "bg-red-500",
-        animate: true
-    },
-    pending: {
-        label: "Pending",
-        sublabel: "Perlu review",
-        icon: Bell,
-        activeColor: "text-amber-700 bg-amber-50 border-amber-200",
-        dotColor: "bg-amber-500"
-    },
-    recent: {
-        label: "Terbaru",
-        sublabel: "48 jam terakhir",
-        icon: History,
-        activeColor: "text-blue-700 bg-blue-50 border-blue-200",
-        dotColor: "bg-blue-500"
-    },
-};
-
-// --- Fetcher Functions ---
-
-async function fetchCounts(managerId: string) {
-    if (!managerId) return { all: 0, pending: 0, urgent: 0, recent: 0 };
-
-    const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
-
-    const allQuery = supabase
-        .from('work_journals')
-        .select('id', { count: 'exact', head: true })
-        .is('deleted_at', null);
-
-    const urgentQuery = supabase
-        .from('work_journals')
-        .select('id', { count: 'exact', head: true })
-        .eq('verification_status', 'pending')
-        .lt('created_at', twentyFourHoursAgo)
-        .is('deleted_at', null);
-
-    const pendingQuery = supabase
-        .from('work_journals')
-        .select('id', { count: 'exact', head: true })
-        .in('verification_status', ['pending'])
-        .is('deleted_at', null);
-
-    const recentQuery = supabase
-        .from('work_journals')
-        .select('id', { count: 'exact', head: true })
-        .gte('created_at', fortyEightHoursAgo)
-        .is('deleted_at', null);
-
-    const [all, urgent, pending, recent] = await Promise.all([
-        allQuery, urgentQuery, pendingQuery, recentQuery
-    ]);
-
-    return {
-        all: all.count || 0,
-        urgent: urgent.count || 0,
-        pending: pending.count || 0,
-        recent: recent.count || 0
-    };
-}
-
-async function fetchJournalPage(
-    managerId: string,
-    page: number,
-    pageSize: number,
-    search: string,
-    tab: TabType
-) {
-    if (!managerId) return { data: [], count: 0 };
-
-    let query = supabase
-        .from('work_journals')
-        .select('*', { count: 'exact' })
-        .is('deleted_at', null);
-
-    const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
-
-    if (tab === 'urgent') {
-        query = query.eq('verification_status', 'pending').lt('created_at', twentyFourHoursAgo);
-    } else if (tab === 'recent') {
-        query = query.gte('created_at', fortyEightHoursAgo);
-    } else if (tab === 'pending') {
-        query = query.in('verification_status', ['pending']);
-    }
-
-    if (search) {
-        query = query.ilike('content', `%${search}%`);
-    }
-
-    const from = page * pageSize;
-    const to = from + pageSize - 1;
-
-    if (tab === 'recent' || tab === 'all') {
-        query = query.order('created_at', { ascending: false });
-    } else {
-        query = query.order('created_at', { ascending: true });
-    }
-
-    const { data: journals, error, count } = await query.range(from, to);
-
-    if (error) throw error;
-    if (!journals || journals.length === 0) return { data: [], count: 0 };
-
-    const userIds = [...new Set(journals.map(j => j.user_id))];
-    const profileMap = new Map<string, JournalProfile>();
-
-    if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-            .from('profiles')
-            .select('user_id, full_name, avatar_url, department, position')
-            .in('user_id', userIds);
-
-        if (profiles) {
-            profiles.forEach(p => profileMap.set(p.user_id, p));
-        }
-    }
-
-    const formattedData: JournalData[] = journals.map(j => {
-        const profile = profileMap.get(j.user_id) || {
-            full_name: 'Unknown User',
-            avatar_url: null,
-            department: '-',
-            position: '-'
-        };
-        return { ...j, profiles: profile };
-    });
-
-    return { data: formattedData, count: count || 0 };
-}
-
-// --- Status Badge Component ---
-function StatusDot({ status }: { status: string }) {
-    const colorMap: Record<string, string> = {
-        approved: "bg-emerald-500",
-        pending: "bg-amber-500",
-        submitted: "bg-amber-500",
-        rejected: "bg-red-500",
-        need_revision: "bg-orange-500"
-    };
-    const labelMap: Record<string, string> = {
-        approved: "Disetujui",
-        pending: "Pending",
-        submitted: "Pending",
-        rejected: "Ditolak",
-        need_revision: "Revisi"
-    };
-    const bgMap: Record<string, string> = {
-        approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        pending: "bg-amber-50 text-amber-700 border-amber-200",
-        submitted: "bg-amber-50 text-amber-700 border-amber-200",
-        rejected: "bg-red-50 text-red-700 border-red-200",
-        need_revision: "bg-orange-50 text-orange-700 border-orange-200"
-    };
-    return (
-        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${bgMap[status] || bgMap.pending}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${colorMap[status] || colorMap.pending}`} />
-            {labelMap[status] || "Pending"}
-        </span>
-    );
-}
+// Manager has its own specific fetching needs, but for simplicity we keep it close to Admin but maybe scoped if needed.
+const ITEMS_PER_PAGE = 20;
 
 const ManagerJurnal = () => {
     const { user } = useAuth();
+    const queryClient = useQueryClient();
 
     // State
-    const [activeTab, setActiveTab] = useState<TabType>('all');
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [viewJournal, setViewJournal] = useState<JournalCardData | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+    // Filters
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [selectedJournalId, setSelectedJournalId] = useState<string | null>(null);
+    const [status, setStatus] = useState("all");
+    const [department, setDepartment] = useState("all");
+    const [date, setDate] = useState<Date | undefined>(undefined);
 
-    // Counts State
-    const [counts, setCounts] = useState({ all: 0, urgent: 0, pending: 0, recent: 0 });
-
-    // Pagination/Data State
-    const [journals, setJournals] = useState<JournalData[]>([]);
-    const [page, setPage] = useState(0);
-    const [hasMore, setHasMore] = useState(true);
+    // Data State
+    const [journals, setJournals] = useState<JournalCardData[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const PAGE_SIZE = 20;
 
     // Debounce Search
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(search);
-            setPage(0);
-            setJournals([]);
-        }, 500);
+        const timer = setTimeout(() => setDebouncedSearch(search), 500);
         return () => clearTimeout(timer);
     }, [search]);
 
-    // Reset on Tab Change
-    useEffect(() => {
-        setPage(0);
-        setJournals([]);
-        setHasMore(true);
-        setSelectedJournalId(null);
-    }, [activeTab]);
-
-    // Data Fetching
-    const loadJournals = async (isRefresh = false) => {
-        if (!user?.id) return;
-        if (isRefresh) setIsLoading(true);
-
+    const fetchJournals = async () => {
+        setIsLoading(true);
         try {
-            const countData = await fetchCounts(user.id);
-            setCounts(countData);
+            let query = supabase
+                .from('work_journals')
+                .select('*', { count: 'exact' })
+                .is('deleted_at', null)
+                .order('date', { ascending: false });
 
-            const { data, count } = await fetchJournalPage(
-                user.id,
-                page,
-                PAGE_SIZE,
-                debouncedSearch,
-                activeTab
-            );
-
-            setJournals(prev => {
-                if (page === 0) return data;
-                const existingIds = new Set(prev.map(p => p.id));
-                const uniqueNew = data.filter(d => !existingIds.has(d.id));
-                return [...prev, ...uniqueNew];
-            });
-
-            setHasMore(data.length === PAGE_SIZE);
-
-            if ((page === 0 || isRefresh) && data.length > 0 && !selectedJournalId) {
-                setSelectedJournalId(data[0].id);
+            // Depending on status
+            if (status !== 'all') {
+                query = query.eq('verification_status', status);
             }
+
+            if (date) {
+                const start = new Date(date);
+                start.setHours(0, 0, 0, 0);
+                const end = new Date(date);
+                end.setHours(23, 59, 59, 999);
+                query = query.gte('date', start.toISOString()).lte('date', end.toISOString());
+            }
+
+            if (debouncedSearch) {
+                query = query.ilike('content', `%${debouncedSearch}%`);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                setJournals([]);
+                return;
+            }
+
+            const userIds = [...new Set(data.map((j: any) => j.user_id))];
+            const profileMap = new Map<string, any>();
+
+            if (userIds.length > 0) {
+                let profileQuery = supabase
+                    .from('profiles')
+                    .select('user_id, full_name, avatar_url, department, position')
+                    .in('user_id', userIds);
+
+                if (department !== 'all') {
+                    profileQuery = profileQuery.eq('department', department);
+                }
+
+                const { data: profiles } = await profileQuery;
+
+                if (profiles) {
+                    profiles.forEach(p => profileMap.set(p.user_id, p));
+                }
+            }
+
+            const formattedData = data.map(journal => {
+                const profile = profileMap.get(journal.user_id);
+                if (department !== 'all' && !profile) return null;
+
+                return {
+                    ...journal,
+                    profiles: profile || { full_name: 'Unknown', avatar_url: null, department: '-', position: '-' }
+                };
+            }).filter(Boolean) as unknown as JournalCardData[];
+
+            setJournals(formattedData);
         } catch (error: any) {
-            console.error("Fetch error:", error);
-            toast({ variant: "destructive", title: "Error", description: "Gagal memuat jurnal" });
+            toast({ variant: "destructive", title: "Error", description: error.message });
         } finally {
-            if (isRefresh) setIsLoading(false);
+            setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        loadJournals(page === 0);
-    }, [user?.id, page, debouncedSearch, activeTab]);
+        if (user) fetchJournals();
+    }, [user, status, debouncedSearch, department, date]);
 
-    // Realtime Subscription
-    useEffect(() => {
-        const channel = supabase
-            .channel('manager-journal-list-realtime')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'work_journals' },
-                () => {
-                    setPage(0);
-                    setTimeout(() => loadJournals(true), 500);
-                }
-            )
-            .subscribe();
+    // Handle Selection & Actions
+    const handleSelect = (id: string, checked: boolean) => {
+        if (checked) setSelectedIds(prev => [...prev, id]);
+        else setSelectedIds(prev => prev.filter(item => item !== id));
+    };
 
-        return () => { supabase.removeChannel(channel); };
-    }, []);
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) setSelectedIds(journals.map(j => j.id));
+        else setSelectedIds([]);
+    };
 
-    const selectedJournal = useMemo(() =>
-        journals.find(j => j.id === selectedJournalId),
-        [journals, selectedJournalId]
-    );
-
-    const handleAction = async (id: string, action: 'approve' | 'reject', reason?: string) => {
+    const handleBulkApprove = async () => {
+        if (selectedIds.length === 0) return;
         try {
-            const status = action === 'approve' ? 'approved' : 'rejected';
-            if (activeTab === 'pending' || activeTab === 'urgent') {
-                setJournals(prev => prev.filter(j => j.id !== id));
-                if (selectedJournalId === id) setSelectedJournalId(null);
-            } else {
-                setJournals(prev => prev.map(j => j.id === id ? { ...j, verification_status: status, status: status } : j));
-            }
-
             const { error } = await supabase
                 .from('work_journals')
-                .update({
-                    verification_status: status,
-                    status: status,
-                    manager_notes: reason
-                })
-                .eq('id', id);
+                .update({ verification_status: 'approved', status: 'approved' })
+                .in('id', selectedIds);
 
             if (error) throw error;
+            toast({ title: "Berhasil", description: `${selectedIds.length} jurnal telah disetujui.` });
+            setSelectedIds([]);
+            fetchJournals();
+        } catch (err: any) {
+            toast({ variant: "destructive", title: "Error", description: err.message });
+        }
+    };
 
-            toast({
-                title: "Berhasil",
-                description: action === 'approve' ? 'Jurnal telah disetujui.' : 'Jurnal telah ditolak.'
-            });
-            loadJournals(false);
-        } catch (e: any) {
-            toast({ variant: "destructive", title: "Error", description: e.message });
-            loadJournals(true);
+    const handleSingleAction = async (id: string, action: 'approve' | 'reject', reason?: string) => {
+        try {
+            const updateData: any = {
+                verification_status: action === 'approve' ? 'approved' : 'rejected',
+                status: action === 'approve' ? 'approved' : 'rejected'
+            };
+
+            const { error } = await supabase.from('work_journals').update(updateData).eq('id', id);
+            if (error) throw error;
+
+            toast({ title: "Berhasil", description: action === 'approve' ? 'Jurnal disetujui.' : 'Jurnal ditolak.' });
+            fetchJournals();
+
+            if (viewJournal?.id === id) {
+                setIsDetailOpen(false);
+                setViewJournal(null);
+            }
+        } catch (err: any) {
+            toast({ variant: "destructive", title: "Error", description: err.message });
         }
     };
 
@@ -374,176 +185,129 @@ const ManagerJurnal = () => {
         },
     ];
 
+    // Stats for Insight Bar
+    const pendingCount = journals.filter(j => j.verification_status === 'pending' || j.verification_status === 'submitted').length;
+    const approvedCount = journals.filter(j => j.verification_status === 'approved').length;
+    const totalJournals = journals.length;
+    const approvalRate = totalJournals > 0 ? Math.round((approvedCount / (totalJournals || 1)) * 100) : 0;
+    const uniqueUsersCount = new Set(journals.map((j: any) => j.user_id)).size;
+    const avgPerUser = uniqueUsersCount > 0 ? Math.round(totalJournals / uniqueUsersCount) : 0;
+
     return (
         <EnterpriseLayout
             title="Jurnal Tim"
-            subtitle="Tinjau dan kelola aktivitas tim Anda."
+            subtitle="Tinjau dan kelola aktivitas kerja tim Anda di satu tempat."
             menuSections={menuSections}
             roleLabel="Manager"
             showRefresh={true}
-            onRefresh={() => { setPage(0); loadJournals(true); }}
+            onRefresh={fetchJournals}
         >
-            <div className="flex h-[calc(100vh-140px)] -mt-4 gap-5">
+            <div className="max-w-[1400px] mx-auto pb-20">
 
-                {/* LEFT SIDEBAR - LIST */}
-                <div className="w-[420px] flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm shrink-0 overflow-hidden">
+                {/* Summary Insight Bar (SaaS Workspace Style) */}
+                <div className="bg-slate-900 text-white rounded-[24px] p-6 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden shadow-xl shadow-slate-900/10">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full blur-[80px] pointer-events-none" />
+                    <div className="absolute bottom-0 left-10 w-48 h-48 bg-purple-500/20 rounded-full blur-[60px] pointer-events-none" />
 
-                    {/* Search & Tabs Header */}
-                    <div className="p-4 border-b border-slate-100 space-y-3 shrink-0">
-                        {/* Search */}
-                        <div className="relative">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input
-                                placeholder="Cari jurnal karyawan..."
-                                className="pl-10 bg-slate-50 border-slate-200 h-10 rounded-xl text-sm font-medium focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Tab Buttons */}
-                        <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-100/60 rounded-xl">
-                            {(Object.keys(TAB_CONFIG) as TabType[]).map((tab) => {
-                                const config = TAB_CONFIG[tab];
-                                const isActive = activeTab === tab;
-                                const count = counts[tab];
-
-                                return (
-                                    <button
-                                        key={tab}
-                                        onClick={() => setActiveTab(tab)}
-                                        className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-lg transition-all duration-200 border ${isActive
-                                            ? `${config.activeColor} shadow-sm`
-                                            : 'text-slate-500 border-transparent hover:bg-white/60'
-                                            }`}
-                                    >
-                                        <span className="text-[10px] font-bold uppercase tracking-wider mb-1">{config.label}</span>
-                                        <div className="flex items-center gap-1">
-                                            <span className={`w-1.5 h-1.5 rounded-full ${isActive ? config.dotColor : 'bg-slate-300'} ${config.animate && count > 0 ? 'animate-pulse' : ''}`} />
-                                            <span className="text-base font-bold leading-none">{count}</span>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                    <div className="relative z-10 flex-1">
+                        <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 tracking-tight">
+                            Sekilas Jurnal Tim
+                        </h2>
+                        <p className="text-slate-400 text-sm mt-1 font-medium max-w-sm">
+                            {pendingCount > 0
+                                ? `Ada ${pendingCount} jurnal yang menunggu review Anda. Mari selesaikan!`
+                                : "Tim Anda luar biasa! Semua jurnal telah direview."}
+                        </p>
                     </div>
 
-                    {/* Scrollable List */}
-                    <div className="flex-1 overflow-y-auto bg-slate-50/30 p-3 space-y-2">
-                        {isLoading && journals.length === 0 ? (
-                            // Skeleton
-                            [1, 2, 3].map(i => (
-                                <div key={i} className="flex gap-3 p-4 bg-white rounded-xl border border-slate-100">
-                                    <Skeleton className="h-10 w-10 rounded-full shrink-0" />
-                                    <div className="space-y-2 flex-1">
-                                        <Skeleton className="h-4 w-3/4" />
-                                        <Skeleton className="h-3 w-1/2" />
-                                    </div>
-                                </div>
-                            ))
-                        ) : journals.length === 0 ? (
-                            // Empty State
-                            <div className="flex flex-col items-center justify-center h-full py-16">
-                                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
-                                    {activeTab === 'urgent' ? <AlertCircle className="h-8 w-8 text-slate-300" /> :
-                                        activeTab === 'recent' ? <Clock className="h-8 w-8 text-slate-300" /> :
-                                            <Inbox className="h-8 w-8 text-slate-300" />}
-                                </div>
-                                <p className="text-sm font-semibold text-slate-500 text-center px-8">
-                                    {activeTab === 'urgent' ? "Tidak ada jurnal urgent! 👍" :
-                                        activeTab === 'recent' ? "Belum ada jurnal baru 48 jam terakhir." :
-                                            activeTab === 'pending' ? "Semua jurnal sudah ditinjau." :
-                                                "Tidak ada jurnal ditemukan."}
-                                </p>
-                                <p className="text-xs text-slate-400 mt-1">
-                                    {activeTab === 'urgent' ? "Semua jurnal telah ditinjau tepat waktu" : "Coba ubah filter atau tab"}
-                                </p>
+                    <div className="relative z-10 flex items-center gap-6 md:gap-12 bg-white/10 backdrop-blur-md rounded-2xl px-8 py-5 border border-white/10">
+                        <div className="flex flex-col">
+                            <span className="text-slate-400 uppercase tracking-widest text-[10px] font-bold mb-1">Vol. Jurnal</span>
+                            <div className="flex items-baseline gap-1.5">
+                                <span className="text-2xl font-extrabold text-white">{totalJournals}</span>
+                                <span className="text-xs text-slate-300 font-semibold">minggu ini</span>
                             </div>
-                        ) : (
-                            // List
-                            <>
-                                {journals.map((journal) => {
-                                    const isSelected = selectedJournalId === journal.id;
-                                    return (
-                                        <div
-                                            key={journal.id}
-                                            onClick={() => setSelectedJournalId(journal.id)}
-                                            className={`relative group cursor-pointer transition-all duration-200 rounded-xl border p-3.5 ${isSelected
-                                                ? 'bg-white border-blue-400 shadow-md ring-2 ring-blue-100'
-                                                : 'bg-white border-slate-200 hover:border-blue-200 hover:shadow-sm'
-                                                }`}
-                                        >
-                                            <div className="flex items-start gap-3">
-                                                <Avatar className="h-10 w-10 border-2 border-white shadow-sm shrink-0">
-                                                    <AvatarImage src={journal.profiles.avatar_url || ""} />
-                                                    <AvatarFallback className="bg-gradient-to-br from-slate-600 to-slate-800 text-white font-bold text-xs">
-                                                        {journal.profiles.full_name?.charAt(0).toUpperCase() || "?"}
-                                                    </AvatarFallback>
-                                                </Avatar>
+                        </div>
 
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex justify-between items-start mb-1">
-                                                        <h4 className={`text-sm font-semibold truncate pr-2 ${isSelected ? 'text-blue-700' : 'text-slate-900'}`}>
-                                                            {journal.profiles.full_name || "Unknown User"}
-                                                        </h4>
-                                                        <span className="text-[10px] text-slate-400 shrink-0 tabular-nums">
-                                                            {formatDistanceToNow(new Date(journal.created_at), { addSuffix: true, locale: id })}
-                                                        </span>
-                                                    </div>
+                        <div className="w-[1px] h-10 bg-white/20 hidden sm:block" />
 
-                                                    <div className="flex items-center gap-1.5 mb-2">
-                                                        <span className="text-[10px] text-slate-400 font-medium truncate">
-                                                            {journal.profiles.department || "-"}
-                                                        </span>
-                                                        <span className="text-slate-200">•</span>
-                                                        <StatusDot status={journal.verification_status} />
-                                                    </div>
+                        <div className="flex flex-col">
+                            <span className="text-slate-400 uppercase tracking-widest text-[10px] font-bold mb-1">Approval Rate</span>
+                            <div className="flex items-baseline gap-1.5">
+                                <span className={cn("text-2xl font-extrabold", approvalRate >= 80 ? "text-emerald-400" : "text-amber-400")}>
+                                    {approvalRate}%
+                                </span>
+                                <span className="text-xs text-slate-300 font-semibold">disetujui</span>
+                            </div>
+                        </div>
 
-                                                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                                                        {journal.content}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                        <div className="w-[1px] h-10 bg-white/20 hidden sm:block" />
 
-                                {hasMore && journals.length > 0 && (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="w-full text-xs text-slate-500 hover:text-blue-600 rounded-xl h-9 mt-1"
-                                        onClick={() => setPage(p => p + 1)}
-                                    >
-                                        Muat lebih banyak...
-                                    </Button>
-                                )}
-                            </>
-                        )}
+                        <div className="flex flex-col">
+                            <span className="text-slate-400 uppercase tracking-widest text-[10px] font-bold mb-1">Produktivitas</span>
+                            <div className="flex items-baseline gap-1.5">
+                                <span className="text-2xl font-extrabold text-blue-400">~{avgPerUser}</span>
+                                <span className="text-xs text-slate-300 font-semibold">/karyawan</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* RIGHT SIDE - DETAIL VIEW */}
-                <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col items-center justify-center">
-                    {selectedJournal ? (
-                        <div className="w-full h-full flex flex-col">
-                            <JournalReviewDetail
-                                journal={selectedJournal}
-                                onApprove={async (id) => handleAction(id, 'approve')}
-                                onReject={async (id, reason) => handleAction(id, 'reject', reason)}
-                                onRequestRevision={async (id, reason) => handleAction(id, 'reject', reason)}
-                            />
+                {/* FILTERS */}
+                <JournalFilters
+                    search={search} onSearchChange={setSearch}
+                    status={status} onStatusChange={setStatus}
+                    department={department} onDepartmentChange={setDepartment}
+                    date={date} onDateChange={setDate}
+                    onReset={() => {
+                        setSearch(""); setStatus("all"); setDepartment("all"); setDate(undefined);
+                    }}
+                />
+
+                {/* ACTION BAR */}
+                {selectedIds.length > 0 && (
+                    <div className="flex items-center gap-3 mb-6 p-4 bg-blue-50/50 rounded-[20px] border border-blue-100 animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm backdrop-blur-sm">
+                        <div className="flex items-center gap-2">
+                            <Badge className="bg-blue-600 text-white hover:bg-blue-600 h-8 px-4 text-xs font-bold rounded-xl shadow-sm">
+                                {selectedIds.length} jurnal dipilih
+                            </Badge>
                         </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center p-8">
-                            <div className="w-24 h-24 rounded-3xl bg-slate-50 flex items-center justify-center mb-5">
-                                <BookOpen className="h-12 w-12 text-slate-200" />
-                            </div>
-                            <p className="text-base font-semibold text-slate-400">Pilih jurnal untuk melihat detail</p>
-                            <p className="text-sm text-slate-300 mt-1">Klik pada jurnal di daftar sebelah kiri</p>
+                        <Button onClick={handleBulkApprove} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-9 px-5 font-bold shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ml-auto md:ml-0">
+                            <CheckCircle className="w-4 h-4" /> Setujui Semua
+                        </Button>
+                        <Button onClick={() => setSelectedIds([])} variant="ghost" size="sm" className="text-slate-500 hover:text-slate-700 hover:bg-white rounded-xl h-9 font-semibold">
+                            Batal
+                        </Button>
+                    </div>
+                )}
+
+                {/* TABLE/CARDS WORKSPACE */}
+                <JournalTable
+                    data={journals}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelect}
+                    onSelectAll={handleSelectAll}
+                    onView={(journal) => { setViewJournal(journal); setIsDetailOpen(true); }}
+                    onApprove={(id) => handleSingleAction(id, 'approve')}
+                    onReject={(id) => handleSingleAction(id, 'reject')}
+                    isLoading={isLoading}
+                />
+
+                {/* SLIDE-IN DETAIL PANEL (PREMIUM MODE) */}
+                <Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+                    <SheetContent className="w-full sm:max-w-[800px] p-0 border-l border-slate-200/60 shadow-2xl">
+                        <div className="h-full overflow-y-auto bg-slate-50/50">
+                            {viewJournal && (
+                                <JournalReviewDetail
+                                    journal={viewJournal}
+                                    onApprove={async (id) => handleSingleAction(id, 'approve')}
+                                    onReject={async (id) => handleSingleAction(id, 'reject')}
+                                    onRequestRevision={async (id) => handleSingleAction(id, 'reject')}
+                                />
+                            )}
                         </div>
-                    )}
-                </div>
+                    </SheetContent>
+                </Sheet>
 
             </div>
         </EnterpriseLayout>

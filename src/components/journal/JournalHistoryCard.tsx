@@ -1,10 +1,10 @@
-
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import { Clock, Folder, MessageSquare, AlertCircle, CheckCircle2, ChevronRight } from "lucide-react";
+import { Clock, Folder, MessageSquare, AlertCircle, CheckCircle2, ChevronRight, Hash } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 export interface JournalHistoryItem {
     id: string;
@@ -30,45 +30,45 @@ interface JournalHistoryCardProps {
 const STATUS_CONFIG = {
     draft: {
         dot: "bg-slate-400",
-        badge: "bg-slate-50 text-slate-600 border-slate-200",
+        badge: "bg-slate-100 text-slate-600 border-slate-200",
         label: "Draft",
-        accent: "border-l-slate-300"
+        accent: "border-slate-200 hover:border-slate-300"
     },
     submitted: {
         dot: "bg-amber-500",
         badge: "bg-amber-50 text-amber-700 border-amber-200",
         label: "Menunggu Review",
-        accent: "border-l-amber-400"
+        accent: "border-slate-200/80 hover:border-amber-300"
     },
     pending: {
         dot: "bg-amber-500",
         badge: "bg-amber-50 text-amber-700 border-amber-200",
         label: "Menunggu Review",
-        accent: "border-l-amber-400"
+        accent: "border-slate-200/80 hover:border-amber-300"
     },
     need_revision: {
         dot: "bg-orange-500",
         badge: "bg-orange-50 text-orange-700 border-orange-200",
         label: "Revisi Diperlukan",
-        accent: "border-l-orange-400"
+        accent: "border-orange-200 hover:border-orange-400 ring-2 ring-orange-50"
     },
     rejected: {
-        dot: "bg-red-500",
-        badge: "bg-red-50 text-red-700 border-red-200",
+        dot: "bg-rose-500",
+        badge: "bg-rose-50 text-rose-700 border-rose-200",
         label: "Ditolak",
-        accent: "border-l-red-400"
+        accent: "border-rose-200 hover:border-rose-300"
     },
     approved: {
         dot: "bg-emerald-500",
         badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
         label: "Disetujui",
-        accent: "border-l-emerald-400"
+        accent: "border-slate-200/80 hover:border-emerald-300"
     },
     read: {
         dot: "bg-blue-500",
         badge: "bg-blue-50 text-blue-700 border-blue-200",
         label: "Dibaca",
-        accent: "border-l-blue-400"
+        accent: "border-slate-200/80 hover:border-blue-300"
     },
 };
 
@@ -78,32 +78,19 @@ export const extractTitleAndContent = (rawContent: string) => {
     if (match) {
         return { title: match[1], content: match[2] };
     }
-    return { title: "", content: rawContent };
-};
-
-// Category emoji map
-const CATEGORY_EMOJI: Record<string, string> = {
-    development: "🛠️",
-    meeting: "📋",
-    design: "🎨",
-    research: "🔬",
-    support: "🤝",
-    learning: "📚"
+    return { title: "Laporan Harian", content: rawContent };
 };
 
 export function JournalHistoryCard({ journal, onClick }: JournalHistoryCardProps) {
     const status = STATUS_CONFIG[journal.verification_status] || STATUS_CONFIG.submitted;
 
-    // Format Duration
-    const hours = Math.floor(journal.duration / 60);
-    const minutes = journal.duration % 60;
+    const hours = Math.floor((journal.duration || 0) / 60);
+    const minutes = (journal.duration || 0) % 60;
     const durationString = hours > 0
-        ? `${hours} jam ${minutes > 0 ? `${minutes} menit` : ''}`
-        : `${minutes} menit`;
+        ? `${hours}j ${minutes > 0 ? `${minutes}m` : ''}`
+        : `${minutes}m`;
 
-    const categoryLabel = journal.project_category
-        ? `${CATEGORY_EMOJI[journal.project_category] || '📁'} ${journal.project_category.charAt(0).toUpperCase() + journal.project_category.slice(1)}`
-        : "📁 Umum";
+    const categoryLabel = journal.project_category || "Umum";
 
     const { title: extractedTitle, content: extractedContent } = extractTitleAndContent(journal.content);
     const displayTitle = journal.title || extractedTitle || "Laporan Aktivitas";
@@ -111,71 +98,71 @@ export function JournalHistoryCard({ journal, onClick }: JournalHistoryCardProps
 
     return (
         <div
-            className={`relative bg-white rounded-xl border border-slate-200 border-l-4 ${status.accent} hover:shadow-md hover:border-slate-300 transition-all duration-300 cursor-pointer group overflow-hidden`}
             onClick={onClick}
+            className={cn(
+                "group relative bg-white rounded-[20px] p-5 border transition-all duration-300 cursor-pointer overflow-hidden flex flex-col gap-4",
+                "shadow-[0_2px_10px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-1",
+                status.accent
+            )}
         >
-            <div className="p-5">
-                {/* Header: Date & Status */}
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-800">
-                            {format(new Date(journal.date), "EEEE", { locale: localeId })}
-                        </span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-sm text-slate-500">
-                            {format(new Date(journal.date), "d MMMM yyyy", { locale: localeId })}
-                        </span>
-                    </div>
-
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${status.badge}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-                        {status.label}
+            {/* Header: Date & Status */}
+            <div className="flex items-start justify-between">
+                <div className="flex flex-col">
+                    <span className="text-[13px] font-bold text-slate-800">
+                        {format(new Date(journal.date), "EEEE, d MMM yyyy", { locale: localeId })}
+                    </span>
+                    <span className="text-[11px] font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">
+                        {categoryLabel}
                     </span>
                 </div>
 
-                {/* Title */}
-                <h3 className="text-base font-bold text-slate-900 mb-1.5 line-clamp-1 group-hover:text-blue-700 transition-colors">
+                <span className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase border",
+                    status.badge
+                )}>
+                    <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", status.dot)} />
+                    {status.label}
+                </span>
+            </div>
+
+            {/* Content Body */}
+            <div>
+                <h3 className="text-[15px] font-bold text-slate-900 mb-1.5 line-clamp-1 group-hover:text-blue-700 transition-colors">
                     {displayTitle}
                 </h3>
-
-                {/* Content Preview */}
-                <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-4">
+                <p className="text-[13px] text-slate-600 line-clamp-2 leading-relaxed font-medium">
                     {displayContent}
                 </p>
+            </div>
 
-                {/* Footer Metadata */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-xs text-slate-500">
-                        <span className="flex items-center gap-1.5">
-                            {categoryLabel}
-                        </span>
-                        <span className="flex items-center gap-1.5">
+            {/* Footer Metrics */}
+            <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100/80">
+                <div className="flex items-center gap-3">
+                    {journal.duration > 0 && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-500 text-[11px] border border-slate-200/60 font-bold">
                             <Clock className="w-3.5 h-3.5 text-slate-400" />
                             {durationString}
                         </span>
-                    </div>
-
-                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all" />
+                    )}
                 </div>
 
-                {/* Manager Feedback */}
                 {journal.manager_notes && (
-                    <div className={`mt-4 pt-4 border-t border-slate-100 flex gap-3 ${journal.verification_status === 'need_revision' ? 'bg-red-50/30 -mx-5 px-5 -mb-5 pb-5 rounded-b-lg' : ''}`}>
-                        <Avatar className="w-7 h-7 border border-slate-200 shrink-0">
-                            <AvatarImage src={journal.manager_profile?.avatar_url || undefined} />
-                            <AvatarFallback className="bg-slate-100 text-slate-600 text-[10px]">M</AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                            <p className="text-[11px] font-bold text-slate-700 mb-0.5">
-                                {journal.manager_profile?.full_name || "Catatan Manager"}
-                            </p>
-                            <p className="text-xs text-slate-500 italic line-clamp-2">
-                                "{journal.manager_notes}"
-                            </p>
-                        </div>
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/50">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        Ada Catatan
                     </div>
                 )}
             </div>
+
+            {/* Feedback Detail Preview Hover state handled via expanding block or slide-in on click usually */}
+            {journal.manager_notes && journal.verification_status === 'need_revision' && (
+                <div className="bg-orange-50/50 p-3 rounded-xl border border-orange-100/50 mt-2">
+                    <p className="text-xs font-semibold text-orange-800 line-clamp-2">
+                        <span className="font-bold text-orange-600">Revisi: </span>
+                        {journal.manager_notes}
+                    </p>
+                </div>
+            )}
         </div>
     );
 }

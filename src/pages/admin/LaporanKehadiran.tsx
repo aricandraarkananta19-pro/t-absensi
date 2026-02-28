@@ -341,7 +341,7 @@ const LaporanKehadiran = () => {
 
             const { data: allProfiles, error: profileError } = await supabase
                 .from("profiles")
-                .select("user_id, full_name, department, position")
+                .select("user_id, full_name, department, position, created_at")
                 .order("full_name");
 
             if (profileError) throw profileError;
@@ -360,121 +360,89 @@ const LaporanKehadiran = () => {
                 return !EXCLUDED_USER_NAMES.some(excluded => nameLower.includes(excluded.toLowerCase()));
             });
 
-            // 2. Fetch Attendance Report Data (RPC)
-            const { data, error } = await supabase.rpc('get_attendance_report', {
-                p_start_date: startDate,
-                p_end_date: endDate,
-                p_department: 'all'
-            });
+            // 2. Fetch All Attendance
+            const startDateIso = dateRange.from.toISOString();
+            const endDateObj = dateRange.to || dateRange.from;
+            const endDateIso = new Date(endDateObj.getTime() + 86400000).toISOString();
 
-            if (error) throw error;
+            const { data: allAttendance, error: attendanceError } = await supabase
+                .from("attendance")
+                .select("*")
+                .gte("clock_in", startDateIso)
+                .lte("clock_in", endDateIso);
 
-            // Debugging for Elia
-            if (data) {
-                const elia = (data as AttendanceReportRpcResponse[]).find(d => d.full_name?.toLowerCase().includes('elia'));
-                if (elia) {
-                    console.log("DEBUG ELIA:", elia);
-                    console.log("DEBUG ELIA DETAILS:", elia.details);
-                }
-            }
+            if (attendanceError) throw attendanceError;
 
-            // 3. Merge Data (Candidates + RPC Result)
-            const rpcMap = new Map((data as AttendanceReportRpcResponse[] || []).map(d => [d.user_id, d]));
+            // 3. Fetch All Leaves
+            const { data: allLeaves, error: leavesError } = await supabase
+                .from("leave_requests")
+                .select("*")
+                .eq("status", "approved")
+                .lte("start_date", endDate)
+                .gte("end_date", startDate);
 
-            // Map over ALL candidates to ensure no one is missing
+            if (leavesError) throw leavesError;
+
+            // 4. Map over ALL candidates to ensure no one is missing, using generateAttendancePeriod for accuracy
             const reports: EmployeeReport[] = candidates.map((emp) => {
-                const d = rpcMap.get(emp.user_id);
+                const empAttendance = allAttendance?.filter(a => a.user_id === emp.user_id) || [];
+                const empLeaves = allLeaves?.filter(l => l.user_id === emp.user_id) || [];
 
-                if (d) {
-                    let remarks = "Kehadiran baik";
-                    const absentCount = Number(d.absent);
-                    const lateCount = Number(d.late);
-                    if (absentCount > 2) remarks = "Perlu evaluasi kehadiran (Alpha > 2)";
-                    else if (lateCount > 4) remarks = "Sering terlambat";
+                const details = generateAttendancePeriod(
+                    dateRange.from!,
+                    dateRange.to || dateRange.from!,
+                    empAttendance,
+                    empLeaves,
+                    emp.created_at
+                );
 
-                    let totalLateMinutes = 0;
+                let totalLateMinutes = 0;
+                let calcPresent = 0;
+                let calcLate = 0;
+                let calcAbsent = 0;
+                let calcLeave = 0;
 
-                    // Recalculate counts from details to ensure accuracy and mutual exclusivity
-                    let calcPresent = 0;
-                    let calcLate = 0;
-                    let calcAbsent = 0;
-                    let calcLeave = 0;
+                details.forEach(det => {
+                    if (det.status === 'late' && det.clockIn) {
+                        totalLateMinutes += calculateLateMinutes(det.clockIn);
+                    }
+                    if (['present', 'early_leave'].includes(det.status)) calcPresent++;
+                    if (det.status === 'late') calcLate++;
+                    if (['absent', 'alpha'].includes(det.status)) calcAbsent++;
+                    if (['leave', 'permission', 'sick'].includes(det.status)) calcLeave++;
+                });
 
-                    const details: DailyAttendanceStatus[] = (d.details || []).map((det) => {
-                        // Calculate Late Mins per Day
-                        if (det.status === 'late' && det.clockIn) {
-                            totalLateMinutes += calculateLateMinutes(det.clockIn);
-                        }
+                let remarks = "Kehadiran baik";
+                if (calcAbsent > 2) remarks = "Perlu evaluasi kehadiran (Alpha > 2)";
+                else if (calcLate > 4) remarks = "Sering terlambat";
 
-                        // Count statuses (Exclusive logic: Late counts ONLY as Late, not Present)
-                        if (['present', 'early_leave'].includes(det.status)) calcPresent++;
-
-                        // Track specific negative statuses separately
-                        if (det.status === 'late') calcLate++;
-
-                        if (['absent', 'alpha'].includes(det.status)) calcAbsent++;
-                        else if (['leave', 'permission', 'sick'].includes(det.status)) calcLeave++;
-
-                        return {
-                            date: det.date,
-                            formattedDate: format(new Date(det.date), 'd MMMM yyyy', { locale: id }),
-                            dayName: format(new Date(det.date), 'EEEE', { locale: id }),
-                            status: det.status,
-                            clockIn: det.clockIn,
-                            clockOut: det.clockOut,
-                            recordId: null,
-                            notes: det.notes,
-                            isWeekend: det.isWeekend
-                        };
-                    });
-
-                    return {
-                        user_id: emp.user_id,
-                        full_name: emp.full_name,
-                        department: emp.department,
-                        position: emp.position || "Staf",
-                        present: calcPresent,
-                        late: calcLate,
-                        absent: calcAbsent,
-                        leave: calcLeave,
-                        details: details,
-                        remarks: remarks,
-                        lateMinutes: totalLateMinutes,
-                        absentDates: details.filter(x => ['absent', 'alpha'].includes(x.status)).map(x => x.date),
-                        lateDates: details.filter(x => x.status === 'late').map(x => x.date),
-                        leaveDates: details.filter(x => ['leave', 'permission', 'sick'].includes(x.status)).map(x => x.date),
-                        dailyStatus: details.reduce((acc, curr) => {
-                            let code = '-';
-                            if (curr.status === 'present') code = 'H';
-                            else if (curr.status === 'late') code = 'T';
-                            else if (curr.status === 'absent' || curr.status === 'alpha') code = 'A';
-                            else if (curr.status === 'leave') code = 'C';
-                            else if (curr.status === 'permission') code = 'I';
-                            else if (curr.status === 'sick') code = 'S';
-                            else if (curr.isWeekend) code = 'L';
-                            acc[curr.date] = code;
-                            return acc;
-                        }, {} as Record<string, string>)
-                    };
-                }
-
-                // If no usage data, return Empty Employee Record
                 return {
                     user_id: emp.user_id,
                     full_name: emp.full_name,
                     department: emp.department,
                     position: emp.position || "Staf",
-                    present: 0,
-                    late: 0,
-                    absent: 0, // Could be total working days if we wanted strict correctness
-                    leave: 0,
-                    details: [],
-                    remarks: "Belum ada data",
-                    lateMinutes: 0,
-                    absentDates: [],
-                    lateDates: [],
-                    leaveDates: [],
-                    dailyStatus: {}
+                    present: calcPresent,
+                    late: calcLate,
+                    absent: calcAbsent,
+                    leave: calcLeave,
+                    details: details,
+                    remarks: remarks,
+                    lateMinutes: totalLateMinutes,
+                    absentDates: details.filter(x => ['absent', 'alpha'].includes(x.status)).map(x => x.date),
+                    lateDates: details.filter(x => x.status === 'late').map(x => x.date),
+                    leaveDates: details.filter(x => ['leave', 'permission', 'sick'].includes(x.status)).map(x => x.date),
+                    dailyStatus: details.reduce((acc, curr) => {
+                        let code = '-';
+                        if (curr.status === 'present') code = 'H';
+                        else if (curr.status === 'late') code = 'T';
+                        else if (curr.status === 'absent' || curr.status === 'alpha') code = 'A';
+                        else if (curr.status === 'leave') code = 'C';
+                        else if (curr.status === 'permission') code = 'I';
+                        else if (curr.status === 'sick') code = 'S';
+                        else if (curr.isWeekend) code = 'L';
+                        acc[curr.date] = code;
+                        return acc;
+                    }, {} as Record<string, string>)
                 };
             });
 
@@ -706,9 +674,15 @@ const LaporanKehadiran = () => {
     };
 
     const getStatusBadge = (status: string) => {
-        if (status === "approved") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200"><CheckCircle2 className="h-3 w-3 mr-1" />Disetujui</Badge>;
-        if (status === "rejected") return <Badge className="bg-red-100 text-red-700 border-red-200"><XCircle className="h-3 w-3 mr-1" />Ditolak</Badge>;
-        return <Badge className="bg-amber-100 text-amber-700 border-amber-200"><Clock className="h-3 w-3 mr-1" />Menunggu</Badge>;
+        const pill = (bg: string, text: string, dot: string, label: string) => (
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${bg} ${text}`}>
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
+                {label}
+            </span>
+        );
+        if (status === "approved") return pill("bg-emerald-50 border-emerald-200", "text-emerald-700", "bg-emerald-500", "Disetujui");
+        if (status === "rejected") return pill("bg-red-50 border-red-200", "text-red-700", "bg-red-500", "Ditolak");
+        return pill("bg-amber-50 border-amber-200", "text-amber-700", "bg-amber-500", "Menunggu");
     };
 
     const getLeaveTypeLabel = (type: string) => type === "cuti" ? "Cuti Tahunan" : type === "sakit" ? "Sakit" : type === "izin" ? "Izin" : type;

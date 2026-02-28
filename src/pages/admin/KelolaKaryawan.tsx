@@ -27,7 +27,7 @@ import { z } from "zod";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
 import { EmployeeStats } from "@/components/employee/EmployeeStats";
 import { EmployeeTable, EmployeeData } from "@/components/employee/EmployeeTable";
-
+import { cn } from "@/lib/utils";
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -76,10 +76,10 @@ const KelolaKaryawan = () => {
   // Stats
   const [stats, setStats] = useState({ total: 0, active: 0, onLeave: 0, depts: 0 });
 
-  // Dialogs
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<EmployeeData | null>(null);
   const [newDepartment, setNewDepartment] = useState("");
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   // Form
   const form = useForm<EmployeeFormData>({
@@ -374,13 +374,32 @@ const KelolaKaryawan = () => {
               onClick={() => setShowArchived(!showArchived)}
               title={showArchived ? "Back to Active" : "View Archived"}
             >
-              {showArchived ? <RotateCcw className="w-4 h-4 text-blue-600" /> : <Archive className="w-4 h-4 text-slate-500" />}
-              {showArchived && <span className="hidden sm:inline text-blue-600">Archived</span>}
+              {showArchived ? <RotateCcw className="w-4 h-4 text-primary" /> : <Archive className="w-4 h-4 text-slate-500" />}
+              {showArchived && <span className="hidden sm:inline text-primary">Archived</span>}
             </Button>
+
+            <div className="flex bg-slate-100 p-1 rounded-lg shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'table' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
+                onClick={() => setViewMode('table')}
+              >
+                <LayoutDashboard className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'grid' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
+                onClick={() => setViewMode('grid')}
+              >
+                <Building2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* 3. TABLE */}
+        {/* 3. TABLE/GRID */}
         <EmployeeTable
           data={employees}
           isLoading={isLoading}
@@ -392,6 +411,7 @@ const KelolaKaryawan = () => {
           totalPages={totalPages}
           totalRecords={totalRecords}
           onPageChange={setPage}
+          viewMode={viewMode}
         />
       </div>
 

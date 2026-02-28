@@ -37,6 +37,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { exportToExcel } from "@/lib/exportUtils";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
+import { ADMIN_MENU_SECTIONS } from "@/config/menu";
 
 // ==========================================
 // TYPES & CONSTANTS
@@ -318,7 +319,7 @@ const Pengaturan = () => {
   // ==========================================
   const renderGeneralSettings = () => (
     <div className="space-y-6">
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
         <CardHeader>
           <CardTitle>Identitas Perusahaan</CardTitle>
           <CardDescription>Informasi yang tampil di laporan dan aplikasi karyawan.</CardDescription>
@@ -349,7 +350,7 @@ const Pengaturan = () => {
 
   const renderScheduleSettings = () => (
     <div className="space-y-6">
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
         <CardHeader>
           <CardTitle>Jadwal Kerja Normal</CardTitle>
           <CardDescription>Pengaturan jam masuk dan pulang standar.</CardDescription>
@@ -389,7 +390,7 @@ const Pengaturan = () => {
         </CardContent>
       </Card>
 
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
         <CardHeader>
           <CardTitle>Toleransi & Lainnya</CardTitle>
         </CardHeader>
@@ -416,7 +417,7 @@ const Pengaturan = () => {
 
   const renderAttendanceSettings = () => (
     <div className="space-y-6">
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
         <CardHeader>
           <CardTitle>Validasi Kehadiran</CardTitle>
           <CardDescription>Persyaratan untuk melakukan absensi.</CardDescription>
@@ -494,7 +495,7 @@ const Pengaturan = () => {
   );
 
   const renderLeavesSettings = () => (
-    <Card className="border-slate-200 shadow-sm">
+    <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
       <CardHeader>
         <CardTitle>Kuota Cuti Tahunan</CardTitle>
         <CardDescription>Jatah standar per karyawan per tahun.</CardDescription>
@@ -528,7 +529,7 @@ const Pengaturan = () => {
 
   const renderSystemSettings = () => (
     <div className="space-y-6">
-      <Card className="border-slate-200 shadow-sm border-l-4 border-l-blue-600">
+      <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px] border-l-4 border-l-blue-600">
         <CardHeader>
           <CardTitle>Tanggal Mulai Absensi (Periode Aktif)</CardTitle>
           <CardDescription>Absensi karyawan dihitung mulai dari tanggal ini.</CardDescription>
@@ -562,7 +563,7 @@ const Pengaturan = () => {
         </CardContent>
       </Card>
 
-      <Card className="border-red-100 bg-red-50/10 shadow-sm">
+      <Card className="border-red-100 bg-red-50/10 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
         <CardHeader>
           <CardTitle className="text-red-700 flex items-center gap-2">
             <ShieldAlert className="w-5 h-5" /> Zona Bahaya
@@ -589,7 +590,7 @@ const Pengaturan = () => {
         </CardContent>
       </Card>
 
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
         <CardHeader>
           <CardTitle>Backup Data</CardTitle>
           <CardDescription>Unduh data untuk arsip.</CardDescription>
@@ -738,72 +739,64 @@ const Pengaturan = () => {
   // VIEW: DESKTOP
   // ==========================================
   return (
-    <div className="min-h-screen bg-slate-50/50">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/dashboard")} className="p-2 rounded-lg hover:bg-slate-100 text-slate-600">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="font-bold text-xl text-slate-800">Pengaturan Sistem</h1>
-              <p className="text-xs text-slate-500">Konfigurasi & Parameter Aplikasi</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Global Save Bar handles actions */}
-          </div>
+    <EnterpriseLayout title="Pengaturan Sistem" menuSections={ADMIN_MENU_SECTIONS}>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Pengaturan Sistem</h1>
+          <p className="text-sm text-slate-500 mt-1">Konfigurasi & parameter aplikasi HRIS</p>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar */}
-          <aside className="w-full lg:w-64 flex-shrink-0 space-y-2">
-            {SECTIONS.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${activeSection === section.id
-                  ? 'bg-white shadow-sm border border-slate-200 text-primary font-medium ring-1 ring-primary/5'
-                  : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                  }`}
-              >
-                <section.icon className={`w-5 h-5 ${activeSection === section.id ? 'text-primary' : 'text-slate-400'}`} />
-                <span className="text-sm">{section.label}</span>
-              </button>
-            ))}
+          <aside className="w-full lg:w-60 flex-shrink-0">
+            <div className="bg-white rounded-[20px] border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-2 space-y-1">
+              {SECTIONS.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-left text-sm ${activeSection === section.id
+                    ? 'bg-primary/5 text-primary font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50'
+                    }`}
+                >
+                  <section.icon className={`w-4.5 h-4.5 ${activeSection === section.id ? 'text-primary' : 'text-slate-400'}`} />
+                  <span>{section.label}</span>
+                </button>
+              ))}
+            </div>
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1 min-w-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <main className="flex-1 min-w-0">
             {getContent(activeSection)}
           </main>
         </div>
+
         {/* Global Save Action Bar (Desktop) */}
-        <div className={`fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 transition-transform duration-300 ${hasChanges ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className={`fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-50 transition-transform duration-300 ${hasChanges ? 'translate-y-0' : 'translate-y-full'}`}>
           <div className="container mx-auto flex items-center justify-between max-w-5xl">
             <div className="hidden md:flex flex-col">
               <span className="text-sm font-bold text-slate-800">Perubahan belum disimpan</span>
               <span className="text-xs text-slate-500">Pastikan Anda menyimpan konfigurasi sebelum keluar.</span>
             </div>
             <div className="flex gap-3 w-full md:w-auto">
-              <Button variant="outline" className="flex-1 md:flex-none border-slate-300 text-slate-700" onClick={handleCancel}>Batalkan</Button>
-              <Button className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white shadow-md" onClick={handleSave} disabled={isSaving}>
+              <Button variant="outline" className="flex-1 md:flex-none rounded-xl border-slate-200 text-slate-700" onClick={handleCancel}>Batalkan</Button>
+              <Button className="flex-1 md:flex-none rounded-xl bg-primary hover:bg-primary/90 text-white shadow-md" onClick={handleSave} disabled={isSaving}>
                 {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Global Save Confirmation Dialog (Desktop) */}
+        {/* Save Confirmation Dialog */}
         <AlertDialog open={showSaveConfirm} onOpenChange={setShowSaveConfirm}>
-          <AlertDialogContent>
+          <AlertDialogContent className="rounded-[20px]">
             <AlertDialogHeader>
               <AlertDialogTitle>Konfirmasi Simpan Perubahan</AlertDialogTitle>
               <AlertDialogDescription>
                 {formData.attendanceStartDate !== settings.attendanceStartDate ? (
-                  <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-amber-800 mb-3">
+                  <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 text-amber-800 mb-3 text-sm">
                     <b>PERINGATAN:</b> Tanggal Mulai Absensi berubah! <br />
                     Ini akan memicu perhitungan ulang pada seluruh laporan.
                   </div>
@@ -814,15 +807,15 @@ const Pengaturan = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Periksa Lagi</AlertDialogCancel>
-              <AlertDialogAction onClick={executeSave} className="bg-primary hover:bg-primary/90">
+              <AlertDialogCancel className="rounded-xl">Periksa Lagi</AlertDialogCancel>
+              <AlertDialogAction onClick={executeSave} className="rounded-xl bg-primary hover:bg-primary/90">
                 Ya, Simpan
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </div>
+    </EnterpriseLayout>
   );
 };
 

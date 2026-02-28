@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Clock, Users, Shield, Fingerprint, ArrowRight, CheckCircle, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck } from "lucide-react";
 import talentaLogo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,105 +12,14 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-// Talenta Brand Colors
-const BRAND = {
-  blue: "#1A5BA8",
-  lightBlue: "#00A0E3",
-  green: "#7DC242",
-};
-
+// ─── Schema ──────────────────────────────────────────────
 const loginSchema = z.object({
-  email: z.string().email("Email tidak valid"),
-  password: z.string().min(1, "Password harus diisi"),
+  email: z.string().email("Format email tidak valid"),
+  password: z.string().min(1, "Password wajib diisi"),
 });
-
 type LoginFormData = z.infer<typeof loginSchema>;
 
-// Animated Floating Orb
-const FloatingOrb = ({
-  size,
-  color,
-  blur,
-  top,
-  left,
-  delay,
-  duration
-}: {
-  size: number;
-  color: string;
-  blur: number;
-  top: string;
-  left: string;
-  delay: number;
-  duration: number;
-}) => (
-  <div
-    className="absolute rounded-full animate-float-orb pointer-events-none"
-    style={{
-      width: size,
-      height: size,
-      background: color,
-      filter: `blur(${blur}px)`,
-      top,
-      left,
-      animationDelay: `${delay}s`,
-      animationDuration: `${duration}s`,
-    }}
-  />
-);
-
-// Animated Grid Pattern
-const GridPattern = () => (
-  <div className="absolute inset-0 overflow-hidden opacity-[0.03]">
-    <svg className="w-full h-full">
-      <defs>
-        <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-          <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="1" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#grid)" />
-    </svg>
-  </div>
-);
-
-// Feature Badge Component
-const FeatureBadge = ({
-  icon: Icon,
-  text,
-  delay
-}: {
-  icon: React.ElementType;
-  text: string;
-  delay: number;
-}) => (
-  <div
-    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm animate-slide-up"
-    style={{ animationDelay: `${delay}s` }}
-  >
-    <Icon className="w-4 h-4" />
-    <span>{text}</span>
-  </div>
-);
-
-// Animated Stats Card
-const StatCard = ({
-  value,
-  label,
-  delay
-}: {
-  value: string;
-  label: string;
-  delay: number;
-}) => (
-  <div
-    className="text-center animate-slide-up"
-    style={{ animationDelay: `${delay}s` }}
-  >
-    <div className="text-3xl font-bold text-white mb-1">{value}</div>
-    <div className="text-sm text-white/60">{label}</div>
-  </div>
-);
-
+// ─── Component ───────────────────────────────────────────
 const Auth = () => {
   const navigate = useNavigate();
   const { user, role, loading } = useAuth();
@@ -118,467 +27,405 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [focusedField, setFocusedField] = useState<string | null>(null);
-
-  // Generate floating orbs
-  const orbs = useMemo(() => [
-    { size: 400, color: `${BRAND.green}40`, blur: 80, top: "10%", left: "10%", delay: 0, duration: 15 },
-    { size: 300, color: `${BRAND.lightBlue}30`, blur: 60, top: "60%", left: "70%", delay: 2, duration: 18 },
-    { size: 200, color: `${BRAND.blue}30`, blur: 50, top: "80%", left: "20%", delay: 4, duration: 12 },
-    { size: 150, color: `${BRAND.green}25`, blur: 40, top: "30%", left: "80%", delay: 1, duration: 20 },
-  ], []);
 
   useEffect(() => {
-    setMounted(true);
+    // Trigger mount animation after a tick
+    const t = setTimeout(() => setMounted(true), 50);
+    return () => clearTimeout(t);
   }, []);
 
-  // Navigation Logic based on Role
+  // Redirect if already logged in
   useEffect(() => {
-    if (!loading && user) {
-      if (role) {
-        navigate("/dashboard");
-      }
+    if (!loading && user && role) {
+      navigate("/dashboard");
     }
   }, [user, role, loading, navigate]);
 
-  const loginForm = useForm<LoginFormData>({
+  const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   });
 
-  const onLogin = async (data: LoginFormData) => {
+  const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-
     const { error } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     });
-
     if (error) {
       toast({
         variant: "destructive",
         title: "Login gagal",
-        description: error.message === "Invalid login credentials"
-          ? "Email atau password salah"
-          : error.message,
+        description:
+          error.message === "Invalid login credentials"
+            ? "Email atau password salah"
+            : error.message,
       });
       setIsLoading(false);
     } else {
-      toast({
-        title: "Login berhasil",
-        description: "Selamat datang kembali!",
-      });
+      toast({ title: "Login berhasil", description: "Selamat datang kembali!" });
     }
   };
 
+  // ─── Loading State ───────────────────────────────────
   if (loading) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center"
-        style={{ background: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.lightBlue} 50%, ${BRAND.green} 100%)` }}
-      >
-        <div className="flex flex-col items-center gap-6">
+      <div className="flex min-h-screen items-center justify-center bg-[#f8f9fb]">
+        <div className="flex flex-col items-center gap-5">
           <div className="relative">
-            <div className="h-20 w-20 rounded-2xl bg-white/20 backdrop-blur-lg flex items-center justify-center">
-              <img src={talentaLogo} alt="Logo" className="h-12 w-12 object-contain" />
+            <div className="h-16 w-16 rounded-2xl bg-white shadow-lg flex items-center justify-center">
+              <img src={talentaLogo} alt="Logo" className="h-10 w-10 object-contain" />
             </div>
-            <div className="absolute inset-0 h-20 w-20 animate-ping rounded-2xl border-2 border-white/30" />
+            <div className="absolute -inset-1 rounded-2xl border-2 border-blue-200 animate-ping opacity-30" />
           </div>
-          <div className="flex flex-col items-center gap-2">
-            <div className="flex gap-1">
-              <div className="h-2 w-2 rounded-full bg-white animate-bounce" style={{ animationDelay: "0s" }} />
-              <div className="h-2 w-2 rounded-full bg-white animate-bounce" style={{ animationDelay: "0.1s" }} />
-              <div className="h-2 w-2 rounded-full bg-white animate-bounce" style={{ animationDelay: "0.2s" }} />
-            </div>
-            <p className="text-white/80 text-sm">Memuat...</p>
+          <div className="flex gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-2 w-2 rounded-full bg-blue-500 animate-bounce"
+                style={{ animationDelay: `${i * 0.1}s` }}
+              />
+            ))}
           </div>
         </div>
       </div>
     );
   }
 
+  // ─── Main Render ─────────────────────────────────────
   return (
-    <div className="flex min-h-screen font-['Inter',system-ui,sans-serif]">
-      {/* Left Side - Brand Showcase */}
-      <div
-        className="hidden lg:flex lg:w-[55%] xl:w-[60%] relative overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${BRAND.blue} 0%, #0D3A6B 50%, ${BRAND.blue} 100%)`
-        }}
-      >
-        {/* Grid Pattern */}
-        <GridPattern />
-
-        {/* Floating Orbs */}
-        {orbs.map((orb, i) => (
-          <FloatingOrb key={i} {...orb} />
-        ))}
-
-        {/* Diagonal Accent Line */}
+    <div className="flex min-h-screen font-['Inter',system-ui,sans-serif] bg-[#f8f9fb]">
+      {/* ═══════════════════════════════════════════════
+          LEFT PANEL — Brand Showcase (Desktop Only)
+         ═══════════════════════════════════════════════ */}
+      <div className="hidden lg:flex lg:w-[52%] xl:w-[55%] relative overflow-hidden bg-[#0f172a]">
+        {/* Soft radial glow */}
         <div
-          className="absolute -right-20 top-0 bottom-0 w-40 opacity-20"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(45deg, transparent 0%, ${BRAND.lightBlue} 50%, transparent 100%)`,
-            transform: "skewX(-15deg)"
+            background:
+              "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(59,130,246,0.15) 0%, transparent 70%)",
           }}
         />
 
-        {/* Content Container */}
-        <div className="relative z-10 flex flex-col items-center justify-center w-full px-12 xl:px-20">
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-[0.04]">
+          <svg className="w-full h-full">
+            <defs>
+              <pattern id="saas-grid" width="48" height="48" patternUnits="userSpaceOnUse">
+                <path d="M 48 0 L 0 0 0 48" fill="none" stroke="white" strokeWidth="0.5" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#saas-grid)" />
+          </svg>
+        </div>
+
+        {/* Floating geometric accents */}
+        <div
+          className="absolute top-[15%] left-[10%] w-72 h-72 rounded-full pointer-events-none auth-float"
+          style={{
+            background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)",
+            animationDelay: "0s",
+          }}
+        />
+        <div
+          className="absolute bottom-[20%] right-[5%] w-96 h-96 rounded-full pointer-events-none auth-float"
+          style={{
+            background: "radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)",
+            animationDelay: "3s",
+          }}
+        />
+        <div
+          className="absolute top-[60%] left-[50%] w-48 h-48 rounded-full pointer-events-none auth-float"
+          style={{
+            background: "radial-gradient(circle, rgba(34,197,94,0.08) 0%, transparent 70%)",
+            animationDelay: "6s",
+          }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full px-14 xl:px-20">
           {/* Logo Card */}
           <div
-            className={`relative transform transition-all duration-1000 ${mounted ? "translate-y-0 opacity-100 scale-100" : "-translate-y-8 opacity-0 scale-95"
+            className={`transition-all duration-1000 ease-out ${mounted ? "translate-y-0 opacity-100 scale-100" : "-translate-y-6 opacity-0 scale-95"
               }`}
           >
-            <div className="bg-white rounded-3xl p-8 shadow-2xl shadow-black/20 relative overflow-hidden">
-              {/* Shine Effect */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/50 to-transparent translate-x-[-100%] animate-shine" />
+            <div className="bg-white rounded-[28px] p-7 shadow-2xl shadow-black/20">
               <img
                 src={talentaLogo}
                 alt="Talenta Traincom Indonesia"
-                className="w-72 xl:w-80 h-auto object-contain relative z-10"
+                className="w-64 xl:w-72 h-auto object-contain"
               />
-            </div>
-            {/* Floating Badge */}
-            <div
-              className="absolute -right-4 -bottom-4 bg-white rounded-2xl px-4 py-2 shadow-lg animate-bounce-slow"
-              style={{ animationDelay: "0.5s" }}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `${BRAND.green}20` }}>
-                  <CheckCircle className="w-4 h-4" style={{ color: BRAND.green }} />
-                </div>
-                <span className="text-sm font-semibold text-slate-700">Enterprise Ready</span>
-              </div>
             </div>
           </div>
 
           {/* Tagline */}
           <div
-            className={`text-center mt-12 transform transition-all duration-1000 delay-300 ${mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+            className={`text-center mt-12 max-w-lg transition-all duration-1000 delay-200 ease-out ${mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
               }`}
           >
-            <h2 className="text-3xl xl:text-4xl font-bold text-white leading-tight">
-              Sistem Absensi
+            <h2 className="text-[2rem] xl:text-[2.25rem] font-bold text-white leading-[1.2] tracking-tight">
+              Human Resources
               <br />
-              <span
-                className="bg-clip-text text-transparent"
-                style={{ backgroundImage: `linear-gradient(90deg, ${BRAND.lightBlue}, ${BRAND.green})` }}
-              >
-                Modern & Terpercaya
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">
+                Information System
               </span>
             </h2>
-            <p className="text-white/70 text-lg mt-4 max-w-md mx-auto">
-              Kelola kehadiran karyawan dengan mudah, akurat, dan real-time
+            <p className="text-slate-400 text-[15px] mt-5 leading-relaxed max-w-sm mx-auto">
+              Platform enterprise untuk mengelola kehadiran, kinerja, dan data karyawan secara real-time.
             </p>
           </div>
 
-          {/* Feature Badges */}
+          {/* Feature pills */}
           <div
-            className={`flex flex-wrap justify-center gap-3 mt-8 transform transition-all duration-1000 delay-500 ${mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+            className={`flex flex-wrap justify-center gap-2.5 mt-10 transition-all duration-1000 delay-400 ease-out ${mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
               }`}
           >
-            <FeatureBadge icon={Clock} text="Real-time Tracking" delay={0.6} />
-            <FeatureBadge icon={Fingerprint} text="GPS Verification" delay={0.7} />
-            <FeatureBadge icon={Shield} text="Data Secure" delay={0.8} />
+            {[
+              "Real-time Attendance",
+              "GPS Verification",
+              "Work Journals",
+              "Leave Management",
+            ].map((feat, i) => (
+              <span
+                key={feat}
+                className="px-4 py-2 rounded-full text-[13px] font-medium text-slate-300 bg-white/[0.06] border border-white/[0.08] backdrop-blur-sm"
+                style={{ animationDelay: `${0.5 + i * 0.1}s` }}
+              >
+                {feat}
+              </span>
+            ))}
           </div>
 
-          {/* Stats Row */}
+          {/* Stats strip */}
           <div
-            className={`flex items-center justify-center gap-12 mt-16 pt-8 border-t border-white/10 transform transition-all duration-1000 delay-700 ${mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+            className={`flex items-center gap-10 mt-16 pt-8 border-t border-white/[0.06] transition-all duration-1000 delay-500 ease-out ${mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
               }`}
           >
-            <StatCard value="500+" label="Karyawan Aktif" delay={0.9} />
-            <div className="h-12 w-px bg-white/20" />
-            <StatCard value="99.9%" label="Uptime" delay={1.0} />
-            <div className="h-12 w-px bg-white/20" />
-            <StatCard value="24/7" label="Support" delay={1.1} />
+            {[
+              { value: "500+", label: "Karyawan" },
+              { value: "99.9%", label: "Uptime" },
+              { value: "24/7", label: "Monitoring" },
+            ].map((stat, i) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-2xl font-bold text-white">{stat.value}</div>
+                <div className="text-xs text-slate-500 mt-1 font-medium tracking-wide uppercase">{stat.label}</div>
+              </div>
+            ))}
           </div>
-        </div>
-
-        {/* Bottom Wave */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" className="w-full h-auto opacity-10">
-            <path
-              fill="white"
-              d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"
-            />
-          </svg>
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
-      <div className="flex-1 flex flex-col bg-gradient-to-br from-white via-slate-50 to-blue-50/30">
-        {/* Mobile Header */}
-        <div
-          className="lg:hidden py-10 px-6 relative overflow-hidden"
-          style={{
-            background: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.lightBlue} 100%)`
-          }}
-        >
-          <div className="absolute inset-0 opacity-20">
-            <GridPattern />
-          </div>
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="bg-white rounded-2xl p-4 shadow-lg mb-4">
-              <img
-                src={talentaLogo}
-                alt="Talenta Traincom Indonesia"
-                className="h-12 w-auto"
-              />
+      {/* ═══════════════════════════════════════════════
+          RIGHT PANEL — Login Form
+         ═══════════════════════════════════════════════ */}
+      <div className="flex-1 flex flex-col relative">
+        {/* ── Mobile branded header ── */}
+        <div className="lg:hidden relative overflow-hidden" style={{ background: "#0f172a" }}>
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 100% 80% at 50% 30%, rgba(59,130,246,0.12) 0%, transparent 70%)",
+            }}
+          />
+          <div className="relative z-10 flex flex-col items-center pt-12 pb-8 px-6">
+            <div
+              className={`bg-white rounded-2xl p-4 shadow-xl transition-all duration-700 ${mounted ? "scale-100 opacity-100" : "scale-90 opacity-0"
+                }`}
+            >
+              <img src={talentaLogo} alt="Logo" className="w-40 h-auto object-contain" />
             </div>
-            <h1 className="text-white font-bold text-xl">T-ABSENSI</h1>
-            <p className="text-white/70 text-sm">Enterprise HRIS System</p>
+            <p className="text-slate-400 text-sm mt-4 font-medium">Human Resources Information System</p>
           </div>
         </div>
 
-        {/* Form Container */}
-        <div className="flex-1 flex items-center justify-center px-6 sm:px-12 lg:px-16 xl:px-20 py-8">
+        {/* ── Form Container ── */}
+        <div className="flex-1 flex items-center justify-center px-6 sm:px-10 lg:px-16 xl:px-24 py-10">
           <div
-            className={`w-full max-w-md transform transition-all duration-1000 ${mounted ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"
+            className={`w-full max-w-[420px] transition-all duration-700 ease-out ${mounted ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
               }`}
           >
-            {/* Desktop Header */}
-            <div className="hidden lg:block text-center mb-10">
-              <div className="inline-flex flex-col items-center gap-2">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg"
-                    style={{
-                      background: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.lightBlue} 100%)`
-                    }}
-                  >
-                    <Clock className="w-6 h-6 text-white" />
-                  </div>
-                  <h1 className="text-3xl font-bold text-slate-800">T-ABSENSI</h1>
-                </div>
-                <div
-                  className="h-1 w-20 rounded-full"
-                  style={{
-                    background: `linear-gradient(90deg, ${BRAND.blue}, ${BRAND.green})`
-                  }}
-                />
+            {/* Desktop logo hint (hidden on mobile because we have header) */}
+            <div className="hidden lg:flex items-center gap-3 mb-10">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <img src={talentaLogo} alt="Logo" className="w-6 h-6 object-contain brightness-0 invert" />
               </div>
+              <span className="text-[17px] font-bold text-slate-800 tracking-tight">Talenta Traincom</span>
             </div>
 
-            {/* Welcome Text */}
-            <div
-              className={`text-center mb-8 transform transition-all duration-700 delay-200 ${mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-                }`}
-            >
-              <h2 className="text-2xl font-bold text-slate-800">Selamat Datang</h2>
-              <p className="text-slate-500 mt-2">Masuk untuk melanjutkan ke dashboard</p>
+            {/* Title */}
+            <div className="mb-8">
+              <h1 className="text-[26px] font-bold text-slate-900 tracking-tight">
+                Selamat Datang
+              </h1>
+              <p className="text-slate-500 text-[15px] mt-1.5">
+                Masuk ke akun Anda untuk melanjutkan
+              </p>
             </div>
 
-            {/* Login Form Card */}
+            {/* ── Login Card ── */}
             <div
-              className={`bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 transform transition-all duration-700 delay-300 ${mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              className={`bg-white rounded-[24px] p-7 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-200/60 transition-all duration-700 delay-150 ease-out ${mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
                 }`}
             >
-              <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-6">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                  {/* Email */}
                   <FormField
-                    control={loginForm.control}
+                    control={form.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-700 font-medium">Email</FormLabel>
+                        <FormLabel className="text-[13px] font-semibold text-slate-700 ml-1">
+                          Email
+                        </FormLabel>
                         <FormControl>
-                          <div className="relative">
+                          <div className="relative group">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                             <Input
                               {...field}
                               type="email"
                               placeholder="nama@perusahaan.com"
-                              onFocus={() => setFocusedField("email")}
-                              onBlur={() => setFocusedField(null)}
-                              className="h-12 pl-4 pr-4 border-slate-200 rounded-xl bg-slate-50/50 transition-all duration-300 focus:bg-white focus:border-2 focus:shadow-lg"
-                              style={{
-                                borderColor: focusedField === "email" ? BRAND.blue : undefined,
-                                boxShadow: focusedField === "email" ? `0 0 0 4px ${BRAND.blue}15` : undefined
-                              }}
+                              autoComplete="email"
+                              className="h-[52px] pl-11 pr-4 rounded-[16px] border-slate-200 bg-slate-50/60 text-[15px] placeholder:text-slate-400 focus-visible:bg-white focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-500/10 transition-all duration-200"
                             />
                           </div>
                         </FormControl>
-                        <FormMessage className="text-red-500" />
+                        <FormMessage className="text-xs text-red-500 ml-1 mt-1" />
                       </FormItem>
                     )}
                   />
 
+                  {/* Password */}
                   <FormField
-                    control={loginForm.control}
+                    control={form.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-700 font-medium">Password</FormLabel>
+                        <FormLabel className="text-[13px] font-semibold text-slate-700 ml-1">
+                          Password
+                        </FormLabel>
                         <FormControl>
-                          <div className="relative">
+                          <div className="relative group">
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                             <Input
                               {...field}
                               type={showPassword ? "text" : "password"}
-                              placeholder="Masukkan password"
-                              onFocus={() => setFocusedField("password")}
-                              onBlur={() => setFocusedField(null)}
-                              className="h-12 pl-4 pr-12 border-slate-200 rounded-xl bg-slate-50/50 transition-all duration-300 focus:bg-white focus:border-2 focus:shadow-lg"
-                              style={{
-                                borderColor: focusedField === "password" ? BRAND.blue : undefined,
-                                boxShadow: focusedField === "password" ? `0 0 0 4px ${BRAND.blue}15` : undefined
-                              }}
+                              placeholder="••••••••"
+                              autoComplete="current-password"
+                              className="h-[52px] pl-11 pr-12 rounded-[16px] border-slate-200 bg-slate-50/60 text-[15px] placeholder:text-slate-400 focus-visible:bg-white focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-500/10 transition-all duration-200"
                             />
-                            <Button
+                            <button
                               type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="absolute right-1 top-1 h-10 w-10 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg transition-colors"
                               onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+                              tabIndex={-1}
                             >
                               {showPassword ? (
-                                <EyeOff className="h-5 w-5" />
+                                <EyeOff className="h-[18px] w-[18px]" />
                               ) : (
-                                <Eye className="h-5 w-5" />
+                                <Eye className="h-[18px] w-[18px]" />
                               )}
-                            </Button>
+                            </button>
                           </div>
                         </FormControl>
-                        <FormMessage className="text-red-500" />
+                        <FormMessage className="text-xs text-red-500 ml-1 mt-1" />
                       </FormItem>
                     )}
                   />
 
-                  <Button
-                    type="submit"
-                    className="w-full h-12 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] group"
-                    style={{
-                      background: `linear-gradient(135deg, ${BRAND.blue} 0%, ${BRAND.lightBlue} 100%)`,
-                      boxShadow: `0 8px 20px ${BRAND.blue}40`
-                    }}
-                    disabled={isLoading || loading}
-                  >
-                    {isLoading || loading ? (
-                      <div className="flex items-center gap-3">
-                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        <span>Memproses...</span>
-                      </div>
-                    ) : (
-                      <span className="flex items-center justify-center gap-2">
-                        Masuk
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    )}
-                  </Button>
+                  {/* Submit */}
+                  <div className="pt-2">
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full h-[52px] rounded-[16px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-[15px] shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 hover:brightness-110 active:scale-[0.98] transition-all duration-200 disabled:opacity-60"
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center gap-2.5">
+                          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                            <circle
+                              className="opacity-20"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              fill="none"
+                            />
+                            <path
+                              className="opacity-80"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                            />
+                          </svg>
+                          Memproses...
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          Masuk
+                          <ArrowRight className="h-4 w-4" />
+                        </span>
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </Form>
+
+              {/* Security Indicator */}
+              <div className="flex items-center justify-center gap-1.5 mt-5 pt-5 border-t border-slate-100">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="text-[12px] text-slate-400 font-medium">
+                  Dilindungi enkripsi enterprise-grade
+                </span>
+              </div>
             </div>
 
-            {/* Help Box */}
+            {/* Help text */}
             <div
-              className={`mt-6 p-4 rounded-2xl border transition-all duration-700 delay-500 ${mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+              className={`mt-6 text-center transition-all duration-700 delay-300 ease-out ${mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
                 }`}
-              style={{
-                backgroundColor: `${BRAND.green}08`,
-                borderColor: `${BRAND.green}25`
-              }}
             >
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${BRAND.green}20` }}
-                >
-                  <Sparkles className="w-5 h-5" style={{ color: BRAND.green }} />
-                </div>
-                <div>
-                  <p className="font-medium text-slate-700 text-sm">Butuh bantuan?</p>
-                  <p className="text-slate-500 text-sm mt-0.5">
-                    Hubungi admin untuk mendapatkan akses akun
-                  </p>
-                </div>
-              </div>
+              <p className="text-[13px] text-slate-400">
+                Belum punya akun?{" "}
+                <span className="text-blue-600 font-medium">Hubungi administrator</span>
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
+        {/* ── Footer ── */}
         <div
-          className={`py-6 text-center border-t border-slate-100 bg-white/50 backdrop-blur-sm transform transition-all duration-700 delay-700 ${mounted ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+          className={`py-5 text-center border-t border-slate-100/80 bg-white/40 backdrop-blur-sm transition-all duration-700 delay-500 ease-out ${mounted ? "opacity-100" : "opacity-0"
             }`}
         >
-          <p className="text-sm text-slate-500">
-            © 2025{" "}
-            <span
-              className="font-semibold bg-clip-text text-transparent"
-              style={{ backgroundImage: `linear-gradient(90deg, ${BRAND.blue}, ${BRAND.lightBlue})` }}
-            >
-              Talenta Traincom Indonesia
-            </span>
+          <p className="text-[12px] text-slate-400">
+            © {new Date().getFullYear()}{" "}
+            <span className="font-semibold text-slate-500">Talenta Traincom Indonesia</span>
             . All rights reserved.
           </p>
         </div>
       </div>
 
-      {/* Animation Styles */}
+      {/* ═══════════════════════════════════════════════
+          ANIMATION STYLES
+         ═══════════════════════════════════════════════ */}
       <style>{`
-        @keyframes float-orb {
+        @keyframes auth-float {
           0%, 100% {
             transform: translate(0, 0) scale(1);
           }
-          25% {
-            transform: translate(30px, -30px) scale(1.1);
+          33% {
+            transform: translate(15px, -20px) scale(1.05);
           }
-          50% {
-            transform: translate(-20px, 20px) scale(0.95);
-          }
-          75% {
-            transform: translate(20px, 10px) scale(1.05);
+          66% {
+            transform: translate(-10px, 10px) scale(0.97);
           }
         }
-        
-        @keyframes shine {
-          0% {
-            transform: translateX(-100%) rotate(15deg);
-          }
-          50%, 100% {
-            transform: translateX(200%) rotate(15deg);
-          }
-        }
-        
-        @keyframes bounce-slow {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-8px);
-          }
-        }
-        
-        @keyframes slide-up {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-float-orb {
-          animation: float-orb 20s ease-in-out infinite;
-        }
-        
-        .animate-shine {
-          animation: shine 3s ease-in-out infinite;
-          animation-delay: 1s;
-        }
-        
-        .animate-bounce-slow {
-          animation: bounce-slow 3s ease-in-out infinite;
-        }
-        
-        .animate-slide-up {
-          animation: slide-up 0.6s ease-out forwards;
-          opacity: 0;
+
+        .auth-float {
+          animation: auth-float 20s ease-in-out infinite;
         }
       `}</style>
     </div>

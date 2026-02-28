@@ -1,5 +1,5 @@
 import { useLocation, Link } from "react-router-dom";
-import { LayoutDashboard, Calendar, FileText, User, History } from "lucide-react";
+import { LayoutDashboard, FileText, Briefcase, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -10,13 +10,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { icon: LayoutDashboard, label: "Beranda", href: "/dashboard" },
-    { icon: History, label: "Riwayat", href: "/karyawan/riwayat" },
-    { icon: Calendar, label: "Cuti", href: "/karyawan/cuti" },
-    { icon: FileText, label: "Log Kerja", href: "/karyawan/jurnal" },
-    { icon: User, label: "Profil", href: "/karyawan/profil" },
+    { icon: FileText, label: "Rekap", href: "/manager/absensi" },
+    { icon: Briefcase, label: "Jurnal", href: "/manager/jurnal" },
+    { icon: Calendar, label: "Cuti", href: "/manager/cuti" },
 ];
 
-const MobileNavigation = () => {
+const ManagerMobileNavigation = () => {
     const location = useLocation();
 
     const isActive = (href: string) => {
@@ -28,9 +27,9 @@ const MobileNavigation = () => {
 
     return (
         <nav
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 pb-[env(safe-area-inset-bottom)] flex justify-between px-2 items-center shadow-[0_-4px_10px_rgba(0,0,0,0.02)] h-[calc(64px+env(safe-area-inset-bottom))]"
+            className="fixed bottom-0 left-0 right-0 z-[100] bg-white border-t border-slate-200 pb-[env(safe-area-inset-bottom)] flex justify-between px-2 items-center shadow-[0_-4px_10px_rgba(0,0,0,0.02)] h-[calc(64px+env(safe-area-inset-bottom))]"
             role="navigation"
-            aria-label="Mobile navigation"
+            aria-label="Manager mobile navigation"
         >
             {navItems.map((item) => {
                 const active = isActive(item.href);
@@ -40,7 +39,7 @@ const MobileNavigation = () => {
                         key={item.href}
                         to={item.href}
                         className={cn(
-                            "flex flex-col items-center justify-center gap-1 w-16 h-full transition-all duration-300 relative",
+                            "flex flex-col items-center justify-center gap-1 w-[25%] h-full transition-all duration-300 relative",
                             active ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
                         )}
                         aria-current={active ? "page" : undefined}
@@ -67,4 +66,4 @@ const MobileNavigation = () => {
     );
 };
 
-export default MobileNavigation;
+export default ManagerMobileNavigation;

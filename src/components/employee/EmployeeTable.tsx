@@ -50,6 +50,7 @@ interface EmployeeTableProps {
     onPageChange: (page: number) => void;
     isArchivedView?: boolean;
     onRestore?: (employee: EmployeeData) => void;
+    viewMode?: 'table' | 'grid';
 }
 
 export function EmployeeTable({
@@ -62,7 +63,8 @@ export function EmployeeTable({
     totalRecords,
     onPageChange,
     isArchivedView,
-    onRestore
+    onRestore,
+    viewMode = 'table'
 }: EmployeeTableProps) {
 
     // Helper for Status Badge
@@ -111,9 +113,9 @@ export function EmployeeTable({
     }
 
     return (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-            {/* Desktop View */}
-            <div className="hidden md:block overflow-x-auto">
+        <div className="bg-white rounded-[24px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col">
+            {/* Desktop Table View */}
+            <div className={cn("hidden overflow-x-auto", viewMode === 'table' && "md:block")}>
                 <Table>
                     <TableHeader className="bg-slate-50">
                         <TableRow>
@@ -143,7 +145,7 @@ export function EmployeeTable({
                                                     "text-xs font-bold",
                                                     employee.role === 'admin' ? "bg-red-50 text-red-600" :
                                                         employee.role === 'manager' ? "bg-amber-50 text-amber-600" :
-                                                            "bg-blue-50 text-blue-600"
+                                                            "bg-primary/10 text-primary"
                                                 )}>
                                                     {employee.full_name?.substring(0, 2).toUpperCase()}
                                                 </AvatarFallback>
@@ -209,7 +211,73 @@ export function EmployeeTable({
                 </Table>
             </div>
 
-            {/* Mobile View */}
+            {/* Grid View (Desktop Only) */}
+            <div className={cn("hidden", viewMode === 'grid' && "md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 bg-slate-50/30")}>
+                {data.length === 0 ? (
+                    <div className="col-span-full h-32 flex items-center justify-center text-slate-500">
+                        {isArchivedView ? "No archived employees found." : "No employees found."}
+                    </div>
+                ) : (
+                    data.map((employee) => (
+                        <div key={employee.id} className="bg-white rounded-[20px] p-5 shadow-sm hover:shadow-md transition-all border border-slate-100 flex flex-col items-center text-center relative group">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-[160px] rounded-xl border-slate-100 shadow-lg">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    {!isArchivedView ? (
+                                        <>
+                                            <DropdownMenuItem onClick={() => onEdit(employee)} className="cursor-pointer">
+                                                <Edit className="mr-2 h-4 w-4 text-slate-500" /> Edit Details
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem className="text-red-600 focus:text-red-700 cursor-pointer" onClick={() => onDelete(employee)}>
+                                                <Trash2 className="mr-2 h-4 w-4" /> Archive
+                                            </DropdownMenuItem>
+                                        </>
+                                    ) : (
+                                        <DropdownMenuItem className="text-primary focus:text-primary cursor-pointer" onClick={() => onRestore?.(employee)}>
+                                            <Edit className="mr-2 h-4 w-4" /> Restore
+                                        </DropdownMenuItem>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            <Avatar className="h-16 w-16 mb-4 shadow-sm border border-slate-100">
+                                <AvatarImage src={employee.avatar_url || undefined} />
+                                <AvatarFallback className="text-lg font-bold bg-primary/10 text-primary">
+                                    {employee.full_name?.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                            </Avatar>
+
+                            <h3 className="font-bold text-slate-900 text-[15px] mb-1">{employee.full_name}</h3>
+                            <p className="text-xs text-slate-500 mb-3">{employee.position || "Employee"}</p>
+
+                            <div className="flex gap-2 mb-4">
+                                {getStatusBadge(employee)}
+                                <Badge variant="secondary" className="font-mono text-[10px] bg-slate-50 text-slate-500 border-none font-medium">
+                                    {getNIP(employee)}
+                                </Badge>
+                            </div>
+
+                            <div className="w-full bg-slate-50 rounded-xl p-3 flex flex-col gap-2 mt-auto text-left border border-slate-100">
+                                <div className="flex items-center gap-2">
+                                    <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                                    <span className="text-xs font-semibold text-slate-700 truncate">{employee.department || "General"}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                                    <span className="text-xs font-medium text-slate-600 truncate">{employee.email || "No Email"}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Mobile View (Always List-like Cards) */}
             <div className="md:hidden flex flex-col p-4 gap-4 bg-slate-50/30">
                 {data.length === 0 ? (
                     <div className="text-center py-8 text-slate-500 text-sm bg-white rounded-xl border border-slate-200">

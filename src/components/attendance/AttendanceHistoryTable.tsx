@@ -259,62 +259,52 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
                 </Table>
             </div>
 
-            {/* Mobile Card View (SaaS App Layout) */}
+            {/* Mobile Card View (SaaS App Layout - Replicating Premium Design) */}
             <div className="md:hidden space-y-4 p-1">
-                {data.map((row, index) => {
-                    const isWeekend = row.status === 'weekend';
-                    const isWeekendTime = new Date(row.date).getDay() === 0 || new Date(row.date).getDay() === 6;
-                    const finalIsWeekend = row.isWeekend || isWeekendTime;
-                    const isFuture = row.status === 'future';
+                <div className="w-full">
+                    {/* Table Header exactly matching the design */}
+                    <div className="grid grid-cols-4 bg-[#8C94A0] rounded-t-xl text-white py-3 px-4 text-[10px] uppercase font-bold tracking-wider opacity-90">
+                        <div>Date</div>
+                        <div>Clock In</div>
+                        <div>Clock Out</div>
+                        <div>Work Hours</div>
+                    </div>
 
-                    return (
-                        <div
-                            key={row.date}
-                            className={cn(
-                                "bg-white/70 backdrop-blur-md border rounded-[20px] p-4 shadow-sm relative overflow-hidden flex flex-col gap-3 transition-all duration-300 animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards",
-                                finalIsWeekend ? "border-slate-100 bg-slate-50/50" : "border-slate-100 hover:shadow-md hover:border-blue-100",
-                                isFuture && "opacity-60 grayscale-[0.5]"
-                            )}
-                            style={{ animationDelay: `${index * 30}ms` }}
-                        >
-                            {/* Card Header */}
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <span className={cn("font-bold text-sm transition-colors", finalIsWeekend ? "text-red-500" : "text-slate-800")}>
-                                        {format(new Date(row.date), "EEEE, d MMM yyyy", { locale: id })}
-                                    </span>
-                                    {finalIsWeekend && <span className="block text-[10px] text-red-500 font-medium mt-0.5 uppercase tracking-wider">Hari Libur</span>}
-                                    {row.notes && <span className="flex items-center text-[10px] text-slate-400 italic mt-1 line-clamp-1"><FileText className="w-3 h-3 mr-1" />{row.notes}</span>}
-                                </div>
-                                <div className="scale-90 origin-top-right">
-                                    {getStatusBadge(row.status, finalIsWeekend)}
-                                </div>
-                            </div>
+                    {/* Table Body exactly matching the design */}
+                    <div className="bg-white border-x border-b border-slate-100 rounded-b-xl overflow-hidden shadow-sm">
+                        {data.map((row, index) => {
+                            const isWeekend = row.status === 'weekend';
+                            const isWeekendTime = new Date(row.date).getDay() === 0 || new Date(row.date).getDay() === 6;
+                            const finalIsWeekend = row.isWeekend || isWeekendTime;
+                            const isFuture = row.status === 'future';
 
-                            {/* Card Body - Clock In / Out / Duration */}
-                            {!isFuture ? (
-                                <div className="grid grid-cols-2 gap-3 mt-2 bg-slate-50/60 backdrop-blur-sm p-4 rounded-[16px] border border-slate-100">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><LogIn className="w-3 h-3" /> Masuk</span>
-                                        <span className="font-mono text-base font-bold text-slate-800">{row.clockIn ? format(new Date(row.clockIn), "HH:mm") : "--:--"}</span>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><LogOut className="w-3 h-3" /> Pulang</span>
-                                        <span className="font-mono text-base font-bold text-slate-800">{row.clockOut ? format(new Date(row.clockOut), "HH:mm") : "--:--"}</span>
-                                    </div>
-                                    <div className="col-span-2 mt-1 pt-3 border-t border-slate-100 flex items-center justify-between">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Durasi Total</span>
-                                        <div>{getDuration(row.clockIn, row.clockOut, row.date)}</div>
-                                    </div>
+                            if (isFuture || finalIsWeekend) return null; // Only show valid working days in this view based on design to keep it clean
+
+                            // Custom date format for design: "Fri, 23 Jan"
+                            const formattedDate = format(new Date(row.date), "E, d MMM", { locale: id }).replace(',', '');
+
+                            // Work Hours calculation for design
+                            let workHoursStr = '- -';
+                            if (row.clockIn && row.clockOut) {
+                                const startTime = new Date(row.clockIn).getTime();
+                                const endTime = new Date(row.clockOut).getTime();
+                                const diff = endTime - startTime;
+                                const hours = Math.floor(diff / (1000 * 60 * 60));
+                                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                workHoursStr = minutes > 0 ? `${hours}h${minutes}m` : `${hours}h`;
+                            }
+
+                            return (
+                                <div key={row.date} className="grid grid-cols-4 items-center border-b border-slate-50 py-3 px-4 text-[11px] font-medium text-slate-700">
+                                    <div className="text-slate-900 font-semibold truncate pr-1">{formattedDate}</div>
+                                    <div>{row.clockIn ? format(new Date(row.clockIn), "HH:mm") : '- -'}</div>
+                                    <div>{row.clockOut ? format(new Date(row.clockOut), "HH:mm") : '- -'}</div>
+                                    <div>{workHoursStr}</div>
                                 </div>
-                            ) : (
-                                <div className="mt-2 bg-slate-50/80 border border-slate-100 border-dashed rounded-[16px] p-4 flex justify-center items-center">
-                                    <span className="text-xs text-slate-400 font-semibold tracking-wide flex items-center gap-2"><Clock className="w-4 h-4" /> Belum Berlangsung</span>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
         </div>
     );
