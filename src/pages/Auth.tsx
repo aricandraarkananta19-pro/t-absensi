@@ -344,15 +344,31 @@ const Auth = () => {
                   {/* Biometric WebAuthN Button */}
                   <Button
                     type="button"
-                    onClick={() => {
-                      toast({ title: "Autentikasi Biometrik", description: "Meminta akses Touch ID / Face ID..." });
+                    onClick={async () => {
+                      try {
+                        setIsLoading(true);
+                        const { data, error } = await supabase.auth.signInWithWebAuthn();
+                        if (error) throw error;
+
+                        toast({ title: "Autentikasi Biometrik Berhasil", description: "Mengalihkan ke sistem..." });
+                      } catch (error: any) {
+                        toast({
+                          title: "Autentikasi Terkendala",
+                          description: "Perangkat ini belum mendaftarkan Passkey/Face ID, atau Anda membatalkan perintah. Silahkan login dengan password untuk mendaftarkan perangkat.",
+                          variant: "destructive"
+                        });
+                      } finally {
+                        setIsLoading(false);
+                      }
                     }}
-                    disabled={!isOnline}
+                    disabled={isLoading || !isOnline}
                     variant="ghost"
-                    className="w-full h-[56px] rounded-[16px] border border-white/10 bg-white/[0.03] text-slate-300 font-semibold text-[15px] hover:bg-white/[0.08] hover:text-white transition-all duration-300 flex items-center justify-center gap-2 group shadow-none"
+                    className="w-full h-[56px] rounded-[16px] border border-white/10 bg-white/[0.03] text-slate-300 font-semibold text-[15px] hover:bg-white/[0.08] hover:text-white transition-all duration-300 flex items-center gap-3 justify-center group shadow-none"
                   >
-                    <Fingerprint className="h-[18px] w-[18px] text-slate-400 group-hover:text-white transition-colors" />
-                    Login dengan Passkey
+                    <div className="flex items-center justify-center p-1.5 rounded-md bg-white/5 border border-white/10 group-hover:bg-indigo-500/20 group-hover:border-indigo-500/30 transition-colors">
+                      <Fingerprint className="h-[18px] w-[18px] text-slate-400 group-hover:text-indigo-300 transition-colors" />
+                    </div>
+                    Login dengan Face ID / Biometrik
                   </Button>
                 </div>
               </form>

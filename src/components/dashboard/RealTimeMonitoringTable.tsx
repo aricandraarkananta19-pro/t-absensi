@@ -102,7 +102,7 @@ export function RealTimeMonitoringTable({
 
     if (isLoading) {
         return (
-            <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px]">
+            <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[28px]">
                 <CardHeader className="pb-3">
                     <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 tracking-tight">
                         <Users className="h-4 w-4" style={{ color: BRAND_COLORS.blue }} />
@@ -128,7 +128,7 @@ export function RealTimeMonitoringTable({
     }
 
     return (
-        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md h-full flex flex-col rounded-[20px] vibe-glass-card">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md h-full flex flex-col rounded-[28px] vibe-glass-card">
             <CardHeader className="pb-3 border-b border-slate-100/80 dark:border-slate-800/80">
                 <div className="flex items-center justify-between">
                     <div>
@@ -225,7 +225,7 @@ export function RealTimeMonitoringTable({
                                 </div>
 
                                 {/* Mobile Card View (SaaS App Layout) */}
-                                <div className="md:hidden bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px] p-4 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col gap-3 hover:shadow-md transition-all mb-4 mx-4">
+                                <div className="md:hidden bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[28px] p-4 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col gap-3 hover:shadow-md transition-all mb-4 mx-4">
                                     <div className="flex justify-between items-start">
                                         <div className="flex items-center gap-3">
                                             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300 shadow-sm">

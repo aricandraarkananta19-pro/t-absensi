@@ -374,8 +374,8 @@ const KaryawanDashboardNew = () => {
     }
 
     const cardBase = cn(
-        "rounded-2xl border shadow-[0_2px_10px_-4px_rgba(0,0,0,0.04)]",
-        isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200/60"
+        "rounded-[28px] border shadow-[0_4px_24px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 relative overflow-hidden",
+        isDark ? "bg-slate-800/80 backdrop-blur-2xl border-slate-700/50" : "bg-white/70 backdrop-blur-2xl border-white/80"
     );
     const textPrimary = isDark ? "text-white" : "text-slate-900";
     const textSecondary = isDark ? "text-slate-400" : "text-slate-500";
@@ -413,7 +413,7 @@ const KaryawanDashboardNew = () => {
             </div>
 
             {/* 4 Stat Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 {/* Card: Jam Kerja */}
                 <div className={cn(cardBase, "p-5 flex flex-col gap-3 group hover:border-blue-200 transition-colors")}>
                     <div className="flex items-center justify-between">
@@ -620,7 +620,7 @@ const KaryawanDashboardNew = () => {
                     </div>
 
                     {/* Quick Actions */}
-                    <div className="grid grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-3 gap-3">
                         <Link to="/karyawan/riwayat" className={cn(cardBase, "p-3 flex flex-col items-center gap-1.5 active:scale-95 transition-transform text-center")}>
                             <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center"><CalendarDays className="w-4 h-4 text-blue-600" /></div>
                             <span className={cn("text-[10px] font-bold", isDark ? "text-slate-300" : "text-slate-600")}>Riwayat</span>

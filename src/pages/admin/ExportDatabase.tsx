@@ -253,6 +253,10 @@ curl -X POST \\
       roleLabel="Administrator"
       showExport={false}
       menuSections={ADMIN_MENU_SECTIONS}
+      breadcrumbs={[
+        { label: "Admin", href: "/admin/dashboard" },
+        { label: "Export Database" },
+      ]}
     >
       <div className="max-w-6xl mx-auto py-8">
 

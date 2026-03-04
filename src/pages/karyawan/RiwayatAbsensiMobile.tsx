@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Download, Clock, ArrowRight, Calendar, Searc
 import { DailyAttendanceStatus } from "@/lib/attendanceGenerator";
 import { cn } from "@/lib/utils";
 import MobileNavigation from "@/components/MobileNavigation";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface Props {
     attendanceList: DailyAttendanceStatus[];
@@ -23,6 +24,7 @@ export default function RiwayatAbsensiMobile({
 }: Props) {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+    const { isDark } = useTheme();
 
     const stats = useMemo(() => {
         return {
@@ -85,7 +87,7 @@ export default function RiwayatAbsensiMobile({
     const filteredList = attendanceList.filter(a => !['future', 'weekend'].includes(a.status));
 
     return (
-        <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-800 pb-24">
+        <div className={cn("flex flex-col min-h-screen pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500", isDark ? "bg-slate-900" : "bg-slate-50")}>
             {/* ===== HEADER ===== */}
             <div className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-violet-800" />
@@ -101,29 +103,29 @@ export default function RiwayatAbsensiMobile({
 
             {/* ===== STATS ROW ===== */}
             <div className="px-5 -mt-3 relative z-10">
-                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-4">
+                <div className={cn("rounded-2xl shadow-sm border p-4", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
                     <div className="grid grid-cols-4 gap-1">
                         <div className="text-center">
                             <span className="text-2xl font-bold text-emerald-600 tabular-nums">{stats.present}</span>
                             <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Hadir</span>
                         </div>
-                        <div className="text-center border-l border-slate-100 dark:border-slate-800">
+                        <div className={cn("text-center border-l", isDark ? "border-slate-700" : "border-slate-100")}>
                             <span className="text-2xl font-bold text-orange-500 tabular-nums">{stats.late}</span>
                             <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Telat</span>
                         </div>
-                        <div className="text-center border-l border-slate-100 dark:border-slate-800">
+                        <div className={cn("text-center border-l", isDark ? "border-slate-700" : "border-slate-100")}>
                             <span className="text-2xl font-bold text-red-500 tabular-nums">{stats.absent}</span>
                             <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Alpha</span>
                         </div>
-                        <div className="text-center border-l border-slate-100 dark:border-slate-800">
+                        <div className={cn("text-center border-l", isDark ? "border-slate-700" : "border-slate-100")}>
                             <span className="text-2xl font-bold text-violet-600 tabular-nums">{stats.leave}</span>
                             <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Cuti</span>
                         </div>
                     </div>
 
                     {/* Attendance rate bar */}
-                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden">
+                    <div className={cn("mt-3 pt-3 border-t flex items-center gap-3", isDark ? "border-slate-700" : "border-slate-100")}>
+                        <div className={cn("flex-1 h-2 rounded-full overflow-hidden", isDark ? "bg-slate-700" : "bg-slate-100")}>
                             <div className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-700" style={{ width: `${attendanceRate}%` }} />
                         </div>
                         <span className="text-xs font-bold text-indigo-600">{attendanceRate}%</span>
@@ -133,20 +135,20 @@ export default function RiwayatAbsensiMobile({
 
             {/* ===== MONTH NAVIGATION ===== */}
             <div className="px-5 mt-5 flex items-center justify-between">
-                <button onClick={onPrevMonth} className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-800 active:scale-95 transition-transform">
-                    <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                <button onClick={onPrevMonth} className={cn("w-9 h-9 rounded-xl flex items-center justify-center shadow-sm border active:scale-95 transition-transform", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
+                    <ChevronLeft className={cn("w-5 h-5", isDark ? "text-slate-300" : "text-slate-600")} />
                 </button>
-                <span className="text-sm font-bold text-slate-800 dark:text-slate-100 capitalize">
+                <span className={cn("text-sm font-bold capitalize", isDark ? "text-slate-100" : "text-slate-800")}>
                     {format(currentMonth, 'MMMM yyyy', { locale: idLocale })}
                 </span>
-                <button onClick={onNextMonth} className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-800 active:scale-95 transition-transform">
-                    <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                <button onClick={onNextMonth} className={cn("w-9 h-9 rounded-xl flex items-center justify-center shadow-sm border active:scale-95 transition-transform", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
+                    <ChevronRight className={cn("w-5 h-5", isDark ? "text-slate-300" : "text-slate-600")} />
                 </button>
             </div>
 
             {/* ===== CALENDAR VIEW ===== */}
             <div className="px-5 mt-4">
-                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-4">
+                <div className={cn("rounded-2xl shadow-sm border p-4", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
                     {/* Day headers */}
                     <div className="grid grid-cols-7 gap-y-3 gap-x-0.5 mb-3">
                         {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(d => (
@@ -240,13 +242,15 @@ export default function RiwayatAbsensiMobile({
 
             {/* ===== DETAIL LIST ===== */}
             <div className="px-5 mt-6">
-                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3">Detail Kehadiran</h3>
+                <h3 className={cn("text-sm font-bold mb-3", isDark ? "text-slate-100" : "text-slate-800")}>Detail Kehadiran</h3>
 
                 {filteredList.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-8 text-center">
-                        <Search className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                        <p className="text-sm font-semibold text-slate-400">Belum ada data kehadiran</p>
-                        <p className="text-xs text-slate-300 mt-1">Data akan muncul setelah Anda check-in</p>
+                    <div className={cn("rounded-2xl shadow-sm border p-8 text-center", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
+                        <div className={cn("w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3", isDark ? "bg-slate-700" : "bg-indigo-50")}>
+                            <Search className={cn("w-6 h-6", isDark ? "text-slate-400" : "text-indigo-400")} />
+                        </div>
+                        <p className={cn("text-sm font-semibold", isDark ? "text-slate-300" : "text-slate-400")}>Belum ada data kehadiran</p>
+                        <p className="text-xs text-slate-500 mt-1">Data akan muncul setelah Anda melakukan check-in harian.</p>
                     </div>
                 ) : (
                     <div className="space-y-2">
@@ -257,7 +261,7 @@ export default function RiwayatAbsensiMobile({
                                 : null;
 
                             return (
-                                <div key={idx} className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-3.5 flex items-center gap-3 transition-all duration-200 active:scale-[0.99]">
+                                <div key={idx} className={cn("rounded-xl shadow-sm border p-3.5 flex items-center gap-3 transition-all duration-200 active:scale-[0.99]", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
                                     {/* Date circle */}
                                     <div className={cn("w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0 border", badge.bg)}>
                                         <span className={cn("text-sm font-bold leading-none", badge.color)}>{new Date(item.date).getDate()}</span>

@@ -35,6 +35,11 @@ interface MenuSection {
     items: MenuItem[];
 }
 
+interface BreadcrumbItem {
+    label: string;
+    href?: string;
+}
+
 interface EnterpriseLayoutProps {
     children: React.ReactNode;
     title: string;
@@ -48,6 +53,7 @@ interface EnterpriseLayoutProps {
     isExporting?: boolean;
     onExport?: () => void;
     customExportNode?: React.ReactNode;
+    breadcrumbs?: BreadcrumbItem[];
 }
 
 // Talenta Brand Colors
@@ -69,7 +75,8 @@ const EnterpriseLayout = ({
     showExport = true,
     isExporting = false,
     onExport,
-    customExportNode
+    customExportNode,
+    breadcrumbs
 }: EnterpriseLayoutProps) => {
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
@@ -121,7 +128,7 @@ const EnterpriseLayout = ({
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50/80 font-['Inter',system-ui,sans-serif] pb-24 lg:pb-0 relative overflow-x-hidden">
+        <div className="min-h-screen bg-slate-50/80 dark:bg-slate-950 font-['Inter',system-ui,sans-serif] pb-24 lg:pb-0 relative overflow-x-hidden">
             {/* Background Graphic Abstract - Subtle SaaS Effect */}
             <div className="fixed top-0 right-0 -z-10 w-[50vw] h-[40vh] bg-blue-100/30 rounded-full blur-[120px] pointer-events-none opacity-60 transform translate-x-1/3 -translate-y-1/4"></div>
             <div className="fixed bottom-0 left-0 -z-10 w-[40vw] h-[35vh] bg-indigo-100/20 rounded-full blur-[120px] pointer-events-none opacity-50 transform -translate-x-1/3 translate-y-1/4"></div>
@@ -129,12 +136,12 @@ const EnterpriseLayout = ({
             <aside
                 className={cn(
                     "hidden md:flex fixed left-0 top-0 bottom-0 z-50 flex-col transition-all duration-300 ease-out",
-                    "bg-white/80 backdrop-blur-xl border-r border-slate-200/60 shadow-sm",
+                    "bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border-r border-slate-200/50 dark:border-slate-700/50 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]",
                     isCollapsed ? "w-[72px]" : "w-[240px]"
                 )}
             >
                 {/* Logo - Added Safe Area Support */}
-                <div className="flex items-center h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-4 border-b border-slate-100/80 bg-white/50">
+                <div className="flex items-center h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-4 border-b border-slate-100/80 dark:border-slate-700/80 bg-white/50 dark:bg-slate-900/50">
                     <div className="flex items-center gap-3 min-w-0">
                         <div
                             className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-md bg-gradient-to-br from-slate-800 to-slate-600"
@@ -167,29 +174,29 @@ const EnterpriseLayout = ({
                                             key={item.title}
                                             to={item.href}
                                             className={cn(
-                                                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 group relative overflow-hidden",
+                                                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group relative overflow-hidden",
                                                 isActive
-                                                    ? "text-primary bg-primary/5 font-semibold"
-                                                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-medium"
+                                                    ? "text-blue-700 dark:text-blue-400 bg-gradient-to-r from-blue-50 to-blue-50/30 dark:from-blue-900/20 dark:to-blue-900/5 font-semibold shadow-sm border border-blue-100/60 dark:border-blue-800/30"
+                                                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 font-medium"
                                             )}
                                         >
                                             {/* Left Accent Indicator */}
                                             {isActive && (
-                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/4 bg-primary rounded-r-full" />
+                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/5 bg-blue-600 dark:bg-blue-400 rounded-r-full" />
                                             )}
 
                                             <div className={cn(
-                                                "flex items-center justify-center w-8 h-8 rounded-md transition-all duration-200",
-                                                isActive ? "text-primary" : "text-slate-400 group-hover:text-slate-600"
+                                                "flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200",
+                                                isActive ? "text-blue-600 dark:text-blue-400 bg-blue-100/60 dark:bg-blue-800/30" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300"
                                             )}>
                                                 <item.icon className="h-4 w-4 flex-shrink-0" />
                                             </div>
                                             {!isCollapsed && <span className="truncate">{item.title}</span>}
                                             {!isCollapsed && item.badge && item.badge > 0 && (
-                                                <span className="ml-auto text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">{item.badge}</span>
+                                                <span className="ml-auto text-[10px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">{item.badge}</span>
                                             )}
                                             {isCollapsed && (
-                                                <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-800 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                                                <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-800 dark:bg-slate-700 text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 shadow-lg">
                                                     {item.title}
                                                 </div>
                                             )}
@@ -231,7 +238,7 @@ const EnterpriseLayout = ({
                 isCollapsed ? "md:ml-[72px]" : "md:ml-[240px]"
             )}>
                 {/* Header - Modern Top Nav */}
-                <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-slate-200/50 pt-[env(safe-area-inset-top)]">
+                <header className="sticky top-0 z-40 w-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border-b border-slate-200/50 dark:border-slate-700/50 shadow-sm pt-[env(safe-area-inset-top)]">
                     <div className="flex items-center justify-between h-16 px-4 lg:px-8">
                         <div className="flex items-center gap-4">
                             {/* Mobile Logo Only */}
@@ -242,14 +249,14 @@ const EnterpriseLayout = ({
                             </div>
 
                             {/* Global Search */}
-                            <div className="hidden md:flex items-center bg-slate-100/50 rounded-full px-3 py-1.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all border border-transparent focus-within:border-primary/20 w-64">
+                            <div className="hidden md:flex items-center bg-white/60 dark:bg-slate-800/60 backdrop-blur-md rounded-full px-4 py-2 focus-within:bg-white dark:focus-within:bg-slate-800 focus-within:ring-2 focus-within:ring-indigo-500/30 transition-all border border-slate-200/60 dark:border-slate-700/60 focus-within:border-indigo-500/30 w-72 lg:w-80 shadow-sm">
                                 <Menu className="w-4 h-4 text-slate-400 mr-2" />
                                 <input
                                     type="text"
-                                    placeholder="Search..."
-                                    className="bg-transparent border-none outline-none text-sm text-slate-700 w-full placeholder:text-slate-400 h-6"
+                                    placeholder="Cari..."
+                                    className="bg-transparent border-none outline-none text-sm text-slate-700 dark:text-slate-200 w-full placeholder:text-slate-400 h-6"
                                 />
-                                <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium bg-white px-1.5 py-0.5 rounded border border-slate-200 shadow-sm ml-2">
+                                <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600 shadow-sm ml-2">
                                     <span>⌘</span><span>K</span>
                                 </div>
                             </div>
@@ -272,11 +279,11 @@ const EnterpriseLayout = ({
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="relative h-9 rounded-full pl-2 pr-4 border border-slate-200 hover:bg-slate-50 gap-2">
-                                        <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
+                                    <Button variant="ghost" className="relative h-10 rounded-full pl-2.5 pr-4 border border-slate-200/60 bg-white/60 backdrop-blur-md hover:bg-white shadow-sm hover:shadow-md transition-all gap-2">
+                                        <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-blue-400 text-white flex items-center justify-center text-[11px] font-bold shadow-sm">
                                             {getInitials(userName)}
                                         </div>
-                                        <span className="text-xs font-semibold text-slate-700 hidden sm:block">{userName.split(' ')[0]}</span>
+                                        <span className="text-sm font-semibold text-slate-700 hidden sm:block">{userName.split(' ')[0]}</span>
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-56 font-['Inter'] rounded-xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border-slate-100">
@@ -286,19 +293,19 @@ const EnterpriseLayout = ({
                                             <p className="text-xs text-muted-foreground leading-none">{roleLabel}</p>
                                         </div>
                                     </DropdownMenuLabel>
-                                    <DropdownMenuSeparator className="bg-slate-100" />
+                                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-700" />
                                     <DropdownMenuItem className="gap-2 cursor-pointer p-2 rounded-lg text-sm">
                                         <UserCog className="w-4 h-4 text-slate-500" />
-                                        Profile Settings
+                                        Pengaturan Profil
                                     </DropdownMenuItem>
                                     <DropdownMenuItem className="gap-2 cursor-pointer p-2 rounded-lg text-sm">
                                         <Settings className="w-4 h-4 text-slate-500" />
-                                        Preferences
+                                        Preferensi
                                     </DropdownMenuItem>
-                                    <DropdownMenuSeparator className="bg-slate-100" />
-                                    <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg text-sm font-medium">
+                                    <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-700" />
+                                    <DropdownMenuItem onClick={handleLogout} className="gap-2 cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg text-sm font-medium">
                                         <LogOut className="w-4 h-4" />
-                                        Log out
+                                        Keluar
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -307,7 +314,23 @@ const EnterpriseLayout = ({
                 </header>
 
                 {/* Content Container with Safe Area Awareness & Bottom Nav Spacing */}
-                <div className="p-4 lg:p-6 pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-6 vibe-page-enter">
+                <div className="p-4 lg:p-6 pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    {/* Breadcrumbs */}
+                    {breadcrumbs && breadcrumbs.length > 0 && (
+                        <nav className="flex items-center gap-1.5 text-xs font-medium text-slate-400 mb-4">
+                            <Link to="/" className="hover:text-slate-600 transition-colors">Home</Link>
+                            {breadcrumbs.map((crumb, i) => (
+                                <span key={i} className="flex items-center gap-1.5">
+                                    <ChevronRight className="w-3 h-3 text-slate-300" />
+                                    {crumb.href ? (
+                                        <Link to={crumb.href} className="hover:text-slate-600 transition-colors">{crumb.label}</Link>
+                                    ) : (
+                                        <span className="text-slate-600 dark:text-slate-300 font-semibold">{crumb.label}</span>
+                                    )}
+                                </span>
+                            ))}
+                        </nav>
+                    )}
                     {children}
                 </div>
             </main>

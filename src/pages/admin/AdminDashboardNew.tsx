@@ -249,7 +249,7 @@ const AdminDashboardNew = () => {
             <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out space-y-6 max-w-[1600px] mx-auto pb-10">
 
                 {/* SMART INSIGHT SECTION - Business Insight Today */}
-                <div className="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-[20px] p-5 lg:p-6 shadow-lg relative overflow-hidden flex flex-col md:flex-row gap-6 justify-between items-start md:items-center border border-indigo-800/50">
+                <div className="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-3xl p-5 lg:p-6 shadow-lg relative overflow-hidden flex flex-col md:flex-row gap-6 justify-between items-start md:items-center border border-indigo-800/50">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white dark:bg-slate-900 opacity-5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
                     <div className="absolute bottom-0 left-20 w-40 h-40 bg-blue-400 opacity-10 rounded-full blur-2xl pointer-events-none" />
 
@@ -259,7 +259,7 @@ const AdminDashboardNew = () => {
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2 mb-1">
-                                Business Insight Today
+                                Insight Bisnis Hari Ini
                                 <Badge className="bg-blue-500/20 text-blue-100 hover:bg-blue-500/20 border-blue-400/30 text-[10px] uppercase font-bold tracking-wider rounded-md px-2 py-0.5">Live</Badge>
                             </h2>
                             <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -297,9 +297,9 @@ const AdminDashboardNew = () => {
                 </div>
 
                 {/* PREMIUM SUMMARY CARDS OVERHAUL */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                     {/* Card 1: Total Karyawan */}
-                    <div className="bg-white dark:bg-slate-900 rounded-[20px] p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-blue-200 transition-all duration-300 group flex flex-col relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 dark:border-slate-700/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-blue-200 hover:-translate-y-0.5 transition-all duration-300 group flex flex-col relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-50 text-slate-200 group-hover:text-blue-50 transition-colors group-hover:scale-110 duration-500">
                             <Users strokeWidth={1} className="w-16 h-16" />
                         </div>
@@ -312,7 +312,7 @@ const AdminDashboardNew = () => {
                             </span>
                         </div>
                         <div className="relative z-10 flex-col mb-4">
-                            <div className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{isLoading ? <Skeleton className="h-9 w-16" /> : stats.totalEmployees}</div>
+                            <div className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">{isLoading ? <Skeleton className="h-9 w-16" /> : stats.totalEmployees}</div>
                             <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">Total Karyawan</div>
                         </div>
                         <div className="mt-auto relative z-10 flex items-center gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -323,7 +323,7 @@ const AdminDashboardNew = () => {
                     </div>
 
                     {/* Card 2: Hadir Hari Ini */}
-                    <div className="bg-white dark:bg-slate-900 rounded-[20px] p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-emerald-200 transition-all duration-300 group flex flex-col relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 dark:border-slate-700/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-emerald-200 hover:-translate-y-0.5 transition-all duration-300 group flex flex-col relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-50 text-slate-200 group-hover:text-emerald-50 transition-colors group-hover:scale-110 duration-500">
                             <UserCheck strokeWidth={1} className="w-16 h-16" />
                         </div>
@@ -336,7 +336,7 @@ const AdminDashboardNew = () => {
                             </span>
                         </div>
                         <div className="relative z-10 flex-col mb-4">
-                            <div className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-baseline gap-1">
+                            <div className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight flex items-baseline gap-1">
                                 {isLoading ? <Skeleton className="h-9 w-16" /> : stats.presentToday} <span className="text-sm font-bold text-slate-400">/ {stats.totalEmployees}</span>
                             </div>
                             <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">Hadir Hari Ini</div>
@@ -351,7 +351,7 @@ const AdminDashboardNew = () => {
                     </div>
 
                     {/* Card 3: Terlambat */}
-                    <div className="bg-white dark:bg-slate-900 rounded-[20px] p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-amber-200 transition-all duration-300 group flex flex-col relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 dark:border-slate-700/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-amber-200 hover:-translate-y-0.5 transition-all duration-300 group flex flex-col relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-50 text-slate-200 group-hover:text-amber-50 transition-colors group-hover:scale-110 duration-500">
                             <Clock strokeWidth={1} className="w-16 h-16" />
                         </div>
@@ -361,12 +361,12 @@ const AdminDashboardNew = () => {
                             </div>
                             {stats.lateToday > 0 && (
                                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-1 rounded-lg border border-rose-100 animate-pulse">
-                                    <AlertCircle className="w-3 h-3" /> Attention
+                                    <AlertCircle className="w-3 h-3" /> Perhatian
                                 </span>
                             )}
                         </div>
                         <div className="relative z-10 flex-col mb-4">
-                            <div className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{isLoading ? <Skeleton className="h-9 w-16" /> : stats.lateToday}</div>
+                            <div className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">{isLoading ? <Skeleton className="h-9 w-16" /> : stats.lateToday}</div>
                             <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">Karyawan Terlambat</div>
                         </div>
                         <div className="mt-auto relative z-10 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
@@ -379,7 +379,7 @@ const AdminDashboardNew = () => {
                     </div>
 
                     {/* Card 4: Jurnal Pending */}
-                    <div className="bg-white dark:bg-slate-900 rounded-[20px] p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-indigo-200 transition-all duration-300 group flex flex-col relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 dark:border-slate-700/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-indigo-200 hover:-translate-y-0.5 transition-all duration-300 group flex flex-col relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-50 text-slate-200 group-hover:text-indigo-50 transition-colors group-hover:scale-110 duration-500">
                             <BookOpen strokeWidth={1} className="w-16 h-16" />
                         </div>
@@ -388,12 +388,12 @@ const AdminDashboardNew = () => {
                                 <BookOpen className="w-5 h-5" />
                             </div>
                             <Link to="/admin/jurnal" className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-lg border border-indigo-100 transition-colors">
-                                Review <ChevronRight className="w-3 h-3" />
+                                Tinjau <ChevronRight className="w-3 h-3" />
                             </Link>
                         </div>
                         <div className="relative z-10 flex-col mb-4">
-                            <div className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{isLoading ? <Skeleton className="h-9 w-16" /> : pendingReviewCount}</div>
-                            <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">Jurnal Pending</div>
+                            <div className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">{isLoading ? <Skeleton className="h-9 w-16" /> : pendingReviewCount}</div>
+                            <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">Jurnal Menunggu</div>
                         </div>
                         <div className="mt-auto relative z-10 pt-4 border-t border-slate-100 dark:border-slate-800">
                             <div className="flex items-center justify-between">
@@ -417,13 +417,13 @@ const AdminDashboardNew = () => {
                 </div>
 
                 {/* CENTRAL CONTENT GRID: Table + Jurnal */}
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
                     {/* Real-time Monitoring Table */}
                     <div className="xl:col-span-2 flex flex-col">
 
                         {/* AI Insight Box above table */}
                         {absenteesPercentage > 80 ? (
-                            <div className="bg-blue-50/50 border border-blue-100/60 rounded-[16px] p-4 mb-4 flex gap-3 text-sm text-blue-800 shadow-sm items-center">
+                            <div className="bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100/60 dark:border-blue-800/30 rounded-2xl p-4 mb-4 flex gap-3 text-sm text-blue-800 dark:text-blue-200 shadow-sm items-center">
                                 <Sparkles className="w-5 h-5 text-blue-500 shrink-0" />
                                 <span className="font-medium">
                                     <strong>Insight:</strong> Sebagian besar karyawan belum absen. Biasanya lonjakan absen terjadi pukul 07:45 - 08:00 WIB.
@@ -431,12 +431,12 @@ const AdminDashboardNew = () => {
                             </div>
                         ) : null}
 
-                        <Card className="flex-1 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white dark:bg-slate-900 rounded-[20px] overflow-hidden flex flex-col">
+                        <Card className="flex-1 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 dark:border-slate-700/60 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden flex flex-col">
                             <CardHeader className="border-b border-slate-100/80 dark:border-slate-800/80 bg-slate-50/30 pb-4 px-6 pt-5">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="space-y-1">
                                         <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                            <Activity className="h-5 w-5 text-blue-600" /> Real-time Monitoring
+                                            <Activity className="h-5 w-5 text-blue-600" /> Monitoring Real-time
                                         </CardTitle>
                                         <CardDescription>Live update karyawan hari ini</CardDescription>
                                     </div>
@@ -533,7 +533,7 @@ const AdminDashboardNew = () => {
                     </div>
 
                     {/* Jurnal Activity Feed */}
-                    <Card className="shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white dark:bg-slate-900 rounded-[20px] flex flex-col h-full xl:max-h-[500px]">
+                    <Card className="shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white dark:bg-slate-900 rounded-[28px] flex flex-col h-full xl:max-h-[500px]">
                         <CardHeader className="pb-2 border-b border-slate-100/80 dark:border-slate-800/80 px-5 pt-5">
                             <div className="flex items-center justify-between mb-2">
                                 <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -608,8 +608,8 @@ const AdminDashboardNew = () => {
                 </div>
 
                 {/* BOTTOM CHARTS */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <Card className="lg:col-span-2 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white dark:bg-slate-900 rounded-[20px]">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+                    <Card className="lg:col-span-2 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white dark:bg-slate-900 rounded-[28px]">
                         <CardHeader className="pb-0 px-6 pt-6">
                             <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">Tren Kinerja Bulanan</CardTitle>
                             <CardDescription className="text-xs font-medium text-slate-500 dark:text-slate-400">Persentase kehadiran 6 bulan terakhir</CardDescription>
@@ -644,7 +644,7 @@ const AdminDashboardNew = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className="shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white dark:bg-slate-900 rounded-[20px]">
+                    <Card className="shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white dark:bg-slate-900 rounded-[28px]">
                         <CardHeader className="pb-0 px-6 pt-6">
                             <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">Kekuatan Tim</CardTitle>
                             <CardDescription className="text-xs font-medium text-slate-500 dark:text-slate-400">Distribusi per departemen</CardDescription>

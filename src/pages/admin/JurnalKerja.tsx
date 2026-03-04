@@ -240,6 +240,10 @@ const JurnalKerja = () => {
             showRefresh={true}
             showExport={false}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ['journals', 'admin'] })}
+            breadcrumbs={[
+                { label: "Admin", href: "/admin/dashboard" },
+                { label: "Jurnal Kerja" },
+            ]}
         >
             <div className="max-w-[1400px] mx-auto pb-20">
 

@@ -533,6 +533,10 @@ const RekapAbsensi = () => {
       roleLabel="Administrator"
       showRefresh={false}
       showExport={true}
+      breadcrumbs={[
+        { label: "Admin", href: "/admin/dashboard" },
+        { label: "Rekap Absensi" },
+      ]}
     >
       {/* Main Content */}
       <div className="space-y-6">
@@ -700,8 +704,14 @@ const RekapAbsensi = () => {
                   ))
                 ) : currentStats.filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-32 text-center text-slate-500 dark:text-slate-400">
-                      Tidak ada data absensi untuk periode ini.
+                    <TableCell colSpan={8} className="text-center py-16">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
+                          <CalendarIcon className="h-7 w-7 text-slate-400" />
+                        </div>
+                        <h3 className="text-base font-bold text-slate-700 dark:text-slate-200">Tidak Ada Data</h3>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm">Tidak ada data absensi untuk periode ini</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -769,8 +779,12 @@ const RekapAbsensi = () => {
                 <div key={i} className="h-32 bg-white dark:bg-slate-900 rounded-2xl animate-pulse" />
               ))
             ) : currentStats.filtered.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
-                Tidak ada data absensi untuk periode ini.
+              <div className="flex flex-col items-center gap-3 py-12 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
+                  <CalendarIcon className="h-7 w-7 text-slate-400" />
+                </div>
+                <h3 className="text-base font-bold text-slate-700 dark:text-slate-200">Tidak Ada Data</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Tidak ada data absensi untuk periode ini</p>
               </div>
             ) : (
               currentStats.filtered.map((row: any) => (

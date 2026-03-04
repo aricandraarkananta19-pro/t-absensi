@@ -719,6 +719,10 @@ const value = useContext(MyContext);`);
       roleLabel="Administrator"
       showExport={false}
       menuSections={ADMIN_MENU_SECTIONS}
+      breadcrumbs={[
+        { label: "Admin", href: "/admin/dashboard" },
+        { label: "Dokumentasi" },
+      ]}
     >
       <main className="max-w-6xl mx-auto py-6">
         <div className="flex justify-end mb-6">

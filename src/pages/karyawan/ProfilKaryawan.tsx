@@ -99,7 +99,7 @@ const ProfilKaryawan = () => {
   };
 
   if (isFetching) {
-    return <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-800"><div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" /></div>;
+    return <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-800"><div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-blue-600" /></div>;
   }
 
   // ==========================================

@@ -739,7 +739,7 @@ const Pengaturan = () => {
   // VIEW: DESKTOP
   // ==========================================
   return (
-    <EnterpriseLayout title="Pengaturan Sistem" menuSections={ADMIN_MENU_SECTIONS}>
+    <EnterpriseLayout title="Pengaturan Sistem" menuSections={ADMIN_MENU_SECTIONS} breadcrumbs={[{ label: "Admin", href: "/admin/dashboard" }, { label: "Pengaturan" }]}>
       <div className="space-y-6">
         {/* Page Header */}
         <div>

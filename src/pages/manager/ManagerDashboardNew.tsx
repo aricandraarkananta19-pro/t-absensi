@@ -186,7 +186,7 @@ const ManagerDashboardNew = () => {
             <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out space-y-6">
 
                 {/* Live Status Bar */}
-                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                     {/* Today's Live Counter */}
                     <div
                         className="p-5 rounded-2xl border flex items-center gap-4 hover:shadow-sm transition-shadow bg-white dark:bg-slate-900"
@@ -290,7 +290,7 @@ const ManagerDashboardNew = () => {
                 </div>
 
                 {/* KPI Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 vibe-stat-grid">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 vibe-stat-grid">
                     <StatCard
                         title="Total Karyawan"
                         value={safeStats.totalEmployees}
@@ -329,9 +329,9 @@ const ManagerDashboardNew = () => {
                 </div>
 
                 {/* Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
                     {/* Weekly Attendance Chart */}
-                    <Card className="lg:col-span-2 border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
+                    <Card className="lg:col-span-2 border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[28px] vibe-glass-card">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -394,7 +394,7 @@ const ManagerDashboardNew = () => {
                     </Card>
 
                     {/* Today's Breakdown */}
-                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px]">
+                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[28px]">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">Ringkasan Kemarin</CardTitle>
                             <CardDescription className="text-xs text-slate-400 font-medium">Distribusi {reportDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</CardDescription>
@@ -460,7 +460,7 @@ const ManagerDashboardNew = () => {
                 </div>
 
                 {/* Row 3: Real-Time Monitoring + Quick Actions & Journals */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
                     {/* Real-Time Monitoring Table - Full width on mobile/tablet, 2 cols on desktop */}
                     <div className="lg:col-span-2 min-h-[400px]">
                         <RealTimeMonitoringTable
@@ -528,7 +528,7 @@ const ManagerDashboardNew = () => {
                         </Link>
 
                         {/* Jurnal Tim Terbaru - Using new React Query hook */}
-                        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px]">
+                        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[28px]">
                             <CardHeader className="pb-3 border-b border-slate-100/80 dark:border-slate-800/80">
                                 <div className="flex items-center justify-between">
                                     <div>
@@ -587,9 +587,9 @@ const ManagerDashboardNew = () => {
                 </div>
 
                 {/* Row 4: Monthly Trend + Department Distribution */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                     {/* 6-Month Attendance Trend */}
-                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px]">
+                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[28px]">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -649,7 +649,7 @@ const ManagerDashboardNew = () => {
                     </Card>
 
                     {/* Department Distribution */}
-                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px]">
+                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[28px]">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>

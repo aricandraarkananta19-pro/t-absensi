@@ -41,6 +41,7 @@ const ManagerMobileNavigation = () => {
                         <Link
                             key={item.href}
                             to={item.href}
+                            onClick={() => { if (navigator.vibrate) navigator.vibrate(10); }}
                             className="flex flex-col items-center justify-center gap-0.5 w-[25%] py-1.5 transition-all duration-200 ease-in-out relative group"
                             aria-current={active ? "page" : undefined}
                         >

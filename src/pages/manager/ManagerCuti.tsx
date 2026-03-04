@@ -285,15 +285,19 @@ const ManagerCuti = () => {
       menuSections={MANAGER_MENU_SECTIONS}
       showRefresh={true}
       onRefresh={fetchLeaveRequests}
+      breadcrumbs={[
+        { label: "Manager", href: "/manager" },
+        { label: "Kelola Cuti" },
+      ]}
     >
       <div className="space-y-6 pb-20">
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 vibe-stat-grid">
-          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[18px]">
+          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-blue-600" />
+                <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">{stats.total}</p>
@@ -302,24 +306,24 @@ const ManagerCuti = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[18px]">
+          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-amber-600" />
+                <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-extrabold text-amber-600 tracking-tight">{stats.pending}</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pending</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Menunggu</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[18px]">
+          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <Check className="h-5 w-5 text-emerald-600" />
+                <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                  <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-extrabold text-emerald-600 tracking-tight">{stats.approved}</p>
@@ -328,11 +332,11 @@ const ManagerCuti = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[18px]">
+          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center">
-                  <X className="h-5 w-5 text-red-600" />
+                <div className="h-10 w-10 rounded-xl bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
+                  <X className="h-5 w-5 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-extrabold text-red-600 tracking-tight">{stats.rejected}</p>
@@ -368,11 +372,11 @@ const ManagerCuti = () => {
         </div>
 
         {/* Table */}
-        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
+        <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl">
           <div className="overflow-x-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
-                <div className="h-8 w-8 animate-spin rounded-full border-3 border-slate-300 border-t-slate-700" />
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-blue-600" />
               </div>
             ) : filteredRequests.length === 0 ? (
               <div className="py-16 text-center">

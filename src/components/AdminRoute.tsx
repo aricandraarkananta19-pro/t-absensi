@@ -12,7 +12,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-blue-600" />
           <p className="text-muted-foreground">Memuat...</p>
         </div>
       </div>

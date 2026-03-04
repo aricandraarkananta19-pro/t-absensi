@@ -9,6 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
@@ -50,6 +60,7 @@ const Departemen = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   // Form
   const form = useForm<DepartmentFormData>({
@@ -162,8 +173,10 @@ const Departemen = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (deptName: string) => {
-    if (!confirm(`Hapus departemen ${deptName}? \nPERINGATAN: ${departments.find(d => d.name === deptName)?.employeeCount} karyawan akan kehilangan status departemen mereka.`)) return;
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const deptName = deleteTarget;
+    setDeleteTarget(null);
 
     const { error } = await supabase
       .from("profiles")
@@ -195,6 +208,10 @@ const Departemen = () => {
       roleLabel="Administrator"
       showExport={false}
       menuSections={ADMIN_MENU_SECTIONS}
+      breadcrumbs={[
+        { label: "Admin", href: "/admin/dashboard" },
+        { label: "Departemen" },
+      ]}
     >
       <div className="pb-20 md:pb-8">
 
@@ -202,15 +219,15 @@ const Departemen = () => {
 
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-3">
-            <Card className="border-none shadow-sm bg-white dark:bg-slate-900"><CardContent className="p-4 text-center">
+            <Card className="border-none shadow-sm bg-white dark:bg-slate-900 rounded-[28px]"><CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{stats.totalDepts}</div>
               <div className="text-[10px] uppercase font-bold text-slate-400 mt-1">Departemen</div>
             </CardContent></Card>
-            <Card className="border-none shadow-sm bg-white dark:bg-slate-900"><CardContent className="p-4 text-center">
+            <Card className="border-none shadow-sm bg-white dark:bg-slate-900 rounded-[28px]"><CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-blue-600">{stats.totalManagers}</div>
               <div className="text-[10px] uppercase font-bold text-blue-400 mt-1">Manager</div>
             </CardContent></Card>
-            <Card className="border-none shadow-sm bg-white dark:bg-slate-900"><CardContent className="p-4 text-center">
+            <Card className="border-none shadow-sm bg-white dark:bg-slate-900 rounded-[28px]"><CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-emerald-600">{stats.totalEmployees}</div>
               <div className="text-[10px] uppercase font-bold text-emerald-400 mt-1">Total Staff</div>
             </CardContent></Card>
@@ -246,7 +263,7 @@ const Departemen = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDepartments.map((dept) => (
-                <Card key={dept.name} className="hover:shadow-md transition-shadow border-slate-200 dark:border-slate-700 group">
+                <Card key={dept.name} className="hover:shadow-md transition-shadow border-slate-200 dark:border-slate-700 group rounded-[28px]">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                       <Building2 className="h-5 w-5" />
@@ -260,7 +277,7 @@ const Departemen = () => {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleEdit(dept.name)}><Edit className="h-4 w-4 mr-2" /> Ubah Nama</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleDelete(dept.name)} className="text-red-600"><Trash2 className="h-4 w-4 mr-2" /> Hapus</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setDeleteTarget(dept.name)} className="text-red-600"><Trash2 className="h-4 w-4 mr-2" /> Hapus</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </CardHeader>
@@ -330,6 +347,35 @@ const Departemen = () => {
             </Form>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent className="rounded-[24px]">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-red-600 flex items-center gap-2">
+                <Trash2 className="w-5 h-5" /> Hapus Departemen
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Anda akan menghapus departemen <strong>{deleteTarget}</strong>.
+                <br />
+                <span className="text-red-500 font-medium">
+                  {departments.find(d => d.name === deleteTarget)?.employeeCount || 0} karyawan akan kehilangan status departemen mereka.
+                </span>
+                <br />
+                Tindakan ini tidak dapat dibatalkan.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-xl">Batal</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                onClick={confirmDelete}
+              >
+                Ya, Hapus Departemen
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </EnterpriseLayout>
   );

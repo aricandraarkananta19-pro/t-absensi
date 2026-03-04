@@ -233,265 +233,266 @@ const KelolaRole = () => {
       roleLabel="Administrator"
       showExport={false}
       menuSections={ADMIN_MENU_SECTIONS}
+      breadcrumbs={[
+        { label: "Admin", href: "/admin/dashboard" },
+        { label: "Kelola Role" },
+      ]}
     >
-      <div className="pb-8">
-
-        {/* Main Content */}
-        <main className="container mx-auto px-4 py-8">
-          {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <Card className="border-border">
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-                    <p className="text-xs text-muted-foreground">Total User</p>
-                  </div>
+      <div className="space-y-6 pb-8">
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <Card className="border-slate-200/60 dark:border-slate-700/60 rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-primary" />
                 </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border">
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-                    <Crown className="h-5 w-5 text-destructive" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-destructive">{stats.admin}</p>
-                    <p className="text-xs text-muted-foreground">Admin</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border">
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-info/10 flex items-center justify-center">
-                    <Eye className="h-5 w-5 text-info" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-info">{stats.manager}</p>
-                    <p className="text-xs text-muted-foreground">Manager</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border">
-              <CardContent className="pt-4 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-success" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-success">{stats.karyawan}</p>
-                    <p className="text-xs text-muted-foreground">Karyawan</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Role Info */}
-          <Card className="border-border mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Informasi Role</CardTitle>
-              <CardDescription>Penjelasan hak akses untuk setiap role</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid sm:grid-cols-3 gap-4">
-                <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Crown className="h-5 w-5 text-destructive" />
-                    <span className="font-semibold text-foreground">Admin</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Akses penuh: kelola karyawan, absensi, laporan, pengaturan, reset data, dan kelola role user.
-                  </p>
-                </div>
-                <div className="p-4 rounded-lg border border-info/30 bg-info/5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Eye className="h-5 w-5 text-info" />
-                    <span className="font-semibold text-foreground">Manager</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Akses read-only: lihat rekap absensi, laporan, dan export data. Tidak dapat mengubah data.
-                  </p>
-                </div>
-                <div className="p-4 rounded-lg border border-success/30 bg-success/5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 className="h-5 w-5 text-success" />
-                    <span className="font-semibold text-foreground">Karyawan</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Akses pribadi: absensi, riwayat absensi, profil, dan pengajuan cuti untuk diri sendiri.
-                  </p>
+                <div>
+                  <p className="text-2xl font-extrabold text-foreground">{stats.total}</p>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Total User</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Cari nama, departemen, atau email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={filterRole} onValueChange={setFilterRole}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filter role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Role</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
-                <SelectItem value="karyawan">Karyawan</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Users Table */}
-          <Card className="border-border">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              </div>
-            ) : filteredUsers.length === 0 ? (
-              <div className="py-12 text-center">
-                <UserCog className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground">Tidak Ada Data</h3>
-                <p className="text-muted-foreground">Tidak ditemukan user dengan kriteria tersebut</p>
-              </div>
-            ) : (
-              <>
-                {/* Desktop Table */}
-                <div className="hidden md:block overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nama</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Departemen</TableHead>
-                        <TableHead>Role Saat Ini</TableHead>
-                        <TableHead>Ubah Role</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredUsers.map((user) => (
-                        <TableRow key={user.user_id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{user.profile?.full_name || "Tanpa Nama"}</p>
-                              <p className="text-xs text-muted-foreground">{user.profile?.position || "-"}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm">{user.email || "-"}</span>
-                          </TableCell>
-                          <TableCell>
-                            {user.profile?.department || "-"}
-                          </TableCell>
-                          <TableCell>{getRoleBadge(user.role)}</TableCell>
-                          <TableCell>
-                            <Select
-                              value={user.role}
-                              onValueChange={(value) => handleChangeRole(user, value)}
-                            >
-                              <SelectTrigger className="w-[130px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="admin">
-                                  <div className="flex items-center gap-2">
-                                    <Crown className="h-3 w-3 text-destructive" />
-                                    Admin
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="manager">
-                                  <div className="flex items-center gap-2">
-                                    <Eye className="h-3 w-3 text-info" />
-                                    Manager
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="karyawan">
-                                  <div className="flex items-center gap-2">
-                                    <CheckCircle2 className="h-3 w-3 text-success" />
-                                    Karyawan
-                                  </div>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+          <Card className="border-slate-200/60 dark:border-slate-700/60 rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                  <Crown className="h-5 w-5 text-destructive" />
                 </div>
-
-                {/* Mobile Cards */}
-                <div className="md:hidden flex flex-col p-4 gap-3">
-                  {filteredUsers.map((user) => (
-                    <div key={user.user_id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-4 flex flex-col gap-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                              {user.profile?.full_name?.charAt(0)?.toUpperCase() || "?"}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900 dark:text-white text-sm">{user.profile?.full_name || "Tanpa Nama"}</p>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{user.profile?.position || "-"}{user.profile?.department ? ` • ${user.profile.department}` : ""}</p>
-                            {user.email && <p className="text-[10px] text-slate-400 mt-0.5">{user.email}</p>}
-                          </div>
-                        </div>
-                        {getRoleBadge(user.role)}
-                      </div>
-                      <div className="pt-2 border-t border-slate-50">
-                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5 block">Ubah Role</label>
-                        <Select
-                          value={user.role}
-                          onValueChange={(value) => handleChangeRole(user, value)}
-                        >
-                          <SelectTrigger className="w-full h-9 text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">
-                              <div className="flex items-center gap-2">
-                                <Crown className="h-3 w-3 text-destructive" />
-                                Admin
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="manager">
-                              <div className="flex items-center gap-2">
-                                <Eye className="h-3 w-3 text-info" />
-                                Manager
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="karyawan">
-                              <div className="flex items-center gap-2">
-                                <CheckCircle2 className="h-3 w-3 text-success" />
-                                Karyawan
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  ))}
+                <div>
+                  <p className="text-2xl font-extrabold text-destructive">{stats.admin}</p>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Admin</p>
                 </div>
-              </>
-            )}
+              </div>
+            </CardContent>
           </Card>
-        </main>
+          <Card className="border-slate-200/60 dark:border-slate-700/60 rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-info/10 flex items-center justify-center">
+                  <Eye className="h-5 w-5 text-info" />
+                </div>
+                <div>
+                  <p className="text-2xl font-extrabold text-info">{stats.manager}</p>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Manager</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-slate-200/60 dark:border-slate-700/60 rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center">
+                  <CheckCircle2 className="h-5 w-5 text-success" />
+                </div>
+                <div>
+                  <p className="text-2xl font-extrabold text-success">{stats.karyawan}</p>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Karyawan</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Role Info */}
+        <Card className="border-border mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Informasi Role</CardTitle>
+            <CardDescription>Penjelasan hak akses untuk setiap role</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Crown className="h-5 w-5 text-destructive" />
+                  <span className="font-semibold text-foreground">Admin</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Akses penuh: kelola karyawan, absensi, laporan, pengaturan, reset data, dan kelola role user.
+                </p>
+              </div>
+              <div className="p-4 rounded-lg border border-info/30 bg-info/5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Eye className="h-5 w-5 text-info" />
+                  <span className="font-semibold text-foreground">Manager</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Akses read-only: lihat rekap absensi, laporan, dan export data. Tidak dapat mengubah data.
+                </p>
+              </div>
+              <div className="p-4 rounded-lg border border-success/30 bg-success/5">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle2 className="h-5 w-5 text-success" />
+                  <span className="font-semibold text-foreground">Karyawan</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Akses pribadi: absensi, riwayat absensi, profil, dan pengajuan cuti untuk diri sendiri.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Cari nama, departemen, atau email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={filterRole} onValueChange={setFilterRole}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filter role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Role</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="manager">Manager</SelectItem>
+              <SelectItem value="karyawan">Karyawan</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Users Table */}
+        <Card className="border-border">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-blue-600" />
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="py-12 text-center">
+              <UserCog className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground">Tidak Ada Data</h3>
+              <p className="text-muted-foreground">Tidak ditemukan user dengan kriteria tersebut</p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Departemen</TableHead>
+                      <TableHead>Role Saat Ini</TableHead>
+                      <TableHead>Ubah Role</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.user_id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{user.profile?.full_name || "Tanpa Nama"}</p>
+                            <p className="text-xs text-muted-foreground">{user.profile?.position || "-"}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">{user.email || "-"}</span>
+                        </TableCell>
+                        <TableCell>
+                          {user.profile?.department || "-"}
+                        </TableCell>
+                        <TableCell>{getRoleBadge(user.role)}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={user.role}
+                            onValueChange={(value) => handleChangeRole(user, value)}
+                          >
+                            <SelectTrigger className="w-[130px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="admin">
+                                <div className="flex items-center gap-2">
+                                  <Crown className="h-3 w-3 text-destructive" />
+                                  Admin
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="manager">
+                                <div className="flex items-center gap-2">
+                                  <Eye className="h-3 w-3 text-info" />
+                                  Manager
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="karyawan">
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle2 className="h-3 w-3 text-success" />
+                                  Karyawan
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden flex flex-col p-4 gap-3">
+                {filteredUsers.map((user) => (
+                  <div key={user.user_id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-4 flex flex-col gap-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                            {user.profile?.full_name?.charAt(0)?.toUpperCase() || "?"}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white text-sm">{user.profile?.full_name || "Tanpa Nama"}</p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{user.profile?.position || "-"}{user.profile?.department ? ` • ${user.profile.department}` : ""}</p>
+                          {user.email && <p className="text-[10px] text-slate-400 mt-0.5">{user.email}</p>}
+                        </div>
+                      </div>
+                      {getRoleBadge(user.role)}
+                    </div>
+                    <div className="pt-2 border-t border-slate-50">
+                      <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5 block">Ubah Role</label>
+                      <Select
+                        value={user.role}
+                        onValueChange={(value) => handleChangeRole(user, value)}
+                      >
+                        <SelectTrigger className="w-full h-9 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">
+                            <div className="flex items-center gap-2">
+                              <Crown className="h-3 w-3 text-destructive" />
+                              Admin
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="manager">
+                            <div className="flex items-center gap-2">
+                              <Eye className="h-3 w-3 text-info" />
+                              Manager
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="karyawan">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="h-3 w-3 text-success" />
+                              Karyawan
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </Card>
+
 
         {/* Confirmation Dialog */}
         <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -524,7 +525,7 @@ const KelolaRole = () => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </EnterpriseLayout>
+    </EnterpriseLayout >
   );
 };
 

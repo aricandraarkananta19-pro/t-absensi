@@ -774,6 +774,10 @@ const LaporanKehadiran = () => {
             onExport={openExportSettings}
             isExporting={isExportingExcel}
             customExportNode={customExportNode}
+            breadcrumbs={[
+                { label: "Admin", href: "/admin/dashboard" },
+                { label: "Laporan Kehadiran" },
+            ]}
         >
             <div className="space-y-8 pb-20">
 
@@ -974,7 +978,7 @@ const LaporanKehadiran = () => {
                         {isLoading ? (
                             <SkeletonTable />
                         ) : filteredReports.length === 0 ? (
-                            <EmptyState title="No Data Found" description="Try adjusting your filters or date range." icon={Filter} />
+                            <EmptyState title="Data Tidak Ditemukan" description="Coba sesuaikan filter atau rentang tanggal Anda." icon={Filter} />
                         ) : (
                             <>
                                 <div className="hidden md:block overflow-x-auto">

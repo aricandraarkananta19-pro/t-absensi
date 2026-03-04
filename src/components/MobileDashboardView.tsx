@@ -55,6 +55,8 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [elapsedTime, setElapsedTime] = useState("00:00:00");
     const [attendanceLogs, setAttendanceLogs] = useState<any[]>([]);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [userName, setUserName] = useState<string>("");
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -431,8 +433,14 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
     };
 
     const handleLogout = async () => {
-        await signOut();
-        navigate("/login");
+        if (isLoggingOut) return;
+        setIsLoggingOut(true);
+        try {
+            await signOut();
+            navigate("/auth");
+        } catch {
+            setIsLoggingOut(false);
+        }
     };
 
     const isWorking = Boolean(todayAttendance && !todayAttendance.clock_out);
@@ -537,10 +545,11 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
                                 )}
                             </button>
                             <button
-                                onClick={handleLogout}
-                                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center border border-white/10 active:scale-90 transition-transform backdrop-blur-sm"
+                                onClick={() => setShowLogoutConfirm(true)}
+                                disabled={isLoggingOut}
+                                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center border border-white/10 active:scale-90 transition-transform backdrop-blur-sm disabled:opacity-50"
                             >
-                                <LogOut className="w-4 h-4 text-white/80" />
+                                {isLoggingOut ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <LogOut className="w-4 h-4 text-white/80" />}
                             </button>
                         </div>
                     </div>
@@ -872,6 +881,30 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
                             )}
                         >
                             {confirmAction === "in" ? "Ya, Masuk" : "Ya, Keluar"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Logout Confirmation Dialog */}
+            <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+                <DialogContent className="max-w-[320px] rounded-[24px] p-6 bg-white mx-auto w-[90%]">
+                    <DialogHeader className="mb-1">
+                        <DialogTitle className="text-lg font-bold text-slate-800 text-center">Keluar Aplikasi?</DialogTitle>
+                        <DialogDescription className="text-center text-slate-500 text-sm">
+                            Anda akan keluar dari sesi saat ini. Pastikan semua pekerjaan sudah tersimpan.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex gap-2 sm:gap-2 mt-2">
+                        <Button variant="outline" onClick={() => setShowLogoutConfirm(false)} className="flex-1 rounded-xl h-11">
+                            Batal
+                        </Button>
+                        <Button
+                            onClick={() => { setShowLogoutConfirm(false); handleLogout(); }}
+                            disabled={isLoggingOut}
+                            className="flex-1 rounded-xl h-11 font-bold text-white bg-red-600 hover:bg-red-700"
+                        >
+                            {isLoggingOut ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Ya, Keluar"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

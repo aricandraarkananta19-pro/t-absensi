@@ -93,7 +93,7 @@ const StatCard = ({
     if (isLoading) {
         return (
             <div className={cn(
-                "rounded-[20px] p-6 relative overflow-hidden shadow-sm border transition-all cursor-default",
+                "rounded-[28px] p-6 relative overflow-hidden shadow-sm border transition-all cursor-default",
                 styles.bg,
                 styles.border,
                 className
@@ -112,7 +112,7 @@ const StatCard = ({
 
     return (
         <div className={cn(
-            "relative group rounded-[20px] p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 overflow-hidden border",
+            "relative group rounded-[28px] p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 overflow-hidden border",
             styles.bg,
             styles.border,
             className

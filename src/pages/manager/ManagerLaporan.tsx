@@ -752,6 +752,10 @@ const ManagerLaporan = () => {
       menuSections={MANAGER_MENU_SECTIONS}
       roleLabel="Manager"
       customExportNode={customExportNode}
+      breadcrumbs={[
+        { label: "Manager", href: "/manager" },
+        { label: "Laporan" },
+      ]}
     >
       <div className="space-y-6 pb-20">
 
@@ -792,97 +796,96 @@ const ManagerLaporan = () => {
         {/* 1. Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Hadir Hari Ini / Total Kehadiran */}
-          <Card className="border-none shadow-sm bg-white dark:bg-slate-900 hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
+          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-2xl relative overflow-hidden group">
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-4">
                 <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">HADIR (Periode Ini)</div>
-                <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                <div className="h-8 w-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                   <UserCheck className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-bold text-slate-900 dark:text-white">{summaryStats.totalPresent}</span>
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{summaryStats.totalPresent}</span>
                 <span className="text-sm text-slate-400 font-medium">/ {(dateRange?.to && dateRange?.from) ? Math.round(differenceInMinutes(dateRange.to, dateRange.from) / 1440 * summaryStats.totalEmployees) : '-'} Total</span>
               </div>
               <Progress value={75} className="h-1.5 bg-slate-100 dark:bg-slate-800/80" indicatorClassName="bg-blue-600" />
               <div className="flex justify-end mt-2 text-xs font-bold text-blue-600">
-                {/* Percentage placeholder */}
                 92%
               </div>
             </CardContent>
           </Card>
 
           {/* Card 2: Terlambat */}
-          <Card className="border-none shadow-sm bg-white dark:bg-slate-900 hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
+          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <Timer className="h-24 w-24 text-amber-500" />
             </div>
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-4">
                 <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">TERLAMBAT</div>
-                <div className="h-8 w-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+                <div className="h-8 w-8 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
                   <Clock className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-3 mb-1">
-                <span className="text-3xl font-bold text-slate-900 dark:text-white">{summaryStats.totalLate}</span>
-                <Badge variant="secondary" className="bg-amber-50 text-amber-600 hover:bg-amber-50 text-[10px] px-1.5 py-0 h-5">
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{summaryStats.totalLate}</span>
+                <Badge variant="secondary" className="bg-amber-50 dark:bg-amber-900/30 text-amber-600 hover:bg-amber-50 text-[10px] px-1.5 py-0 h-5">
                   <TrendingUp className="h-3 w-3 mr-1" /> +2
                 </Badge>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Employees arrived late</p>
-              <div className="mt-3 inline-flex items-center text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
-                Avg {summaryStats.totalLate > 0 ? (summaryStats.totalLateMinutes / summaryStats.totalLate).toFixed(0) : 0} mins / late
+              <p className="text-xs text-slate-500 dark:text-slate-400">Karyawan terlambat hadir</p>
+              <div className="mt-3 inline-flex items-center text-xs font-medium text-amber-600 bg-amber-50 dark:bg-amber-900/30 px-2 py-1 rounded-md">
+                Rata-rata {summaryStats.totalLate > 0 ? (summaryStats.totalLateMinutes / summaryStats.totalLate).toFixed(0) : 0} mnt / terlambat
               </div>
             </CardContent>
           </Card>
 
           {/* Card 3: Izin / Sakit */}
-          <Card className="border-none shadow-sm bg-white dark:bg-slate-900 hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
+          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <FileText className="h-24 w-24 text-purple-500" />
             </div>
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-4">
                 <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">IZIN / SAKIT</div>
-                <div className="h-8 w-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
+                <div className="h-8 w-8 rounded-full bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
                   <FileText className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-bold text-slate-900 dark:text-white">{summaryStats.totalLeave}</span>
-                <span className="text-sm text-slate-400 font-medium">Staff</span>
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{summaryStats.totalLeave}</span>
+                <span className="text-sm text-slate-400 font-medium">Staf</span>
               </div>
               <div className="flex gap-2 mt-2">
-                <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-none">3 Sick</Badge>
-                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">2 Permit</Badge>
+                <Badge className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-100 border-none">Sakit</Badge>
+                <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 border-none">Izin</Badge>
               </div>
             </CardContent>
           </Card>
 
           {/* Card 4: Belum Absen */}
-          <Card className="border-none shadow-sm bg-white dark:bg-slate-900 hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
+          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <UserX className="h-24 w-24 text-red-500" />
             </div>
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-4">
                 <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">BELUM ABSEN</div>
-                <div className="h-8 w-8 rounded-full bg-red-50 flex items-center justify-center text-red-600">
+                <div className="h-8 w-8 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
                   <UserX className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-bold text-slate-900 dark:text-white">{summaryStats.waitingCheckIn}</span>
-                <span className="text-sm text-slate-400 font-medium">Staff</span>
+                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{summaryStats.waitingCheckIn}</span>
+                <span className="text-sm text-slate-400 font-medium">Staf</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Waiting for check-in...</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Menunggu absensi masuk...</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Trend Kehadiran Chart */}
-        <Card className="border-none shadow-sm bg-white dark:bg-slate-900 rounded-xl overflow-hidden">
+        <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900 rounded-2xl overflow-hidden">
           <CardContent className="p-5">
             <div className="flex justify-between items-center mb-6">
               <div>
@@ -937,7 +940,7 @@ const ManagerLaporan = () => {
         </Card>
 
         {/* 2. Main Content Card */}
-        <Card className="border-none shadow-sm bg-white dark:bg-slate-900 rounded-xl overflow-hidden min-h-[500px]">
+        <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900 rounded-2xl overflow-hidden min-h-[500px]">
           <div className="border-b border-slate-100 dark:border-slate-800 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-lg text-slate-900 dark:text-white">Kehadiran Karyawan</h3>
@@ -966,7 +969,7 @@ const ManagerLaporan = () => {
             {isLoading ? (
               <SkeletonTable />
             ) : filteredReports.length === 0 ? (
-              <EmptyState title="No Data Found" description="Try adjusting your filters or date range." icon={Filter} />
+              <EmptyState title="Data Tidak Ditemukan" description="Coba sesuaikan filter atau rentang tanggal Anda." icon={Filter} />
             ) : (
               <>
                 <div className="hidden md:block overflow-x-auto">
@@ -974,11 +977,11 @@ const ManagerLaporan = () => {
                     <TableHeader>
                       <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-50/50 dark:bg-slate-800/50">
                         <TableHead className="w-12 py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 pl-4">No</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400">Employee Details</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400">Detail Karyawan</TableHead>
                         <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-center">Total Hadir</TableHead>
                         <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-center">Terlambat (Menit)</TableHead>
                         <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-center">Status Cuti / Izin</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-right pr-6">Attendance Rate</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-right pr-6">Tingkat Kehadiran</TableHead>
                         <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-center">Detail</TableHead>
                       </TableRow>
                     </TableHeader>

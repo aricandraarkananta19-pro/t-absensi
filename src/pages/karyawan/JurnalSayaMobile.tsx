@@ -7,6 +7,7 @@ import MobileNavigation from "@/components/MobileNavigation";
 import { JournalHistoryItem } from "@/components/journal/JournalHistoryCard";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { DailyJournalForm, DailyJournalFormData } from "@/components/journal/DailyJournalForm";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface Props {
     journals: JournalHistoryItem[];
@@ -35,6 +36,7 @@ export default function JurnalSayaMobile({
     todayJournalData
 }: Props) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const { isDark } = useTheme();
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -62,9 +64,9 @@ export default function JurnalSayaMobile({
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-[#F8FAFC] pb-[100px] font-sans">
+        <div className={cn("flex flex-col min-h-screen pb-[100px] font-sans animate-in fade-in slide-in-from-bottom-4 duration-500", isDark ? "bg-slate-900" : "bg-[#F8FAFC]")}>
             {/* Premium Dark Header */}
-            <div className="bg-[#0F172A] text-white pt-[max(env(safe-area-inset-top),32px)] pb-12 px-6 rounded-b-[40px] shadow-lg relative overflow-hidden">
+            <div className={cn("text-white pt-[max(env(safe-area-inset-top),32px)] pb-12 px-6 rounded-b-[40px] shadow-lg relative overflow-hidden", isDark ? "bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800" : "bg-[#0F172A]")}>
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white dark:bg-slate-900/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
                 <div className="relative z-10 flex justify-between items-start mb-6">
                     <div>
@@ -87,12 +89,12 @@ export default function JurnalSayaMobile({
                 {/* List of Journals */}
                 <div className="space-y-4">
                     {filteredJournals.length === 0 ? (
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-100 dark:border-slate-800 text-center flex flex-col items-center justify-center shadow-sm">
-                            <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3">
-                                <FileText className="w-6 h-6 text-slate-400" />
+                        <div className={cn("rounded-2xl p-8 border text-center flex flex-col items-center justify-center shadow-sm", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
+                            <div className={cn("w-14 h-14 rounded-full flex items-center justify-center mb-3", isDark ? "bg-slate-700" : "bg-indigo-50")}>
+                                <FileText className={cn("w-6 h-6", isDark ? "text-slate-400" : "text-indigo-400")} />
                             </div>
-                            <span className="text-sm font-bold text-[#0F172A]">Belum Ada Log Kerja</span>
-                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">Anda belum mencatat apapun di periode ini.</span>
+                            <span className={cn("text-sm font-bold", isDark ? "text-white" : "text-[#0F172A]")}>Belum Ada Log Kerja</span>
+                            <span className="text-xs font-medium text-slate-500 mt-1">Ketuk tombol + di bawah untuk mencatat pekerjaan.</span>
                         </div>
                     ) : (
                         filteredJournals.map((journal) => {
@@ -101,7 +103,7 @@ export default function JurnalSayaMobile({
                             const isToday = journal.date === format(new Date(), 'yyyy-MM-dd');
 
                             return (
-                                <div key={journal.id} className="bg-white dark:bg-slate-900 p-5 rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100 dark:border-slate-800 relative group overflow-hidden">
+                                <div key={journal.id} className={cn("p-5 rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border relative group overflow-hidden", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
                                     <div className="flex justify-between items-start mb-3">
                                         <div>
                                             <span className={cn(
@@ -110,7 +112,7 @@ export default function JurnalSayaMobile({
                                             )}>
                                                 {isToday ? "Hari Ini" : formattedDate}
                                             </span>
-                                            <h4 className="font-bold text-[#0F172A] text-sm leading-snug pr-4">
+                                            <h4 className={cn("font-bold text-sm leading-snug pr-4", isDark ? "text-white" : "text-[#0F172A]")}>
                                                 {title || journal.project_category || "Log Kerja Harian"}
                                             </h4>
                                         </div>

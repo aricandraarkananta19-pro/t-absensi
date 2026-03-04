@@ -347,6 +347,10 @@ const KelolaKaryawan = () => {
       showRefresh={true}
       showExport={false}
       onRefresh={fetchEmployees}
+      breadcrumbs={[
+        { label: "Admin", href: "/admin/dashboard" },
+        { label: "Kelola Karyawan" },
+      ]}
     >
       <div className="max-w-[1400px] mx-auto pb-20">
 

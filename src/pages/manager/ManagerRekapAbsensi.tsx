@@ -305,6 +305,10 @@ const ManagerRekapAbsensi = () => {
       refreshInterval={0}
       showExport={true}
       onExport={() => exportToExcel({ title: "Rekap", filename: "rekap", columns: exportColumns, data: getExportData() })}
+      breadcrumbs={[
+        { label: "Manager", href: "/manager" },
+        { label: "Rekap Absensi" },
+      ]}
     >
       {/* Date Navigation Bar */}
       <div className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -399,7 +403,7 @@ const ManagerRekapAbsensi = () => {
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={fetchAttendance} className="gap-1">
-            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+            <RefreshCw className="h-3.5 w-3.5" /> Perbarui
           </Button>
         </div>
       </div>
@@ -415,7 +419,7 @@ const ManagerRekapAbsensi = () => {
       </div>
 
       {/* Filters & Export */}
-      <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md mb-6 rounded-[20px] vibe-glass-card">
+      <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md mb-6 rounded-2xl">
         <CardContent className="py-4">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -445,7 +449,7 @@ const ManagerRekapAbsensi = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button className="gap-2 text-white rounded-xl font-semibold bg-slate-900 hover:bg-slate-800 shadow-lg shadow-slate-900/20">
-                    <Download className="h-4 w-4" /> Export
+                    <Download className="h-4 w-4" /> Ekspor
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -458,7 +462,7 @@ const ManagerRekapAbsensi = () => {
       </Card>
 
       {/* Table */}
-      <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
+      <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl">
         <CardContent className="p-0">
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
@@ -478,7 +482,15 @@ const ManagerRekapAbsensi = () => {
                   [...Array(5)].map((_, i) => <TableRow key={i}><TableCell colSpan={6}><Skeleton className="h-12 w-full" /></TableCell></TableRow>)
                 ) : filteredAttendance.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10 text-slate-500 dark:text-slate-400">Tidak ada data.</TableCell>
+                    <TableCell colSpan={6} className="text-center py-16">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
+                          <Users className="h-7 w-7 text-slate-400" />
+                        </div>
+                        <h3 className="text-base font-bold text-slate-700 dark:text-slate-200">Tidak Ada Data</h3>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm">Tidak ada data kehadiran untuk kriteria ini</p>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ) : (
                   filteredAttendance.map((row) => (
@@ -503,8 +515,12 @@ const ManagerRekapAbsensi = () => {
             {isLoading ? (
               [...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)
             ) : filteredAttendance.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
-                Tidak ada data.
+              <div className="flex flex-col items-center gap-3 py-12 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
+                  <Users className="h-7 w-7 text-slate-400" />
+                </div>
+                <h3 className="text-base font-bold text-slate-700 dark:text-slate-200">Tidak Ada Data</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Tidak ada data kehadiran untuk kriteria ini</p>
               </div>
             ) : (
               filteredAttendance.map((row) => (
@@ -540,7 +556,7 @@ const ManagerRekapAbsensi = () => {
 // Simple Stat Card Component inline
 function StatCard({ icon: Icon, label, value, colorClass, bgClass }: any) {
   return (
-    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[18px]">
+    <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
       <CardContent className="pt-4 pb-4">
         <div className="flex items-center gap-3">
           <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", bgClass)}>

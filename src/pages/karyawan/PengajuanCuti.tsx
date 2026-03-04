@@ -355,7 +355,7 @@ const PengajuanCuti = () => {
 
         {isFetching ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-400 border-t-transparent" />
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-blue-600" />
           </div>
         ) : leaveRequests.length === 0 ? (
           <div className="text-center py-16 bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-[24px] border border-dashed border-slate-300 shadow-sm">
