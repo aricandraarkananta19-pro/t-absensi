@@ -34,44 +34,44 @@ interface StatCardProps {
 
 const colorStyles = {
     primary: {
-        bg: "bg-white",
-        text: "text-slate-800",
-        label: "text-slate-500",
+        bg: "bg-white dark:bg-slate-900",
+        text: "text-slate-800 dark:text-slate-100",
+        label: "text-slate-500 dark:text-slate-400",
         iconBg: "bg-indigo-50",
         iconColor: "text-indigo-600",
-        border: "border-slate-100",
+        border: "border-slate-100 dark:border-slate-800",
     },
     success: {
-        bg: "bg-white",
-        text: "text-slate-800",
-        label: "text-slate-500",
+        bg: "bg-white dark:bg-slate-900",
+        text: "text-slate-800 dark:text-slate-100",
+        label: "text-slate-500 dark:text-slate-400",
         iconBg: "bg-emerald-50",
         iconColor: "text-emerald-600",
-        border: "border-slate-100",
+        border: "border-slate-100 dark:border-slate-800",
     },
     warning: {
-        bg: "bg-white",
-        text: "text-slate-800",
-        label: "text-slate-500",
+        bg: "bg-white dark:bg-slate-900",
+        text: "text-slate-800 dark:text-slate-100",
+        label: "text-slate-500 dark:text-slate-400",
         iconBg: "bg-amber-50",
         iconColor: "text-amber-600",
-        border: "border-slate-100",
+        border: "border-slate-100 dark:border-slate-800",
     },
     danger: {
-        bg: "bg-white",
-        text: "text-slate-800",
-        label: "text-slate-500",
+        bg: "bg-white dark:bg-slate-900",
+        text: "text-slate-800 dark:text-slate-100",
+        label: "text-slate-500 dark:text-slate-400",
         iconBg: "bg-rose-50",
         iconColor: "text-rose-600",
-        border: "border-slate-100",
+        border: "border-slate-100 dark:border-slate-800",
     },
     info: {
-        bg: "bg-white",
-        text: "text-slate-800",
-        label: "text-slate-500",
+        bg: "bg-white dark:bg-slate-900",
+        text: "text-slate-800 dark:text-slate-100",
+        label: "text-slate-500 dark:text-slate-400",
         iconBg: "bg-blue-50",
         iconColor: "text-blue-600",
-        border: "border-slate-100",
+        border: "border-slate-100 dark:border-slate-800",
     },
 };
 
@@ -101,10 +101,10 @@ const StatCard = ({
                 <div className="animate-pulse flex flex-col gap-4">
                     <div className="flex justify-between items-start">
                         <div className="h-4 w-24 bg-slate-200 rounded-md" />
-                        <div className="h-10 w-10 bg-slate-100 rounded-xl" />
+                        <div className="h-10 w-10 bg-slate-100 dark:bg-slate-800/80 rounded-xl" />
                     </div>
                     <div className="h-10 w-20 bg-slate-200 rounded-lg mt-2" />
-                    <div className="h-3 w-32 bg-slate-100 rounded-md mt-1" />
+                    <div className="h-3 w-32 bg-slate-100 dark:bg-slate-800/80 rounded-md mt-1" />
                 </div>
             </div>
         );
@@ -134,19 +134,19 @@ const StatCard = ({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-8 w-8 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full"
+                                        className="h-8 w-8 text-slate-400 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-slate-800/80 rounded-full"
                                     >
                                         <MoreVertical className="h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-40 bg-white border-slate-100 shadow-xl rounded-xl">
+                                <DropdownMenuContent align="end" className="w-40 bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-xl rounded-xl">
                                     {onViewDetails && (
-                                        <DropdownMenuItem onClick={onViewDetails} className="cursor-pointer text-sm font-medium hover:bg-slate-50">
+                                        <DropdownMenuItem onClick={onViewDetails} className="cursor-pointer text-sm font-medium hover:bg-slate-50 dark:bg-slate-800">
                                             Lihat Detail
                                         </DropdownMenuItem>
                                     )}
                                     {onExport && (
-                                        <DropdownMenuItem onClick={onExport} className="cursor-pointer text-sm font-medium hover:bg-slate-50">
+                                        <DropdownMenuItem onClick={onExport} className="cursor-pointer text-sm font-medium hover:bg-slate-50 dark:bg-slate-800">
                                             Export Data
                                         </DropdownMenuItem>
                                     )}
@@ -183,7 +183,7 @@ const StatCard = ({
                     )}
 
                     {subtitle && (
-                        <p className="text-xs text-slate-500 font-medium">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                             {subtitle}
                         </p>
                     )}

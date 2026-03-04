@@ -32,33 +32,33 @@ export function AttendanceCalendarView({ data, currentMonth = new Date() }: Atte
     const weekDays = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 
     return (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden m-1">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden m-1">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     <CalendarDays className="w-5 h-5 text-blue-600" />
                     {format(monthStart, 'MMMM yyyy', { locale: id })}
                 </h3>
                 <div className="flex gap-2">
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 rounded-md shadow-sm">
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md shadow-sm">
                         <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-                        <span className="text-[10px] font-semibold text-slate-600">Hadir</span>
+                        <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">Hadir</span>
                     </div>
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 rounded-md shadow-sm">
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md shadow-sm">
                         <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
-                        <span className="text-[10px] font-semibold text-slate-600">Telat</span>
+                        <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">Telat</span>
                     </div>
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 rounded-md shadow-sm">
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md shadow-sm">
                         <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                        <span className="text-[10px] font-semibold text-slate-600">Alpha</span>
+                        <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">Alpha</span>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+            <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                 {weekDays.map((d, i) => (
                     <div key={d} className={cn(
                         "py-3 text-center text-xs font-bold uppercase tracking-wider",
-                        i === 5 || i === 6 ? "text-red-500 bg-red-50/30" : "text-slate-500"
+                        i === 5 || i === 6 ? "text-red-500 bg-red-50/30" : "text-slate-500 dark:text-slate-400"
                     )}>
                         {d}
                     </div>
@@ -74,14 +74,14 @@ export function AttendanceCalendarView({ data, currentMonth = new Date() }: Atte
 
                     if (!isCurrentMonth) {
                         return (
-                            <div key={dateKey} className="min-h-[110px] bg-slate-50/50 p-2 opacity-50 flex flex-col items-start border-b border-slate-100">
+                            <div key={dateKey} className="min-h-[110px] bg-slate-50/50 dark:bg-slate-800/50 p-2 opacity-50 flex flex-col items-start border-b border-slate-100 dark:border-slate-800">
                                 <span className="text-xs font-semibold text-slate-400">{format(day, 'd')}</span>
                             </div>
                         );
                     }
 
                     // Render Status Logic
-                    let bgColor = "bg-white hover:bg-slate-50";
+                    let bgColor = "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800";
                     let accentColor = "border-transparent";
                     let content = null;
 
@@ -161,24 +161,24 @@ export function AttendanceCalendarView({ data, currentMonth = new Date() }: Atte
                                 break;
                             default:
                                 if (isWeekend) {
-                                    bgColor = "bg-slate-50/50";
+                                    bgColor = "bg-slate-50/50 dark:bg-slate-800/50";
                                 }
                         }
                     } else {
                         // Current month but no record (Future or before join?)
-                        if (isWeekend) bgColor = "bg-slate-50/50";
+                        if (isWeekend) bgColor = "bg-slate-50/50 dark:bg-slate-800/50";
                     }
 
                     return (
                         <div key={dateKey} className={cn(
-                            "min-h-[110px] p-2 flex flex-col items-start justify-between border-b border-slate-100 transition-all border-l-4",
+                            "min-h-[110px] p-2 flex flex-col items-start justify-between border-b border-slate-100 dark:border-slate-800 transition-all border-l-4",
                             bgColor,
                             accentColor
                         )}>
                             <div className="flex justify-between w-full">
                                 <span className={cn(
                                     "text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full",
-                                    isToday(day) ? "bg-blue-600 text-white shadow-md" : (isWeekend ? "text-red-500 bg-white/50" : "text-slate-700")
+                                    isToday(day) ? "bg-blue-600 text-white shadow-md" : (isWeekend ? "text-red-500 bg-white dark:bg-slate-900/50" : "text-slate-700 dark:text-slate-200")
                                 )}>{format(day, 'd')}</span>
                                 {isToday(day) && <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 rounded-sm h-fit">Today</span>}
                             </div>

@@ -535,7 +535,7 @@ const AbsensiKaryawan = () => {
   return (
     <>
       {/* DESKTOP VIEW */}
-      <div className="hidden md:flex min-h-screen bg-slate-50/50 text-slate-900 font-['Inter',sans-serif] flex-col overflow-x-hidden relative">
+      <div className="hidden md:flex min-h-screen bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white font-['Inter',sans-serif] flex-col overflow-x-hidden relative">
 
         {/* Background Graphic Abstract - Subtle SaaS Effect */}
         <div className="absolute top-0 right-0 -z-10 w-[80vw] h-[60vh] bg-blue-100/40 rounded-full blur-[100px] pointer-events-none opacity-80 transform translate-x-1/2 -translate-y-1/2"></div>
@@ -545,16 +545,16 @@ const AbsensiKaryawan = () => {
         <header className="relative z-20 w-full px-6 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] flex items-center justify-between">
           <button
             onClick={() => navigate("/dashboard")}
-            className="group flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white/70 hover:bg-white backdrop-blur-md border border-white/40 shadow-sm transition-all active:scale-95"
+            className="group flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white dark:bg-slate-900/70 hover:bg-white dark:bg-slate-900 backdrop-blur-md border border-white/40 shadow-sm transition-all active:scale-95"
           >
-            <ArrowLeft className="h-5 w-5 text-slate-700 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm font-semibold text-slate-700 hidden sm:inline">Kembali</span>
+            <ArrowLeft className="h-5 w-5 text-slate-700 dark:text-slate-200 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 hidden sm:inline">Kembali</span>
           </button>
 
           {/* Location Badge */}
-          <div className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/40 shadow-sm">
+          <div className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white dark:bg-slate-900/70 backdrop-blur-md border border-white/40 shadow-sm">
             <MapPin className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-semibold text-slate-700 max-w-[200px] truncate">
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 max-w-[200px] truncate">
               {location || "Mengecek lokasi..."}
             </span>
           </div>
@@ -568,18 +568,18 @@ const AbsensiKaryawan = () => {
             <div className="flex flex-col items-center justify-center text-center space-y-8 lg:space-y-12 animate-fade-in-up">
 
               {/* Date & Time */}
-              <div className="space-y-2 relative z-10 text-slate-900">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-white/40 border border-white/60 backdrop-blur-md shadow-sm">
-                  <Calendar className="h-4 w-4 text-slate-600" />
-                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+              <div className="space-y-2 relative z-10 text-slate-900 dark:text-white">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-white dark:bg-slate-900/40 border border-white/60 backdrop-blur-md shadow-sm">
+                  <Calendar className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide">
                     {formatDate(currentTime)}
                   </p>
                 </div>
                 <div className="relative">
-                  <h1 className="text-[64px] sm:text-[80px] lg:text-[100px] font-sans font-extrabold tracking-tighter leading-none tabular-nums drop-shadow-sm text-slate-800">
+                  <h1 className="text-[64px] sm:text-[80px] lg:text-[100px] font-sans font-extrabold tracking-tighter leading-none tabular-nums drop-shadow-sm text-slate-800 dark:text-slate-100">
                     {formatTime(currentTime)}
                   </h1>
-                  <p className="text-slate-500 text-sm sm:text-base font-medium tracking-widest uppercase mt-2">Waktu Indonesia Barat</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base font-medium tracking-widest uppercase mt-2">Waktu Indonesia Barat</p>
                 </div>
               </div>
 
@@ -592,13 +592,13 @@ const AbsensiKaryawan = () => {
 
                 <div className={`
                 relative w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80 rounded-[40px] flex flex-col items-center justify-center gap-4 
-                bg-white/70 backdrop-blur-xl border border-white/70 shadow-2xl transition-all duration-500
+                bg-white dark:bg-slate-900/70 backdrop-blur-xl border border-white/70 shadow-2xl transition-all duration-500
                 ${!todayAttendance ? 'shadow-indigo-500/10' : !todayAttendance.clock_out ? 'shadow-emerald-500/20' : 'shadow-slate-500/10'}
               `}>
                   {!todayAttendance ? (
                     <>
                       <Fingerprint className="h-16 w-16 text-slate-300" />
-                      <span className="text-xl sm:text-2xl font-bold text-slate-700">Belum Masuk</span>
+                      <span className="text-xl sm:text-2xl font-bold text-slate-700 dark:text-slate-200">Belum Masuk</span>
                     </>
                   ) : !todayAttendance.clock_out ? (
                     <>
@@ -613,8 +613,8 @@ const AbsensiKaryawan = () => {
                     <>
                       <CheckCircle2 className="h-16 w-16 text-slate-400" />
                       <div className="text-center">
-                        <span className="block text-xl sm:text-2xl font-extrabold text-slate-700">Selesai</span>
-                        <div className="mt-2 text-sm px-4 py-1.5 bg-slate-100 rounded-full text-slate-600 font-semibold border border-slate-200">
+                        <span className="block text-xl sm:text-2xl font-extrabold text-slate-700 dark:text-slate-200">Selesai</span>
+                        <div className="mt-2 text-sm px-4 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-full text-slate-600 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700">
                           {getWorkDuration()} kerja
                         </div>
                       </div>
@@ -629,19 +629,19 @@ const AbsensiKaryawan = () => {
             <div className="w-full max-w-md mx-auto flex flex-col gap-6 lg:gap-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
 
               {/* Shift Info Card */}
-              <div className="bg-white/70 backdrop-blur-md border border-white/40 rounded-[24px] p-6 lg:p-8 hover:shadow-md transition-all shadow-sm vibe-glass-card">
+              <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md border border-white/40 rounded-[24px] p-6 lg:p-8 hover:shadow-md transition-all shadow-sm vibe-glass-card">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <Clock className="h-4 w-4" />
                   Jadwal Shift
                 </h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 rounded-xl bg-slate-50/50 border border-slate-100">
-                    <span className="text-slate-500 text-xs font-semibold uppercase tracking-wide">Wajib Masuk</span>
-                    <span className="font-mono font-bold text-slate-800 text-lg">{settings.clockInStart} - {settings.clockInEnd}</span>
+                  <div className="flex justify-between items-center p-4 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wide">Wajib Masuk</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-100 text-lg">{settings.clockInStart} - {settings.clockInEnd}</span>
                   </div>
-                  <div className="flex justify-between items-center p-4 rounded-xl bg-slate-50/50 border border-slate-100">
-                    <span className="text-slate-500 text-xs font-semibold uppercase tracking-wide">Wajib Pulang</span>
-                    <span className="font-mono font-bold text-slate-800 text-lg">{settings.clockOutStart} - {settings.clockOutEnd}</span>
+                  <div className="flex justify-between items-center p-4 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wide">Wajib Pulang</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-100 text-lg">{settings.clockOutStart} - {settings.clockOutEnd}</span>
                   </div>
                 </div>
               </div>
@@ -658,7 +658,7 @@ const AbsensiKaryawan = () => {
                       <span className="text-xl sm:text-2xl font-extrabold text-white">Clock In</span>
                       <span className="text-slate-300 text-sm sm:text-base font-medium">Catat kehadiran hari ini</span>
                     </div>
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/10 flex items-center justify-center group-hover:rotate-12 transition-transform border border-white/20">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white dark:bg-slate-900/10 flex items-center justify-center group-hover:rotate-12 transition-transform border border-white/20">
                       {isLoading ? <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <LogIn className="h-6 w-6 sm:h-7 sm:w-7 text-white" />}
                     </div>
                   </button>
@@ -674,14 +674,14 @@ const AbsensiKaryawan = () => {
                   <button
                     onClick={initiateClockOut}
                     disabled={isLoading}
-                    className="w-full h-20 sm:h-24 rounded-[24px] bg-white hover:bg-slate-50 active:scale-95 transition-all duration-300 flex items-center justify-between px-8 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.1)] border border-slate-200 group"
+                    className="w-full h-20 sm:h-24 rounded-[24px] bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800 active:scale-95 transition-all duration-300 flex items-center justify-between px-8 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.1)] border border-slate-200 dark:border-slate-700 group"
                   >
                     <div className="flex flex-col items-start">
-                      <span className="text-xl sm:text-2xl font-extrabold text-slate-800">Clock Out</span>
-                      <span className="text-slate-500 text-sm sm:text-base font-medium">Akhiri sesi via jurnal</span>
+                      <span className="text-xl sm:text-2xl font-extrabold text-slate-800 dark:text-slate-100">Clock Out</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-sm sm:text-base font-medium">Akhiri sesi via jurnal</span>
                     </div>
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-100 flex items-center justify-center group-hover:rotate-12 transition-transform border border-slate-200">
-                      {isLoading ? <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" /> : <LogOut className="h-6 w-6 sm:h-7 sm:w-7 text-slate-600" />}
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center group-hover:rotate-12 transition-transform border border-slate-200 dark:border-slate-700">
+                      {isLoading ? <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" /> : <LogOut className="h-6 w-6 sm:h-7 sm:w-7 text-slate-600 dark:text-slate-300" />}
                     </div>
                   </button>
                 )}
@@ -690,15 +690,15 @@ const AbsensiKaryawan = () => {
               {/* Today's Summary */}
               {todayAttendance && (
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 border border-white/40 text-center shadow-sm vibe-glass-card">
+                  <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl p-4 border border-white/40 text-center shadow-sm vibe-glass-card">
                     <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest">Waktu Masuk</p>
-                    <p className="text-xl sm:text-2xl font-sans tracking-tight font-extrabold text-slate-800">
+                    <p className="text-xl sm:text-2xl font-sans tracking-tight font-extrabold text-slate-800 dark:text-slate-100">
                       {formatTimeShort(new Date(todayAttendance.clock_in))}
                     </p>
                   </div>
-                  <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 border border-white/40 text-center shadow-sm vibe-glass-card">
+                  <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl p-4 border border-white/40 text-center shadow-sm vibe-glass-card">
                     <p className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest">Waktu Pulang</p>
-                    <p className="text-xl sm:text-2xl font-sans tracking-tight font-extrabold text-slate-800">
+                    <p className="text-xl sm:text-2xl font-sans tracking-tight font-extrabold text-slate-800 dark:text-slate-100">
                       {todayAttendance.clock_out ? formatTimeShort(new Date(todayAttendance.clock_out)) : "--:--"}
                     </p>
                   </div>
@@ -710,12 +710,12 @@ const AbsensiKaryawan = () => {
         </main>
 
         <AlertDialog open={showClockOutConfirm} onOpenChange={setShowClockOutConfirm}>
-          <AlertDialogContent className="bg-white text-slate-900 border-slate-200">
+          <AlertDialogContent className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700">
             <AlertDialogHeader>
-              <AlertDialogTitle className={isEarlyLeave ? "text-amber-600" : "text-slate-900"}>
+              <AlertDialogTitle className={isEarlyLeave ? "text-amber-600" : "text-slate-900 dark:text-white"}>
                 {isEarlyLeave ? "Konfirmasi Pulang Awal" : "Konfirmasi Clock Out"}
               </AlertDialogTitle>
-              <AlertDialogDescription className="text-slate-600">
+              <AlertDialogDescription className="text-slate-600 dark:text-slate-300">
                 {isEarlyLeave ? (
                   <div className="space-y-2">
                     <p>Waktu saat ini <b>belum menunjukkan jam pulang ({settings.clockOutStart})</b>.</p>
@@ -732,7 +732,7 @@ const AbsensiKaryawan = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="border-slate-200 hover:bg-slate-50 text-slate-700">Batal</AlertDialogCancel>
+              <AlertDialogCancel className="border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200">Batal</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleProceedToJournal}
                 className={isEarlyLeave ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}
@@ -754,7 +754,7 @@ const AbsensiKaryawan = () => {
         {/* Verification Modal (Psychological Security) */}
         {isVerifying && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl p-8 max-w-[320px] w-full mx-4 shadow-2xl flex flex-col items-center justify-center space-y-6">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-[320px] w-full mx-4 shadow-2xl flex flex-col items-center justify-center space-y-6">
               <div className="relative">
                 <div className="absolute inset-0 border-[3px] border-blue-500 rounded-full animate-ping opacity-20" />
                 <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center relative overflow-hidden">
@@ -764,8 +764,8 @@ const AbsensiKaryawan = () => {
                 </div>
               </div>
               <div className="text-center space-y-2">
-                <h4 className="text-lg font-bold text-slate-800">Sistem Keamanan</h4>
-                <p className="text-sm font-medium text-slate-500 animate-pulse">{verificationText}</p>
+                <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100">Sistem Keamanan</h4>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 animate-pulse">{verificationText}</p>
               </div>
             </div>
           </div>
@@ -773,31 +773,31 @@ const AbsensiKaryawan = () => {
       </div>
 
       {/* MOBILE VIEW (Strict design match) */}
-      <div className="flex md:hidden min-h-screen bg-white text-slate-900 font-['Inter',sans-serif] flex-col overflow-x-hidden relative pb-[100px]">
+      <div className="flex md:hidden min-h-screen bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-['Inter',sans-serif] flex-col overflow-x-hidden relative pb-[100px]">
 
         {/* Header */}
         <div className="flex justify-between items-center px-6 pt-12 pb-6">
-          <button onClick={() => navigate("/dashboard")} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 shadow-sm active:scale-95 transition-transform">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600"><path d="m15 18-6-6 6-6" /></svg>
+          <button onClick={() => navigate("/dashboard")} className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-800 shadow-sm active:scale-95 transition-transform">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-slate-300"><path d="m15 18-6-6 6-6" /></svg>
           </button>
-          <span className="text-[17px] font-semibold text-slate-900 tracking-tight">Attendance</span>
-          <button className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>
+          <span className="text-[17px] font-semibold text-slate-900 dark:text-white tracking-tight">Attendance</span>
+          <button className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center border border-slate-100 dark:border-slate-800 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600 dark:text-slate-300"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>
           </button>
         </div>
 
         <div className="flex-1 flex flex-col items-center pt-8 w-full max-w-[500px] mx-auto px-4">
 
           {/* Date & Time Header Match from Image */}
-          <div className="flex flex-col items-center w-full mb-8 text-slate-900">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white shadow-sm mb-4">
-              <Calendar className="h-3 w-3 text-slate-500" />
-              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
+          <div className="flex flex-col items-center w-full mb-8 text-slate-900 dark:text-white">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm mb-4">
+              <Calendar className="h-3 w-3 text-slate-500 dark:text-slate-400" />
+              <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
                 {formatDate(currentTime)}
               </p>
             </div>
 
-            <h2 className="text-[54px] sm:text-[64px] font-sans font-extrabold tracking-tighter leading-none tabular-nums text-slate-900 drop-shadow-sm mb-2">
+            <h2 className="text-[54px] sm:text-[64px] font-sans font-extrabold tracking-tighter leading-none tabular-nums text-slate-900 dark:text-white drop-shadow-sm mb-2">
               {formatTime(currentTime).replace(/:/g, '.')}
             </h2>
             <p className="text-[10px] font-semibold text-slate-400 tracking-widest uppercase">Waktu Indonesia Barat</p>
@@ -806,11 +806,11 @@ const AbsensiKaryawan = () => {
           {/* Layout Cards Grid */}
           <div className="w-full flex flex-col gap-6 mb-8">
             {/* Status Card (Fingerprint) */}
-            <div className="w-full aspect-square max-h-[220px] bg-white rounded-[32px] shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col items-center justify-center p-6">
+            <div className="w-full aspect-square max-h-[220px] bg-white dark:bg-slate-900 rounded-[32px] shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center p-6">
               {!todayAttendance ? (
                 <>
                   <Fingerprint className="h-16 w-16 text-slate-300 mb-4" strokeWidth={1.5} />
-                  <span className="text-xl font-bold text-slate-800">Belum Masuk</span>
+                  <span className="text-xl font-bold text-slate-800 dark:text-slate-100">Belum Masuk</span>
                 </>
               ) : !todayAttendance.clock_out ? (
                 <>
@@ -818,14 +818,14 @@ const AbsensiKaryawan = () => {
                     <div className="absolute inset-0 border-[3px] border-emerald-400/50 rounded-full animate-pulse-slow p-2" />
                     <Timer className="h-16 w-16 text-[#1A5BA8]" strokeWidth={1.5} />
                   </div>
-                  <span className="text-xl font-bold text-slate-800">Sedang Bekerja</span>
-                  <span className="text-xs font-semibold text-slate-500 mt-1">{formatTimeShort(new Date(todayAttendance.clock_in))} WIB</span>
+                  <span className="text-xl font-bold text-slate-800 dark:text-slate-100">Sedang Bekerja</span>
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">{formatTimeShort(new Date(todayAttendance.clock_in))} WIB</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="h-16 w-16 text-slate-400 mb-4" strokeWidth={1.5} />
-                  <span className="text-xl font-bold text-slate-800">Selesai</span>
-                  <div className="mt-2 text-xs px-3 py-1 bg-slate-50 rounded-full text-slate-600 font-semibold border border-slate-200">
+                  <span className="text-xl font-bold text-slate-800 dark:text-slate-100">Selesai</span>
+                  <div className="mt-2 text-xs px-3 py-1 bg-slate-50 dark:bg-slate-800 rounded-full text-slate-600 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700">
                     {getWorkDuration()}
                   </div>
                 </>
@@ -833,20 +833,20 @@ const AbsensiKaryawan = () => {
             </div>
 
             {/* Shift Card */}
-            <div className="w-full bg-white rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-slate-100 p-5">
+            <div className="w-full bg-white dark:bg-slate-900 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-slate-100 dark:border-slate-800 p-5">
               <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5" /> JADWAL SHIFT
               </h3>
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-slate-500">WAJIB MASUK</span>
-                  <span className="font-bold text-slate-800 font-mono tracking-wide">{settings.clockInStart} - {settings.clockInEnd}</span>
+                  <span className="font-bold text-slate-500 dark:text-slate-400">WAJIB MASUK</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 font-mono tracking-wide">{settings.clockInStart} - {settings.clockInEnd}</span>
                 </div>
-                <div className="h-px bg-slate-50 w-full"></div>
+                <div className="h-px bg-slate-50 dark:bg-slate-800 w-full"></div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-slate-500">WAJIB PULANG</span>
-                  <span className="font-bold text-slate-800 font-mono tracking-wide">{settings.clockOutStart} - {settings.clockOutEnd}</span>
+                  <span className="font-bold text-slate-500 dark:text-slate-400">WAJIB PULANG</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 font-mono tracking-wide">{settings.clockOutStart} - {settings.clockOutEnd}</span>
                 </div>
               </div>
             </div>
@@ -881,13 +881,13 @@ const AbsensiKaryawan = () => {
                 </div>
               </button>
             ) : (
-              <div className="w-full h-16 rounded-[20px] bg-slate-100 border border-slate-200 transition-all flex items-center justify-between px-5 pointer-events-none">
+              <div className="w-full h-16 rounded-[20px] bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-between px-5 pointer-events-none">
                 <div className="flex flex-col items-start px-1">
-                  <span className="text-slate-800 font-bold text-lg">Hadir</span>
-                  <span className="text-slate-500 text-[10px] font-medium tracking-wide">Kehadiran Berhasil Dicatat</span>
+                  <span className="text-slate-800 dark:text-slate-100 font-bold text-lg">Hadir</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-[10px] font-medium tracking-wide">Kehadiran Berhasil Dicatat</span>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center">
-                  <CheckCircle2 className="h-4 w-4 text-slate-500" />
+                <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                  <CheckCircle2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                 </div>
               </div>
             )}
@@ -896,8 +896,8 @@ const AbsensiKaryawan = () => {
           {/* Attendance Log Table section */}
           <div className="w-full px-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">Attendance Log</h3>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-xs font-medium text-slate-600">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Attendance Log</h3>
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300">
                 This month <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
               </button>
             </div>
@@ -912,10 +912,10 @@ const AbsensiKaryawan = () => {
               </div>
 
               {/* Log Rows */}
-              <div className="bg-white border-x border-b border-slate-100 rounded-b-xl overflow-hidden shadow-sm">
+              <div className="bg-white dark:bg-slate-900 border-x border-b border-slate-100 dark:border-slate-800 rounded-b-xl overflow-hidden shadow-sm">
                 {recentLogs.length > 0 ? recentLogs.map((row, i) => (
-                  <div key={row.id || i} className="grid grid-cols-4 items-center border-b border-slate-50 py-3 px-4 text-[11px] font-medium text-slate-700">
-                    <div className="text-slate-900 font-semibold">{new Date(row.clock_in).toLocaleDateString("en-GB", { weekday: 'short', day: 'numeric', month: 'short' })}</div>
+                  <div key={row.id || i} className="grid grid-cols-4 items-center border-b border-slate-50 py-3 px-4 text-[11px] font-medium text-slate-700 dark:text-slate-200">
+                    <div className="text-slate-900 dark:text-white font-semibold">{new Date(row.clock_in).toLocaleDateString("en-GB", { weekday: 'short', day: 'numeric', month: 'short' })}</div>
                     <div>{formatTimeShort(new Date(row.clock_in))}</div>
                     <div>{row.clock_out ? formatTimeShort(new Date(row.clock_out)) : '- -'}</div>
                     <div>{calculateDuration(row.clock_in, row.clock_out)}</div>
@@ -931,7 +931,7 @@ const AbsensiKaryawan = () => {
         {/* Floating Navigation Pill */}
         {isMobile && (
           <div className="fixed bottom-6 left-6 right-6 z-50">
-            <div className="bg-white/80 backdrop-blur-xl rounded-[28px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-white/60 flex items-center justify-between px-6 py-4">
+            <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl rounded-[28px] shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-white/60 flex items-center justify-between px-6 py-4">
               <button onClick={() => navigate("/dashboard")} className="w-[42px] h-[42px] flex items-center justify-center text-slate-400 hover:text-[#047857] transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
               </button>
@@ -957,7 +957,7 @@ const AbsensiKaryawan = () => {
         {/* Mobile Verification Modal (Psychological Security) */}
         {isVerifying && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-3xl p-8 max-w-[300px] w-full mx-4 shadow-2xl flex flex-col items-center justify-center space-y-6">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-[300px] w-full mx-4 shadow-2xl flex flex-col items-center justify-center space-y-6">
               <div className="relative">
                 <div className="absolute inset-0 border-[3px] border-blue-500 rounded-full animate-ping opacity-20" />
                 <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center relative overflow-hidden">
@@ -966,8 +966,8 @@ const AbsensiKaryawan = () => {
                 </div>
               </div>
               <div className="text-center space-y-2">
-                <h4 className="text-lg font-bold text-slate-800">Sistem Keamanan</h4>
-                <p className="text-sm font-medium text-slate-500 animate-pulse text-center">{verificationText}</p>
+                <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100">Sistem Keamanan</h4>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 animate-pulse text-center">{verificationText}</p>
               </div>
             </div>
           </div>

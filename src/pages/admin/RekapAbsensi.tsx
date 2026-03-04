@@ -520,7 +520,7 @@ const RekapAbsensi = () => {
       case "leave": return pill("bg-purple-50 border-purple-200", "text-purple-700", "bg-purple-500", "Cuti");
       case "permission": return pill("bg-blue-50 border-blue-200", "text-blue-700", "bg-blue-500", "Izin");
       case "sick": return pill("bg-pink-50 border-pink-200", "text-pink-700", "bg-pink-500", "Sakit");
-      case "not_clocked_out": return pill("bg-slate-50 border-slate-200", "text-slate-600", "bg-slate-400 animate-pulse", "Belum Pulang");
+      case "not_clocked_out": return pill("bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700", "text-slate-600 dark:text-slate-300", "bg-slate-400 animate-pulse", "Belum Pulang");
       default: return <span className="text-[11px] text-slate-400">-</span>;
     }
   };
@@ -538,7 +538,7 @@ const RekapAbsensi = () => {
       <div className="space-y-6">
 
         {/* 1. Header & Filters Card */}
-        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
           <div className="p-4 flex flex-col lg:flex-row gap-4 justify-between lg:items-center">
 
             {/* View Switcher */}
@@ -549,7 +549,7 @@ const RekapAbsensi = () => {
                   onClick={() => setViewMode(m)}
                   className={cn(
                     "px-4 py-2 text-sm font-semibold rounded-lg transition-all capitalize",
-                    viewMode === m ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                    viewMode === m ? "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm" : "text-slate-400 hover:text-slate-600 dark:text-slate-300"
                   )}
                 >
                   {m === 'range' ? 'Periode' : (m === 'daily' ? 'Harian' : 'Bulanan')}
@@ -558,11 +558,11 @@ const RekapAbsensi = () => {
             </div>
 
             {/* Date Navigation */}
-            <div className="flex items-center gap-3 bg-white/50 p-1.5 rounded-xl border border-slate-200/60">
+            <div className="flex items-center gap-3 bg-white dark:bg-slate-900/50 p-1.5 rounded-xl border border-slate-200/60">
               {viewMode === 'range' ? (
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" className="h-9 w-[240px] justify-start text-left font-normal bg-white border border-slate-200">
+                    <Button variant="ghost" className="h-9 w-[240px] justify-start text-left font-normal bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {dateRange?.from ? (
                         dateRange.to ? <>{format(dateRange.from, "d MMM yyyy", { locale: id })} - {format(dateRange.to, "d MMM yyyy", { locale: id })}</> : format(dateRange.from, "d MMM yyyy", { locale: id })
@@ -575,11 +575,11 @@ const RekapAbsensi = () => {
                 </Popover>
               ) : (
                 <>
-                  <Button variant="ghost" size="icon" onClick={goToPrevious} className="h-8 w-8 hover:bg-white hover:shadow-sm"><ChevronLeft className="w-4 h-4" /></Button>
-                  <span className="font-semibold text-slate-700 text-sm min-w-[140px] text-center">
+                  <Button variant="ghost" size="icon" onClick={goToPrevious} className="h-8 w-8 hover:bg-white dark:bg-slate-900 hover:shadow-sm"><ChevronLeft className="w-4 h-4" /></Button>
+                  <span className="font-semibold text-slate-700 dark:text-slate-200 text-sm min-w-[140px] text-center">
                     {viewMode === 'daily' ? format(new Date(filterDate), 'EEEE, d MMM yyyy', { locale: id }) : format(selectedMonth, 'MMMM yyyy', { locale: id })}
                   </span>
-                  <Button variant="ghost" size="icon" onClick={goToNext} className="h-8 w-8 hover:bg-white hover:shadow-sm"><ChevronRight className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={goToNext} className="h-8 w-8 hover:bg-white dark:bg-slate-900 hover:shadow-sm"><ChevronRight className="w-4 h-4" /></Button>
                 </>
               )}
             </div>
@@ -603,13 +603,13 @@ const RekapAbsensi = () => {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Cari karyawan..."
-                className="pl-10 bg-white/50 border-slate-200/60 rounded-xl h-10 font-medium"
+                className="pl-10 bg-white dark:bg-slate-900/50 border-slate-200/60 rounded-xl h-10 font-medium"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-              <SelectTrigger className="w-[200px] bg-white/50 border-slate-200/60 rounded-xl h-10 font-medium">
+              <SelectTrigger className="w-[200px] bg-white dark:bg-slate-900/50 border-slate-200/60 rounded-xl h-10 font-medium">
                 <Filter className="w-3.5 h-3.5 mr-2 text-slate-400" />
                 <SelectValue placeholder="Semua Departemen" />
               </SelectTrigger>
@@ -623,51 +623,51 @@ const RekapAbsensi = () => {
 
         {/* 2. Stat Cards Summary */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 vibe-stat-grid">
-          <Card className="bg-white/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
+          <Card className="bg-white dark:bg-slate-900/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
             <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Hadir</p>
-              <p className="text-xl font-extrabold text-slate-900 tracking-tight">{currentStats.totalPresent}</p>
+              <p className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">{currentStats.totalPresent}</p>
             </div>
           </Card>
-          <Card className="bg-white/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
+          <Card className="bg-white dark:bg-slate-900/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
             <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
               <AlertCircle className="w-5 h-5" />
             </div>
             <div>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Terlambat</p>
-              <p className="text-xl font-extrabold text-slate-900 tracking-tight">{currentStats.totalLate}</p>
+              <p className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">{currentStats.totalLate}</p>
             </div>
           </Card>
-          <Card className="bg-white/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
+          <Card className="bg-white dark:bg-slate-900/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
             <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
               <XCircle className="w-5 h-5" />
             </div>
             <div>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Alpha</p>
-              <p className="text-xl font-extrabold text-slate-900 tracking-tight">{currentStats.totalAbsent}</p>
+              <p className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">{currentStats.totalAbsent}</p>
             </div>
           </Card>
-          <Card className="bg-white/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
+          <Card className="bg-white dark:bg-slate-900/70 backdrop-blur-md border-white/60 shadow-sm shadow-slate-200/40 p-4 flex items-center gap-4 rounded-[18px]">
             <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
               <FileText className="w-5 h-5" />
             </div>
             <div>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cuti / Izin</p>
-              <p className="text-xl font-extrabold text-slate-900 tracking-tight">{currentStats.totalLeave}</p>
+              <p className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">{currentStats.totalLeave}</p>
             </div>
           </Card>
         </div>
 
         {/* 3. Data Table */}
-        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md overflow-hidden rounded-[20px] vibe-glass-card">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md overflow-hidden rounded-[20px] vibe-glass-card">
           {/* Desktop Table View */}
           <div className="hidden md:block overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow className="border-b border-slate-100">
+              <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
+                <TableRow className="border-b border-slate-100 dark:border-slate-800">
                   <TableHead className="w-[50px] font-bold text-slate-400 text-[10px] uppercase tracking-wider">No</TableHead>
                   <TableHead className="font-bold text-slate-400 text-[10px] uppercase tracking-wider">Karyawan</TableHead>
                   <TableHead className="font-bold text-slate-400 text-[10px] uppercase tracking-wider">Departemen</TableHead>
@@ -692,33 +692,33 @@ const RekapAbsensi = () => {
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell><div className="h-4 w-4 bg-slate-100 rounded animate-pulse" /></TableCell>
-                      <TableCell><div className="h-4 w-32 bg-slate-100 rounded animate-pulse" /></TableCell>
-                      <TableCell><div className="h-4 w-20 bg-slate-100 rounded animate-pulse" /></TableCell>
-                      <TableCell colSpan={4}><div className="h-4 w-full bg-slate-100 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-4 bg-slate-100 dark:bg-slate-800/80 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-32 bg-slate-100 dark:bg-slate-800/80 rounded animate-pulse" /></TableCell>
+                      <TableCell><div className="h-4 w-20 bg-slate-100 dark:bg-slate-800/80 rounded animate-pulse" /></TableCell>
+                      <TableCell colSpan={4}><div className="h-4 w-full bg-slate-100 dark:bg-slate-800/80 rounded animate-pulse" /></TableCell>
                     </TableRow>
                   ))
                 ) : currentStats.filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-32 text-center text-slate-500">
+                    <TableCell colSpan={8} className="h-32 text-center text-slate-500 dark:text-slate-400">
                       Tidak ada data absensi untuk periode ini.
                     </TableCell>
                   </TableRow>
                 ) : (
                   currentStats.filtered.map((row: any, i) => (
-                    <TableRow key={row.user_id} className="hover:bg-slate-50/50">
-                      <TableCell className="text-slate-500 text-xs">{i + 1}</TableCell>
+                    <TableRow key={row.user_id} className="hover:bg-slate-50/50 dark:bg-slate-800/50">
+                      <TableCell className="text-slate-500 dark:text-slate-400 text-xs">{i + 1}</TableCell>
                       <TableCell>
-                        <div className="font-medium text-slate-800 text-sm">{row.name}</div>
+                        <div className="font-medium text-slate-800 dark:text-slate-100 text-sm">{row.name}</div>
                         <div className="text-[10px] text-slate-400">ID: {row.user_id.substring(0, 6)}</div>
                       </TableCell>
-                      <TableCell className="text-slate-500 text-xs">{row.department}</TableCell>
+                      <TableCell className="text-slate-500 dark:text-slate-400 text-xs">{row.department}</TableCell>
 
                       {viewMode === 'daily' ? (
                         <>
-                          <TableCell className="text-center font-mono text-xs text-slate-600">{formatTime(row.clock_in)}</TableCell>
-                          <TableCell className="text-center font-mono text-xs text-slate-600">{formatTime(row.clock_out)}</TableCell>
-                          <TableCell className="text-center text-xs text-slate-500">{calculateDuration(row.clock_in, row.clock_out)}</TableCell>
+                          <TableCell className="text-center font-mono text-xs text-slate-600 dark:text-slate-300">{formatTime(row.clock_in)}</TableCell>
+                          <TableCell className="text-center font-mono text-xs text-slate-600 dark:text-slate-300">{formatTime(row.clock_out)}</TableCell>
+                          <TableCell className="text-center text-xs text-slate-500 dark:text-slate-400">{calculateDuration(row.clock_in, row.clock_out)}</TableCell>
                           <TableCell className="text-center">
                             {getStatusBadge(row.status)}
                           </TableCell>
@@ -737,7 +737,7 @@ const RekapAbsensi = () => {
                         </>
                       ) : (
                         <>
-                          <TableCell className="text-center font-bold text-slate-700">{row.present}</TableCell>
+                          <TableCell className="text-center font-bold text-slate-700 dark:text-slate-200">{row.present}</TableCell>
                           <TableCell className="text-center font-medium text-amber-600">{row.late}</TableCell>
                           <TableCell className="text-center font-medium text-red-600">{row.absent}</TableCell>
                           <TableCell className="text-center">
@@ -763,22 +763,22 @@ const RekapAbsensi = () => {
           </div>
 
           {/* Mobile Cards View */}
-          <div className="md:hidden flex flex-col p-4 gap-4 bg-slate-50/50">
+          <div className="md:hidden flex flex-col p-4 gap-4 bg-slate-50/50 dark:bg-slate-800/50">
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-32 bg-white rounded-2xl animate-pulse" />
+                <div key={i} className="h-32 bg-white dark:bg-slate-900 rounded-2xl animate-pulse" />
               ))
             ) : currentStats.filtered.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 text-sm bg-white rounded-xl border border-slate-100">
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
                 Tidak ada data absensi untuk periode ini.
               </div>
             ) : (
               currentStats.filtered.map((row: any) => (
-                <div key={row.user_id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 relative flex flex-col gap-3">
+                <div key={row.user_id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-4 relative flex flex-col gap-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{row.name}</h4>
-                      <p className="text-[11px] text-slate-500 font-medium">{row.department}</p>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{row.name}</h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{row.department}</p>
                     </div>
                     {viewMode === 'daily' ? (
                       getStatusBadge(row.status)
@@ -793,18 +793,18 @@ const RekapAbsensi = () => {
                   </div>
 
                   {viewMode === 'daily' ? (
-                    <div className="grid grid-cols-2 gap-3 bg-slate-50/50 rounded-xl p-3 border border-slate-50">
+                    <div className="grid grid-cols-2 gap-3 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-50">
                       <div className="flex flex-col">
                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Jam Masuk</span>
-                        <span className="text-xs font-mono font-semibold text-slate-700">{formatTime(row.clock_in)}</span>
+                        <span className="text-xs font-mono font-semibold text-slate-700 dark:text-slate-200">{formatTime(row.clock_in)}</span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Jam Keluar</span>
-                        <span className="text-xs font-mono font-semibold text-slate-700">{formatTime(row.clock_out)}</span>
+                        <span className="text-xs font-mono font-semibold text-slate-700 dark:text-slate-200">{formatTime(row.clock_out)}</span>
                       </div>
-                      <div className="col-span-2 pt-1 mt-1 border-t border-slate-100 flex justify-between items-center">
+                      <div className="col-span-2 pt-1 mt-1 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Durasi</span>
-                        <span className="text-xs font-bold text-slate-800">{calculateDuration(row.clock_in, row.clock_out)}</span>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{calculateDuration(row.clock_in, row.clock_out)}</span>
                       </div>
                     </div>
                   ) : (

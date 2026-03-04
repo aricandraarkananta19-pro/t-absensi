@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface AttendanceRecord {
     id: string;
@@ -70,7 +71,7 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     // Feature 5: Dark Mode
-    const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') === 'dark');
+    const { isDark, toggleTheme } = useTheme();
 
     // Feature 6: Quick Journal
     const [showQuickJournal, setShowQuickJournal] = useState(false);
@@ -272,11 +273,7 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
 
     useEffect(() => { fetchNotifCount(); }, [fetchNotifCount]);
 
-    // Feature 5: Dark Mode toggle
-    useEffect(() => {
-        document.documentElement.classList.toggle('dark', isDark);
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    }, [isDark]);
+    // Feature 5: Dark Mode toggle removed as it corresponds to ThemeProvider
 
     // Feature 2: Pull-to-Refresh
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -524,7 +521,7 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
                         <div className="flex items-center gap-1.5">
                             {/* Dark Mode Toggle */}
                             <button
-                                onClick={() => setIsDark(!isDark)}
+                                onClick={toggleTheme}
                                 className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center border border-white/10 active:scale-90 transition-all backdrop-blur-sm"
                                 aria-label="Toggle dark mode"
                             >

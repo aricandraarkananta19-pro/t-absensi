@@ -73,7 +73,7 @@ const Auth = () => {
       <div className="flex min-h-screen items-center justify-center bg-[#f8f9fb]">
         <div className="flex flex-col items-center gap-5">
           <div className="relative">
-            <div className="h-16 w-16 rounded-2xl bg-white shadow-lg flex items-center justify-center">
+            <div className="h-16 w-16 rounded-2xl bg-white dark:bg-slate-900 shadow-lg flex items-center justify-center">
               <img src={talentaLogo} alt="Logo" className="h-10 w-10 object-contain" />
             </div>
             <div className="absolute -inset-1 rounded-2xl border-2 border-blue-200 animate-ping opacity-30" />
@@ -150,7 +150,7 @@ const Auth = () => {
             className={`transition-all duration-1000 ease-out ${mounted ? "translate-y-0 opacity-100 scale-100" : "-translate-y-6 opacity-0 scale-95"
               }`}
           >
-            <div className="bg-white rounded-[28px] p-7 shadow-2xl shadow-black/20">
+            <div className="bg-white dark:bg-slate-900 rounded-[28px] p-7 shadow-2xl shadow-black/20">
               <img
                 src={talentaLogo}
                 alt="Talenta Traincom Indonesia"
@@ -189,7 +189,7 @@ const Auth = () => {
             ].map((feat, i) => (
               <span
                 key={feat}
-                className="px-4 py-2 rounded-full text-[13px] font-medium text-slate-300 bg-white/[0.06] border border-white/[0.08] backdrop-blur-sm"
+                className="px-4 py-2 rounded-full text-[13px] font-medium text-slate-300 bg-white dark:bg-slate-900/[0.06] border border-white/[0.08] backdrop-blur-sm"
                 style={{ animationDelay: `${0.5 + i * 0.1}s` }}
               >
                 {feat}
@@ -209,7 +209,7 @@ const Auth = () => {
             ].map((stat, i) => (
               <div key={stat.label} className="text-center">
                 <div className="text-2xl font-bold text-white">{stat.value}</div>
-                <div className="text-xs text-slate-500 mt-1 font-medium tracking-wide uppercase">{stat.label}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium tracking-wide uppercase">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -231,7 +231,7 @@ const Auth = () => {
           />
           <div className="relative z-10 flex flex-col items-center pt-12 pb-8 px-6">
             <div
-              className={`bg-white rounded-2xl p-4 shadow-xl transition-all duration-700 ${mounted ? "scale-100 opacity-100" : "scale-90 opacity-0"
+              className={`bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-xl transition-all duration-700 ${mounted ? "scale-100 opacity-100" : "scale-90 opacity-0"
                 }`}
             >
               <img src={talentaLogo} alt="Logo" className="w-40 h-auto object-contain" />
@@ -251,22 +251,22 @@ const Auth = () => {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
                 <img src={talentaLogo} alt="Logo" className="w-6 h-6 object-contain brightness-0 invert" />
               </div>
-              <span className="text-[17px] font-bold text-slate-800 tracking-tight">Talenta Traincom</span>
+              <span className="text-[17px] font-bold text-slate-800 dark:text-slate-100 tracking-tight">Talenta Traincom</span>
             </div>
 
             {/* Title */}
             <div className="mb-8">
-              <h1 className="text-[26px] font-bold text-slate-900 tracking-tight">
+              <h1 className="text-[26px] font-bold text-slate-900 dark:text-white tracking-tight">
                 Selamat Datang
               </h1>
-              <p className="text-slate-500 text-[15px] mt-1.5">
+              <p className="text-slate-500 dark:text-slate-400 text-[15px] mt-1.5">
                 Masuk ke akun Anda untuk melanjutkan
               </p>
             </div>
 
             {/* ── Login Card ── */}
             <div
-              className={`bg-white rounded-[24px] p-7 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-200/60 transition-all duration-700 delay-150 ease-out ${mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+              className={`bg-white dark:bg-slate-900 rounded-[24px] p-7 sm:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-slate-200/60 transition-all duration-700 delay-150 ease-out ${mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
                 }`}
             >
               <Form {...form}>
@@ -277,7 +277,7 @@ const Auth = () => {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[13px] font-semibold text-slate-700 ml-1">
+                        <FormLabel className="text-[13px] font-semibold text-slate-700 dark:text-slate-200 ml-1">
                           Email
                         </FormLabel>
                         <FormControl>
@@ -288,7 +288,7 @@ const Auth = () => {
                               type="email"
                               placeholder="nama@perusahaan.com"
                               autoComplete="email"
-                              className="h-[52px] pl-11 pr-4 rounded-[16px] border-slate-200 bg-slate-50/60 text-[15px] placeholder:text-slate-400 focus-visible:bg-white focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-500/10 transition-all duration-200"
+                              className="h-[52px] pl-11 pr-4 rounded-[16px] border-slate-200 dark:border-slate-700 bg-slate-50/60 text-[15px] placeholder:text-slate-400 focus-visible:bg-white dark:bg-slate-900 focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-500/10 transition-all duration-200"
                             />
                           </div>
                         </FormControl>
@@ -303,7 +303,7 @@ const Auth = () => {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[13px] font-semibold text-slate-700 ml-1">
+                        <FormLabel className="text-[13px] font-semibold text-slate-700 dark:text-slate-200 ml-1">
                           Password
                         </FormLabel>
                         <FormControl>
@@ -314,12 +314,12 @@ const Auth = () => {
                               type={showPassword ? "text" : "password"}
                               placeholder="••••••••"
                               autoComplete="current-password"
-                              className="h-[52px] pl-11 pr-12 rounded-[16px] border-slate-200 bg-slate-50/60 text-[15px] placeholder:text-slate-400 focus-visible:bg-white focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-500/10 transition-all duration-200"
+                              className="h-[52px] pl-11 pr-12 rounded-[16px] border-slate-200 dark:border-slate-700 bg-slate-50/60 text-[15px] placeholder:text-slate-400 focus-visible:bg-white dark:bg-slate-900 focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-500/10 transition-all duration-200"
                             />
                             <button
                               type="button"
                               onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800/80 transition-all"
                               tabIndex={-1}
                             >
                               {showPassword ? (
@@ -374,7 +374,7 @@ const Auth = () => {
               </Form>
 
               {/* Security Indicator */}
-              <div className="flex items-center justify-center gap-1.5 mt-5 pt-5 border-t border-slate-100">
+              <div className="flex items-center justify-center gap-1.5 mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
                 <span className="text-[12px] text-slate-400 font-medium">
                   Dilindungi enkripsi enterprise-grade
@@ -397,12 +397,12 @@ const Auth = () => {
 
         {/* ── Footer ── */}
         <div
-          className={`py-5 text-center border-t border-slate-100/80 bg-white/40 backdrop-blur-sm transition-all duration-700 delay-500 ease-out ${mounted ? "opacity-100" : "opacity-0"
+          className={`py-5 text-center border-t border-slate-100/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 backdrop-blur-sm transition-all duration-700 delay-500 ease-out ${mounted ? "opacity-100" : "opacity-0"
             }`}
         >
           <p className="text-[12px] text-slate-400">
             © {new Date().getFullYear()}{" "}
-            <span className="font-semibold text-slate-500">Talenta Traincom Indonesia</span>
+            <span className="font-semibold text-slate-500 dark:text-slate-400">Talenta Traincom Indonesia</span>
             . All rights reserved.
           </p>
         </div>

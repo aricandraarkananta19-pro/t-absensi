@@ -72,10 +72,10 @@ export default function RiwayatAbsensiMobile({
             sick: { text: "Sakit", color: "text-amber-700", bg: "bg-amber-50 border-amber-200" },
             absent: { text: "Alpha", color: "text-red-700", bg: "bg-red-50 border-red-200" },
             alpha: { text: "Alpha", color: "text-red-700", bg: "bg-red-50 border-red-200" },
-            future: { text: "Mendatang", color: "text-slate-500", bg: "bg-slate-50 border-slate-200" },
-            weekend: { text: "Libur", color: "text-slate-500", bg: "bg-slate-50 border-slate-200" },
+            future: { text: "Mendatang", color: "text-slate-500 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700" },
+            weekend: { text: "Libur", color: "text-slate-500 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700" },
         };
-        return map[status] || { text: status, color: "text-slate-600", bg: "bg-slate-50 border-slate-200" };
+        return map[status] || { text: status, color: "text-slate-600 dark:text-slate-300", bg: "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700" };
     };
 
     // Selected date detail
@@ -85,14 +85,14 @@ export default function RiwayatAbsensiMobile({
     const filteredList = attendanceList.filter(a => !['future', 'weekend'].includes(a.status));
 
     return (
-        <div className="flex flex-col min-h-screen bg-slate-50 pb-24">
+        <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-800 pb-24">
             {/* ===== HEADER ===== */}
             <div className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-violet-800" />
                 <div className="relative z-10 pt-[max(env(safe-area-inset-top),40px)] pb-6 px-5">
                     <div className="flex justify-between items-center">
                         <h1 className="text-xl font-bold text-white tracking-tight">Riwayat Kehadiran</h1>
-                        <button onClick={onExport} className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/10 active:scale-95 transition-transform">
+                        <button onClick={onExport} className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900/10 backdrop-blur-sm flex items-center justify-center border border-white/10 active:scale-95 transition-transform">
                             <Download className="w-4 h-4 text-white" />
                         </button>
                     </div>
@@ -101,29 +101,29 @@ export default function RiwayatAbsensiMobile({
 
             {/* ===== STATS ROW ===== */}
             <div className="px-5 -mt-3 relative z-10">
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-4">
                     <div className="grid grid-cols-4 gap-1">
                         <div className="text-center">
                             <span className="text-2xl font-bold text-emerald-600 tabular-nums">{stats.present}</span>
                             <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Hadir</span>
                         </div>
-                        <div className="text-center border-l border-slate-100">
+                        <div className="text-center border-l border-slate-100 dark:border-slate-800">
                             <span className="text-2xl font-bold text-orange-500 tabular-nums">{stats.late}</span>
                             <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Telat</span>
                         </div>
-                        <div className="text-center border-l border-slate-100">
+                        <div className="text-center border-l border-slate-100 dark:border-slate-800">
                             <span className="text-2xl font-bold text-red-500 tabular-nums">{stats.absent}</span>
                             <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Alpha</span>
                         </div>
-                        <div className="text-center border-l border-slate-100">
+                        <div className="text-center border-l border-slate-100 dark:border-slate-800">
                             <span className="text-2xl font-bold text-violet-600 tabular-nums">{stats.leave}</span>
                             <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Cuti</span>
                         </div>
                     </div>
 
                     {/* Attendance rate bar */}
-                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                        <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden">
                             <div className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-700" style={{ width: `${attendanceRate}%` }} />
                         </div>
                         <span className="text-xs font-bold text-indigo-600">{attendanceRate}%</span>
@@ -133,20 +133,20 @@ export default function RiwayatAbsensiMobile({
 
             {/* ===== MONTH NAVIGATION ===== */}
             <div className="px-5 mt-5 flex items-center justify-between">
-                <button onClick={onPrevMonth} className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm border border-slate-100 active:scale-95 transition-transform">
-                    <ChevronLeft className="w-5 h-5 text-slate-600" />
+                <button onClick={onPrevMonth} className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-800 active:scale-95 transition-transform">
+                    <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
                 </button>
-                <span className="text-sm font-bold text-slate-800 capitalize">
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-100 capitalize">
                     {format(currentMonth, 'MMMM yyyy', { locale: idLocale })}
                 </span>
-                <button onClick={onNextMonth} className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm border border-slate-100 active:scale-95 transition-transform">
-                    <ChevronRight className="w-5 h-5 text-slate-600" />
+                <button onClick={onNextMonth} className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-800 active:scale-95 transition-transform">
+                    <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />
                 </button>
             </div>
 
             {/* ===== CALENDAR VIEW ===== */}
             <div className="px-5 mt-4">
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-4">
                     {/* Day headers */}
                     <div className="grid grid-cols-7 gap-y-3 gap-x-0.5 mb-3">
                         {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(d => (
@@ -173,13 +173,13 @@ export default function RiwayatAbsensiMobile({
                                 >
                                     <span className={cn(
                                         "text-xs font-semibold tabular-nums",
-                                        isSelected ? "text-white" : isToday ? "text-indigo-600 font-bold" : "text-slate-700"
+                                        isSelected ? "text-white" : isToday ? "text-indigo-600 font-bold" : "text-slate-700 dark:text-slate-200"
                                     )}>
                                         {d.getDate()}
                                     </span>
                                     <div className={cn(
                                         "w-1.5 h-1.5 rounded-full mt-0.5 transition-all",
-                                        isSelected ? "bg-white/60" : dotColor,
+                                        isSelected ? "bg-white dark:bg-slate-900/60" : dotColor,
                                         !record && "opacity-0"
                                     )} />
                                 </button>
@@ -188,7 +188,7 @@ export default function RiwayatAbsensiMobile({
                     </div>
 
                     {/* Legend */}
-                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-slate-100 justify-center">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 justify-center">
                         {[
                             { color: "bg-emerald-500", label: "Hadir" },
                             { color: "bg-orange-500", label: "Telat" },
@@ -197,7 +197,7 @@ export default function RiwayatAbsensiMobile({
                         ].map(item => (
                             <div key={item.label} className="flex items-center gap-1.5">
                                 <div className={cn("w-2 h-2 rounded-full", item.color)} />
-                                <span className="text-[10px] font-medium text-slate-500">{item.label}</span>
+                                <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{item.label}</span>
                             </div>
                         ))}
                     </div>
@@ -205,9 +205,9 @@ export default function RiwayatAbsensiMobile({
 
                 {/* Selected date detail */}
                 {selectedRecord && selectedRecord.status !== 'future' && selectedRecord.status !== 'weekend' && (
-                    <div className="mt-3 bg-white rounded-2xl shadow-sm border border-slate-100 p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="mt-3 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-bold text-slate-800">
+                            <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
                                 {format(selectedDate, 'EEEE, d MMMM', { locale: idLocale })}
                             </span>
                             {(() => {
@@ -222,14 +222,14 @@ export default function RiwayatAbsensiMobile({
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
                                 <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                <span className="text-xs font-medium text-slate-600">
+                                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                                     {selectedRecord.clockIn ? new Date(selectedRecord.clockIn).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                                 </span>
                             </div>
                             <ArrowRight className="w-3 h-3 text-slate-300" />
                             <div className="flex items-center gap-2">
                                 <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                <span className="text-xs font-medium text-slate-600">
+                                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                                     {selectedRecord.clockOut ? new Date(selectedRecord.clockOut).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                                 </span>
                             </div>
@@ -240,10 +240,10 @@ export default function RiwayatAbsensiMobile({
 
             {/* ===== DETAIL LIST ===== */}
             <div className="px-5 mt-6">
-                <h3 className="text-sm font-bold text-slate-800 mb-3">Detail Kehadiran</h3>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3">Detail Kehadiran</h3>
 
                 {filteredList.length === 0 ? (
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-8 text-center">
                         <Search className="w-10 h-10 text-slate-200 mx-auto mb-3" />
                         <p className="text-sm font-semibold text-slate-400">Belum ada data kehadiran</p>
                         <p className="text-xs text-slate-300 mt-1">Data akan muncul setelah Anda check-in</p>
@@ -257,7 +257,7 @@ export default function RiwayatAbsensiMobile({
                                 : null;
 
                             return (
-                                <div key={idx} className="bg-white rounded-xl shadow-sm border border-slate-100 p-3.5 flex items-center gap-3 transition-all duration-200 active:scale-[0.99]">
+                                <div key={idx} className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-3.5 flex items-center gap-3 transition-all duration-200 active:scale-[0.99]">
                                     {/* Date circle */}
                                     <div className={cn("w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0 border", badge.bg)}>
                                         <span className={cn("text-sm font-bold leading-none", badge.color)}>{new Date(item.date).getDate()}</span>
@@ -269,7 +269,7 @@ export default function RiwayatAbsensiMobile({
                                     {/* Info */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-0.5">
-                                            <span className="text-[13px] font-bold text-slate-800">{format(new Date(item.date), 'EEEE', { locale: idLocale })}</span>
+                                            <span className="text-[13px] font-bold text-slate-800 dark:text-slate-100">{format(new Date(item.date), 'EEEE', { locale: idLocale })}</span>
                                             <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border", badge.bg, badge.color)}>
                                                 {badge.text}
                                             </span>
@@ -283,7 +283,7 @@ export default function RiwayatAbsensiMobile({
                                     {/* Duration */}
                                     {duration !== null && (
                                         <div className="text-right shrink-0">
-                                            <span className="text-sm font-bold text-slate-800 tabular-nums">{duration}</span>
+                                            <span className="text-sm font-bold text-slate-800 dark:text-slate-100 tabular-nums">{duration}</span>
                                             <span className="text-[10px] font-medium text-slate-400 ml-0.5">j</span>
                                         </div>
                                     )}

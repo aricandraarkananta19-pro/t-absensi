@@ -32,7 +32,7 @@ const MobileNavigation = () => {
             aria-label="Mobile navigation"
         >
             {/* Glass background */}
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-t border-slate-200/60" />
+            <div className="absolute inset-0 bg-white dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-200/60" />
 
             <div className="relative flex justify-around items-center h-16 px-2 max-w-lg mx-auto">
                 {navItems.map((item) => {
@@ -52,14 +52,14 @@ const MobileNavigation = () => {
 
                             <div className={cn(
                                 "relative p-1.5 rounded-xl transition-all duration-200",
-                                active ? "bg-indigo-50" : "bg-transparent group-active:bg-slate-50"
+                                active ? "bg-indigo-50" : "bg-transparent group-active:bg-slate-50 dark:bg-slate-800"
                             )}>
                                 <item.icon
                                     className={cn(
                                         "w-[22px] h-[22px] transition-all duration-200",
                                         active
                                             ? "text-indigo-600 stroke-[2.5px]"
-                                            : "text-slate-400 stroke-[1.8px] group-active:text-slate-600"
+                                            : "text-slate-400 stroke-[1.8px] group-active:text-slate-600 dark:text-slate-300"
                                     )}
                                 />
                             </div>

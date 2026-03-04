@@ -65,7 +65,7 @@ export default function JurnalSayaMobile({
         <div className="flex flex-col min-h-screen bg-[#F8FAFC] pb-[100px] font-sans">
             {/* Premium Dark Header */}
             <div className="bg-[#0F172A] text-white pt-[max(env(safe-area-inset-top),32px)] pb-12 px-6 rounded-b-[40px] shadow-lg relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white dark:bg-slate-900/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
                 <div className="relative z-10 flex justify-between items-start mb-6">
                     <div>
                         <h1 className="text-xl font-bold tracking-tight mb-1">Log Kerja</h1>
@@ -74,7 +74,7 @@ export default function JurnalSayaMobile({
 
                     <button
                         onClick={() => setFilterStatus(filterStatus === "Bulan Ini" ? "Semua" : "Bulan Ini")}
-                        className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full border border-white/10 active:scale-95 transition-transform"
+                        className="flex items-center gap-2 bg-white dark:bg-slate-900/10 px-3 py-1.5 rounded-full border border-white/10 active:scale-95 transition-transform"
                     >
                         <Calendar className="w-3.5 h-3.5" />
                         <span className="text-[11px] font-bold uppercase tracking-wider">{filterStatus}</span>
@@ -87,12 +87,12 @@ export default function JurnalSayaMobile({
                 {/* List of Journals */}
                 <div className="space-y-4">
                     {filteredJournals.length === 0 ? (
-                        <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center flex flex-col items-center justify-center shadow-sm">
-                            <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-100 dark:border-slate-800 text-center flex flex-col items-center justify-center shadow-sm">
+                            <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3">
                                 <FileText className="w-6 h-6 text-slate-400" />
                             </div>
                             <span className="text-sm font-bold text-[#0F172A]">Belum Ada Log Kerja</span>
-                            <span className="text-xs font-medium text-slate-500 mt-1">Anda belum mencatat apapun di periode ini.</span>
+                            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">Anda belum mencatat apapun di periode ini.</span>
                         </div>
                     ) : (
                         filteredJournals.map((journal) => {
@@ -101,7 +101,7 @@ export default function JurnalSayaMobile({
                             const isToday = journal.date === format(new Date(), 'yyyy-MM-dd');
 
                             return (
-                                <div key={journal.id} className="bg-white p-5 rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100 relative group overflow-hidden">
+                                <div key={journal.id} className="bg-white dark:bg-slate-900 p-5 rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100 dark:border-slate-800 relative group overflow-hidden">
                                     <div className="flex justify-between items-start mb-3">
                                         <div>
                                             <span className={cn(
@@ -117,7 +117,7 @@ export default function JurnalSayaMobile({
                                         {getStatusBadge(journal.verification_status || 'submitted')}
                                     </div>
 
-                                    <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed mb-3">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-2 leading-relaxed mb-3">
                                         {content}
                                     </p>
 
@@ -139,9 +139,9 @@ export default function JurnalSayaMobile({
                         <Plus className="w-6 h-6" />
                     </button>
                 </DialogTrigger>
-                <DialogContent className="max-w-[400px] mx-auto p-0 rounded-[24px] bg-slate-50 sm:max-h-[90vh] overflow-y-auto w-[90%] left-1/2 -translate-x-1/2 border-none">
+                <DialogContent className="max-w-[400px] mx-auto p-0 rounded-[24px] bg-slate-50 dark:bg-slate-800 sm:max-h-[90vh] overflow-y-auto w-[90%] left-1/2 -translate-x-1/2 border-none">
                     <div className="p-6">
-                        <h2 className="text-lg font-bold text-slate-800 mb-4 tracking-tight">Tambah Log Pekerjaan</h2>
+                        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 tracking-tight">Tambah Log Pekerjaan</h2>
                         <DailyJournalForm
                             onSubmit={handleFormSubmit}
                             isSubmitting={isSubmitting}

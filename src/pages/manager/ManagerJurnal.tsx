@@ -220,7 +220,7 @@ const ManagerJurnal = () => {
                         </p>
                     </div>
 
-                    <div className="relative z-10 flex items-center gap-6 md:gap-12 bg-white/10 backdrop-blur-md rounded-2xl px-8 py-5 border border-white/10">
+                    <div className="relative z-10 flex items-center gap-6 md:gap-12 bg-white dark:bg-slate-900/10 backdrop-blur-md rounded-2xl px-8 py-5 border border-white/10">
                         <div className="flex flex-col">
                             <span className="text-slate-400 uppercase tracking-widest text-[10px] font-bold mb-1">Vol. Jurnal</span>
                             <div className="flex items-baseline gap-1.5">
@@ -229,7 +229,7 @@ const ManagerJurnal = () => {
                             </div>
                         </div>
 
-                        <div className="w-[1px] h-10 bg-white/20 hidden sm:block" />
+                        <div className="w-[1px] h-10 bg-white dark:bg-slate-900/20 hidden sm:block" />
 
                         <div className="flex flex-col">
                             <span className="text-slate-400 uppercase tracking-widest text-[10px] font-bold mb-1">Approval Rate</span>
@@ -241,7 +241,7 @@ const ManagerJurnal = () => {
                             </div>
                         </div>
 
-                        <div className="w-[1px] h-10 bg-white/20 hidden sm:block" />
+                        <div className="w-[1px] h-10 bg-white dark:bg-slate-900/20 hidden sm:block" />
 
                         <div className="flex flex-col">
                             <span className="text-slate-400 uppercase tracking-widest text-[10px] font-bold mb-1">Produktivitas</span>
@@ -275,7 +275,7 @@ const ManagerJurnal = () => {
                         <Button onClick={handleBulkApprove} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 rounded-xl h-9 px-5 font-bold shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ml-auto md:ml-0">
                             <CheckCircle className="w-4 h-4" /> Setujui Semua
                         </Button>
-                        <Button onClick={() => setSelectedIds([])} variant="ghost" size="sm" className="text-slate-500 hover:text-slate-700 hover:bg-white rounded-xl h-9 font-semibold">
+                        <Button onClick={() => setSelectedIds([])} variant="ghost" size="sm" className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200 hover:bg-white dark:bg-slate-900 rounded-xl h-9 font-semibold">
                             Batal
                         </Button>
                     </div>
@@ -296,7 +296,7 @@ const ManagerJurnal = () => {
                 {/* SLIDE-IN DETAIL PANEL (PREMIUM MODE) */}
                 <Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
                     <SheetContent className="w-full sm:max-w-[800px] p-0 border-l border-slate-200/60 shadow-2xl">
-                        <div className="h-full overflow-y-auto bg-slate-50/50">
+                        <div className="h-full overflow-y-auto bg-slate-50/50 dark:bg-slate-800/50">
                             {viewJournal && (
                                 <JournalReviewDetail
                                     journal={viewJournal}

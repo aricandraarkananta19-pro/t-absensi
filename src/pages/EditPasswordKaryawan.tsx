@@ -76,7 +76,7 @@ const EditPasswordKaryawan = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20 font-['Inter',sans-serif] relative overflow-x-hidden text-slate-900">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-800/50 pb-20 font-['Inter',sans-serif] relative overflow-x-hidden text-slate-900 dark:text-white">
       {/* Background Graphic Abstract */}
       <div className="absolute top-0 right-0 -z-0 w-[60vw] h-[40vh] bg-blue-100/40 rounded-full blur-[100px] pointer-events-none opacity-60 transform translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-0 left-0 -z-0 w-[40vw] h-[40vh] bg-indigo-100/30 rounded-full blur-[100px] pointer-events-none opacity-60 transform -translate-x-1/2 translate-y-1/2"></div>
@@ -88,26 +88,26 @@ const EditPasswordKaryawan = () => {
             variant="ghost"
             size="sm"
             onClick={() => navigate('/dashboard')}
-            className="text-slate-500 hover:text-slate-800 hover:bg-white/50 border border-transparent hover:border-slate-200/60 rounded-xl transition-all shadow-sm bg-white border-slate-100"
+            className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-100 hover:bg-white dark:bg-slate-900/50 border border-transparent hover:border-slate-200/60 rounded-xl transition-all shadow-sm bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Kembali ke Dashboard
           </Button>
         </div>
-        <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-800 tracking-tight">Edit Password</h1>
-        <p className="text-slate-500 font-medium text-sm mt-2 max-w-md">Kelola keamanan akun Anda dengan memperbarui kata sandi secara berkala.</p>
+        <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Edit Password</h1>
+        <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-2 max-w-md">Kelola keamanan akun Anda dengan memperbarui kata sandi secara berkala.</p>
       </header>
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto px-6 py-4 relative z-10">
         <div className="mx-auto max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="bg-white/70 backdrop-blur-md rounded-[24px] border border-white/60 shadow-xl shadow-slate-200/40 overflow-hidden">
-            <div className="p-6 border-b border-slate-200/50 flex flex-col items-center text-center">
+          <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[24px] border border-white/60 shadow-xl shadow-slate-200/40 overflow-hidden">
+            <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/50 flex flex-col items-center text-center">
               <div className="flex h-16 w-16 mb-4 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100/50 border border-blue-100 shadow-sm">
                 <Lock className="h-8 w-8 text-blue-600" />
               </div>
-              <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Ubah Password</h2>
-              <p className="text-sm font-medium text-slate-500 mt-2">
+              <h2 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Ubah Password</h2>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">
                 Pastikan password baru Anda kuat dan belum pernah digunakan sebelumnya.
               </p>
             </div>
@@ -121,18 +121,18 @@ const EditPasswordKaryawan = () => {
                     name="newPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-widest">Password Baru</FormLabel>
+                        <FormLabel className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">Password Baru</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input
                               {...field}
                               type={showNewPassword ? "text" : "password"}
                               placeholder="Masukkan password baru"
-                              className="pr-10 h-12 bg-slate-50 border-slate-200 rounded-xl focus:bg-white focus:ring-blue-500/20 font-medium text-slate-800 shadow-sm transition-all"
+                              className="pr-10 h-12 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:bg-slate-900 focus:ring-blue-500/20 font-medium text-slate-800 dark:text-slate-100 shadow-sm transition-all"
                             />
                             <button
                               type="button"
-                              className="absolute right-0 top-0 h-full px-4 text-slate-400 hover:text-slate-600 transition-colors"
+                              className="absolute right-0 top-0 h-full px-4 text-slate-400 hover:text-slate-600 dark:text-slate-300 transition-colors"
                               onClick={() => setShowNewPassword(!showNewPassword)}
                             >
                               {showNewPassword ? (
@@ -151,14 +151,14 @@ const EditPasswordKaryawan = () => {
                   {/* Password Requirements */}
                   {newPassword && (
                     <div className="rounded-xl border border-slate-200/60 bg-slate-50/80 p-5 mt-2 transition-all duration-300">
-                      <p className="mb-3 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      <p className="mb-3 text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
                         Persyaratan Password
                       </p>
                       <ul className="space-y-2.5">
                         {passwordRequirements.map((req, index) => (
                           <li
                             key={index}
-                            className={cn("flex items-center gap-2.5 text-sm font-medium transition-colors", req.met ? "text-emerald-700" : "text-slate-500")}
+                            className={cn("flex items-center gap-2.5 text-sm font-medium transition-colors", req.met ? "text-emerald-700" : "text-slate-500 dark:text-slate-400")}
                           >
                             <div className={cn("flex items-center justify-center w-5 h-5 rounded-full", req.met ? "bg-emerald-100" : "bg-slate-200/50")}>
                               <CheckCircle2
@@ -178,18 +178,18 @@ const EditPasswordKaryawan = () => {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-widest mt-2 block">Konfirmasi Password Baru</FormLabel>
+                        <FormLabel className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest mt-2 block">Konfirmasi Password Baru</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input
                               {...field}
                               type={showConfirmPassword ? "text" : "password"}
                               placeholder="Masukkan ulang password baru"
-                              className="pr-10 h-12 bg-slate-50 border-slate-200 rounded-xl focus:bg-white focus:ring-blue-500/20 font-medium text-slate-800 shadow-sm transition-all"
+                              className="pr-10 h-12 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:bg-slate-900 focus:ring-blue-500/20 font-medium text-slate-800 dark:text-slate-100 shadow-sm transition-all"
                             />
                             <button
                               type="button"
-                              className="absolute right-0 top-0 h-full px-4 text-slate-400 hover:text-slate-600 transition-colors"
+                              className="absolute right-0 top-0 h-full px-4 text-slate-400 hover:text-slate-600 dark:text-slate-300 transition-colors"
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                             >
                               {showConfirmPassword ? (
@@ -206,12 +206,12 @@ const EditPasswordKaryawan = () => {
                   />
 
                   {/* Submit Button */}
-                  <div className="flex flex-col sm:flex-row gap-3 pt-6 mt-6 border-t border-slate-200/50">
+                  <div className="flex flex-col sm:flex-row gap-3 pt-6 mt-6 border-t border-slate-200/50 dark:border-slate-700/50">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => navigate("/dashboard")}
-                      className="flex-1 h-12 rounded-xl border-slate-200 font-bold text-slate-700 hover:bg-slate-50 shadow-sm order-2 sm:order-1"
+                      className="flex-1 h-12 rounded-xl border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:bg-slate-800 shadow-sm order-2 sm:order-1"
                     >
                       Batalkan
                     </Button>
@@ -240,7 +240,7 @@ const EditPasswordKaryawan = () => {
             <h3 className="mb-3 text-xs font-bold text-blue-800 uppercase tracking-widest flex items-center gap-2">
               <Shield className="w-4 h-4 text-blue-600" /> Tips Keamanan Akun
             </h3>
-            <ul className="space-y-2.5 text-sm font-medium text-slate-600">
+            <ul className="space-y-2.5 text-sm font-medium text-slate-600 dark:text-slate-300">
               <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Jangan merekas password yang sama dengan akun platform lain.</li>
               <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Hindari menggunakan informasi pribadi seperti tanggal lahir, nomor KTP atau nama lengkap.</li>
               <li className="flex items-start gap-2"><span className="text-blue-500 mt-0.5">•</span> Disarankan mengganti password secara berkala minimal setiap 3-6 bulan.</li>

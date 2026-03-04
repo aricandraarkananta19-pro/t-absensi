@@ -163,7 +163,7 @@ export function JournalCleanupModal({ open, onOpenChange }: JournalCleanupModalP
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-slate-700">
+                            <Label className="text-slate-700 dark:text-slate-200">
                                 Ketik <span className="font-bold font-mono text-red-600">DELETE DATA</span> untuk konfirmasi:
                             </Label>
                             <Input

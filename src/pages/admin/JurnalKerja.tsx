@@ -255,7 +255,7 @@ const JurnalKerja = () => {
                         <p className="text-slate-400 text-sm mt-1 font-medium max-w-sm">Evaluasi efisiensi tim melalui rasio persetujuan jurnal harian secara real-time.</p>
                     </div>
 
-                    <div className="relative z-10 flex items-center gap-6 md:gap-12 bg-white/10 backdrop-blur-md rounded-2xl px-8 py-5 border border-white/10">
+                    <div className="relative z-10 flex items-center gap-6 md:gap-12 bg-white dark:bg-slate-900/10 backdrop-blur-md rounded-2xl px-8 py-5 border border-white/10">
                         <div className="flex flex-col">
                             <span className="text-slate-400 uppercase tracking-widest text-[10px] font-bold mb-1">Vol. Jurnal</span>
                             <div className="flex items-baseline gap-1.5">
@@ -264,7 +264,7 @@ const JurnalKerja = () => {
                             </div>
                         </div>
 
-                        <div className="w-[1px] h-10 bg-white/20 hidden sm:block" />
+                        <div className="w-[1px] h-10 bg-white dark:bg-slate-900/20 hidden sm:block" />
 
                         <div className="flex flex-col">
                             <span className="text-slate-400 uppercase tracking-widest text-[10px] font-bold mb-1">Approval Rate</span>
@@ -276,7 +276,7 @@ const JurnalKerja = () => {
                             </div>
                         </div>
 
-                        <div className="w-[1px] h-10 bg-white/20 hidden sm:block" />
+                        <div className="w-[1px] h-10 bg-white dark:bg-slate-900/20 hidden sm:block" />
 
                         <div className="flex flex-col">
                             <span className="text-slate-400 uppercase tracking-widest text-[10px] font-bold mb-1">Produktivitas</span>
@@ -326,7 +326,7 @@ const JurnalKerja = () => {
                             onClick={() => setSelectedIds([])}
                             variant="ghost"
                             size="sm"
-                            className="text-slate-600 hover:text-slate-800 rounded-xl h-9"
+                            className="text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:text-slate-100 rounded-xl h-9"
                         >
                             Batal
                         </Button>
@@ -354,7 +354,7 @@ const JurnalKerja = () => {
                 {/* Loading more indicator */}
                 {isFetchingNextPage && (
                     <div className="flex justify-center py-6">
-                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                             <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                             Memuat lebih banyak...
                         </div>
@@ -363,7 +363,7 @@ const JurnalKerja = () => {
 
                 {/* DETAIL MODAL */}
                 <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-                    <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden flex flex-col gap-0 rounded-2xl border-slate-200">
+                    <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden flex flex-col gap-0 rounded-2xl border-slate-200 dark:border-slate-700">
                         <div className="flex-1 overflow-y-auto">
                             <JournalReviewDetail
                                 journal={viewJournal}

@@ -31,7 +31,7 @@ export function JournalReviewSidebar({
         return (
             <div className="space-y-3 p-4">
                 {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="h-24 bg-slate-50 rounded-xl animate-pulse border border-slate-100" />
+                    <div key={i} className="h-24 bg-slate-50 dark:bg-slate-800 rounded-xl animate-pulse border border-slate-100 dark:border-slate-800" />
                 ))}
             </div>
         );
@@ -39,7 +39,7 @@ export function JournalReviewSidebar({
 
     if (journals.length === 0 && !isLoading) {
         return (
-            <div className="p-8 text-center text-slate-500 text-sm">
+            <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-sm">
                 No journals found.
             </div>
         );
@@ -70,7 +70,7 @@ export function JournalReviewSidebar({
                             "group cursor-pointer rounded-xl p-4 border transition-all duration-200 relative overflow-hidden",
                             isSelected
                                 ? "bg-blue-50/50 border-blue-200 shadow-sm"
-                                : "bg-white border-transparent hover:border-slate-100 hover:bg-slate-50"
+                                : "bg-white dark:bg-slate-900 border-transparent hover:border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:bg-slate-800"
                         )}
                     >
                         {isSelected && (
@@ -79,9 +79,9 @@ export function JournalReviewSidebar({
 
                         <div className="flex items-start gap-3">
                             <div className="relative shrink-0">
-                                <Avatar className="h-10 w-10 border border-slate-100">
+                                <Avatar className="h-10 w-10 border border-slate-100 dark:border-slate-800">
                                     <AvatarImage src={avatar || undefined} />
-                                    <AvatarFallback className="text-xs bg-slate-100 text-slate-600">
+                                    <AvatarFallback className="text-xs bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300">
                                         {fullName.substring(0, 2).toUpperCase()}
                                     </AvatarFallback>
                                 </Avatar>
@@ -94,7 +94,7 @@ export function JournalReviewSidebar({
                                 <div className="flex justify-between items-start mb-0.5">
                                     <h4 className={cn(
                                         "text-sm font-bold truncate pr-2",
-                                        isSelected ? "text-blue-900" : "text-slate-900"
+                                        isSelected ? "text-blue-900" : "text-slate-900 dark:text-white"
                                     )}>
                                         {fullName}
                                     </h4>
@@ -103,11 +103,11 @@ export function JournalReviewSidebar({
                                     </span>
                                 </div>
 
-                                <p className="text-xs font-medium text-slate-700 truncate mb-1.5">
+                                <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate mb-1.5">
                                     {displayTitle}
                                 </p>
 
-                                <div className="flex items-center gap-3 text-[10px] text-slate-500">
+                                <div className="flex items-center gap-3 text-[10px] text-slate-500 dark:text-slate-400">
                                     <div className="flex items-center gap-1">
                                         <Clock className="w-3 h-3" />
                                         <span>{durationText}</span>
@@ -129,7 +129,7 @@ export function JournalReviewSidebar({
                     <button
                         onClick={onLoadMore}
                         disabled={isLoadingMore}
-                        className="w-full py-2.5 text-xs font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center justify-center gap-2"
+                        className="w-full py-2.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
                         {isLoadingMore ? (
                             <>

@@ -25,7 +25,7 @@ export function JournalSummaryView({ journal, onAction }: JournalSummaryViewProp
                     ctaIcon: FileEdit,
                     ctaVariant: "default" as const,
                     statusLabel: "Draft",
-                    statusColor: "text-slate-600 bg-slate-100"
+                    statusColor: "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80"
                 };
             case 'need_revision':
                 return {
@@ -92,10 +92,10 @@ export function JournalSummaryView({ journal, onAction }: JournalSummaryViewProp
                         </span>
                     </div>
 
-                    <h2 className="text-2xl font-bold text-slate-900">
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                         {config.title}
                     </h2>
-                    <p className="text-slate-500 leading-relaxed">
+                    <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
                         {config.description}
                     </p>
                 </div>
@@ -114,12 +114,12 @@ export function JournalSummaryView({ journal, onAction }: JournalSummaryViewProp
             </div>
 
             {/* Quick Preview Section */}
-            <div className="p-6 bg-white border-t border-slate-100">
+            <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                     Preview Isi Jurnal
                 </p>
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                    <p className="text-sm text-slate-600 line-clamp-3 italic">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3 italic">
                         "{journal.content}"
                     </p>
                 </div>

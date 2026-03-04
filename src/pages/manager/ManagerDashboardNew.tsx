@@ -189,7 +189,7 @@ const ManagerDashboardNew = () => {
                 <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {/* Today's Live Counter */}
                     <div
-                        className="p-5 rounded-2xl border flex items-center gap-4 hover:shadow-sm transition-shadow bg-white"
+                        className="p-5 rounded-2xl border flex items-center gap-4 hover:shadow-sm transition-shadow bg-white dark:bg-slate-900"
                         style={{
                             backgroundColor: `${BRAND_COLORS.green}08`,
                             borderColor: `${BRAND_COLORS.green}25`
@@ -207,20 +207,20 @@ const ManagerDashboardNew = () => {
                             )}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-600 truncate">Clock-In Hari Ini</p>
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-300 truncate">Clock-In Hari Ini</p>
                             <div className="flex items-baseline gap-2">
                                 <span className="text-2xl font-bold" style={{ color: BRAND_COLORS.green }}>
                                     {safeLiveStats.clockedInToday}
                                 </span>
-                                <span className="text-sm text-slate-500 truncate">
+                                <span className="text-sm text-slate-500 dark:text-slate-400 truncate">
                                     / {safeStats.totalEmployees} karyawan
                                 </span>
                             </div>
                         </div>
                         {safeLiveStats.lastClockIn && (
                             <div className="text-right hidden xs:block">
-                                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">Terakhir</p>
-                                <p className="text-sm font-bold text-slate-700">
+                                <p className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-medium">Terakhir</p>
+                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
                                     {formatTime(safeLiveStats.lastClockIn)}
                                 </p>
                             </div>
@@ -229,7 +229,7 @@ const ManagerDashboardNew = () => {
 
                     {/* Working Hours Status */}
                     <div
-                        className="p-5 rounded-2xl border flex items-center gap-4 hover:shadow-sm transition-shadow bg-white"
+                        className="p-5 rounded-2xl border flex items-center gap-4 hover:shadow-sm transition-shadow bg-white dark:bg-slate-900"
                         style={{
                             backgroundColor: workingHoursActive ? `${BRAND_COLORS.blue}08` : "#F8FAFC",
                             borderColor: workingHoursActive ? `${BRAND_COLORS.blue}25` : "#E2E8F0"
@@ -246,9 +246,9 @@ const ManagerDashboardNew = () => {
                             <Timer className="h-7 w-7 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-600">Jam Kerja Kantor</p>
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Jam Kerja Kantor</p>
                             <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                                <span className="text-lg font-bold text-slate-800">
+                                <span className="text-lg font-bold text-slate-800 dark:text-slate-100">
                                     {settings.clockInStart} - {settings.clockOutEnd}
                                 </span>
                                 {workingHoursActive ? (
@@ -256,7 +256,7 @@ const ManagerDashboardNew = () => {
                                         Aktif
                                     </Badge>
                                 ) : (
-                                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 text-slate-500">
+                                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 text-slate-500 dark:text-slate-400">
                                         Libur / Tutup
                                     </Badge>
                                 )}
@@ -266,7 +266,7 @@ const ManagerDashboardNew = () => {
 
                     {/* Report Date Info */}
                     <div
-                        className="p-5 rounded-2xl border flex items-center gap-4 hover:shadow-sm transition-shadow bg-white sm:col-span-2 lg:col-span-1"
+                        className="p-5 rounded-2xl border flex items-center gap-4 hover:shadow-sm transition-shadow bg-white dark:bg-slate-900 sm:col-span-2 lg:col-span-1"
                         style={{
                             backgroundColor: `${BRAND_COLORS.lightBlue}08`,
                             borderColor: `${BRAND_COLORS.lightBlue}25`
@@ -281,8 +281,8 @@ const ManagerDashboardNew = () => {
                             <CalendarClock className="h-7 w-7 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-600">Tanggal Rekap Otomatis</p>
-                            <p className="text-lg font-bold text-slate-800 truncate">
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Tanggal Rekap Otomatis</p>
+                            <p className="text-lg font-bold text-slate-800 dark:text-slate-100 truncate">
                                 {reportDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
                             </p>
                         </div>
@@ -331,11 +331,11 @@ const ManagerDashboardNew = () => {
                 {/* Charts Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
                     {/* Weekly Attendance Chart */}
-                    <Card className="lg:col-span-2 border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
+                    <Card className="lg:col-span-2 border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Kehadiran Minggu Ini</CardTitle>
+                                    <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">Kehadiran Minggu Ini</CardTitle>
                                     <CardDescription className="text-xs text-slate-400 font-medium">Data 7 hari terakhir</CardDescription>
                                 </div>
                                 <Link to="/manager/laporan">
@@ -381,11 +381,11 @@ const ManagerDashboardNew = () => {
                             </div>
                             {/* Legend */}
                             <div className="flex justify-center gap-6 mt-2">
-                                <div className="flex items-center gap-2 text-xs text-slate-600">
+                                <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
                                     <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: CHART_COLORS.success }} />
                                     Hadir Tepat Waktu
                                 </div>
-                                <div className="flex items-center gap-2 text-xs text-slate-600">
+                                <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
                                     <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: CHART_COLORS.warning }} />
                                     Terlambat
                                 </div>
@@ -394,9 +394,9 @@ const ManagerDashboardNew = () => {
                     </Card>
 
                     {/* Today's Breakdown */}
-                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
+                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px]">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Ringkasan Kemarin</CardTitle>
+                            <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">Ringkasan Kemarin</CardTitle>
                             <CardDescription className="text-xs text-slate-400 font-medium">Distribusi {reportDate.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -436,9 +436,9 @@ const ManagerDashboardNew = () => {
                                             <div key={index} className="flex items-center justify-between text-sm">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                                                    <span className="text-slate-600">{item.name}</span>
+                                                    <span className="text-slate-600 dark:text-slate-300">{item.name}</span>
                                                 </div>
-                                                <span className="font-semibold text-slate-800">{item.value}</span>
+                                                <span className="font-semibold text-slate-800 dark:text-slate-100">{item.value}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -451,7 +451,7 @@ const ManagerDashboardNew = () => {
                                     >
                                         <Clock className="h-8 w-8" style={{ color: `${BRAND_COLORS.blue}50` }} />
                                     </div>
-                                    <p className="text-slate-500 text-sm font-medium">Belum ada data</p>
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Belum ada data</p>
                                     <p className="text-slate-400 text-xs mt-1">Menunggu clock-in karyawan</p>
                                 </div>
                             )}
@@ -475,7 +475,7 @@ const ManagerDashboardNew = () => {
                     {/* Quick Actions + Journals */}
                     <div className="flex flex-col gap-3">
                         <Link to="/manager/absensi">
-                            <div className="flex items-center gap-4 p-4 rounded-[18px] border border-white/60 hover:border-slate-200 hover:shadow-md transition-all group cursor-pointer bg-white/70 backdrop-blur-md">
+                            <div className="flex items-center gap-4 p-4 rounded-[18px] border border-white/60 hover:border-slate-200 dark:border-slate-700 hover:shadow-md transition-all group cursor-pointer bg-white dark:bg-slate-900/70 backdrop-blur-md">
                                 <div
                                     className="w-12 h-12 rounded-xl flex items-center justify-center transition-all group-hover:shadow-md"
                                     style={{ backgroundColor: `${BRAND_COLORS.blue}15` }}
@@ -483,14 +483,14 @@ const ManagerDashboardNew = () => {
                                     <Clock className="h-6 w-6" style={{ color: BRAND_COLORS.blue }} />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="text-sm font-semibold text-slate-800">Rekap Absensi</p>
-                                    <p className="text-xs text-slate-500">Lihat data kehadiran tim</p>
+                                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Rekap Absensi</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Lihat data kehadiran tim</p>
                                 </div>
                                 <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
                             </div>
                         </Link>
                         <Link to="/manager/laporan">
-                            <div className="flex items-center gap-4 p-4 rounded-[18px] border border-white/60 hover:border-slate-200 hover:shadow-md transition-all group cursor-pointer bg-white/70 backdrop-blur-md">
+                            <div className="flex items-center gap-4 p-4 rounded-[18px] border border-white/60 hover:border-slate-200 dark:border-slate-700 hover:shadow-md transition-all group cursor-pointer bg-white dark:bg-slate-900/70 backdrop-blur-md">
                                 <div
                                     className="w-12 h-12 rounded-xl flex items-center justify-center transition-all group-hover:shadow-md"
                                     style={{ backgroundColor: `${BRAND_COLORS.green}15` }}
@@ -498,20 +498,20 @@ const ManagerDashboardNew = () => {
                                     <BarChart3 className="h-6 w-6" style={{ color: BRAND_COLORS.green }} />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="text-sm font-semibold text-slate-800">Laporan</p>
-                                    <p className="text-xs text-slate-500">Analisis & export data</p>
+                                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Laporan</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Analisis & export data</p>
                                 </div>
                                 <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-green-500 transition-colors" />
                             </div>
                         </Link>
                         <Link to="/manager/cuti">
-                            <div className="flex items-center gap-4 p-4 rounded-[18px] border border-white/60 hover:border-slate-200 hover:shadow-md transition-all group cursor-pointer bg-white/70 backdrop-blur-md">
+                            <div className="flex items-center gap-4 p-4 rounded-[18px] border border-white/60 hover:border-slate-200 dark:border-slate-700 hover:shadow-md transition-all group cursor-pointer bg-white dark:bg-slate-900/70 backdrop-blur-md">
                                 <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center transition-all group-hover:bg-amber-100">
                                     <FileCheck className="h-6 w-6 text-amber-600" />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="text-sm font-semibold text-slate-800">Kelola Cuti</p>
-                                    <p className="text-xs text-slate-500">Approve/reject pengajuan</p>
+                                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Kelola Cuti</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Approve/reject pengajuan</p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {safeStats.pendingLeave > 0 && (
@@ -528,11 +528,11 @@ const ManagerDashboardNew = () => {
                         </Link>
 
                         {/* Jurnal Tim Terbaru - Using new React Query hook */}
-                        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
-                            <CardHeader className="pb-3 border-b border-slate-100/80">
+                        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px]">
+                            <CardHeader className="pb-3 border-b border-slate-100/80 dark:border-slate-800/80">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2 tracking-tight">
+                                        <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 tracking-tight">
                                             <BookOpen className="h-4 w-4 text-amber-600" />
                                             Jurnal Tim Terbaru
                                         </CardTitle>
@@ -555,20 +555,20 @@ const ManagerDashboardNew = () => {
                                 {(!journalsData?.journals || journalsData.journals.length === 0) ? (
                                     <div className="flex flex-col items-center justify-center h-48 text-center p-4">
                                         <CheckCircle2 className="h-10 w-10 text-green-500 mb-2 opacity-20" />
-                                        <p className="text-sm font-medium text-slate-900">Belum ada jurnal</p>
-                                        <p className="text-xs text-slate-500">Data jurnal tim kosong.</p>
+                                        <p className="text-sm font-medium text-slate-900 dark:text-white">Belum ada jurnal</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">Data jurnal tim kosong.</p>
                                     </div>
                                 ) : (
                                     <div className="divide-y divide-slate-100">
                                         {journalsData.journals.map((journal) => (
-                                            <div key={journal.id} className="p-4 hover:bg-slate-50 transition-colors">
+                                            <div key={journal.id} className="p-4 hover:bg-slate-50 dark:bg-slate-800 transition-colors">
                                                 <div className="flex items-start justify-between mb-1">
-                                                    <p className="text-sm font-medium text-slate-900 line-clamp-1">{journal.full_name}</p>
+                                                    <p className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1">{journal.full_name}</p>
                                                     <span className="text-[10px] text-slate-400 whitespace-nowrap">
                                                         {new Date(journal.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-slate-600 mb-3 line-clamp-2">{journal.content}</p>
+                                                <p className="text-xs text-slate-600 dark:text-slate-300 mb-3 line-clamp-2">{journal.content}</p>
                                                 <div className="flex items-center justify-between">
                                                     {journal.status === 'approved' && <Badge variant="outline" className="text-[10px] h-5 border-green-200 text-green-700 bg-green-50">Disetujui</Badge>}
                                                     {journal.status === 'rejected' && <Badge variant="outline" className="text-[10px] h-5 border-red-200 text-red-700 bg-red-50">Ditolak</Badge>}
@@ -589,11 +589,11 @@ const ManagerDashboardNew = () => {
                 {/* Row 4: Monthly Trend + Department Distribution */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* 6-Month Attendance Trend */}
-                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
+                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px]">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Tren Kehadiran 6 Bulan</CardTitle>
+                                    <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">Tren Kehadiran 6 Bulan</CardTitle>
                                     <CardDescription className="text-xs text-slate-400 font-medium">Persentase kehadiran bulanan</CardDescription>
                                 </div>
                                 <TrendingUp className="h-5 w-5" style={{ color: BRAND_COLORS.green }} />
@@ -608,7 +608,7 @@ const ManagerDashboardNew = () => {
                                     >
                                         <TrendingUp className="h-8 w-8" style={{ color: `${BRAND_COLORS.blue}50` }} />
                                     </div>
-                                    <p className="text-slate-500 text-sm font-medium">Belum ada data bulanan</p>
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Belum ada data bulanan</p>
                                     <p className="text-slate-400 text-xs mt-1">Data akan muncul seiring waktu</p>
                                 </div>
                             ) : (
@@ -649,11 +649,11 @@ const ManagerDashboardNew = () => {
                     </Card>
 
                     {/* Department Distribution */}
-                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
+                    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px]">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Distribusi Departemen</CardTitle>
+                                    <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">Distribusi Departemen</CardTitle>
                                     <CardDescription className="text-xs text-slate-400 font-medium">Jumlah karyawan per departemen</CardDescription>
                                 </div>
                                 <Building2 className="h-5 w-5" style={{ color: BRAND_COLORS.blue }} />
@@ -668,7 +668,7 @@ const ManagerDashboardNew = () => {
                                     >
                                         <Building2 className="h-8 w-8" style={{ color: `${BRAND_COLORS.blue}50` }} />
                                     </div>
-                                    <p className="text-slate-500 text-sm font-medium">Belum ada data departemen</p>
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Belum ada data departemen</p>
                                     <p className="text-slate-400 text-xs mt-1">Pastikan karyawan sudah ada departemen</p>
                                 </div>
                             ) : (
@@ -697,8 +697,8 @@ const ManagerDashboardNew = () => {
                                         {departmentData.map((dept, index) => (
                                             <div key={index} className="flex items-center gap-2">
                                                 <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: dept.color }} />
-                                                <span className="text-sm text-slate-600 truncate flex-1">{dept.name}</span>
-                                                <span className="text-sm font-semibold text-slate-800">{dept.count}</span>
+                                                <span className="text-sm text-slate-600 dark:text-slate-300 truncate flex-1">{dept.name}</span>
+                                                <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{dept.count}</span>
                                             </div>
                                         ))}
                                     </div>

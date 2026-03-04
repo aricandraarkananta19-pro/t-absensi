@@ -59,11 +59,11 @@ export function WorkInsightWidget({ userId }: WorkInsightProps) {
     };
 
     if (isLoading) {
-        return <div className="h-32 w-full animate-pulse bg-slate-100 rounded-xl" />;
+        return <div className="h-32 w-full animate-pulse bg-slate-100 dark:bg-slate-800/80 rounded-xl" />;
     }
 
     return (
-        <Card className="border-slate-200 shadow-sm bg-white overflow-hidden">
+        <Card className="border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
             <CardHeader className="pb-3 border-b border-slate-50">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -71,7 +71,7 @@ export function WorkInsightWidget({ userId }: WorkInsightProps) {
                             <BookOpen className="h-5 w-5 text-indigo-600" />
                         </div>
                         <div>
-                            <CardTitle className="text-base text-slate-800">Work Insights</CardTitle>
+                            <CardTitle className="text-base text-slate-800 dark:text-slate-100">Work Insights</CardTitle>
                             <CardDescription className="text-xs">Jurnal aktivitas harian</CardDescription>
                         </div>
                     </div>
@@ -83,7 +83,7 @@ export function WorkInsightWidget({ userId }: WorkInsightProps) {
 
             <CardContent className="pt-4">
                 {recentJournals.length === 0 ? (
-                    <div className="text-center py-6 text-slate-500">
+                    <div className="text-center py-6 text-slate-500 dark:text-slate-400">
                         <Sparkles className="h-8 w-8 mx-auto text-slate-300 mb-2" />
                         <p className="text-sm">Belum ada jurnal minggu ini.</p>
                         <Button variant="link" className="text-indigo-600 text-xs mt-1" onClick={() => navigate('/karyawan/absensi')}>
@@ -93,7 +93,7 @@ export function WorkInsightWidget({ userId }: WorkInsightProps) {
                 ) : (
                     <div className="space-y-3">
                         {recentJournals.map((journal) => (
-                            <div key={journal.id} className="group flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 cursor-pointer" onClick={() => navigate('/karyawan/jurnal')}>
+                            <div key={journal.id} className="group flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 dark:bg-slate-800 transition-colors border border-transparent hover:border-slate-100 dark:border-slate-800 cursor-pointer" onClick={() => navigate('/karyawan/jurnal')}>
                                 <div className="mt-1">
                                     {journal.verification_status === 'approved' ? (
                                         <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -104,11 +104,11 @@ export function WorkInsightWidget({ userId }: WorkInsightProps) {
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-slate-900 line-clamp-1 group-hover:text-indigo-700 transition-colors">
+                                    <p className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1 group-hover:text-indigo-700 transition-colors">
                                         {journal.content}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                                        <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded">
                                             {new Date(journal.date).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}
                                         </span>
                                         {journal.duration > 0 && (
@@ -127,7 +127,7 @@ export function WorkInsightWidget({ userId }: WorkInsightProps) {
                 {recentJournals.length > 0 && (
                     <div className="mt-4 bg-gradient-to-r from-indigo-50 to-blue-50 p-3 rounded-lg border border-indigo-100 flex gap-3">
                         <Sparkles className="h-4 w-4 text-indigo-600 mt-0.5 shrink-0" />
-                        <p className="text-xs text-slate-600 leading-snug">
+                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-snug">
                             <span className="font-semibold text-indigo-700">AI Summary:</span> Minggu ini fokus utama Anda adalah perbaikan bug sistem (60%) dan meeting koordinasi (20%). Kerja bagus!
                         </p>
                     </div>

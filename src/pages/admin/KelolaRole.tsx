@@ -438,17 +438,17 @@ const KelolaRole = () => {
                 {/* Mobile Cards */}
                 <div className="md:hidden flex flex-col p-4 gap-3">
                   {filteredUsers.map((user) => (
-                    <div key={user.user_id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col gap-3">
+                    <div key={user.user_id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-4 flex flex-col gap-3">
                       <div className="flex items-start justify-between">
                         <div className="flex gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-bold text-slate-600">
+                          <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
                               {user.profile?.full_name?.charAt(0)?.toUpperCase() || "?"}
                             </span>
                           </div>
                           <div>
-                            <p className="font-bold text-slate-900 text-sm">{user.profile?.full_name || "Tanpa Nama"}</p>
-                            <p className="text-[11px] text-slate-500 font-medium">{user.profile?.position || "-"}{user.profile?.department ? ` • ${user.profile.department}` : ""}</p>
+                            <p className="font-bold text-slate-900 dark:text-white text-sm">{user.profile?.full_name || "Tanpa Nama"}</p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{user.profile?.position || "-"}{user.profile?.department ? ` • ${user.profile.department}` : ""}</p>
                             {user.email && <p className="text-[10px] text-slate-400 mt-0.5">{user.email}</p>}
                           </div>
                         </div>

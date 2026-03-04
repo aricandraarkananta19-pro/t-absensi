@@ -35,12 +35,12 @@ export function DeleteJournalModal({
                         <AlertTriangle className={`w-7 h-7 ${isSoftDelete ? 'text-orange-600' : 'text-red-600'}`} />
                     </div>
 
-                    <DialogTitle className="text-center text-lg font-bold text-slate-800">
+                    <DialogTitle className="text-center text-lg font-bold text-slate-800 dark:text-slate-100">
                         {isSoftDelete ? "Arsipkan Jurnal?" : "Hapus Jurnal?"}
                     </DialogTitle>
-                    <DialogDescription className="text-center text-slate-600">
+                    <DialogDescription className="text-center text-slate-600 dark:text-slate-300">
                         {journalDate && (
-                            <span className="block text-sm text-slate-500 mb-2">
+                            <span className="block text-sm text-slate-500 dark:text-slate-400 mb-2">
                                 Jurnal tanggal: <strong>{journalDate}</strong>
                             </span>
                         )}
@@ -50,7 +50,7 @@ export function DeleteJournalModal({
                                 <span className="block">
                                     Jurnal ini akan <strong className="text-orange-600">diarsipkan</strong>.
                                 </span>
-                                <span className="block mt-2 text-sm text-slate-500">
+                                <span className="block mt-2 text-sm text-slate-500 dark:text-slate-400">
                                     Data tetap tersimpan untuk keperluan audit admin, namun tidak akan muncul lagi di daftar Anda.
                                 </span>
                             </>
@@ -59,7 +59,7 @@ export function DeleteJournalModal({
                                 <span className="block">
                                     Draft ini akan dihapus <strong className="text-red-600">permanen</strong>.
                                 </span>
-                                <span className="block mt-2 text-sm text-slate-500">
+                                <span className="block mt-2 text-sm text-slate-500 dark:text-slate-400">
                                     Tindakan ini tidak dapat dibatalkan. Data akan hilang selamanya.
                                 </span>
                             </>

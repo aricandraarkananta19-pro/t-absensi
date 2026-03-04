@@ -52,16 +52,16 @@ export function DailyJournalForm({
     const isFormValid = title && category && duration && content;
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
             {/* Header */}
-            <div className="px-6 sm:px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-slate-50/50 to-white">
+            <div className="px-6 sm:px-8 py-6 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50/50 to-white">
                 <div className="flex items-center gap-4">
                     <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white shrink-0">
                         <Edit3 className="w-5 h-5" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">Tulis Jurnal Hari Ini</h2>
-                        <p className="text-sm text-slate-500 mt-0.5">
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Tulis Jurnal Hari Ini</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                             {format(date, "EEEE, d MMMM yyyy", { locale: localeId })}
                         </p>
                     </div>
@@ -74,7 +74,7 @@ export function DailyJournalForm({
 
                     {/* Activity Title */}
                     <div className="space-y-2">
-                        <Label htmlFor="title" className="text-sm font-semibold text-slate-700">
+                        <Label htmlFor="title" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                             Judul Aktivitas <span className="text-red-400">*</span>
                         </Label>
                         <Input
@@ -82,7 +82,7 @@ export function DailyJournalForm({
                             placeholder="Contoh: Implementasi fitur autentikasi baru"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="h-11 rounded-xl border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm"
+                            className="h-11 rounded-xl border-slate-200 dark:border-slate-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm"
                             required
                         />
                     </div>
@@ -90,14 +90,14 @@ export function DailyJournalForm({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Project Category */}
                         <div className="space-y-2">
-                            <Label htmlFor="category" className="text-sm font-semibold text-slate-700">
+                            <Label htmlFor="category" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                                 Kategori Project <span className="text-red-400">*</span>
                             </Label>
                             <Select value={category} onValueChange={setCategory}>
-                                <SelectTrigger id="category" className="h-11 rounded-xl border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm">
+                                <SelectTrigger id="category" className="h-11 rounded-xl border-slate-200 dark:border-slate-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm">
                                     <SelectValue placeholder="Pilih kategori" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl shadow-xl border-slate-200">
+                                <SelectContent className="rounded-xl shadow-xl border-slate-200 dark:border-slate-700">
                                     <SelectItem value="development">🛠️ Development</SelectItem>
                                     <SelectItem value="meeting">📋 Meeting</SelectItem>
                                     <SelectItem value="design">🎨 Design</SelectItem>
@@ -110,7 +110,7 @@ export function DailyJournalForm({
 
                         {/* Duration */}
                         <div className="space-y-2">
-                            <Label htmlFor="duration" className="text-sm font-semibold text-slate-700">
+                            <Label htmlFor="duration" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                                 Durasi (Jam) <span className="text-red-400">*</span>
                             </Label>
                             <div className="relative">
@@ -123,7 +123,7 @@ export function DailyJournalForm({
                                     placeholder="0.0"
                                     value={duration}
                                     onChange={(e) => setDuration(e.target.value)}
-                                    className="h-11 rounded-xl border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 pl-4 pr-12 text-sm"
+                                    className="h-11 rounded-xl border-slate-200 dark:border-slate-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 pl-4 pr-12 text-sm"
                                     required
                                 />
                                 <div className="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none">
@@ -137,7 +137,7 @@ export function DailyJournalForm({
 
                     {/* Detailed Description */}
                     <div className="space-y-2">
-                        <Label htmlFor="description" className="text-sm font-semibold text-slate-700">
+                        <Label htmlFor="description" className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                             Deskripsi Detail <span className="text-red-400">*</span>
                         </Label>
                         <Textarea
@@ -145,7 +145,7 @@ export function DailyJournalForm({
                             placeholder="Jelaskan tugas, tantangan, dan hasil pekerjaan Anda hari ini..."
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            className="min-h-[130px] rounded-xl border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none p-4 text-sm leading-relaxed"
+                            className="min-h-[130px] rounded-xl border-slate-200 dark:border-slate-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none p-4 text-sm leading-relaxed"
                             required
                         />
                         <p className="text-[11px] text-slate-400 flex items-center gap-1">
@@ -155,7 +155,7 @@ export function DailyJournalForm({
                     </div>
 
                     {/* Submit */}
-                    <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row justify-end items-center gap-4">
+                    <div className="pt-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-end items-center gap-4">
                         <Button
                             type="submit"
                             disabled={isSubmitting || !isFormValid}

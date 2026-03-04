@@ -319,7 +319,7 @@ const Pengaturan = () => {
   // ==========================================
   const renderGeneralSettings = () => (
     <div className="space-y-6">
-      <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
+      <Card className="border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
         <CardHeader>
           <CardTitle>Identitas Perusahaan</CardTitle>
           <CardDescription>Informasi yang tampil di laporan dan aplikasi karyawan.</CardDescription>
@@ -350,7 +350,7 @@ const Pengaturan = () => {
 
   const renderScheduleSettings = () => (
     <div className="space-y-6">
-      <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
+      <Card className="border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
         <CardHeader>
           <CardTitle>Jadwal Kerja Normal</CardTitle>
           <CardDescription>Pengaturan jam masuk dan pulang standar.</CardDescription>
@@ -390,7 +390,7 @@ const Pengaturan = () => {
         </CardContent>
       </Card>
 
-      <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
+      <Card className="border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
         <CardHeader>
           <CardTitle>Toleransi & Lainnya</CardTitle>
         </CardHeader>
@@ -398,7 +398,7 @@ const Pengaturan = () => {
           <div className="space-y-2">
             <Label>Batas Keterlambatan</Label>
             <Input type="time" value={formData.lateThreshold} onChange={(e) => handleChange("lateThreshold", e.target.value)} />
-            <p className="text-xs text-slate-500">Lewat dari jam ini dianggap "Terlambat".</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Lewat dari jam ini dianggap "Terlambat".</p>
           </div>
           {/* Save Button - Bottom Right */}
           <div className="flex justify-end pt-4">
@@ -417,7 +417,7 @@ const Pengaturan = () => {
 
   const renderAttendanceSettings = () => (
     <div className="space-y-6">
-      <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
+      <Card className="border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
         <CardHeader>
           <CardTitle>Validasi Kehadiran</CardTitle>
           <CardDescription>Persyaratan untuk melakukan absensi.</CardDescription>
@@ -426,7 +426,7 @@ const Pengaturan = () => {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="text-base">Wajib Foto Selfie</Label>
-              <p className="text-sm text-slate-500">Karyawan wajib menyertakan foto saat clock-in.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Karyawan wajib menyertakan foto saat clock-in.</p>
             </div>
             <Switch
               checked={formData.requirePhotoOnClockIn}
@@ -437,7 +437,7 @@ const Pengaturan = () => {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="text-base">Pelacakan Lokasi (GPS)</Label>
-              <p className="text-sm text-slate-500">Hanya izinkan absen di radius kantor.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Hanya izinkan absen di radius kantor.</p>
             </div>
             <Switch
               checked={formData.enableLocationTracking}
@@ -448,7 +448,7 @@ const Pengaturan = () => {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="text-base">Auto Clock-Out</Label>
-              <p className="text-sm text-slate-500">Otomatis pulang jika lupa absen hingga jam tertentu.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Otomatis pulang jika lupa absen hingga jam tertentu.</p>
             </div>
             <Switch
               checked={formData.autoClockOut}
@@ -456,7 +456,7 @@ const Pengaturan = () => {
             />
           </div>
           {formData.autoClockOut && (
-            <div className="pl-4 border-l-2 border-slate-100">
+            <div className="pl-4 border-l-2 border-slate-100 dark:border-slate-800">
               <Label>Waktu Eksekusi</Label>
               <Input
                 type="time"
@@ -495,7 +495,7 @@ const Pengaturan = () => {
   );
 
   const renderLeavesSettings = () => (
-    <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
+    <Card className="border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
       <CardHeader>
         <CardTitle>Kuota Cuti Tahunan</CardTitle>
         <CardDescription>Jatah standar per karyawan per tahun.</CardDescription>
@@ -510,7 +510,7 @@ const Pengaturan = () => {
               value={formData.maxLeaveDays}
               onChange={(e) => handleChange("maxLeaveDays", parseInt(e.target.value) || 0)}
             />
-            <span className="text-sm text-slate-500">hari / tahun</span>
+            <span className="text-sm text-slate-500 dark:text-slate-400">hari / tahun</span>
           </div>
         </div>
         {/* Save Button - Bottom Right */}
@@ -529,7 +529,7 @@ const Pengaturan = () => {
 
   const renderSystemSettings = () => (
     <div className="space-y-6">
-      <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px] border-l-4 border-l-blue-600">
+      <Card className="border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px] border-l-4 border-l-blue-600">
         <CardHeader>
           <CardTitle>Tanggal Mulai Absensi (Periode Aktif)</CardTitle>
           <CardDescription>Absensi karyawan dihitung mulai dari tanggal ini.</CardDescription>
@@ -590,13 +590,13 @@ const Pengaturan = () => {
         </CardContent>
       </Card>
 
-      <Card className="border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
+      <Card className="border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)] rounded-[20px]">
         <CardHeader>
           <CardTitle>Backup Data</CardTitle>
           <CardDescription>Unduh data untuk arsip.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" className="w-full justify-start hover:bg-slate-50" onClick={handleBackupAttendance}>
+          <Button variant="outline" className="w-full justify-start hover:bg-slate-50 dark:bg-slate-800" onClick={handleBackupAttendance}>
             <Download className="w-4 h-4 mr-2" />
             Download Backup Absensi (.xlsx)
           </Button>
@@ -649,13 +649,13 @@ const Pengaturan = () => {
   // ==========================================
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-slate-50 pb-safe">
-        <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200 h-[52px] px-4 flex items-center justify-between pt-safe">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-800 pb-safe">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 h-[52px] px-4 flex items-center justify-between pt-safe">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/dashboard")} className="p-2 -ml-2 rounded-full active:bg-slate-100">
-              <ArrowLeft className="w-6 h-6 text-slate-900" />
+            <button onClick={() => navigate("/dashboard")} className="p-2 -ml-2 rounded-full active:bg-slate-100 dark:bg-slate-800/80">
+              <ArrowLeft className="w-6 h-6 text-slate-900 dark:text-white" />
             </button>
-            <h1 className="text-base font-semibold text-slate-900">Pengaturan</h1>
+            <h1 className="text-base font-semibold text-slate-900 dark:text-white">Pengaturan</h1>
           </div>
           {/* Global Save Bar handles actions now */}
         </header>
@@ -665,15 +665,15 @@ const Pengaturan = () => {
             <div
               key={section.id}
               onClick={() => setActiveMobileSheet(section.id)}
-              className="bg-white rounded-[20px] p-4 shadow-sm border border-slate-100 flex items-center justify-between active:scale-[0.98] transition-transform"
+              className="bg-white dark:bg-slate-900 rounded-[20px] p-4 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between active:scale-[0.98] transition-transform"
             >
               <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${activeMobileSheet === section.id ? 'bg-primary text-white' : 'bg-slate-50 text-slate-600'}`}>
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${activeMobileSheet === section.id ? 'bg-primary text-white' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>
                   <section.icon className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900">{section.label}</h3>
-                  <p className="text-xs text-slate-500 line-clamp-1">{section.description}</p>
+                  <h3 className="font-semibold text-slate-900 dark:text-white">{section.label}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{section.description}</p>
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-slate-300" />
@@ -684,23 +684,23 @@ const Pengaturan = () => {
         {/* Mobile Edit Sheet */}
         <Sheet open={!!activeMobileSheet} onOpenChange={(open) => !open && setActiveMobileSheet(null)}>
           <SheetContent side="bottom" className="h-[90vh] rounded-t-[20px] p-0 overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
               <h2 className="font-semibold text-lg">{SECTIONS.find(s => s.id === activeMobileSheet)?.label}</h2>
               <div className="flex gap-2">
                 <Button size="sm" variant="ghost" onClick={() => setActiveMobileSheet(null)}>Tutup</Button>
                 <Button size="sm" onClick={handleSave} disabled={isSaving}>Simpan</Button>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 bg-slate-50 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-800 space-y-4">
               {activeMobileSheet && getContent(activeMobileSheet)}
             </div>
           </SheetContent>
         </Sheet>
 
         {/* Global Save Action Bar (Mobile) */}
-        <div className={`fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 transition-transform duration-300 ${hasChanges ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className={`fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 transition-transform duration-300 ${hasChanges ? 'translate-y-0' : 'translate-y-full'}`}>
           <div className="flex gap-3">
-            <Button variant="outline" className="flex-1 border-slate-300 text-slate-700" onClick={handleCancel}>Batalkan</Button>
+            <Button variant="outline" className="flex-1 border-slate-300 text-slate-700 dark:text-slate-200" onClick={handleCancel}>Batalkan</Button>
             <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white shadow-md" onClick={handleSave} disabled={isSaving}>
               {isSaving ? "..." : "Simpan"}
             </Button>
@@ -743,21 +743,21 @@ const Pengaturan = () => {
       <div className="space-y-6">
         {/* Page Header */}
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Pengaturan Sistem</h1>
-          <p className="text-sm text-slate-500 mt-1">Konfigurasi & parameter aplikasi HRIS</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Pengaturan Sistem</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Konfigurasi & parameter aplikasi HRIS</p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar */}
           <aside className="w-full lg:w-60 flex-shrink-0">
-            <div className="bg-white rounded-[20px] border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-2 space-y-1">
+            <div className="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-2 space-y-1">
               {SECTIONS.map((section) => (
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all text-left text-sm ${activeSection === section.id
                     ? 'bg-primary/5 text-primary font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-800'
                     }`}
                 >
                   <section.icon className={`w-4.5 h-4.5 ${activeSection === section.id ? 'text-primary' : 'text-slate-400'}`} />
@@ -774,14 +774,14 @@ const Pengaturan = () => {
         </div>
 
         {/* Global Save Action Bar (Desktop) */}
-        <div className={`fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-50 transition-transform duration-300 ${hasChanges ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className={`fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-50 transition-transform duration-300 ${hasChanges ? 'translate-y-0' : 'translate-y-full'}`}>
           <div className="container mx-auto flex items-center justify-between max-w-5xl">
             <div className="hidden md:flex flex-col">
-              <span className="text-sm font-bold text-slate-800">Perubahan belum disimpan</span>
-              <span className="text-xs text-slate-500">Pastikan Anda menyimpan konfigurasi sebelum keluar.</span>
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-100">Perubahan belum disimpan</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">Pastikan Anda menyimpan konfigurasi sebelum keluar.</span>
             </div>
             <div className="flex gap-3 w-full md:w-auto">
-              <Button variant="outline" className="flex-1 md:flex-none rounded-xl border-slate-200 text-slate-700" onClick={handleCancel}>Batalkan</Button>
+              <Button variant="outline" className="flex-1 md:flex-none rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200" onClick={handleCancel}>Batalkan</Button>
               <Button className="flex-1 md:flex-none rounded-xl bg-primary hover:bg-primary/90 text-white shadow-md" onClick={handleSave} disabled={isSaving}>
                 {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
               </Button>

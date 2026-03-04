@@ -55,7 +55,7 @@ const getAvatarColor = (name: string) => {
 };
 
 const getDeptBadgeColor = (dept: string) => {
-    if (!dept) return "bg-slate-100 text-slate-600 border-slate-200";
+    if (!dept) return "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700";
     const colors = [
         "bg-blue-50 text-blue-700 border-blue-200",
         "bg-purple-50 text-purple-700 border-purple-200",
@@ -250,11 +250,11 @@ const AdminDashboardNew = () => {
 
                 {/* SMART INSIGHT SECTION - Business Insight Today */}
                 <div className="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-[20px] p-5 lg:p-6 shadow-lg relative overflow-hidden flex flex-col md:flex-row gap-6 justify-between items-start md:items-center border border-indigo-800/50">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white dark:bg-slate-900 opacity-5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
                     <div className="absolute bottom-0 left-20 w-40 h-40 bg-blue-400 opacity-10 rounded-full blur-2xl pointer-events-none" />
 
                     <div className="relative z-10 flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shrink-0 shadow-inner">
+                        <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900/10 backdrop-blur-md flex items-center justify-center border border-white/20 shrink-0 shadow-inner">
                             <Sparkles className="w-6 h-6 text-blue-200" />
                         </div>
                         <div>
@@ -265,13 +265,13 @@ const AdminDashboardNew = () => {
                             <div className="flex flex-wrap items-center gap-2 mt-2">
                                 {/* Insight 1 */}
                                 {absenteesPercentage > 50 && (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/10 rounded-full text-xs font-medium text-white shadow-sm">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-slate-900/10 border border-white/10 rounded-full text-xs font-medium text-white shadow-sm">
                                         <AlertCircle className="w-3.5 h-3.5 text-amber-300" />
                                         {absenteesPercentage}% belum absensi
                                     </span>
                                 )}
                                 {/* Insight 2 */}
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/10 rounded-full text-xs font-medium text-white shadow-sm">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-slate-900/10 border border-white/10 rounded-full text-xs font-medium text-white shadow-sm">
                                     {hasLate ? (
                                         <><Timer className="w-3.5 h-3.5 text-rose-300" /> {stats.lateToday} orang datang terlambat</>
                                     ) : (
@@ -280,7 +280,7 @@ const AdminDashboardNew = () => {
                                 </span>
                                 {/* Insight 3 */}
                                 {pendingReviewCount > 0 && (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/10 rounded-full text-xs font-medium text-white shadow-sm">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-slate-900/10 border border-white/10 rounded-full text-xs font-medium text-white shadow-sm">
                                         <BookOpen className="w-3.5 h-3.5 text-blue-200" /> {pendingReviewCount} jurnal butuh review
                                     </span>
                                 )}
@@ -299,7 +299,7 @@ const AdminDashboardNew = () => {
                 {/* PREMIUM SUMMARY CARDS OVERHAUL */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                     {/* Card 1: Total Karyawan */}
-                    <div className="bg-white rounded-[20px] p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-blue-200 transition-all duration-300 group flex flex-col relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-[20px] p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-blue-200 transition-all duration-300 group flex flex-col relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-50 text-slate-200 group-hover:text-blue-50 transition-colors group-hover:scale-110 duration-500">
                             <Users strokeWidth={1} className="w-16 h-16" />
                         </div>
@@ -307,23 +307,23 @@ const AdminDashboardNew = () => {
                             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100/50 shadow-inner group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
                                 <Users className="w-5 h-5" />
                             </div>
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-100 dark:border-slate-800">
                                 <Users className="w-3 h-3" /> Aktif Bekerja
                             </span>
                         </div>
                         <div className="relative z-10 flex-col mb-4">
-                            <div className="text-3xl font-black text-slate-800 tracking-tight">{isLoading ? <Skeleton className="h-9 w-16" /> : stats.totalEmployees}</div>
-                            <div className="text-sm font-semibold text-slate-500 mt-1">Total Karyawan</div>
+                            <div className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{isLoading ? <Skeleton className="h-9 w-16" /> : stats.totalEmployees}</div>
+                            <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">Total Karyawan</div>
                         </div>
-                        <div className="mt-auto relative z-10 flex items-center gap-2 pt-4 border-t border-slate-100">
+                        <div className="mt-auto relative z-10 flex items-center gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                             <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                            <span className="text-xs font-bold text-slate-700">+{stats.newEmployeesThisMonth}</span>
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200">+{stats.newEmployeesThisMonth}</span>
                             <span className="text-xs text-slate-400 font-medium">bergabung bulan ini</span>
                         </div>
                     </div>
 
                     {/* Card 2: Hadir Hari Ini */}
-                    <div className="bg-white rounded-[20px] p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-emerald-200 transition-all duration-300 group flex flex-col relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-[20px] p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-emerald-200 transition-all duration-300 group flex flex-col relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-50 text-slate-200 group-hover:text-emerald-50 transition-colors group-hover:scale-110 duration-500">
                             <UserCheck strokeWidth={1} className="w-16 h-16" />
                         </div>
@@ -336,22 +336,22 @@ const AdminDashboardNew = () => {
                             </span>
                         </div>
                         <div className="relative z-10 flex-col mb-4">
-                            <div className="text-3xl font-black text-slate-800 tracking-tight flex items-baseline gap-1">
+                            <div className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-baseline gap-1">
                                 {isLoading ? <Skeleton className="h-9 w-16" /> : stats.presentToday} <span className="text-sm font-bold text-slate-400">/ {stats.totalEmployees}</span>
                             </div>
-                            <div className="text-sm font-semibold text-slate-500 mt-1">Hadir Hari Ini</div>
+                            <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">Hadir Hari Ini</div>
                         </div>
-                        <div className="mt-auto relative z-10 pt-4 border-t border-slate-100">
-                            <Progress value={Math.round((stats.presentToday / Math.max(stats.totalEmployees, 1)) * 100)} className="h-1.5 w-full bg-slate-100 [&>div]:bg-emerald-500" />
+                        <div className="mt-auto relative z-10 pt-4 border-t border-slate-100 dark:border-slate-800">
+                            <Progress value={Math.round((stats.presentToday / Math.max(stats.totalEmployees, 1)) * 100)} className="h-1.5 w-full bg-slate-100 dark:bg-slate-800/80 [&>div]:bg-emerald-500" />
                             <div className="flex justify-between items-center mt-2">
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Progress</span>
-                                <span className="text-[10px] font-bold text-slate-700">{isLoading ? "-" : stats.totalEmployees - stats.presentToday} belum absen</span>
+                                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200">{isLoading ? "-" : stats.totalEmployees - stats.presentToday} belum absen</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Card 3: Terlambat */}
-                    <div className="bg-white rounded-[20px] p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-amber-200 transition-all duration-300 group flex flex-col relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-[20px] p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-amber-200 transition-all duration-300 group flex flex-col relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-50 text-slate-200 group-hover:text-amber-50 transition-colors group-hover:scale-110 duration-500">
                             <Clock strokeWidth={1} className="w-16 h-16" />
                         </div>
@@ -366,20 +366,20 @@ const AdminDashboardNew = () => {
                             )}
                         </div>
                         <div className="relative z-10 flex-col mb-4">
-                            <div className="text-3xl font-black text-slate-800 tracking-tight">{isLoading ? <Skeleton className="h-9 w-16" /> : stats.lateToday}</div>
-                            <div className="text-sm font-semibold text-slate-500 mt-1">Karyawan Terlambat</div>
+                            <div className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{isLoading ? <Skeleton className="h-9 w-16" /> : stats.lateToday}</div>
+                            <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">Karyawan Terlambat</div>
                         </div>
-                        <div className="mt-auto relative z-10 pt-4 border-t border-slate-100 flex items-center gap-2">
+                        <div className="mt-auto relative z-10 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
                             {stats.lateToday === 0 ? (
-                                <><CheckCircle className="w-4 h-4 text-emerald-500" /><span className="text-xs font-semibold text-slate-600">Performa waktu sempurna</span></>
+                                <><CheckCircle className="w-4 h-4 text-emerald-500" /><span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Performa waktu sempurna</span></>
                             ) : (
-                                <><TrendingDown className="w-4 h-4 text-rose-500" /><span className="text-xs font-semibold text-slate-600">{stats.lateToday} karyawan terlambat hari ini</span></>
+                                <><TrendingDown className="w-4 h-4 text-rose-500" /><span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{stats.lateToday} karyawan terlambat hari ini</span></>
                             )}
                         </div>
                     </div>
 
                     {/* Card 4: Jurnal Pending */}
-                    <div className="bg-white rounded-[20px] p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-indigo-200 transition-all duration-300 group flex flex-col relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-[20px] p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-slate-200/60 hover:shadow-[0_8px_20px_-8px_rgba(0,0,0,0.1)] hover:border-indigo-200 transition-all duration-300 group flex flex-col relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-50 text-slate-200 group-hover:text-indigo-50 transition-colors group-hover:scale-110 duration-500">
                             <BookOpen strokeWidth={1} className="w-16 h-16" />
                         </div>
@@ -392,10 +392,10 @@ const AdminDashboardNew = () => {
                             </Link>
                         </div>
                         <div className="relative z-10 flex-col mb-4">
-                            <div className="text-3xl font-black text-slate-800 tracking-tight">{isLoading ? <Skeleton className="h-9 w-16" /> : pendingReviewCount}</div>
-                            <div className="text-sm font-semibold text-slate-500 mt-1">Jurnal Pending</div>
+                            <div className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{isLoading ? <Skeleton className="h-9 w-16" /> : pendingReviewCount}</div>
+                            <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-1">Jurnal Pending</div>
                         </div>
-                        <div className="mt-auto relative z-10 pt-4 border-t border-slate-100">
+                        <div className="mt-auto relative z-10 pt-4 border-t border-slate-100 dark:border-slate-800">
                             <div className="flex items-center justify-between">
                                 <div className="flex -space-x-2">
                                     {(filteredJournals.slice(0, 3) || []).map((j, i) => (
@@ -405,12 +405,12 @@ const AdminDashboardNew = () => {
                                         </Avatar>
                                     ))}
                                     {pendingReviewCount > 3 && (
-                                        <div className="w-6 h-6 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[8px] font-bold text-slate-600">
+                                        <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800/80 border-2 border-white flex items-center justify-center text-[8px] font-bold text-slate-600 dark:text-slate-300">
                                             +{pendingReviewCount - 3}
                                         </div>
                                     )}
                                 </div>
-                                <span className="text-xs font-medium text-slate-500">Menunggu Review</span>
+                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Menunggu Review</span>
                             </div>
                         </div>
                     </div>
@@ -431,29 +431,29 @@ const AdminDashboardNew = () => {
                             </div>
                         ) : null}
 
-                        <Card className="flex-1 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white rounded-[20px] overflow-hidden flex flex-col">
-                            <CardHeader className="border-b border-slate-100/80 bg-slate-50/30 pb-4 px-6 pt-5">
+                        <Card className="flex-1 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white dark:bg-slate-900 rounded-[20px] overflow-hidden flex flex-col">
+                            <CardHeader className="border-b border-slate-100/80 dark:border-slate-800/80 bg-slate-50/30 pb-4 px-6 pt-5">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div className="space-y-1">
-                                        <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                        <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                             <Activity className="h-5 w-5 text-blue-600" /> Real-time Monitoring
                                         </CardTitle>
                                         <CardDescription>Live update karyawan hari ini</CardDescription>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         {/* Filters */}
-                                        <div className="bg-slate-100/70 p-1 rounded-xl flex items-center text-sm font-semibold border border-slate-200/50 shadow-inner">
+                                        <div className="bg-slate-100/70 p-1 rounded-xl flex items-center text-sm font-semibold border border-slate-200/50 dark:border-slate-700/50 shadow-inner">
                                             <button
                                                 onClick={() => setAttendanceFilter('all')}
-                                                className={cn("px-3 py-1.5 rounded-lg transition-all", attendanceFilter === 'all' ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                                                className={cn("px-3 py-1.5 rounded-lg transition-all", attendanceFilter === 'all' ? "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200")}
                                             >Semua</button>
                                             <button
                                                 onClick={() => setAttendanceFilter('present')}
-                                                className={cn("px-3 py-1.5 rounded-lg transition-all", attendanceFilter === 'present' ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                                                className={cn("px-3 py-1.5 rounded-lg transition-all", attendanceFilter === 'present' ? "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200")}
                                             >Hadir</button>
                                             <button
                                                 onClick={() => setAttendanceFilter('late')}
-                                                className={cn("px-3 py-1.5 rounded-lg transition-all", attendanceFilter === 'late' ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                                                className={cn("px-3 py-1.5 rounded-lg transition-all", attendanceFilter === 'late' ? "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200")}
                                             >Telat</button>
                                         </div>
                                     </div>
@@ -461,12 +461,12 @@ const AdminDashboardNew = () => {
                             </CardHeader>
                             <CardContent className="p-0 overflow-y-auto" style={{ maxHeight: '420px' }}>
                                 <Table>
-                                    <TableHeader className="bg-white sticky top-0 z-10 shadow-[0_1px_2px_0_rgba(0,0,0,0.03)] border-b border-slate-200/80">
+                                    <TableHeader className="bg-white dark:bg-slate-900 sticky top-0 z-10 shadow-[0_1px_2px_0_rgba(0,0,0,0.03)] border-b border-slate-200/80">
                                         <TableRow className="hover:bg-transparent">
-                                            <TableHead className="w-[45%] text-xs font-bold text-slate-500 uppercase tracking-widest pl-6 h-12">Karyawan</TableHead>
-                                            <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-widest text-center h-12">Jam Masuk</TableHead>
-                                            <TableHead className="text-xs font-bold text-slate-500 uppercase tracking-widest text-center h-12 hidden md:table-cell">Keterlambatan</TableHead>
-                                            <TableHead className="text-right text-xs font-bold text-slate-500 uppercase tracking-widest pr-6 h-12">Status</TableHead>
+                                            <TableHead className="w-[45%] text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest pl-6 h-12">Karyawan</TableHead>
+                                            <TableHead className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center h-12">Jam Masuk</TableHead>
+                                            <TableHead className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center h-12 hidden md:table-cell">Keterlambatan</TableHead>
+                                            <TableHead className="text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest pr-6 h-12">Status</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -476,7 +476,7 @@ const AdminDashboardNew = () => {
                                             ))
                                         ) : filteredAttendance.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={4} className="h-48 text-center text-slate-500 font-medium">
+                                                <TableCell colSpan={4} className="h-48 text-center text-slate-500 dark:text-slate-400 font-medium">
                                                     <div className="flex flex-col items-center justify-center gap-2">
                                                         <UserX className="w-10 h-10 text-slate-300" />
                                                         <p>Belum ada data dengan status ini.</p>
@@ -485,14 +485,14 @@ const AdminDashboardNew = () => {
                                             </TableRow>
                                         ) : (
                                             filteredAttendance.map((record) => (
-                                                <TableRow key={record.id} className="group hover:bg-slate-50/70 border-b border-slate-100 transition-colors">
+                                                <TableRow key={record.id} className="group hover:bg-slate-50/70 border-b border-slate-100 dark:border-slate-800 transition-colors">
                                                     <TableCell className="font-medium pl-6 py-4">
                                                         <div className="flex items-center gap-3 w-max">
                                                             <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold border shadow-sm transition-transform group-hover:scale-105", getAvatarColor(record.full_name), "border-white")}>
                                                                 {getInitials(record.full_name)}
                                                             </div>
                                                             <div>
-                                                                <div className="text-sm font-bold text-slate-800 transition-colors">{record.full_name}</div>
+                                                                <div className="text-sm font-bold text-slate-800 dark:text-slate-100 transition-colors">{record.full_name}</div>
                                                                 <div className="mt-1">
                                                                     <span className={cn("text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-widest", getDeptBadgeColor(record.department))}>
                                                                         {record.department || 'General'}
@@ -503,12 +503,12 @@ const AdminDashboardNew = () => {
                                                     </TableCell>
                                                     <TableCell className="text-center">
                                                         {record.clock_in ? (
-                                                            <div className="inline-flex font-mono text-[13px] font-bold bg-slate-100/80 text-slate-700 px-2.5 py-1 rounded-md border border-slate-200/80">
+                                                            <div className="inline-flex font-mono text-[13px] font-bold bg-slate-100/80 text-slate-700 dark:text-slate-200 px-2.5 py-1 rounded-md border border-slate-200/80">
                                                                 {formatTime(record.clock_in)}
                                                             </div>
                                                         ) : <span className="text-slate-300">-</span>}
                                                     </TableCell>
-                                                    <TableCell className="text-center font-medium text-slate-600 hidden md:table-cell">
+                                                    <TableCell className="text-center font-medium text-slate-600 dark:text-slate-300 hidden md:table-cell">
                                                         {record.status === 'late' && record.delay ? (
                                                             <span className="text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded-md border border-rose-100">
                                                                 {record.delay}
@@ -524,7 +524,7 @@ const AdminDashboardNew = () => {
                                     </TableBody>
                                 </Table>
                             </CardContent>
-                            <div className="p-3 border-t border-slate-100 bg-slate-50/50 mt-auto">
+                            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 mt-auto">
                                 <Button variant="ghost" className="w-full text-sm font-bold text-blue-600 hover:text-blue-700 hover:bg-blue-50" asChild>
                                     <Link to="/admin/absensi">Buka Log Kehadiran Lintas Divisi &rarr;</Link>
                                 </Button>
@@ -533,13 +533,13 @@ const AdminDashboardNew = () => {
                     </div>
 
                     {/* Jurnal Activity Feed */}
-                    <Card className="shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white rounded-[20px] flex flex-col h-full xl:max-h-[500px]">
-                        <CardHeader className="pb-2 border-b border-slate-100/80 px-5 pt-5">
+                    <Card className="shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white dark:bg-slate-900 rounded-[20px] flex flex-col h-full xl:max-h-[500px]">
+                        <CardHeader className="pb-2 border-b border-slate-100/80 dark:border-slate-800/80 px-5 pt-5">
                             <div className="flex items-center justify-between mb-2">
-                                <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2">
+                                <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                     <Briefcase className="h-4 w-4 text-indigo-500" /> Jurnal Masuk
                                 </CardTitle>
-                                <div className="text-[10px] uppercase font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">Live Feed</div>
+                                <div className="text-[10px] uppercase font-bold text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-1 rounded-md">Live Feed</div>
                             </div>
                             {/* Filter Jurnal */}
                             <div className="flex gap-1.5 mt-2">
@@ -547,7 +547,7 @@ const AdminDashboardNew = () => {
                                     <button
                                         key={fk} onClick={() => setJournalFilter(fk as any)}
                                         className={cn("px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all",
-                                            journalFilter === fk ? "bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm" : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50")}
+                                            journalFilter === fk ? "bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm" : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800")}
                                     >
                                         {fk}
                                     </button>
@@ -558,16 +558,16 @@ const AdminDashboardNew = () => {
                         <CardContent className="flex-1 p-0 overflow-y-auto">
                             {filteredJournals.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center p-8 text-center h-full">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
+                                    <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 border border-slate-100 dark:border-slate-800">
                                         <CheckCircle2 className="h-8 w-8 text-slate-300" />
                                     </div>
-                                    <p className="font-bold text-sm text-slate-700">Tidak ada jurnal {journalFilter !== 'all' ? journalFilter : ''}</p>
+                                    <p className="font-bold text-sm text-slate-700 dark:text-slate-200">Tidak ada jurnal {journalFilter !== 'all' ? journalFilter : ''}</p>
                                     <p className="text-xs text-slate-400 mt-1">Anda sudah uptodate.</p>
                                 </div>
                             ) : (
                                 <div className="divide-y divide-slate-100/80">
                                     {filteredJournals.map((journal) => (
-                                        <div key={journal.id} className="p-4 hover:bg-slate-50 transition-colors group relative">
+                                        <div key={journal.id} className="p-4 hover:bg-slate-50 dark:bg-slate-800 transition-colors group relative">
                                             <div className="flex gap-3">
                                                 <Avatar className="h-9 w-9 border-2 border-white shadow-sm shrink-0">
                                                     <AvatarImage src={journal.avatar_url || ""} className="object-cover" />
@@ -577,13 +577,13 @@ const AdminDashboardNew = () => {
                                                 </Avatar>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-start mb-0.5">
-                                                        <p className="text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-blue-600 transition-colors">{journal.full_name}</p>
+                                                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 transition-colors">{journal.full_name}</p>
                                                         <span className="text-[10px] font-bold text-slate-400 ml-2 shrink-0">
                                                             {new Date(journal.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                                         </span>
                                                     </div>
-                                                    <p className="text-[11px] font-semibold text-slate-500 mb-1.5">{journal.department || 'Umum'}</p>
-                                                    <div className="text-xs text-slate-600 bg-slate-50/80 border border-slate-100 p-2.5 rounded-xl line-clamp-2 leading-relaxed font-medium mb-2 group-hover:bg-white transition-colors group-hover:shadow-sm">
+                                                    <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5">{journal.department || 'Umum'}</p>
+                                                    <div className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50/80 border border-slate-100 dark:border-slate-800 p-2.5 rounded-xl line-clamp-2 leading-relaxed font-medium mb-2 group-hover:bg-white dark:bg-slate-900 transition-colors group-hover:shadow-sm">
                                                         {journal.title.replace(/\*\*/g, '')}
                                                     </div>
                                                     <div className="flex items-center justify-between">
@@ -609,10 +609,10 @@ const AdminDashboardNew = () => {
 
                 {/* BOTTOM CHARTS */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <Card className="lg:col-span-2 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white rounded-[20px]">
+                    <Card className="lg:col-span-2 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white dark:bg-slate-900 rounded-[20px]">
                         <CardHeader className="pb-0 px-6 pt-6">
-                            <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Tren Kinerja Bulanan</CardTitle>
-                            <CardDescription className="text-xs font-medium text-slate-500">Persentase kehadiran 6 bulan terakhir</CardDescription>
+                            <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">Tren Kinerja Bulanan</CardTitle>
+                            <CardDescription className="text-xs font-medium text-slate-500 dark:text-slate-400">Persentase kehadiran 6 bulan terakhir</CardDescription>
                         </CardHeader>
                         <CardContent className="pt-4 pb-6 px-2">
                             {isLoading ? (
@@ -644,10 +644,10 @@ const AdminDashboardNew = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className="shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white rounded-[20px]">
+                    <Card className="shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] border-slate-200/60 bg-white dark:bg-slate-900 rounded-[20px]">
                         <CardHeader className="pb-0 px-6 pt-6">
-                            <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Kekuatan Tim</CardTitle>
-                            <CardDescription className="text-xs font-medium text-slate-500">Distribusi per departemen</CardDescription>
+                            <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">Kekuatan Tim</CardTitle>
+                            <CardDescription className="text-xs font-medium text-slate-500 dark:text-slate-400">Distribusi per departemen</CardDescription>
                         </CardHeader>
                         <CardContent className="pt-4 pb-6 px-4">
                             {isLoading ? (
@@ -673,7 +673,7 @@ const AdminDashboardNew = () => {
                                 {departmentData.slice(0, 4).map((d, i) => (
                                     <div key={i} className="flex items-center gap-1.5">
                                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }}></div>
-                                        <span className="text-[11px] font-bold text-slate-600">{d.name}</span>
+                                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">{d.name}</span>
                                     </div>
                                 ))}
                             </div>

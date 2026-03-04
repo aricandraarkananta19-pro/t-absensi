@@ -27,6 +27,7 @@ import { format, subDays } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import KaryawanWorkspaceLayout from "@/components/layout/KaryawanWorkspaceLayout";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useTheme } from "@/contexts/ThemeContext";
 import MobileDashboardView from "@/components/MobileDashboardView";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -86,7 +87,7 @@ const KaryawanDashboardNew = () => {
     const [notifCount, setNotifCount] = useState(0);
 
     // Dark mode
-    const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') === 'dark');
+    const { isDark } = useTheme();
 
     // Elapsed time
     const [elapsedTime, setElapsedTime] = useState("00:00:00");
@@ -114,12 +115,6 @@ const KaryawanDashboardNew = () => {
             return () => clearInterval(interval);
         }
     }, [todayAttendance]);
-
-    // Dark mode effect
-    useEffect(() => {
-        document.documentElement.classList.toggle('dark', isDark);
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    }, [isDark]);
 
     useEffect(() => {
         if (user) {
@@ -387,7 +382,7 @@ const KaryawanDashboardNew = () => {
     const textMuted = isDark ? "text-slate-500" : "text-slate-400";
 
     return (
-        <KaryawanWorkspaceLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)} notifCount={notifCount}>
+        <KaryawanWorkspaceLayout notifCount={notifCount}>
 
             {/* Sapaan & Insight */}
             <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">

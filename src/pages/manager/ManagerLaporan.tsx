@@ -55,7 +55,7 @@ const BRAND_COLORS = {
 
 // =============== SKELETON LOADER COMPONENT ===============
 const SkeletonCard = () => (
-  <Card className="border-slate-200 w-full bg-white shadow-sm">
+  <Card className="border-slate-200 dark:border-slate-700 w-full bg-white dark:bg-slate-900 shadow-sm">
     <CardContent className="p-5">
       <div className="flex items-center gap-4">
         <Skeleton className="h-12 w-12 rounded-full" />
@@ -69,8 +69,8 @@ const SkeletonCard = () => (
 );
 
 const SkeletonTable = () => (
-  <Card className="border-slate-200 shadow-sm bg-white overflow-hidden">
-    <div className="bg-slate-50 py-3 px-4 border-b">
+  <Card className="border-slate-200 dark:border-slate-700 shadow-sm bg-white dark:bg-slate-900 overflow-hidden">
+    <div className="bg-slate-50 dark:bg-slate-800 py-3 px-4 border-b">
       <Skeleton className="h-5 w-32" />
     </div>
     <CardContent className="p-0">
@@ -91,11 +91,11 @@ const SkeletonTable = () => (
 // =============== EMPTY STATE COMPONENT ===============
 const EmptyState = ({ title, description, icon: Icon }: { title: string; description: string; icon: React.ElementType }) => (
   <div className="flex flex-col items-center justify-center py-16 px-4">
-    <div className="h-20 w-20 rounded-2xl bg-slate-50 flex items-center justify-center mb-6 border border-slate-200">
+    <div className="h-20 w-20 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-6 border border-slate-200 dark:border-slate-700">
       <Icon className="h-10 w-10 text-slate-400" />
     </div>
-    <h3 className="text-lg font-semibold text-slate-900 mb-2">{title}</h3>
-    <p className="text-sm text-slate-500 text-center max-w-sm">{description}</p>
+    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">{title}</h3>
+    <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-sm">{description}</p>
   </div>
 );
 
@@ -695,17 +695,17 @@ const ManagerLaporan = () => {
           <ChevronDown className="h-4 w-4 opacity-70 ml-1" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[280px] p-4 bg-white rounded-xl shadow-xl border-slate-100 z-[100]">
+      <PopoverContent align="end" className="w-[280px] p-4 bg-white dark:bg-slate-900 rounded-xl shadow-xl border-slate-100 dark:border-slate-800 z-[100]">
         <div className="space-y-4">
           <div className="space-y-1">
-            <h4 className="font-semibold text-sm text-slate-800">Cetak Laporan</h4>
-            <p className="text-[11px] text-slate-500 leading-tight">Pilih format laporan dan sinkronkan dengan periode yang Anda inginkan.</p>
+            <h4 className="font-semibold text-sm text-slate-800 dark:text-slate-100">Cetak Laporan</h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">Pilih format laporan dan sinkronkan dengan periode yang Anda inginkan.</p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-700">Pilih Format</label>
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Pilih Format</label>
             <select
-              className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-600 outline-none"
+              className="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-600 outline-none"
               value={exportFormat}
               onChange={(e) => setExportFormat(e.target.value)}
             >
@@ -716,9 +716,9 @@ const ManagerLaporan = () => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-700">Periode Target</label>
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Periode Target</label>
             <select
-              className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-600 outline-none"
+              className="flex h-9 w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1 text-xs shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-600 outline-none"
               value={exportPeriodVal}
               onChange={(e) => setExportPeriodVal(e.target.value)}
             >
@@ -756,14 +756,14 @@ const ManagerLaporan = () => {
       <div className="space-y-6 pb-20">
 
         {/* 1. Filter Bar for Period Selection */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-center gap-3">
             <div className="bg-blue-50 text-blue-600 p-2 rounded-xl">
               <CalendarIcon className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800 text-sm">Filter Tanggal & Bulan</h3>
-              <p className="text-[11px] text-slate-500 font-medium">Laporan akan dimuat ulang sesuai periode yang Anda pilih</p>
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Filter Tanggal & Bulan</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Laporan akan dimuat ulang sesuai periode yang Anda pilih</p>
             </div>
           </div>
 
@@ -775,7 +775,7 @@ const ManagerLaporan = () => {
                 handlePeriodChange(val);
               }}
             >
-              <SelectTrigger className="w-full sm:w-[220px] h-10 font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-blue-500">
+              <SelectTrigger className="w-full sm:w-[220px] h-10 font-bold bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-blue-500">
                 <SelectValue placeholder="Pilih Periode/Bulan" />
               </SelectTrigger>
               <SelectContent>
@@ -792,19 +792,19 @@ const ManagerLaporan = () => {
         {/* 1. Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Hadir Hari Ini / Total Kehadiran */}
-          <Card className="border-none shadow-sm bg-white hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
+          <Card className="border-none shadow-sm bg-white dark:bg-slate-900 hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-4">
-                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">HADIR (Periode Ini)</div>
+                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">HADIR (Periode Ini)</div>
                 <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
                   <UserCheck className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-bold text-slate-900">{summaryStats.totalPresent}</span>
+                <span className="text-3xl font-bold text-slate-900 dark:text-white">{summaryStats.totalPresent}</span>
                 <span className="text-sm text-slate-400 font-medium">/ {(dateRange?.to && dateRange?.from) ? Math.round(differenceInMinutes(dateRange.to, dateRange.from) / 1440 * summaryStats.totalEmployees) : '-'} Total</span>
               </div>
-              <Progress value={75} className="h-1.5 bg-slate-100" indicatorClassName="bg-blue-600" />
+              <Progress value={75} className="h-1.5 bg-slate-100 dark:bg-slate-800/80" indicatorClassName="bg-blue-600" />
               <div className="flex justify-end mt-2 text-xs font-bold text-blue-600">
                 {/* Percentage placeholder */}
                 92%
@@ -813,24 +813,24 @@ const ManagerLaporan = () => {
           </Card>
 
           {/* Card 2: Terlambat */}
-          <Card className="border-none shadow-sm bg-white hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
+          <Card className="border-none shadow-sm bg-white dark:bg-slate-900 hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <Timer className="h-24 w-24 text-amber-500" />
             </div>
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-4">
-                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">TERLAMBAT</div>
+                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">TERLAMBAT</div>
                 <div className="h-8 w-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
                   <Clock className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-3 mb-1">
-                <span className="text-3xl font-bold text-slate-900">{summaryStats.totalLate}</span>
+                <span className="text-3xl font-bold text-slate-900 dark:text-white">{summaryStats.totalLate}</span>
                 <Badge variant="secondary" className="bg-amber-50 text-amber-600 hover:bg-amber-50 text-[10px] px-1.5 py-0 h-5">
                   <TrendingUp className="h-3 w-3 mr-1" /> +2
                 </Badge>
               </div>
-              <p className="text-xs text-slate-500">Employees arrived late</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Employees arrived late</p>
               <div className="mt-3 inline-flex items-center text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
                 Avg {summaryStats.totalLate > 0 ? (summaryStats.totalLateMinutes / summaryStats.totalLate).toFixed(0) : 0} mins / late
               </div>
@@ -838,19 +838,19 @@ const ManagerLaporan = () => {
           </Card>
 
           {/* Card 3: Izin / Sakit */}
-          <Card className="border-none shadow-sm bg-white hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
+          <Card className="border-none shadow-sm bg-white dark:bg-slate-900 hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <FileText className="h-24 w-24 text-purple-500" />
             </div>
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-4">
-                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">IZIN / SAKIT</div>
+                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">IZIN / SAKIT</div>
                 <div className="h-8 w-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
                   <FileText className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-bold text-slate-900">{summaryStats.totalLeave}</span>
+                <span className="text-3xl font-bold text-slate-900 dark:text-white">{summaryStats.totalLeave}</span>
                 <span className="text-sm text-slate-400 font-medium">Staff</span>
               </div>
               <div className="flex gap-2 mt-2">
@@ -861,33 +861,33 @@ const ManagerLaporan = () => {
           </Card>
 
           {/* Card 4: Belum Absen */}
-          <Card className="border-none shadow-sm bg-white hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
+          <Card className="border-none shadow-sm bg-white dark:bg-slate-900 hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <UserX className="h-24 w-24 text-red-500" />
             </div>
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-4">
-                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">BELUM ABSEN</div>
+                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">BELUM ABSEN</div>
                 <div className="h-8 w-8 rounded-full bg-red-50 flex items-center justify-center text-red-600">
                   <UserX className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-bold text-slate-900">{summaryStats.waitingCheckIn}</span>
+                <span className="text-3xl font-bold text-slate-900 dark:text-white">{summaryStats.waitingCheckIn}</span>
                 <span className="text-sm text-slate-400 font-medium">Staff</span>
               </div>
-              <p className="text-xs text-slate-500">Waiting for check-in...</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Waiting for check-in...</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Trend Kehadiran Chart */}
-        <Card className="border-none shadow-sm bg-white rounded-xl overflow-hidden">
+        <Card className="border-none shadow-sm bg-white dark:bg-slate-900 rounded-xl overflow-hidden">
           <CardContent className="p-5">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h3 className="text-sm font-semibold text-slate-900">Tren Kehadiran Harian</h3>
-                <p className="text-xs text-slate-500">Visualisasi data absensi harian pada periode terpilih</p>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Tren Kehadiran Harian</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Visualisasi data absensi harian pada periode terpilih</p>
               </div>
               <div className="flex gap-4 text-xs font-semibold">
                 <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Hadir</span>
@@ -937,20 +937,20 @@ const ManagerLaporan = () => {
         </Card>
 
         {/* 2. Main Content Card */}
-        <Card className="border-none shadow-sm bg-white rounded-xl overflow-hidden min-h-[500px]">
-          <div className="border-b border-slate-100 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <Card className="border-none shadow-sm bg-white dark:bg-slate-900 rounded-xl overflow-hidden min-h-[500px]">
+          <div className="border-b border-slate-100 dark:border-slate-800 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-lg text-slate-900">Kehadiran Karyawan</h3>
+              <h3 className="font-bold text-lg text-slate-900 dark:text-white">Kehadiran Karyawan</h3>
               <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700 border-blue-200">
                 {filteredReports.length} Staff
               </Badge>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-slate-500">
+              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                 <Filter className="h-4 w-4" />
                 <Select value={filterDepartment} onValueChange={setFilterDepartment}>
-                  <SelectTrigger className="h-9 border-slate-200 bg-white hover:bg-slate-50 w-[180px]">
+                  <SelectTrigger className="h-9 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800 w-[180px]">
                     <SelectValue placeholder="All Departments" />
                   </SelectTrigger>
                   <SelectContent>
@@ -972,14 +972,14 @@ const ManagerLaporan = () => {
                 <div className="hidden md:block overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                        <TableHead className="w-12 py-4 font-semibold text-xs uppercase text-slate-500 pl-4">No</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500">Employee Details</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-center">Total Hadir</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-center">Terlambat (Menit)</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-center">Status Cuti / Izin</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-right pr-6">Attendance Rate</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 text-center">Detail</TableHead>
+                      <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-50/50 dark:bg-slate-800/50">
+                        <TableHead className="w-12 py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 pl-4">No</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400">Employee Details</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-center">Total Hadir</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-center">Terlambat (Menit)</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-center">Status Cuti / Izin</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-right pr-6">Attendance Rate</TableHead>
+                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-center">Detail</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -993,29 +993,29 @@ const ManagerLaporan = () => {
                         const leaveCount = emp.details.filter(d => d.status === 'leave').length;
 
                         return (
-                          <TableRow key={emp.user_id} className="hover:bg-slate-50 border-b border-slate-100 transition-colors">
-                            <TableCell className="text-slate-500 text-xs font-medium pl-4">{index + 1}</TableCell>
+                          <TableRow key={emp.user_id} className="hover:bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 transition-colors">
+                            <TableCell className="text-slate-500 dark:text-slate-400 text-xs font-medium pl-4">{index + 1}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <Avatar className="h-9 w-9 border border-slate-200">
+                                <Avatar className="h-9 w-9 border border-slate-200 dark:border-slate-700">
                                   <AvatarImage src="" />
                                   <AvatarFallback className={cn(
                                     "text-xs font-bold",
                                     ['A', 'C', 'E'].includes(emp.full_name?.charAt(0) || '') ? "bg-blue-100 text-blue-600" :
                                       ['B', 'D', 'F'].includes(emp.full_name?.charAt(0) || '') ? "bg-amber-100 text-amber-600" :
-                                        ['G', 'H', 'I'].includes(emp.full_name?.charAt(0) || '') ? "bg-purple-100 text-purple-600" : "bg-slate-100 text-slate-600"
+                                        ['G', 'H', 'I'].includes(emp.full_name?.charAt(0) || '') ? "bg-purple-100 text-purple-600" : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300"
                                   )}>
                                     {emp.full_name?.charAt(0).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <div className="font-semibold text-slate-900 text-sm">{emp.full_name}</div>
-                                  <div className="text-xs text-slate-500">{emp.department} • {emp.position || "Staff"}</div>
+                                  <div className="font-semibold text-slate-900 dark:text-white text-sm">{emp.full_name}</div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">{emp.department} • {emp.position || "Staff"}</div>
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell className="text-center font-bold text-slate-900">
-                              <Badge variant="outline" className="bg-slate-50 font-mono text-base px-3 py-1">
+                            <TableCell className="text-center font-bold text-slate-900 dark:text-white">
+                              <Badge variant="outline" className="bg-slate-50 dark:bg-slate-800 font-mono text-base px-3 py-1">
                                 {emp.present + emp.late}
                               </Badge>
                             </TableCell>
@@ -1032,7 +1032,7 @@ const ManagerLaporan = () => {
                               <div className="flex justify-center gap-1 flex-wrap">
                                 {sickCount > 0 && <Badge variant="secondary" className="bg-purple-50 text-purple-600 border-purple-100">{sickCount} Sakit</Badge>}
                                 {permitCount > 0 && <Badge variant="secondary" className="bg-blue-50 text-blue-600 border-blue-100">{permitCount} Izin</Badge>}
-                                {leaveCount > 0 && <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-slate-200">{leaveCount} Cuti</Badge>}
+                                {leaveCount > 0 && <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700">{leaveCount} Cuti</Badge>}
                                 {sickCount === 0 && permitCount === 0 && leaveCount === 0 && <span className="text-slate-300 text-xs">-</span>}
                               </div>
                             </TableCell>
@@ -1046,7 +1046,7 @@ const ManagerLaporan = () => {
                                         attendancePercent >= 50 ? "text-amber-600" : "text-red-600"
                                   )}>{attendancePercent}%</span>
                                 </div>
-                                <div className="h-1.5 w-16 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-1.5 w-16 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden">
                                   <div
                                     className={cn("h-full rounded-full transition-all",
                                       attendancePercent >= 90 ? "bg-emerald-500" :
@@ -1071,7 +1071,7 @@ const ManagerLaporan = () => {
                 </div>
 
                 {/* Mobile Cards View */}
-                <div className="md:hidden flex flex-col p-4 gap-4 bg-slate-50/50">
+                <div className="md:hidden flex flex-col p-4 gap-4 bg-slate-50/50 dark:bg-slate-800/50">
                   {filteredReports.map((emp, index) => {
                     const totalDays = emp.present + emp.late + emp.absent + emp.leave;
                     const attendancePercent = totalDays > 0 ? Math.round(((emp.present + emp.late) / totalDays) * 100) : 0;
@@ -1081,27 +1081,27 @@ const ManagerLaporan = () => {
                     const leaveCount = emp.details.filter(d => d.status === 'leave').length;
 
                     return (
-                      <div key={emp.user_id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 relative flex flex-col gap-4">
+                      <div key={emp.user_id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-4 relative flex flex-col gap-4">
                         <div className="flex items-start justify-between">
                           <div className="flex gap-3">
-                            <Avatar className="h-12 w-12 border border-slate-100 shadow-sm">
+                            <Avatar className="h-12 w-12 border border-slate-100 dark:border-slate-800 shadow-sm">
                               <AvatarImage src="" />
                               <AvatarFallback className={cn(
                                 "text-sm font-bold",
                                 ['A', 'C', 'E'].includes(emp.full_name?.charAt(0) || '') ? "bg-blue-100 text-blue-600" :
                                   ['B', 'D', 'F'].includes(emp.full_name?.charAt(0) || '') ? "bg-amber-100 text-amber-600" :
-                                    ['G', 'H', 'I'].includes(emp.full_name?.charAt(0) || '') ? "bg-purple-100 text-purple-600" : "bg-slate-100 text-slate-600"
+                                    ['G', 'H', 'I'].includes(emp.full_name?.charAt(0) || '') ? "bg-purple-100 text-purple-600" : "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300"
                               )}>
                                 {emp.full_name?.charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <h4 className="font-bold text-slate-900 text-sm">{emp.full_name}</h4>
-                              <p className="text-[11px] text-slate-500 font-medium pb-1">{emp.department} • {emp.position || "Staff"}</p>
+                              <h4 className="font-bold text-slate-900 dark:text-white text-sm">{emp.full_name}</h4>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium pb-1">{emp.department} • {emp.position || "Staff"}</p>
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 {sickCount > 0 && <Badge variant="secondary" className="bg-purple-50 text-purple-600 border-none text-[9px] h-4 leading-none">{sickCount} Sakit</Badge>}
                                 {permitCount > 0 && <Badge variant="secondary" className="bg-blue-50 text-blue-600 border-none text-[9px] h-4 leading-none">{permitCount} Izin</Badge>}
-                                {leaveCount > 0 && <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-none text-[9px] h-4 leading-none">{leaveCount} Cuti</Badge>}
+                                {leaveCount > 0 && <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-none text-[9px] h-4 leading-none">{leaveCount} Cuti</Badge>}
                                 {sickCount === 0 && permitCount === 0 && leaveCount === 0 && <span className="text-slate-300 text-[10px]">-</span>}
                               </div>
                             </div>
@@ -1111,10 +1111,10 @@ const ManagerLaporan = () => {
                           </Button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 bg-slate-50/50 rounded-xl p-3 border border-slate-50">
+                        <div className="grid grid-cols-2 gap-3 bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-50">
                           <div className="flex flex-col">
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Total Hadir</span>
-                            <span className="text-sm font-bold text-slate-800">{emp.present + emp.late} hari</span>
+                            <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{emp.present + emp.late} hari</span>
                           </div>
                           <div className="flex flex-col">
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Keterlambatan</span>
@@ -1138,7 +1138,7 @@ const ManagerLaporan = () => {
                                   attendancePercent >= 50 ? "text-amber-600" : "text-red-600"
                             )}>{attendancePercent}%</span>
                           </div>
-                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-2 w-full bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden">
                             <div
                               className={cn("h-full rounded-full transition-all",
                                 attendancePercent >= 90 ? "bg-emerald-500" :
@@ -1155,7 +1155,7 @@ const ManagerLaporan = () => {
                 </div>
               </>
             )}
-            <div className="p-4 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 flex justify-between items-center">
               <span>Showing <strong>1</strong> to <strong>{Math.min(filteredReports.length, 10)}</strong> of <strong>{filteredReports.length}</strong> entries</span>
               <div className="flex gap-1">
                 <Button variant="outline" size="sm" className="h-7 w-auto px-2 text-xs" disabled>Prev</Button>
@@ -1169,8 +1169,8 @@ const ManagerLaporan = () => {
 
       {/* DETAIL MODAL */}
       < Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen} >
-        <DialogContent className="flex flex-col h-[90vh] max-w-5xl overflow-hidden p-0 gap-0 bg-slate-50/50">
-          <div className="bg-white p-6 border-b border-slate-100 flex-shrink-0">
+        <DialogContent className="flex flex-col h-[90vh] max-w-5xl overflow-hidden p-0 gap-0 bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="bg-white dark:bg-slate-900 p-6 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
             <DialogHeader className="hidden">
               <DialogTitle>Detail Kehadiran</DialogTitle>
             </DialogHeader>
@@ -1185,29 +1185,29 @@ const ManagerLaporan = () => {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">{selectedEmployee?.full_name}</h3>
-                  <p className="text-sm text-slate-500 font-medium mb-1">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">{selectedEmployee?.full_name}</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">
                     {selectedEmployee?.department} • {selectedEmployee?.position || "Staf"}
                   </p>
                   <div className="text-xs text-slate-400 flex items-center gap-1.5">
                     <CalendarIcon className="w-3 h-3" />
-                    <span>Periode: <b className="text-slate-600">{dateRange?.from ? format(dateRange.from, 'd MMMM yyyy', { locale: id }) : '-'}</b> s/d <b className="text-slate-600">{dateRange?.to ? format(dateRange.to, 'd MMMM yyyy', { locale: id }) : '-'}</b></span>
+                    <span>Periode: <b className="text-slate-600 dark:text-slate-300">{dateRange?.from ? format(dateRange.from, 'd MMMM yyyy', { locale: id }) : '-'}</b> s/d <b className="text-slate-600 dark:text-slate-300">{dateRange?.to ? format(dateRange.to, 'd MMMM yyyy', { locale: id }) : '-'}</b></span>
                   </div>
                 </div>
               </div>
 
               {/* Center: View Toggle */}
-              <div className="flex bg-slate-100 p-1 rounded-lg">
+              <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-lg">
                 <button
                   onClick={() => setViewMode('list')}
-                  className={cn("px-4 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-2", viewMode === 'list' ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-900")}
+                  className={cn("px-4 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-2", viewMode === 'list' ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white")}
                 >
                   <FileText className="w-3.5 h-3.5" />
                   Harian
                 </button>
                 <button
                   onClick={() => setViewMode('calendar')}
-                  className={cn("px-4 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-2", viewMode === 'calendar' ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-900")}
+                  className={cn("px-4 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-2", viewMode === 'calendar' ? "bg-white dark:bg-slate-900 shadow-sm text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-white")}
                 >
                   <CalendarIcon className="w-3.5 h-3.5" />
                   Bulanan

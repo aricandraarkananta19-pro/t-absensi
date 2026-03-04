@@ -19,7 +19,7 @@ export function AttendanceStats({ stats, loading = false }: AttendanceStatsProps
         return (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-24 bg-slate-100 rounded-xl animate-pulse" />
+                    <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800/80 rounded-xl animate-pulse" />
                 ))}
             </div>
         );
@@ -66,7 +66,7 @@ export function AttendanceStats({ stats, loading = false }: AttendanceStatsProps
                 <Card key={index} className={cn("border shadow-sm", item.border)}>
                     <CardContent className="p-4 flex flex-col justify-between h-full">
                         <div className="flex justify-between items-start mb-2">
-                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                 {item.label}
                             </span>
                             <div className={cn("p-1.5 rounded-lg", item.bg)}>

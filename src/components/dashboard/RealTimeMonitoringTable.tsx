@@ -36,7 +36,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bgColor: str
     online: { label: "Online", color: "text-green-700", bgColor: "bg-green-50 border-green-200", icon: Wifi },
     present: { label: "Hadir", color: "text-blue-700", bgColor: "bg-blue-50 border-blue-200", icon: CheckCircle },
     late: { label: "Terlambat", color: "text-amber-700", bgColor: "bg-amber-50 border-amber-200", icon: AlertCircle },
-    inactive: { label: "Pulang", color: "text-slate-500", bgColor: "bg-slate-100 border-slate-200", icon: WifiOff },
+    inactive: { label: "Pulang", color: "text-slate-500 dark:text-slate-400", bgColor: "bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700", icon: WifiOff },
     idle: { label: "Idle", color: "text-orange-600", bgColor: "bg-orange-50 border-orange-200", icon: Timer },
     absent: { label: "Tidak Hadir", color: "text-red-700", bgColor: "bg-red-50 border-red-200", icon: AlertCircle },
     leave: { label: "Cuti / Izin", color: "text-purple-700", bgColor: "bg-purple-50 border-purple-200", icon: Clock },
@@ -102,9 +102,9 @@ export function RealTimeMonitoringTable({
 
     if (isLoading) {
         return (
-            <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px]">
+            <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px]">
                 <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2 tracking-tight">
+                    <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 tracking-tight">
                         <Users className="h-4 w-4" style={{ color: BRAND_COLORS.blue }} />
                         Monitoring Real-Time
                     </CardTitle>
@@ -112,7 +112,7 @@ export function RealTimeMonitoringTable({
                 <CardContent>
                     <div className="space-y-3">
                         {[1, 2, 3, 4, 5].map(i => (
-                            <div key={i} className="animate-pulse flex items-center gap-3 p-3 rounded-lg bg-slate-50">
+                            <div key={i} className="animate-pulse flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
                                 <div className="w-10 h-10 rounded-full bg-slate-200" />
                                 <div className="flex-1 space-y-2">
                                     <div className="h-4 bg-slate-200 rounded w-32" />
@@ -128,11 +128,11 @@ export function RealTimeMonitoringTable({
     }
 
     return (
-        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md h-full flex flex-col rounded-[20px] vibe-glass-card">
-            <CardHeader className="pb-3 border-b border-slate-100/80">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md h-full flex flex-col rounded-[20px] vibe-glass-card">
+            <CardHeader className="pb-3 border-b border-slate-100/80 dark:border-slate-800/80">
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="text-base font-bold text-slate-800 flex items-center gap-2 tracking-tight">
+                        <CardTitle className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 tracking-tight">
                             <Users className="h-4 w-4" style={{ color: BRAND_COLORS.blue }} />
                             Monitoring Real-Time
                         </CardTitle>
@@ -154,7 +154,7 @@ export function RealTimeMonitoringTable({
                         disabled={isRefetching}
                         className="h-8 w-8 p-0"
                     >
-                        <RefreshCw className={cn("h-4 w-4 text-slate-500", isRefetching && "animate-spin")} />
+                        <RefreshCw className={cn("h-4 w-4 text-slate-500 dark:text-slate-400", isRefetching && "animate-spin")} />
                     </Button>
                 </div>
             </CardHeader>
@@ -167,13 +167,13 @@ export function RealTimeMonitoringTable({
                         >
                             <Clock className="h-8 w-8" style={{ color: `${BRAND_COLORS.blue}50` }} />
                         </div>
-                        <p className="text-slate-500 text-sm font-medium">Belum ada aktivitas hari ini</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Belum ada aktivitas hari ini</p>
                         <p className="text-slate-400 text-xs mt-1">Data akan muncul saat karyawan clock-in</p>
                     </div>
                 ) : (
                     <div className="divide-y divide-slate-100">
                         {/* Header Row */}
-                        <div className="hidden md:grid md:grid-cols-12 gap-3 p-3 bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10 border-b border-slate-100">
+                        <div className="hidden md:grid md:grid-cols-12 gap-3 p-3 bg-slate-50/50 dark:bg-slate-800/50 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
                             <div className="col-span-4">Karyawan</div>
                             <div className="col-span-2 text-center">Clock-In</div>
                             <div className="col-span-2 text-center">Clock-Out</div>
@@ -185,37 +185,37 @@ export function RealTimeMonitoringTable({
                             <div key={record.id} className="group">
                                 {/* Desktop Row */}
                                 <div className={cn(
-                                    "hidden md:grid md:grid-cols-12 gap-3 p-3 transition-colors hover:bg-slate-50 border-b border-slate-50",
+                                    "hidden md:grid md:grid-cols-12 gap-3 p-3 transition-colors hover:bg-slate-50 dark:bg-slate-800 border-b border-slate-50",
                                     index === 0 && record.liveStatus === "online" && "bg-gradient-to-r from-green-50/50 to-transparent"
                                 )}>
                                     {/* Employee Info */}
                                     <div className="md:col-span-4 flex items-center gap-3 pl-3">
-                                        <div className="flex-shrink-0 w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shadow-sm">
+                                        <div className="flex-shrink-0 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300 shadow-sm">
                                             {getInitials(record.full_name)}
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-sm font-bold text-slate-800 truncate group-hover:text-blue-600 transition-colors">{record.full_name}</p>
+                                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-blue-600 transition-colors">{record.full_name}</p>
                                             <p className="text-[10px] uppercase font-bold text-slate-400 truncate tracking-wider">{record.department || "-"}</p>
                                         </div>
                                     </div>
 
                                     {/* Clock-In */}
                                     <div className="md:col-span-2 flex items-center justify-center">
-                                        <div className="inline-flex font-mono text-xs font-bold bg-slate-100/50 text-slate-700 px-2 py-1 rounded border border-slate-200 shadow-sm">
+                                        <div className="inline-flex font-mono text-xs font-bold bg-slate-100/50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-200 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 shadow-sm">
                                             {record.clock_in ? formatTime(record.clock_in) : "--:--"}
                                         </div>
                                     </div>
 
                                     {/* Clock-Out */}
                                     <div className="md:col-span-2 flex items-center justify-center">
-                                        <div className="inline-flex font-mono text-xs font-bold bg-slate-50 text-slate-500 px-2 py-1 rounded border border-slate-100">
+                                        <div className="inline-flex font-mono text-xs font-bold bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-1 rounded border border-slate-100 dark:border-slate-800">
                                             {record.clock_out ? formatTime(record.clock_out) : "--:--"}
                                         </div>
                                     </div>
 
                                     {/* Shift */}
                                     <div className="md:col-span-2 flex items-center justify-center">
-                                        <span className="text-xs font-medium text-slate-600">{record.shift}</span>
+                                        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{record.shift}</span>
                                     </div>
 
                                     {/* Status */}
@@ -225,15 +225,15 @@ export function RealTimeMonitoringTable({
                                 </div>
 
                                 {/* Mobile Card View (SaaS App Layout) */}
-                                <div className="md:hidden bg-white/70 backdrop-blur-md rounded-[20px] p-4 border border-slate-100 shadow-sm flex flex-col gap-3 hover:shadow-md transition-all mb-4 mx-4">
+                                <div className="md:hidden bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px] p-4 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col gap-3 hover:shadow-md transition-all mb-4 mx-4">
                                     <div className="flex justify-between items-start">
                                         <div className="flex items-center gap-3">
-                                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shadow-sm">
+                                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300 shadow-sm">
                                                 {getInitials(record.full_name)}
                                             </div>
                                             <div>
-                                                <div className="text-sm font-bold text-slate-800 line-clamp-1">{record.full_name}</div>
-                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider mt-1 inline-block bg-slate-100 text-slate-600">
+                                                <div className="text-sm font-bold text-slate-800 dark:text-slate-100 line-clamp-1">{record.full_name}</div>
+                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider mt-1 inline-block bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300">
                                                     {record.department || "Karyawan"}
                                                 </span>
                                             </div>
@@ -243,14 +243,14 @@ export function RealTimeMonitoringTable({
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-3 mt-2 bg-slate-50/60 backdrop-blur-sm p-3 rounded-[16px] border border-slate-100">
+                                    <div className="grid grid-cols-2 gap-3 mt-2 bg-slate-50/60 backdrop-blur-sm p-3 rounded-[16px] border border-slate-100 dark:border-slate-800">
                                         <div className="flex flex-col">
                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Clock className="w-3 h-3" /> Masuk</span>
-                                            <span className="font-mono text-sm font-bold text-slate-800">{record.clock_in ? formatTime(record.clock_in) : "--:--"}</span>
+                                            <span className="font-mono text-sm font-bold text-slate-800 dark:text-slate-100">{record.clock_in ? formatTime(record.clock_in) : "--:--"}</span>
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Clock className="w-3 h-3" /> Pulang</span>
-                                            <span className="font-mono text-sm font-bold text-slate-800">{record.clock_out ? formatTime(record.clock_out) : "--:--"}</span>
+                                            <span className="font-mono text-sm font-bold text-slate-800 dark:text-slate-100">{record.clock_out ? formatTime(record.clock_out) : "--:--"}</span>
                                         </div>
                                     </div>
                                 </div>

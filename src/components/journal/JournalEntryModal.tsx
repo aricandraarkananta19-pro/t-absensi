@@ -68,7 +68,7 @@ export function JournalEntryModal({
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="journal" className="text-slate-700 font-medium">
+                <Label htmlFor="journal" className="text-slate-700 dark:text-slate-200 font-medium">
                     Apa pencapaian utama Anda hari ini?
                 </Label>
                 <div className="relative">
@@ -81,7 +81,7 @@ export function JournalEntryModal({
                     />
                     {/* AI Voice Trigger (Mock) */}
                     <button
-                        className={`absolute bottom-3 right-3 p-2 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600'}`}
+                        className={`absolute bottom-3 right-3 p-2 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-600'}`}
                         onClick={() => setIsListening(!isListening)}
                     >
                         <Mic className="w-4 h-4" />
@@ -90,17 +90,17 @@ export function JournalEntryModal({
 
                 {/* Helper Chips */}
                 <div className="flex flex-wrap gap-2 mt-1">
-                    <button className="text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-full text-slate-600 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-1">
+                    <button className="text-xs px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-slate-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-1">
                         <Sparkles className="w-3 h-3" /> Rapikan dengan AI
                     </button>
                     <button
-                        className="text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-full text-slate-600 hover:bg-blue-50 hover:text-blue-600"
+                        className="text-xs px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-slate-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600"
                         onClick={() => setJournalText(prev => prev + "Deployment selesai. ")}
                     >
                         + Deployment
                     </button>
                     <button
-                        className="text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-full text-slate-600 hover:bg-blue-50 hover:text-blue-600"
+                        className="text-xs px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-slate-600 dark:text-slate-300 hover:bg-blue-50 hover:text-blue-600"
                         onClick={() => setJournalText(prev => prev + "Meeting dengan klien. ")}
                     >
                         + Meeting
@@ -122,7 +122,7 @@ export function JournalEntryModal({
                     </DialogHeader>
                     {Content}
                     <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
-                        <Button variant="ghost" onClick={onSkip} className="text-slate-500">Lewati & Pulang</Button>
+                        <Button variant="ghost" onClick={onSkip} className="text-slate-500 dark:text-slate-400">Lewati & Pulang</Button>
                         <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
                             <Send className="w-4 h-4" /> Simpan & Pulang
                         </Button>

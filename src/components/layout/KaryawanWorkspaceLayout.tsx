@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import MobileNavigation from "@/components/MobileNavigation";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface KaryawanWorkspaceLayoutProps {
     children: React.ReactNode;
@@ -19,8 +20,9 @@ interface KaryawanWorkspaceLayoutProps {
     notifCount?: number;
 }
 
-export default function KaryawanWorkspaceLayout({ children, isDark = false, onToggleDark, notifCount = 0 }: KaryawanWorkspaceLayoutProps) {
+export default function KaryawanWorkspaceLayout({ children, notifCount = 0 }: KaryawanWorkspaceLayoutProps) {
     const { user, signOut } = useAuth();
+    const { isDark, toggleTheme } = useTheme();
     const navigate = useNavigate();
     const isMobile = useIsMobile();
     const location = useLocation();
@@ -80,14 +82,13 @@ export default function KaryawanWorkspaceLayout({ children, isDark = false, onTo
 
                     <div className="flex items-center gap-2">
                         {/* Dark Mode Toggle */}
-                        {onToggleDark && (
-                            <button
-                                onClick={onToggleDark}
-                                className={cn("p-2 rounded-full transition-colors",
-                                    isDark ? "hover:bg-slate-800 text-slate-400 hover:text-amber-400" : "hover:bg-slate-50 text-slate-400 hover:text-slate-600")}>
-                                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                            </button>
-                        )}
+                        <button
+                            onClick={toggleTheme}
+                            className={cn("p-2 rounded-full transition-colors",
+                                isDark ? "hover:bg-slate-800 text-slate-400 hover:text-amber-400" : "hover:bg-slate-50 text-slate-400 hover:text-slate-600")}
+                        >
+                            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                        </button>
 
                         {/* Bell with Notification Count */}
                         <button className={cn("relative p-2 rounded-full transition-colors",

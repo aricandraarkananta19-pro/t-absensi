@@ -202,15 +202,15 @@ const Departemen = () => {
 
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-3">
-            <Card className="border-none shadow-sm bg-white"><CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-slate-800">{stats.totalDepts}</div>
+            <Card className="border-none shadow-sm bg-white dark:bg-slate-900"><CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{stats.totalDepts}</div>
               <div className="text-[10px] uppercase font-bold text-slate-400 mt-1">Departemen</div>
             </CardContent></Card>
-            <Card className="border-none shadow-sm bg-white"><CardContent className="p-4 text-center">
+            <Card className="border-none shadow-sm bg-white dark:bg-slate-900"><CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-blue-600">{stats.totalManagers}</div>
               <div className="text-[10px] uppercase font-bold text-blue-400 mt-1">Manager</div>
             </CardContent></Card>
-            <Card className="border-none shadow-sm bg-white"><CardContent className="p-4 text-center">
+            <Card className="border-none shadow-sm bg-white dark:bg-slate-900"><CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-emerald-600">{stats.totalEmployees}</div>
               <div className="text-[10px] uppercase font-bold text-emerald-400 mt-1">Total Staff</div>
             </CardContent></Card>
@@ -224,7 +224,7 @@ const Departemen = () => {
                 placeholder="Cari departemen..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-white border-slate-200"
+                className="pl-9 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
               />
             </div>
             <Button onClick={handleAddNew} className="w-full sm:w-auto bg-blue-700 hover:bg-blue-800 gap-2">
@@ -235,25 +235,25 @@ const Departemen = () => {
           {/* Grid Content */}
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-blue-600" />
             </div>
           ) : filteredDepartments.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200">
+            <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
               <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-lg font-medium text-slate-900">Belum Ada Departemen</h3>
-              <p className="text-slate-500 max-w-xs mx-auto mt-1">Tambahkan departemen baru untuk mulai mengorganisir karyawan anda.</p>
+              <h3 className="text-lg font-medium text-slate-900 dark:text-white">Belum Ada Departemen</h3>
+              <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto mt-1">Tambahkan departemen baru untuk mulai mengorganisir karyawan anda.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDepartments.map((dept) => (
-                <Card key={dept.name} className="hover:shadow-md transition-shadow border-slate-200 group">
+                <Card key={dept.name} className="hover:shadow-md transition-shadow border-slate-200 dark:border-slate-700 group">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                       <Building2 className="h-5 w-5" />
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-slate-400 hover:text-slate-600">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-slate-400 hover:text-slate-600 dark:text-slate-300">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -265,8 +265,8 @@ const Departemen = () => {
                     </DropdownMenu>
                   </CardHeader>
                   <CardContent>
-                    <h3 className="font-bold text-lg text-slate-800 mb-1">{dept.name}</h3>
-                    <div className="flex items-center gap-4 text-sm text-slate-500 mb-4">
+                    <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100 mb-1">{dept.name}</h3>
+                    <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-4">
                       <div className="flex items-center gap-1.5">
                         <Users className="h-4 w-4" /> {dept.employeeCount} Staff
                       </div>
@@ -278,15 +278,15 @@ const Departemen = () => {
                     </div>
 
                     {/* Staff Preview Pile */}
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
                       <div className="flex -space-x-2">
                         {dept.employees.map((name, i) => (
-                          <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600" title={name}>
+                          <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300" title={name}>
                             {name.charAt(0)}
                           </div>
                         ))}
                         {dept.employeeCount > 3 && (
-                          <div className="h-8 w-8 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center text-[10px] text-slate-500">
+                          <div className="h-8 w-8 rounded-full border-2 border-white bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-[10px] text-slate-500 dark:text-slate-400">
                             +{dept.employeeCount - 3}
                           </div>
                         )}

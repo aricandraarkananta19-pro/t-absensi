@@ -20,7 +20,7 @@ export const BottomNavigation = () => {
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
             {/* Glassmorphism background */}
-            <div className="mx-3 mb-3 rounded-2xl bg-white/90 backdrop-blur-md border border-white/20 shadow-2xl shadow-slate-900/20">
+            <div className="mx-3 mb-3 rounded-2xl bg-white dark:bg-slate-900/90 backdrop-blur-md border border-white/20 shadow-2xl shadow-slate-900/20">
                 {/* Safe area padding for iPhone home indicator */}
                 <div className="flex items-center justify-around py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
                     {navItems.map((item) => {
@@ -33,7 +33,7 @@ export const BottomNavigation = () => {
                                 to={item.href}
                                 className={`flex flex-col items-center justify-center min-w-[64px] min-h-[44px] px-3 py-1.5 rounded-xl transition-all ${isActive
                                         ? "bg-gradient-to-r from-[#0066b3]/10 to-[#7dc242]/10 text-[#0066b3]"
-                                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:bg-slate-800/80"
                                     }`}
                             >
                                 <item.icon className={`h-5 w-5 ${isActive ? "text-[#0066b3]" : ""}`} />

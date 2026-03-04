@@ -30,9 +30,9 @@ interface JournalHistoryCardProps {
 const STATUS_CONFIG = {
     draft: {
         dot: "bg-slate-400",
-        badge: "bg-slate-100 text-slate-600 border-slate-200",
+        badge: "bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700",
         label: "Draft",
-        accent: "border-slate-200 hover:border-slate-300"
+        accent: "border-slate-200 dark:border-slate-700 hover:border-slate-300"
     },
     submitted: {
         dot: "bg-amber-500",
@@ -100,7 +100,7 @@ export function JournalHistoryCard({ journal, onClick }: JournalHistoryCardProps
         <div
             onClick={onClick}
             className={cn(
-                "group relative bg-white rounded-[20px] p-5 border transition-all duration-300 cursor-pointer overflow-hidden flex flex-col gap-4",
+                "group relative bg-white dark:bg-slate-900 rounded-[20px] p-5 border transition-all duration-300 cursor-pointer overflow-hidden flex flex-col gap-4",
                 "shadow-[0_2px_10px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.08)] hover:-translate-y-1",
                 status.accent
             )}
@@ -108,7 +108,7 @@ export function JournalHistoryCard({ journal, onClick }: JournalHistoryCardProps
             {/* Header: Date & Status */}
             <div className="flex items-start justify-between">
                 <div className="flex flex-col">
-                    <span className="text-[13px] font-bold text-slate-800">
+                    <span className="text-[13px] font-bold text-slate-800 dark:text-slate-100">
                         {format(new Date(journal.date), "EEEE, d MMM yyyy", { locale: localeId })}
                     </span>
                     <span className="text-[11px] font-semibold text-slate-400 mt-0.5 uppercase tracking-wider">
@@ -127,19 +127,19 @@ export function JournalHistoryCard({ journal, onClick }: JournalHistoryCardProps
 
             {/* Content Body */}
             <div>
-                <h3 className="text-[15px] font-bold text-slate-900 mb-1.5 line-clamp-1 group-hover:text-blue-700 transition-colors">
+                <h3 className="text-[15px] font-bold text-slate-900 dark:text-white mb-1.5 line-clamp-1 group-hover:text-blue-700 transition-colors">
                     {displayTitle}
                 </h3>
-                <p className="text-[13px] text-slate-600 line-clamp-2 leading-relaxed font-medium">
+                <p className="text-[13px] text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed font-medium">
                     {displayContent}
                 </p>
             </div>
 
             {/* Footer Metrics */}
-            <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100/80">
+            <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100/80 dark:border-slate-800/80">
                 <div className="flex items-center gap-3">
                     {journal.duration > 0 && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-500 text-[11px] border border-slate-200/60 font-bold">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[11px] border border-slate-200/60 font-bold">
                             <Clock className="w-3.5 h-3.5 text-slate-400" />
                             {durationString}
                         </span>

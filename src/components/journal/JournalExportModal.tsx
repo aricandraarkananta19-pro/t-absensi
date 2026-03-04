@@ -372,7 +372,7 @@ export function JournalExportModal({ open, onOpenChange }: JournalExportModalPro
 
     return (
         <Dialog open={open} onOpenChange={(v) => { if (status === 'idle') onOpenChange(v) }}>
-            <DialogContent className="sm:max-w-[600px] gap-0 p-0 overflow-hidden bg-white">
+            <DialogContent className="sm:max-w-[600px] gap-0 p-0 overflow-hidden bg-white dark:bg-slate-900">
                 <DialogHeader className="p-6 pb-2">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                         <FileDown className="w-5 h-5 text-blue-600" />
@@ -398,11 +398,11 @@ export function JournalExportModal({ open, onOpenChange }: JournalExportModalPro
                                     "cursor-pointer flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all gap-2 text-center h-24",
                                     formatType === item.id
                                         ? `${item.activeBorder} ${item.bg}`
-                                        : "border-slate-100 hover:border-slate-200 hover:bg-slate-50"
+                                        : "border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800"
                                 )}
                             >
                                 <item.icon className={cn("w-6 h-6", item.color)} />
-                                <span className={cn("text-xs font-bold text-slate-700")}>{item.label}</span>
+                                <span className={cn("text-xs font-bold text-slate-700 dark:text-slate-200")}>{item.label}</span>
                             </div>
                         ))}
                     </div>
@@ -410,7 +410,7 @@ export function JournalExportModal({ open, onOpenChange }: JournalExportModalPro
                     <div className="grid sm:grid-cols-2 gap-6">
                         {/* 2. Period Selection */}
                         <div className="space-y-3">
-                            <Label className="text-xs font-bold text-slate-500 uppercase">Periode Waktu</Label>
+                            <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Periode Waktu</Label>
                             <Select value={periodType} onValueChange={(v: any) => handlePeriodChange(v)}>
                                 <SelectTrigger className="h-10">
                                     <SelectValue />
@@ -433,7 +433,7 @@ export function JournalExportModal({ open, onOpenChange }: JournalExportModalPro
                                             !dateRange && "text-muted-foreground"
                                         )}
                                     >
-                                        <CalendarIcon className="mr-2 h-4 w-4 text-slate-500" />
+                                        <CalendarIcon className="mr-2 h-4 w-4 text-slate-500 dark:text-slate-400" />
                                         {dateRange?.from ? (
                                             dateRange.to ? (
                                                 <span className="text-xs">
@@ -465,7 +465,7 @@ export function JournalExportModal({ open, onOpenChange }: JournalExportModalPro
 
                         {/* 3. Filter Options */}
                         <div className="space-y-3">
-                            <Label className="text-xs font-bold text-slate-500 uppercase">Filter Data</Label>
+                            <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Filter Data</Label>
 
                             {/* Department */}
                             <Select value={department} onValueChange={setDepartment}>
@@ -496,7 +496,7 @@ export function JournalExportModal({ open, onOpenChange }: JournalExportModalPro
                     </div>
                 </div>
 
-                <DialogFooter className="p-6 pt-2 bg-slate-50 border-t border-slate-100 gap-3">
+                <DialogFooter className="p-6 pt-2 bg-slate-50 dark:bg-slate-800 border-t border-slate-100 dark:border-slate-800 gap-3">
                     <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={status !== 'idle'}>
                         Batal
                     </Button>

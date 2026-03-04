@@ -6,7 +6,7 @@ export const DashboardSkeleton = () => {
             {/* KPI Cards Skeleton */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="bg-white rounded-xl p-6 border shadow-sm space-y-3">
+                    <div key={i} className="bg-white dark:bg-slate-900 rounded-xl p-6 border shadow-sm space-y-3">
                         <div className="flex justify-between items-start">
                             <Skeleton className="h-4 w-24" />
                             <Skeleton className="h-8 w-8 rounded-full" />
@@ -21,7 +21,7 @@ export const DashboardSkeleton = () => {
 
             {/* Charts Section Skeleton */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white rounded-xl border p-6 space-y-4">
+                <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border p-6 space-y-4">
                     <div className="flex justify-between items-center mb-6">
                         <Skeleton className="h-6 w-48" />
                         <Skeleton className="h-8 w-24" />
@@ -33,7 +33,7 @@ export const DashboardSkeleton = () => {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl border p-6 space-y-6">
+                <div className="bg-white dark:bg-slate-900 rounded-xl border p-6 space-y-6">
                     <Skeleton className="h-6 w-40" />
                     <div className="flex justify-center py-4">
                         <Skeleton className="h-48 w-48 rounded-full" />
@@ -55,7 +55,7 @@ export const DashboardSkeleton = () => {
             {/* Recent Activity Skeleton */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {[1, 2].map((col) => (
-                    <div key={col} className="bg-white rounded-xl border overflow-hidden">
+                    <div key={col} className="bg-white dark:bg-slate-900 rounded-xl border overflow-hidden">
                         <div className="p-4 border-b">
                             <Skeleton className="h-6 w-32" />
                         </div>

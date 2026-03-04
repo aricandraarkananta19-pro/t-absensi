@@ -360,12 +360,12 @@ const KelolaKaryawan = () => {
         />
 
         {/* 2. FILTERS & ACTIONS BAR */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="relative w-full md:w-[400px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search by name or NIP..."
-              className="pl-9 bg-slate-50 border-slate-200"
+              className="pl-9 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -373,7 +373,7 @@ const KelolaKaryawan = () => {
 
           <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
             <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-              <SelectTrigger className="w-[180px] bg-slate-50 border-slate-200">
+              <SelectTrigger className="w-[180px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                 <SelectValue placeholder="All Departments" />
               </SelectTrigger>
               <SelectContent>
@@ -383,7 +383,7 @@ const KelolaKaryawan = () => {
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px] bg-slate-50 border-slate-200 hidden sm:flex">
+              <SelectTrigger className="w-[150px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hidden sm:flex">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
@@ -416,19 +416,19 @@ const KelolaKaryawan = () => {
 
             <Button
               variant={showArchived ? "secondary" : "outline"}
-              className="gap-2 shrink-0 bg-white border-slate-200"
+              className="gap-2 shrink-0 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
               onClick={() => setShowArchived(!showArchived)}
               title={showArchived ? "Back to Active" : "View Archived"}
             >
-              {showArchived ? <RotateCcw className="w-4 h-4 text-primary" /> : <Archive className="w-4 h-4 text-slate-500" />}
+              {showArchived ? <RotateCcw className="w-4 h-4 text-primary" /> : <Archive className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
               {showArchived && <span className="hidden sm:inline text-primary">Archived</span>}
             </Button>
 
-            <div className="flex bg-slate-100 p-1 rounded-lg shrink-0">
+            <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-lg shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'table' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
+                className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'table' ? "bg-white dark:bg-slate-900 shadow-sm text-primary" : "text-slate-500 dark:text-slate-400")}
                 onClick={() => setViewMode('table')}
               >
                 <LayoutDashboard className="h-4 w-4" />
@@ -436,7 +436,7 @@ const KelolaKaryawan = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'grid' ? "bg-white shadow-sm text-primary" : "text-slate-500")}
+                className={cn("h-8 w-8 rounded-md transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-900 shadow-sm text-primary" : "text-slate-500 dark:text-slate-400")}
                 onClick={() => setViewMode('grid')}
               >
                 <Building2 className="h-4 w-4" />

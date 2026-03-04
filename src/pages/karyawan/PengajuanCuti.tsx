@@ -215,8 +215,8 @@ const PengajuanCuti = () => {
       {/* Title + Action Button */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Izin & Cuti</h1>
-          <p className="text-slate-500 font-medium text-sm mt-1">Ajukan permohonan cuti, sakit, atau izin.</p>
+          <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Izin & Cuti</h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">Ajukan permohonan cuti, sakit, atau izin.</p>
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -225,10 +225,10 @@ const PengajuanCuti = () => {
               <Plus className="h-5 w-5 text-white" /> Buat Pengajuan
             </Button>
           </DialogTrigger>
-          <DialogContent className="mx-4 rounded-[24px] max-w-md border-0 shadow-2xl p-0 overflow-hidden bg-white/90 backdrop-blur-xl">
+          <DialogContent className="mx-4 rounded-[24px] max-w-md border-0 shadow-2xl p-0 overflow-hidden bg-white dark:bg-slate-900/90 backdrop-blur-xl">
             <DialogHeader className="px-6 py-6 pb-2">
-              <DialogTitle className="text-xl font-extrabold text-slate-800">Form Pengajuan</DialogTitle>
-              <DialogDescription className="text-slate-500 font-medium">
+              <DialogTitle className="text-xl font-extrabold text-slate-800 dark:text-slate-100">Form Pengajuan</DialogTitle>
+              <DialogDescription className="text-slate-500 dark:text-slate-400 font-medium">
                 Isi form di bawah untuk mengajukan cuti atau izin.
               </DialogDescription>
             </DialogHeader>
@@ -239,14 +239,14 @@ const PengajuanCuti = () => {
                   name="leave_type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-widest">Jenis Cuti</FormLabel>
+                      <FormLabel className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">Jenis Cuti</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-blue-500/20 font-medium text-slate-700">
+                          <SelectTrigger className="h-12 bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-blue-500/20 font-medium text-slate-700 dark:text-slate-200">
                             <SelectValue placeholder="Pilih jenis" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="rounded-xl border-slate-200 shadow-xl">
+                        <SelectContent className="rounded-xl border-slate-200 dark:border-slate-700 shadow-xl">
                           <SelectItem value="cuti" className="py-2.5 font-medium cursor-pointer">Cuti Tahunan</SelectItem>
                           <SelectItem value="sakit" className="py-2.5 font-medium cursor-pointer">Sakit</SelectItem>
                           <SelectItem value="izin" className="py-2.5 font-medium cursor-pointer">Izin</SelectItem>
@@ -263,9 +263,9 @@ const PengajuanCuti = () => {
                     name="start_date"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-widest">Mulai</FormLabel>
+                        <FormLabel className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">Mulai</FormLabel>
                         <FormControl>
-                          <Input {...field} type="date" className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-blue-500/20 font-medium text-slate-700" />
+                          <Input {...field} type="date" className="h-12 bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-blue-500/20 font-medium text-slate-700 dark:text-slate-200" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -276,9 +276,9 @@ const PengajuanCuti = () => {
                     name="end_date"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-widest">Selesai</FormLabel>
+                        <FormLabel className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">Selesai</FormLabel>
                         <FormControl>
-                          <Input {...field} type="date" className="h-12 bg-white/50 border-slate-200 rounded-xl focus:ring-blue-500/20 font-medium text-slate-700" />
+                          <Input {...field} type="date" className="h-12 bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-blue-500/20 font-medium text-slate-700 dark:text-slate-200" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -291,17 +291,17 @@ const PengajuanCuti = () => {
                   name="reason"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold text-slate-700 uppercase tracking-widest">Keterangan Tambahan</FormLabel>
+                      <FormLabel className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest">Keterangan Tambahan</FormLabel>
                       <FormControl>
-                        <Textarea {...field} placeholder="Berikan alasan atau detail singkat..." rows={3} className="bg-white/50 border-slate-200 rounded-xl focus:ring-blue-500/20 font-medium text-slate-700 resize-none" />
+                        <Textarea {...field} placeholder="Berikan alasan atau detail singkat..." rows={3} className="bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 rounded-xl focus:ring-blue-500/20 font-medium text-slate-700 dark:text-slate-200 resize-none" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <div className="flex gap-3 pt-4 mt-2 border-t border-slate-100">
-                  <Button type="button" variant="outline" className="flex-1 rounded-xl h-12 font-bold bg-white text-slate-700" onClick={() => setDialogOpen(false)}>
+                <div className="flex gap-3 pt-4 mt-2 border-t border-slate-100 dark:border-slate-800">
+                  <Button type="button" variant="outline" className="flex-1 rounded-xl h-12 font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200" onClick={() => setDialogOpen(false)}>
                     Batal
                   </Button>
                   <Button type="submit" className="flex-1 rounded-xl h-12 font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20" disabled={isLoading}>
@@ -320,14 +320,14 @@ const PengajuanCuti = () => {
 
       {/* Stats Section */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
-        <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Sisa Cuti</p>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-4xl font-extrabold text-slate-800">{Math.max(0, settings.maxLeaveDays - usedLeaveDays)}</h3>
-            <span className="text-sm font-semibold text-slate-500">Hari</span>
+            <h3 className="text-4xl font-extrabold text-slate-800 dark:text-slate-100">{Math.max(0, settings.maxLeaveDays - usedLeaveDays)}</h3>
+            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Hari</span>
           </div>
         </div>
-        <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
           <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Disetujui</p>
           <div className="flex items-baseline gap-2">
             <h3 className="text-4xl font-extrabold text-emerald-600">
@@ -336,7 +336,7 @@ const PengajuanCuti = () => {
             <span className="text-sm font-semibold text-emerald-600/60">Pengajuan</span>
           </div>
         </div>
-        <div className="bg-white/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
           <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Menunggu</p>
           <div className="flex items-baseline gap-2">
             <h3 className="text-4xl font-extrabold text-amber-600">
@@ -349,8 +349,8 @@ const PengajuanCuti = () => {
 
       {/* Leave Requests List */}
       <div>
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-200/50">
-          <h3 className="text-xl font-bold text-slate-800 tracking-tight">Riwayat Pengajuan</h3>
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-200/50 dark:border-slate-700/50">
+          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Riwayat Pengajuan</h3>
         </div>
 
         {isFetching ? (
@@ -358,12 +358,12 @@ const PengajuanCuti = () => {
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-400 border-t-transparent" />
           </div>
         ) : leaveRequests.length === 0 ? (
-          <div className="text-center py-16 bg-white/40 backdrop-blur-sm rounded-[24px] border border-dashed border-slate-300 shadow-sm">
-            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="text-center py-16 bg-white dark:bg-slate-900/40 backdrop-blur-sm rounded-[24px] border border-dashed border-slate-300 shadow-sm">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800/80 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <FileText className="w-8 h-8 text-slate-400" />
             </div>
-            <h3 className="text-lg font-bold text-slate-700 mb-1">Belum Ada Pengajuan</h3>
-            <p className="text-slate-500 font-medium text-sm mb-6">Anda belum pernah mengajukan cuti atau izin sebelumnya.</p>
+            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-1">Belum Ada Pengajuan</h3>
+            <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mb-6">Anda belum pernah mengajukan cuti atau izin sebelumnya.</p>
             <Button
               onClick={() => setDialogOpen(true)}
               className="bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl px-6 h-12 shadow-md gap-2 active:scale-95"
@@ -377,7 +377,7 @@ const PengajuanCuti = () => {
             {leaveRequests.map((request, index) => (
               <div
                 key={request.id}
-                className="bg-white/70 backdrop-blur-md rounded-[20px] p-5 lg:p-6 border border-white/40 shadow-sm hover:shadow-md transition-all duration-300 group"
+                className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px] p-5 lg:p-6 border border-white/40 shadow-sm hover:shadow-md transition-all duration-300 group"
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start gap-4 lg:gap-6">
@@ -389,14 +389,14 @@ const PengajuanCuti = () => {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-                      <span className="font-extrabold text-slate-800 text-lg">
+                      <span className="font-extrabold text-slate-800 dark:text-slate-100 text-lg">
                         {getLeaveTypeLabel(request.leave_type)}
                       </span>
                       {getStatusBadge(request.status)}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500 mb-3">
-                      <div className="flex items-center gap-1.5 bg-slate-100/50 px-2 py-1 rounded-lg">
+                    <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500 dark:text-slate-400 mb-3">
+                      <div className="flex items-center gap-1.5 bg-slate-100/50 dark:bg-slate-800/50 px-2 py-1 rounded-lg">
                         <Calendar className="h-4 w-4" />
                         <span>
                           {new Date(request.start_date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
@@ -404,13 +404,13 @@ const PengajuanCuti = () => {
                           {new Date(request.end_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                         </span>
                       </div>
-                      <span className="px-2 py-1 bg-white border border-slate-200 shadow-sm rounded-lg text-slate-600">
+                      <span className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm rounded-lg text-slate-600 dark:text-slate-300">
                         {calculateDays(request.start_date, request.end_date)} hari kerja
                       </span>
                     </div>
 
                     {request.reason && (
-                      <p className="text-sm font-medium text-slate-600 pl-1 border-l-2 border-slate-200">{request.reason}</p>
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300 pl-1 border-l-2 border-slate-200 dark:border-slate-700">{request.reason}</p>
                     )}
 
                     {request.status === "rejected" && request.rejection_reason && (
@@ -422,7 +422,7 @@ const PengajuanCuti = () => {
                   </div>
 
                   {request.status === "pending" && (
-                    <div className="pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 mt-2 sm:mt-0 flex justify-end">
+                    <div className="pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800 mt-2 sm:mt-0 flex justify-end">
                       <Button
                         variant="ghost"
                         onClick={() => handleDelete(request.id)}

@@ -54,7 +54,7 @@ export function JournalFormModal({
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col p-6">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-bold text-slate-800">
+                        <DialogTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">
                             {isReadOnly
                                 ? "📋 Detail Jurnal"
                                 : isRevision
@@ -64,7 +64,7 @@ export function JournalFormModal({
                                         : "📝 Apa yang kamu kerjakan hari ini?"
                             }
                         </DialogTitle>
-                        <DialogDescription className="text-slate-500">
+                        <DialogDescription className="text-slate-500 dark:text-slate-400">
                             {isReadOnly
                                 ? "Detail jurnal yang telah dikirim."
                                 : isRevision
@@ -98,7 +98,7 @@ export function JournalFormModal({
         <Drawer open={open} onOpenChange={onOpenChange}>
             <DrawerContent className="h-[90vh] flex flex-col rounded-t-[20px] after:hidden">
                 <DrawerHeader className="text-left shrink-0">
-                    <DrawerTitle className="text-lg font-bold text-slate-800">
+                    <DrawerTitle className="text-lg font-bold text-slate-800 dark:text-slate-100">
                         {isReadOnly
                             ? "📋 Detail Jurnal"
                             : isRevision
@@ -108,7 +108,7 @@ export function JournalFormModal({
                                     : "📝 Apa yang kamu kerjakan hari ini?"
                         }
                     </DrawerTitle>
-                    <DrawerDescription className="text-slate-500 text-sm">
+                    <DrawerDescription className="text-slate-500 dark:text-slate-400 text-sm">
                         {isReadOnly
                             ? "Detail jurnal yang telah dikirim."
                             : isRevision
@@ -117,7 +117,7 @@ export function JournalFormModal({
                         }
                     </DrawerDescription>
                 </DrawerHeader>
-                <div className="px-4 flex-1 min-h-0 h-full pb-0 bg-white">
+                <div className="px-4 flex-1 min-h-0 h-full pb-0 bg-white dark:bg-slate-900">
                     <JournalForm
                         initialData={initialData}
                         isEditing={isEditing}

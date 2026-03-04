@@ -22,7 +22,7 @@ export interface JournalFormData {
 
 const MOOD_OPTIONS = [
     { value: '😊', label: 'Baik', description: 'Produktif', color: 'bg-green-100 text-green-700 border-green-200' },
-    { value: '😐', label: 'Biasa', description: 'Normal', color: 'bg-slate-100 text-slate-700 border-slate-200' },
+    { value: '😐', label: 'Biasa', description: 'Normal', color: 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700' },
     { value: '😣', label: 'Sulit', description: 'Kendala', color: 'bg-red-100 text-red-700 border-red-200' }
 ];
 
@@ -140,17 +140,17 @@ export function JournalForm({
     const isDisabled = isReadOnly || isDateConflict;
 
     return (
-        <div className="flex flex-col h-full w-full relative bg-slate-50/50">
+        <div className="flex flex-col h-full w-full relative bg-slate-50/50 dark:bg-slate-800/50">
             {/* Scrollable Content Area */}
             <div className="flex-1 min-h-0 overflow-y-auto w-full px-4 sm:px-6 py-6 space-y-6">
 
                 {/* Status Banner for ReadOnly */}
                 {isReadOnly && !isRevision && (
-                    <div className="p-4 bg-slate-100 border border-slate-200 rounded-xl flex gap-3 items-center shadow-sm">
-                        <Lock className="w-5 h-5 text-slate-500" />
+                    <div className="p-4 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl flex gap-3 items-center shadow-sm">
+                        <Lock className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                         <div>
-                            <p className="text-sm font-semibold text-slate-800">Mode Baca</p>
-                            <p className="text-xs text-slate-500">Jurnal ini sudah disetujui dan tidak dapat diubah.</p>
+                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Mode Baca</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Jurnal ini sudah disetujui dan tidak dapat diubah.</p>
                         </div>
                     </div>
                 )}
@@ -170,7 +170,7 @@ export function JournalForm({
 
                 {/* Date Selection */}
                 <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         Tanggal Jurnal
                     </Label>
 
@@ -206,15 +206,15 @@ export function JournalForm({
                                     onClick={() => !isDisabled && props.isDateLocked !== true && setIsDateDrawerOpen(true)}
                                     disabled={isDisabled || props.isDateLocked}
                                     className={cn(
-                                        "w-full justify-start text-left font-semibold text-slate-800 h-14 rounded-xl border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm",
-                                        isDisabled && "opacity-80 bg-slate-50"
+                                        "w-full justify-start text-left font-semibold text-slate-800 dark:text-slate-100 h-14 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800 transition-all shadow-sm",
+                                        isDisabled && "opacity-80 bg-slate-50 dark:bg-slate-800"
                                     )}
                                 >
                                     <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mr-3 border border-blue-100">
                                         <CalendarIcon className="h-5 w-5 text-blue-600" />
                                     </div>
                                     <div className="flex flex-col gap-0.5">
-                                        <span className="text-xs text-slate-500 font-medium">Hari & Tanggal</span>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Hari & Tanggal</span>
                                         <span>{date ? format(date, "EEEE, d MMMM yyyy", { locale: id }) : "Pilih Tanggal"}</span>
                                     </div>
                                 </Button>
@@ -225,8 +225,8 @@ export function JournalForm({
                                             variant={"outline"}
                                             disabled={isDisabled || props.isDateLocked}
                                             className={cn(
-                                                "w-full justify-start text-left font-medium text-slate-700 h-12 px-4 rounded-xl border-slate-200 bg-white hover:bg-slate-50 transition-all",
-                                                isDisabled && "opacity-80 bg-slate-50"
+                                                "w-full justify-start text-left font-medium text-slate-700 dark:text-slate-200 h-12 px-4 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800 transition-all",
+                                                isDisabled && "opacity-80 bg-slate-50 dark:bg-slate-800"
                                             )}
                                         >
                                             <CalendarIcon className="mr-3 h-4 w-4 text-blue-500" />
@@ -280,7 +280,7 @@ export function JournalForm({
 
                 {/* Main Content */}
                 <div className="space-y-3">
-                    <Label htmlFor="content" className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <Label htmlFor="content" className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         Deskripsi Aktivitas <span className="text-red-500">*</span>
                     </Label>
                     <div className="relative">
@@ -289,8 +289,8 @@ export function JournalForm({
                             ref={textareaRef}
                             placeholder="Ceritakan apa saja yang Anda kerjakan hari ini secara detail..."
                             className={cn(
-                                "min-h-[160px] resize-none border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 py-4 px-4 leading-relaxed transition-all rounded-xl shadow-sm text-base text-slate-700 placeholder:text-slate-400 bg-white",
-                                isDisabled && "bg-slate-50 text-slate-500 shadow-none border-slate-100"
+                                "min-h-[160px] resize-none border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 py-4 px-4 leading-relaxed transition-all rounded-xl shadow-sm text-base text-slate-700 dark:text-slate-200 placeholder:text-slate-400 bg-white dark:bg-slate-900",
+                                isDisabled && "bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 shadow-none border-slate-100 dark:border-slate-800"
                             )}
                             disabled={isDisabled}
                             value={content}
@@ -303,7 +303,7 @@ export function JournalForm({
                                     "text-[10px] uppercase font-bold px-2 py-1 rounded-full backdrop-blur-sm transition-colors",
                                     content.length >= MIN_CHARS
                                         ? "bg-green-100/80 text-green-700"
-                                        : "bg-slate-100/80 text-slate-500"
+                                        : "bg-slate-100/80 text-slate-500 dark:text-slate-400"
                                 )}>
                                     {content.length >= MIN_CHARS ? 'Siap' : `${content.length}/${MIN_CHARS}`}
                                 </span>
@@ -316,7 +316,7 @@ export function JournalForm({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {/* Work Result */}
                     <div className="space-y-3">
-                        <Label className="text-sm font-bold text-slate-800">Status Pekerjaan</Label>
+                        <Label className="text-sm font-bold text-slate-800 dark:text-slate-100">Status Pekerjaan</Label>
                         {isMobile ? (
                             <>
                                 <button
@@ -324,8 +324,8 @@ export function JournalForm({
                                     onClick={() => !isDisabled && setIsResultDrawerOpen(true)}
                                     disabled={isDisabled}
                                     className={cn(
-                                        "w-full flex items-center gap-3 p-3.5 border rounded-xl text-left transition-all shadow-sm bg-white hover:bg-slate-50",
-                                        isDisabled ? "opacity-60 bg-slate-50" : "border-slate-200"
+                                        "w-full flex items-center gap-3 p-3.5 border rounded-xl text-left transition-all shadow-sm bg-white dark:bg-slate-900 hover:bg-slate-50 dark:bg-slate-800",
+                                        isDisabled ? "opacity-60 bg-slate-50 dark:bg-slate-800" : "border-slate-200 dark:border-slate-700"
                                     )}
                                 >
                                     <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0",
@@ -337,10 +337,10 @@ export function JournalForm({
                                             workResult === 'pending' ? <AlertCircle className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="font-bold text-slate-800 text-sm">
+                                        <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                                             {WORK_RESULT_OPTIONS.find(o => o.value === workResult)?.label}
                                         </span>
-                                        <span className="text-xs text-slate-500">
+                                        <span className="text-xs text-slate-500 dark:text-slate-400">
                                             {WORK_RESULT_OPTIONS.find(o => o.value === workResult)?.description}
                                         </span>
                                     </div>
@@ -352,7 +352,7 @@ export function JournalForm({
                                             <DrawerTitle>Status Pekerjaan</DrawerTitle>
                                             <DrawerDescription>Seberapa jauh progress pekerjaan Anda?</DrawerDescription>
                                         </DrawerHeader>
-                                        <div className="p-4 space-y-3 pb-8 bg-slate-50/50">
+                                        <div className="p-4 space-y-3 pb-8 bg-slate-50/50 dark:bg-slate-800/50">
                                             {WORK_RESULT_OPTIONS.map((option) => (
                                                 <button
                                                     key={option.value}
@@ -361,23 +361,23 @@ export function JournalForm({
                                                         setIsResultDrawerOpen(false);
                                                     }}
                                                     className={cn(
-                                                        "w-full p-4 rounded-2xl flex items-center gap-4 border text-left transition-all bg-white relative overflow-hidden",
+                                                        "w-full p-4 rounded-2xl flex items-center gap-4 border text-left transition-all bg-white dark:bg-slate-900 relative overflow-hidden",
                                                         workResult === option.value
                                                             ? "border-blue-500 ring-2 ring-blue-500/10 shadow-lg scale-[1.02]"
-                                                            : "border-slate-200 hover:border-slate-300 shadow-sm"
+                                                            : "border-slate-200 dark:border-slate-700 hover:border-slate-300 shadow-sm"
                                                     )}
                                                 >
                                                     <div className={cn(
                                                         "w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-xl transition-colors",
-                                                        workResult === option.value ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
+                                                        workResult === option.value ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-slate-800/80 text-slate-400"
                                                     )}>
                                                         <option.icon className="w-6 h-6" />
                                                     </div>
                                                     <div>
-                                                        <div className={cn("font-bold text-base", workResult === option.value ? "text-blue-700" : "text-slate-900")}>
+                                                        <div className={cn("font-bold text-base", workResult === option.value ? "text-blue-700" : "text-slate-900 dark:text-white")}>
                                                             {option.label}
                                                         </div>
-                                                        <div className="text-sm text-slate-500">{option.description}</div>
+                                                        <div className="text-sm text-slate-500 dark:text-slate-400">{option.description}</div>
                                                     </div>
                                                 </button>
                                             ))}
@@ -387,7 +387,7 @@ export function JournalForm({
                             </>
                         ) : (
                             <Select value={workResult} onValueChange={(v: any) => setWorkResult(v)} disabled={isDisabled}>
-                                <SelectTrigger className="w-full h-[52px] border-slate-200 bg-white focus:ring-blue-500 rounded-xl px-3">
+                                <SelectTrigger className="w-full h-[52px] border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-blue-500 rounded-xl px-3">
                                     <SelectValue placeholder="Pilih status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -396,8 +396,8 @@ export function JournalForm({
                                             <div className="flex items-center gap-3">
                                                 <option.icon className={cn("w-4 h-4", option.color)} />
                                                 <div className="flex flex-col gap-0.5">
-                                                    <span className="font-semibold text-sm text-slate-700">{option.label}</span>
-                                                    <span className="text-[10px] text-slate-500">{option.description}</span>
+                                                    <span className="font-semibold text-sm text-slate-700 dark:text-slate-200">{option.label}</span>
+                                                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{option.description}</span>
                                                 </div>
                                             </div>
                                         </SelectItem>
@@ -409,7 +409,7 @@ export function JournalForm({
 
                     {/* Mood Selector */}
                     <div className="space-y-3">
-                        <Label className="text-sm font-bold text-slate-800">Mood Kerja</Label>
+                        <Label className="text-sm font-bold text-slate-800 dark:text-slate-100">Mood Kerja</Label>
                         <div className="flex gap-2">
                             {MOOD_OPTIONS.map((option) => (
                                 <button
@@ -421,7 +421,7 @@ export function JournalForm({
                                         "flex-1 flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border-2 transition-all duration-200 h-[52px]",
                                         mood === option.value
                                             ? option.color + " ring-2 ring-offset-1 ring-offset-white shadow-sm"
-                                            : "border-slate-100 bg-white hover:border-slate-200 text-slate-400 hover:bg-slate-50",
+                                            : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:bg-slate-800",
                                         isDisabled && "opacity-50 cursor-not-allowed"
                                     )}
                                 >
@@ -434,7 +434,7 @@ export function JournalForm({
 
                 {/* Obstacles / Notes Field */}
                 <div className="space-y-3">
-                    <Label htmlFor="obstacles" className="text-sm font-bold text-slate-700 flex items-center justify-between">
+                    <Label htmlFor="obstacles" className="text-sm font-bold text-slate-700 dark:text-slate-200 flex items-center justify-between">
                         Kendala / Catatan
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Opsional</span>
                     </Label>
@@ -442,8 +442,8 @@ export function JournalForm({
                         id="obstacles"
                         placeholder="Tuliskan jika ada kendala atau catatan tambahan..."
                         className={cn(
-                            "min-h-[80px] text-sm resize-none border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl shadow-sm bg-white placeholder:text-slate-400",
-                            isDisabled && "bg-slate-50 text-slate-500 border-slate-100"
+                            "min-h-[80px] text-sm resize-none border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl shadow-sm bg-white dark:bg-slate-900 placeholder:text-slate-400",
+                            isDisabled && "bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-800"
                         )}
                         value={obstacles}
                         onChange={(e) => setObstacles(e.target.value)}
@@ -455,14 +455,14 @@ export function JournalForm({
 
             {/* Sticky Bottom Action Bar */}
             <div className={cn(
-                "border-t border-slate-200 bg-white/80 backdrop-blur-md p-4 sm:p-5 flex flex-col sm:flex-row gap-3 z-30 shrink-0 shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.1)] transition-all",
+                "border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/80 backdrop-blur-md p-4 sm:p-5 flex flex-col sm:flex-row gap-3 z-30 shrink-0 shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.1)] transition-all",
                 isMobile ? "pb-8" : "pb-5"
             )}>
                 <Button
                     variant="ghost"
                     onClick={onCancel}
                     disabled={isSubmitting}
-                    className="text-slate-500 font-medium h-12 rounded-xl hover:bg-slate-100"
+                    className="text-slate-500 dark:text-slate-400 font-medium h-12 rounded-xl hover:bg-slate-100 dark:bg-slate-800/80"
                 >
                     {isReadOnly ? "Tutup" : "Batal"}
                 </Button>
@@ -474,7 +474,7 @@ export function JournalForm({
                                 variant="outline"
                                 onClick={() => handleSubmit(true)}
                                 disabled={isSubmitting || !isValidLength || isDateConflict}
-                                className="flex-1 sm:flex-none border-slate-300 text-slate-700 font-semibold h-12 rounded-xl hover:bg-slate-50 hover:text-slate-900"
+                                className="flex-1 sm:flex-none border-slate-300 text-slate-700 dark:text-slate-200 font-semibold h-12 rounded-xl hover:bg-slate-50 dark:bg-slate-800 hover:text-slate-900 dark:text-white"
                             >
                                 Simpan Draft
                             </Button>
@@ -486,7 +486,7 @@ export function JournalForm({
                             className={cn(
                                 "flex-1 sm:flex-none sm:min-w-[160px] h-12 rounded-xl font-bold shadow-lg text-white transition-all transform active:scale-95",
                                 isDateConflict
-                                    ? "bg-slate-300 shadow-none cursor-not-allowed text-slate-500"
+                                    ? "bg-slate-300 shadow-none cursor-not-allowed text-slate-500 dark:text-slate-400"
                                     : "bg-blue-600 hover:bg-blue-700 shadow-blue-500/30 hover:shadow-blue-500/50"
                             )}
                         >

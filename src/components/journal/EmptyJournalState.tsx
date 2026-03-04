@@ -27,7 +27,7 @@ export function EmptyJournalState({
         },
         filter: {
             icon: FileText,
-            iconBg: "bg-slate-100",
+            iconBg: "bg-slate-100 dark:bg-slate-800/80",
             iconColor: "text-slate-400",
             title: title || "Tidak ada hasil",
             description: description || "Tidak ada jurnal yang cocok dengan filter yang dipilih."
@@ -45,7 +45,7 @@ export function EmptyJournalState({
     const IconComponent = currentConfig.icon;
 
     return (
-        <div className="text-center py-16 px-6 bg-white rounded-2xl border-2 border-dashed border-slate-200 animate-fade-in">
+        <div className="text-center py-16 px-6 bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 animate-fade-in">
             {/* Illustration */}
             <div className={`
                 w-20 h-20 ${currentConfig.iconBg} rounded-2xl 
@@ -56,12 +56,12 @@ export function EmptyJournalState({
             </div>
 
             {/* Title */}
-            <h3 className="text-xl font-bold text-slate-800 mb-2">
+            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">
                 {currentConfig.title}
             </h3>
 
             {/* Description */}
-            <p className="text-slate-500 max-w-sm mx-auto mb-6 text-sm leading-relaxed">
+            <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-6 text-sm leading-relaxed">
                 {currentConfig.description}
             </p>
 

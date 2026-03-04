@@ -29,7 +29,7 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
         return (
             <div className="flex flex-col items-center justify-center h-[400px] w-full gap-3">
                 <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
-                <p className="text-slate-500 font-medium animate-pulse">Memuat data kehadiran...</p>
+                <p className="text-slate-500 dark:text-slate-400 font-medium animate-pulse">Memuat data kehadiran...</p>
             </div>
         );
     }
@@ -37,11 +37,11 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
     if (data.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-[400px] text-center p-8">
-                <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center shadow-sm mb-4 border border-slate-100 animate-in zoom-in duration-500">
+                <div className="h-16 w-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-4 border border-slate-100 dark:border-slate-800 animate-in zoom-in duration-500">
                     <CalendarOff className="h-8 w-8 text-slate-300" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-1">Tidak Ada Data</h3>
-                <p className="text-slate-500 text-sm max-w-[250px]">Belum ada riwayat kehadiran yang tercatat untuk periode ini.</p>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">Tidak Ada Data</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm max-w-[250px]">Belum ada riwayat kehadiran yang tercatat untuk periode ini.</p>
             </div>
         );
     }
@@ -78,7 +78,7 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
         return (
-            <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100/50 px-2 py-1 rounded">
+            <span className="font-mono text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100/50 dark:bg-slate-800/50 px-2 py-1 rounded">
                 {hours}j {minutes}m
             </span>
         );
@@ -86,7 +86,7 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
 
     const getStatusBadge = (status: string, isWeekend: boolean) => {
         if (isWeekend) {
-            return <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"><CalendarOff className="w-3 h-3 mr-1.5" /> Libur</Badge>;
+            return <Badge variant="outline" className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800/80"><CalendarOff className="w-3 h-3 mr-1.5" /> Libur</Badge>;
         }
 
         switch (status) {
@@ -113,16 +113,16 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
     return (
         <div className="w-full">
             {/* Desktop Table View */}
-            <div className="hidden md:block bg-white border-t border-slate-100 shadow-none rounded-none w-full">
+            <div className="hidden md:block bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-none rounded-none w-full">
                 <Table>
-                    <TableHeader className="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-20 border-b border-slate-200 shadow-sm">
+                    <TableHeader className="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-20 border-b border-slate-200 dark:border-slate-700 shadow-sm">
                         <TableRow className="hover:bg-slate-50/80 border-none">
-                            <TableHead className="w-[25%] font-bold text-xs uppercase tracking-wider text-slate-500 pl-6 h-12">Tanggal</TableHead>
-                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Jam Masuk</TableHead>
-                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Jam Pulang</TableHead>
-                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Durasi</TableHead>
-                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Status</TableHead>
-                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 text-center h-12">Aksi</TableHead>
+                            <TableHead className="w-[25%] font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 pl-6 h-12">Tanggal</TableHead>
+                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center h-12">Jam Masuk</TableHead>
+                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center h-12">Jam Pulang</TableHead>
+                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center h-12">Durasi</TableHead>
+                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center h-12">Status</TableHead>
+                            <TableHead className="w-[15%] font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center h-12">Aksi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -141,7 +141,7 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
                                         style={{ animationDelay: `${index * 30}ms` }}
                                     >
                                         <TableCell className="pl-6 py-4">
-                                            <span className="text-sm font-medium text-slate-400 group-hover:text-slate-600 transition-colors">
+                                            <span className="text-sm font-medium text-slate-400 group-hover:text-slate-600 dark:text-slate-300 transition-colors">
                                                 {format(new Date(row.date), "EEEE, d MMM yyyy", { locale: id })}
                                             </span>
                                         </TableCell>
@@ -149,10 +149,10 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
                                         <TableCell className="text-center py-4 text-slate-300">-</TableCell>
                                         <TableCell className="text-center py-4 text-slate-300">-</TableCell>
                                         <TableCell className="text-center py-4">
-                                            <Badge variant="outline" className="border-dashed border-slate-200 text-slate-400 font-normal shadow-none hover:bg-transparent">Belum Berlangsung</Badge>
+                                            <Badge variant="outline" className="border-dashed border-slate-200 dark:border-slate-700 text-slate-400 font-normal shadow-none hover:bg-transparent">Belum Berlangsung</Badge>
                                         </TableCell>
                                         <TableCell className="text-center py-4 text-slate-200">
-                                            <div className="w-8 h-8 rounded-full bg-slate-50 mx-auto"></div>
+                                            <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 mx-auto"></div>
                                         </TableCell>
                                     </TableRow>
                                 );
@@ -163,7 +163,7 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
                                     key={row.date}
                                     className={cn(
                                         "border-b border-slate-50 transition-all duration-300 group animate-in slide-in-from-bottom-2 fade-in fill-mode-backwards",
-                                        finalIsWeekend ? "bg-slate-50/50 hover:bg-slate-50" : "hover:bg-slate-50/40",
+                                        finalIsWeekend ? "bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-50 dark:bg-slate-800" : "hover:bg-slate-50/40",
                                         (row.status === 'absent' || row.status === 'alpha') && !finalIsWeekend && "bg-red-50/10 hover:bg-red-50/20"
                                     )}
                                     style={{ animationDelay: `${index * 30}ms` }}
@@ -172,7 +172,7 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
                                         <div className="flex flex-col">
                                             <span className={cn(
                                                 "font-bold text-sm transition-colors",
-                                                finalIsWeekend ? "text-red-500" : "text-slate-800 group-hover:text-blue-700"
+                                                finalIsWeekend ? "text-red-500" : "text-slate-800 dark:text-slate-100 group-hover:text-blue-700"
                                             )}>
                                                 {format(new Date(row.date), "EEEE, d MMM yyyy", { locale: id })}
                                             </span>
@@ -188,7 +188,7 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
                                     </TableCell>
                                     <TableCell className="text-center py-4">
                                         {row.clockIn ? (
-                                            <div className="inline-flex items-center justify-center bg-white text-slate-700 shadow-sm px-3 py-1.5 rounded-md font-mono text-xs font-bold border border-slate-200 group-hover:border-blue-300 group-hover:shadow-md transition-all group-hover:scale-105">
+                                            <div className="inline-flex items-center justify-center bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 shadow-sm px-3 py-1.5 rounded-md font-mono text-xs font-bold border border-slate-200 dark:border-slate-700 group-hover:border-blue-300 group-hover:shadow-md transition-all group-hover:scale-105">
                                                 {format(new Date(row.clockIn), "HH:mm")}
                                             </div>
                                         ) : (
@@ -197,7 +197,7 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
                                     </TableCell>
                                     <TableCell className="text-center py-4">
                                         {row.clockOut ? (
-                                            <div className="inline-flex items-center justify-center bg-white text-slate-700 shadow-sm px-3 py-1.5 rounded-md font-mono text-xs font-bold border border-slate-200 group-hover:border-blue-300 group-hover:shadow-md transition-all group-hover:scale-105">
+                                            <div className="inline-flex items-center justify-center bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 shadow-sm px-3 py-1.5 rounded-md font-mono text-xs font-bold border border-slate-200 dark:border-slate-700 group-hover:border-blue-300 group-hover:shadow-md transition-all group-hover:scale-105">
                                                 {format(new Date(row.clockOut), "HH:mm")}
                                             </div>
                                         ) : (
@@ -222,14 +222,14 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
                                                             <MoreHorizontal className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-sm border-slate-200 shadow-lg">
-                                                        <DropdownMenuLabel className="text-xs font-bold uppercase tracking-wider text-slate-500">Aksi</DropdownMenuLabel>
+                                                    <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900/95 backdrop-blur-sm border-slate-200 dark:border-slate-700 shadow-lg">
+                                                        <DropdownMenuLabel className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Aksi</DropdownMenuLabel>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem className="cursor-pointer text-sm font-medium focus:bg-slate-100">
-                                                            <Eye className="w-4 h-4 mr-2 text-slate-500" /> Lihat Detail
+                                                        <DropdownMenuItem className="cursor-pointer text-sm font-medium focus:bg-slate-100 dark:bg-slate-800/80">
+                                                            <Eye className="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400" /> Lihat Detail
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem className="cursor-pointer text-sm font-medium focus:bg-slate-100">
-                                                            <MapPin className="w-4 h-4 mr-2 text-slate-500" /> Cek Lokasi
+                                                        <DropdownMenuItem className="cursor-pointer text-sm font-medium focus:bg-slate-100 dark:bg-slate-800/80">
+                                                            <MapPin className="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400" /> Cek Lokasi
                                                         </DropdownMenuItem>
                                                         {row.clockIn && (
                                                             <DropdownMenuItem className="cursor-pointer text-sm font-medium text-blue-600 focus:text-blue-700 focus:bg-blue-50">
@@ -243,7 +243,7 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
                                             {/* Default State: Location Icon (Fades out on hover) */}
                                             <div className="absolute opacity-100 group-hover:opacity-0 transition-opacity duration-300 pointer-events-none">
                                                 {row.clockIn ? (
-                                                    <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
+                                                    <div className="h-8 w-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-slate-800">
                                                         <Building2 className="h-3.5 w-3.5" />
                                                     </div>
                                                 ) : (
@@ -271,7 +271,7 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
                     </div>
 
                     {/* Table Body exactly matching the design */}
-                    <div className="bg-white border-x border-b border-slate-100 rounded-b-xl overflow-hidden shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 border-x border-b border-slate-100 dark:border-slate-800 rounded-b-xl overflow-hidden shadow-sm">
                         {data.map((row, index) => {
                             const isWeekend = row.status === 'weekend';
                             const isWeekendTime = new Date(row.date).getDay() === 0 || new Date(row.date).getDay() === 6;
@@ -295,8 +295,8 @@ export function AttendanceHistoryTable({ data, isLoading }: AttendanceHistoryTab
                             }
 
                             return (
-                                <div key={row.date} className="grid grid-cols-4 items-center border-b border-slate-50 py-3 px-4 text-[11px] font-medium text-slate-700">
-                                    <div className="text-slate-900 font-semibold truncate pr-1">{formattedDate}</div>
+                                <div key={row.date} className="grid grid-cols-4 items-center border-b border-slate-50 py-3 px-4 text-[11px] font-medium text-slate-700 dark:text-slate-200">
+                                    <div className="text-slate-900 dark:text-white font-semibold truncate pr-1">{formattedDate}</div>
                                     <div>{row.clockIn ? format(new Date(row.clockIn), "HH:mm") : '- -'}</div>
                                     <div>{row.clockOut ? format(new Date(row.clockOut), "HH:mm") : '- -'}</div>
                                     <div>{workHoursStr}</div>

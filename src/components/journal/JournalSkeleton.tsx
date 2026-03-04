@@ -4,7 +4,7 @@ export const JournalSkeleton = () => {
     return (
         <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white border border-slate-200 rounded-xl p-5">
+                <div key={i} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
                     <div className="flex gap-4">
                         <Skeleton className="h-11 w-11 rounded-full" />
                         <div className="flex-1 space-y-3">
@@ -33,7 +33,7 @@ export const JournalStatsSkeleton = () => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white shadow-sm border border-slate-200 rounded-xl p-4 h-24 flex items-center justify-between">
+                <div key={i} className="bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-700 rounded-xl p-4 h-24 flex items-center justify-between">
                     <div className="space-y-2">
                         <Skeleton className="h-4 w-20" />
                         <Skeleton className="h-8 w-12" />

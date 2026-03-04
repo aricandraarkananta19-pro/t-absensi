@@ -49,7 +49,7 @@ export function EmployeeStats({ total, active, onLeave, departments, isLoading =
         return (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-24 bg-slate-50 rounded-xl animate-pulse border border-slate-100" />
+                    <div key={i} className="h-24 bg-slate-50 dark:bg-slate-800 rounded-xl animate-pulse border border-slate-100 dark:border-slate-800" />
                 ))}
             </div>
         );
@@ -58,12 +58,12 @@ export function EmployeeStats({ total, active, onLeave, departments, isLoading =
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {stats.map((stat, index) => (
-                <Card key={index} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <Card key={index} className="border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
                     <CardContent className="p-5 flex items-start justify-between">
                         <div>
-                            <p className="text-sm font-medium text-slate-500 mb-1">{stat.label}</p>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{stat.label}</p>
                             <div className="flex items-baseline gap-2">
-                                <h3 className="text-3xl font-bold text-slate-900">{stat.value}</h3>
+                                <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stat.value}</h3>
                                 {stat.badge && (
                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${stat.badgeColor}`}>
                                         {stat.badge}

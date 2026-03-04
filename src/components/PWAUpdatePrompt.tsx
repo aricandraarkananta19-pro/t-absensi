@@ -108,7 +108,7 @@ const PWAUpdatePrompt = () => {
                 <div className="flex items-center gap-3 px-4 py-3 bg-green-600 text-white rounded-xl shadow-lg">
                     <Wifi className="h-5 w-5 flex-shrink-0" />
                     <p className="text-sm">Aplikasi siap digunakan secara offline!</p>
-                    <button onClick={close} className="p-1 hover:bg-white/20 rounded-full">
+                    <button onClick={close} className="p-1 hover:bg-white dark:bg-slate-900/20 rounded-full">
                         <X className="h-4 w-4" />
                     </button>
                 </div>
@@ -120,7 +120,7 @@ const PWAUpdatePrompt = () => {
     if (needRefresh) {
         return (
             <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[100] animate-slide-up w-[calc(100%-2rem)] max-w-[360px]">
-                <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
                     <div className="p-4">
                         <div className="flex items-start gap-3">
                             <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
@@ -164,7 +164,7 @@ const PWAUpdatePrompt = () => {
     if (deferredPrompt) {
         return (
             <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] animate-slide-up w-[calc(100%-2rem)] max-w-[360px]">
-                <div className="bg-white rounded-2xl shadow-2xl border border-blue-100 overflow-hidden text-center p-5 relative">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-blue-100 overflow-hidden text-center p-5 relative">
                     <button onClick={() => setDeferredPrompt(null)} className="absolute top-3 right-3 p-1 hover:bg-gray-100 rounded-full">
                         <X className="h-4 w-4 text-gray-400" />
                     </button>

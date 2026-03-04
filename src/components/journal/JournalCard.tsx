@@ -52,7 +52,7 @@ interface JournalCardProps {
 const STATUS_CONFIG = {
     draft: {
         label: "Draft",
-        className: "bg-slate-50 text-slate-600 border-slate-200",
+        className: "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700",
         dotColor: "bg-slate-400",
         icon: FileEdit,
         description: "Belum dikirim"
@@ -173,10 +173,10 @@ export function JournalCard({
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="min-w-0">
-                                        <h4 className="text-sm font-bold text-slate-900 truncate leading-tight">
+                                        <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate leading-tight">
                                             {profile.full_name}
                                         </h4>
-                                        <p className="text-xs text-slate-500 truncate mt-0.5">
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                                             {profile.position || profile.department || "Karyawan"}
                                         </p>
                                     </div>
@@ -187,10 +187,10 @@ export function JournalCard({
                                         <Calendar className="w-5 h-5 text-white" />
                                     </div>
                                     <div className="min-w-0">
-                                        <h4 className="text-sm font-bold text-slate-900">
+                                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                                             {format(new Date(journal.date), "EEEE", { locale: id })}
                                         </h4>
-                                        <p className="text-xs text-slate-500">
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">
                                             {format(new Date(journal.date), "d MMMM yyyy", { locale: id })}
                                         </p>
                                     </div>
@@ -211,7 +211,7 @@ export function JournalCard({
 
                     {/* CONTENT SECTION */}
                     <div className="space-y-3">
-                        <p className="text-sm text-slate-700 leading-relaxed line-clamp-3">
+                        <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed line-clamp-3">
                             {journal.content}
                         </p>
 
@@ -219,7 +219,7 @@ export function JournalCard({
                         {(journal.duration > 0 || journal.mood) && (
                             <div className="flex items-center gap-2 flex-wrap">
                                 {journal.duration > 0 && (
-                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 rounded-md text-[10px] font-medium text-slate-600">
+                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 dark:bg-slate-800/80 rounded-md text-[10px] font-medium text-slate-600 dark:text-slate-300">
                                         <Clock className="w-3 h-3" />
                                         {Math.floor(journal.duration / 60)}j {journal.duration % 60}m
                                     </span>
@@ -263,14 +263,14 @@ export function JournalCard({
                     {/* ACTIONS ROW */}
                     {showActions && (
                         <div
-                            className="flex items-center justify-between pt-3 border-t border-slate-100"
+                            className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex items-center gap-2">
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-8 px-3 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 gap-1.5"
+                                    className="h-8 px-3 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-blue-50 gap-1.5"
                                     onClick={() => onView?.(journal)}
                                 >
                                     <Eye className="w-3.5 h-3.5" />
@@ -307,7 +307,7 @@ export function JournalCard({
                                 {!isEmployee && (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600">
+                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600 dark:text-slate-300">
                                                 <MoreHorizontal className="w-4 h-4" />
                                             </Button>
                                         </DropdownMenuTrigger>

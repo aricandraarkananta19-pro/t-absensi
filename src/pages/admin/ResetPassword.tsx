@@ -154,13 +154,13 @@ const ResetPassword = () => {
                 placeholder="Cari karyawan..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11 bg-white/70 backdrop-blur-md border-slate-200/60 rounded-xl shadow-sm focus:ring-2 focus:ring-slate-200/50 font-medium text-slate-800"
+                className="pl-10 h-11 bg-white dark:bg-slate-900/70 backdrop-blur-md border-slate-200/60 rounded-xl shadow-sm focus:ring-2 focus:ring-slate-200/50 font-medium text-slate-800 dark:text-slate-100"
               />
             </div>
           </div>
 
           {/* Table */}
-          <div className="bg-white/70 backdrop-blur-md rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 overflow-hidden vibe-glass-card">
+          <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px] border border-white/60 shadow-sm shadow-slate-200/40 overflow-hidden vibe-glass-card">
             <div className="p-0">
               {isLoading ? (
                 <div className="flex items-center justify-center py-16">
@@ -168,11 +168,11 @@ const ResetPassword = () => {
                 </div>
               ) : filteredEmployees.length === 0 ? (
                 <div className="py-16 text-center">
-                  <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800/80 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Users className="h-8 w-8 text-slate-400" />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-700">Tidak Ada Data</h3>
-                  <p className="text-slate-500 text-sm font-medium mt-1">Belum ada karyawan terdaftar</p>
+                  <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200">Tidak Ada Data</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Belum ada karyawan terdaftar</p>
                 </div>
               ) : (
                 <>
@@ -180,33 +180,33 @@ const ResetPassword = () => {
                   <div className="hidden md:block">
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-slate-50/50 border-b border-slate-100">
-                          <TableHead className="font-bold text-slate-500 text-xs uppercase tracking-wider">Nama</TableHead>
-                          <TableHead className="font-bold text-slate-500 text-xs uppercase tracking-wider">Departemen</TableHead>
-                          <TableHead className="w-[120px] font-bold text-slate-500 text-xs uppercase tracking-wider">Aksi</TableHead>
+                        <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                          <TableHead className="font-bold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">Nama</TableHead>
+                          <TableHead className="font-bold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">Departemen</TableHead>
+                          <TableHead className="w-[120px] font-bold text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">Aksi</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredEmployees.map((employee) => (
-                          <TableRow key={employee.id} className="hover:bg-slate-50/50 transition-colors">
+                          <TableRow key={employee.id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 transition-colors">
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center">
-                                  <span className="text-xs font-bold text-slate-600">
+                                <div className="h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center">
+                                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
                                     {employee.full_name?.charAt(0)?.toUpperCase() || "?"}
                                   </span>
                                 </div>
-                                <span className="font-semibold text-slate-800 text-sm">{employee.full_name || "-"}</span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{employee.full_name || "-"}</span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-slate-500 text-sm">
+                            <TableCell className="text-slate-500 dark:text-slate-400 text-sm">
                               {employee.department || "-"}
                             </TableCell>
                             <TableCell>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="gap-2 rounded-xl border-slate-200 hover:bg-slate-50 font-semibold text-xs h-9"
+                                className="gap-2 rounded-xl border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800 font-semibold text-xs h-9"
                                 onClick={() => {
                                   setSelectedEmployee(employee);
                                   setDialogOpen(true);
@@ -225,22 +225,22 @@ const ResetPassword = () => {
                   {/* Mobile Cards */}
                   <div className="md:hidden flex flex-col p-4 gap-3">
                     {filteredEmployees.map((employee) => (
-                      <div key={employee.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center justify-between gap-3">
+                      <div key={employee.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-4 flex items-center justify-between gap-3">
                         <div className="flex gap-3 items-center min-w-0">
-                          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-bold text-slate-600">
+                          <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
                               {employee.full_name?.charAt(0)?.toUpperCase() || "?"}
                             </span>
                           </div>
                           <div className="min-w-0">
-                            <p className="font-bold text-slate-900 text-sm truncate">{employee.full_name || "-"}</p>
-                            <p className="text-[11px] text-slate-500 font-medium">{employee.department || "-"}</p>
+                            <p className="font-bold text-slate-900 dark:text-white text-sm truncate">{employee.full_name || "-"}</p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{employee.department || "-"}</p>
                           </div>
                         </div>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="gap-1.5 rounded-xl border-slate-200 hover:bg-slate-50 font-semibold text-xs h-9 flex-shrink-0"
+                          className="gap-1.5 rounded-xl border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-800 font-semibold text-xs h-9 flex-shrink-0"
                           onClick={() => {
                             setSelectedEmployee(employee);
                             setDialogOpen(true);
@@ -261,15 +261,15 @@ const ResetPassword = () => {
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogContent className="rounded-[20px] border-slate-200/60">
               <DialogHeader>
-                <DialogTitle className="text-lg font-extrabold text-slate-800 tracking-tight">Reset Password</DialogTitle>
-                <DialogDescription className="text-sm text-slate-500 font-medium">
-                  Reset password untuk <span className="font-bold text-slate-700">{selectedEmployee?.full_name}</span>
+                <DialogTitle className="text-lg font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Reset Password</DialogTitle>
+                <DialogDescription className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                  Reset password untuk <span className="font-bold text-slate-700 dark:text-slate-200">{selectedEmployee?.full_name}</span>
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <div className="flex gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={generateRandomPassword} className="gap-2 rounded-xl border-slate-200 font-semibold text-xs">
+                    <Button type="button" variant="outline" size="sm" onClick={generateRandomPassword} className="gap-2 rounded-xl border-slate-200 dark:border-slate-700 font-semibold text-xs">
                       <RefreshCw className="h-3.5 w-3.5" />
                       Generate Password
                     </Button>
@@ -323,8 +323,8 @@ const ResetPassword = () => {
                     )}
                   />
 
-                  <div className="flex gap-3 pt-4 border-t border-slate-100">
-                    <Button type="button" variant="outline" className="flex-1 h-11 rounded-xl border-slate-200 font-bold" onClick={() => {
+                  <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <Button type="button" variant="outline" className="flex-1 h-11 rounded-xl border-slate-200 dark:border-slate-700 font-bold" onClick={() => {
                       setDialogOpen(false);
                       form.reset();
                     }}>

@@ -326,7 +326,7 @@ const ManagerRekapAbsensi = () => {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <p className="text-sm text-slate-600 whitespace-nowrap">Tanggal Rekap</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">Tanggal Rekap</p>
               {isToday && <Badge variant="secondary" className="text-xs px-2 py-0 h-5">Hari Ini</Badge>}
             </div>
             <div className="flex items-center gap-1">
@@ -364,12 +364,12 @@ const ManagerRekapAbsensi = () => {
             <Activity className="h-6 w-6 text-white" />
           </div>
           <div className="flex-1">
-            <p className="text-sm text-slate-600">Tingkat Kehadiran</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">Tingkat Kehadiran</p>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold" style={{ color: BRAND_COLORS.green }}>
                 {attendanceRate}%
               </span>
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-slate-500 dark:text-slate-400">
                 ({stats.present}/{totalEmployees})
               </span>
             </div>
@@ -393,8 +393,8 @@ const ManagerRekapAbsensi = () => {
             <Timer className="h-6 w-6 text-white" />
           </div>
           <div className="flex-1">
-            <p className="text-sm text-slate-600">Data Real-time</p>
-            <p className="text-base font-semibold text-slate-800">
+            <p className="text-sm text-slate-600 dark:text-slate-300">Data Real-time</p>
+            <p className="text-base font-semibold text-slate-800 dark:text-slate-100">
               {lastUpdated?.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) || "-"}
             </p>
           </div>
@@ -415,7 +415,7 @@ const ManagerRekapAbsensi = () => {
       </div>
 
       {/* Filters & Export */}
-      <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md mb-6 rounded-[20px] vibe-glass-card">
+      <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md mb-6 rounded-[20px] vibe-glass-card">
         <CardContent className="py-4">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -425,11 +425,11 @@ const ManagerRekapAbsensi = () => {
                   placeholder="Cari nama atau departemen..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 border-slate-200/60 rounded-xl h-11 bg-white/50 font-medium"
+                  className="pl-10 border-slate-200/60 rounded-xl h-11 bg-white dark:bg-slate-900/50 font-medium"
                 />
               </div>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-full sm:w-[150px] border-slate-200/60 rounded-xl h-11 bg-white/50 font-medium">
+                <SelectTrigger className="w-full sm:w-[150px] border-slate-200/60 rounded-xl h-11 bg-white dark:bg-slate-900/50 font-medium">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -458,13 +458,13 @@ const ManagerRekapAbsensi = () => {
       </Card>
 
       {/* Table */}
-      <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
+      <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
         <CardContent className="p-0">
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50/50 border-b border-slate-100">
+                <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                   <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Karyawan</TableHead>
                   <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider hidden sm:table-cell">Departemen</TableHead>
                   <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Clock In</TableHead>
@@ -478,7 +478,7 @@ const ManagerRekapAbsensi = () => {
                   [...Array(5)].map((_, i) => <TableRow key={i}><TableCell colSpan={6}><Skeleton className="h-12 w-full" /></TableCell></TableRow>)
                 ) : filteredAttendance.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10 text-slate-500">Tidak ada data.</TableCell>
+                    <TableCell colSpan={6} className="text-center py-10 text-slate-500 dark:text-slate-400">Tidak ada data.</TableCell>
                   </TableRow>
                 ) : (
                   filteredAttendance.map((row) => (
@@ -486,7 +486,7 @@ const ManagerRekapAbsensi = () => {
                       <TableCell>
                         <div className="font-medium">{row.profile.full_name}</div>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell text-slate-500">{row.profile.department}</TableCell>
+                      <TableCell className="hidden sm:table-cell text-slate-500 dark:text-slate-400">{row.profile.department}</TableCell>
                       <TableCell className="text-center text-sm font-mono">{formatTime(row.clock_in)}</TableCell>
                       <TableCell className="text-center text-sm font-mono">{formatTime(row.clock_out)}</TableCell>
                       <TableCell className="text-center hidden md:table-cell text-sm">{calculateDuration(row.clock_in, row.clock_out)}</TableCell>
@@ -499,31 +499,31 @@ const ManagerRekapAbsensi = () => {
           </div>
 
           {/* Mobile Cards */}
-          <div className="md:hidden flex flex-col p-4 gap-3 bg-slate-50/50 rounded-b-[20px]">
+          <div className="md:hidden flex flex-col p-4 gap-3 bg-slate-50/50 dark:bg-slate-800/50 rounded-b-[20px]">
             {isLoading ? (
               [...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)
             ) : filteredAttendance.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 text-sm bg-white rounded-xl border border-slate-100">
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400 text-sm bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
                 Tidak ada data.
               </div>
             ) : (
               filteredAttendance.map((row) => (
-                <div key={row.id} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex flex-col gap-3">
+                <div key={row.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm flex flex-col gap-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{row.profile.full_name}</h4>
-                      <p className="text-[11px] text-slate-500">{row.profile.department || "Karyawan"}</p>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{row.profile.full_name}</h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">{row.profile.department || "Karyawan"}</p>
                     </div>
                     <div>{getStatusBadge(row.status)}</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-1">
-                    <div className="bg-slate-50 rounded-xl p-2.5 flex flex-col">
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-2.5 flex flex-col">
                       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Masuk</span>
-                      <span className="text-xs font-mono font-semibold text-slate-700">{formatTime(row.clock_in)}</span>
+                      <span className="text-xs font-mono font-semibold text-slate-700 dark:text-slate-200">{formatTime(row.clock_in)}</span>
                     </div>
-                    <div className="bg-slate-50 rounded-xl p-2.5 flex flex-col">
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-2.5 flex flex-col">
                       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Keluar</span>
-                      <span className="text-xs font-mono font-semibold text-slate-700">{formatTime(row.clock_out)}</span>
+                      <span className="text-xs font-mono font-semibold text-slate-700 dark:text-slate-200">{formatTime(row.clock_out)}</span>
                     </div>
                   </div>
                 </div>
@@ -540,7 +540,7 @@ const ManagerRekapAbsensi = () => {
 // Simple Stat Card Component inline
 function StatCard({ icon: Icon, label, value, colorClass, bgClass }: any) {
   return (
-    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[18px]">
+    <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[18px]">
       <CardContent className="pt-4 pb-4">
         <div className="flex items-center gap-3">
           <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", bgClass)}>

@@ -303,7 +303,7 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                             : "Terjadi kesalahan saat mengambil detail jurnal."}
                     </p>
                 </div>
-                <Button variant="outline" onClick={onClose} className="border-red-200 text-red-700 bg-white hover:bg-red-50">
+                <Button variant="outline" onClick={onClose} className="border-red-200 text-red-700 bg-white dark:bg-slate-900 hover:bg-red-50">
                     Tutup
                 </Button>
             </div>
@@ -315,17 +315,17 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
             <div className="space-y-8 pb-20"> {/* pb-20 for sticky footer space */}
 
                 {/* HEAD & META */}
-                < div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center" >
+                < div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center" >
                     <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-full bg-white border-2 border-slate-200 overflow-hidden shadow-sm flex items-center justify-center text-slate-400">
+                        <div className="h-12 w-12 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm flex items-center justify-center text-slate-400">
                             {journal.profiles.avatar_url
                                 ? <img src={journal.profiles.avatar_url} alt="Ava" className="h-full w-full object-cover" />
                                 : <User className="w-6 h-6" />
                             }
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-900 text-lg">{journal.profiles.full_name}</h3>
-                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                            <h3 className="font-bold text-slate-900 dark:text-white text-lg">{journal.profiles.full_name}</h3>
+                            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                                 <Briefcase className="w-3.5 h-3.5" />
                                 <span>{journal.profiles.position || "Staff"}</span>
                                 <span className="mx-1">•</span>
@@ -348,10 +348,10 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                 < section >
                     <div className="flex items-center gap-2 mb-3">
                         <div className="h-6 w-1 bg-blue-600 rounded-full" />
-                        <h4 className="font-bold text-slate-800 text-base">Ringkasan Pekerjaan</h4>
+                        <h4 className="font-bold text-slate-800 dark:text-slate-100 text-base">Ringkasan Pekerjaan</h4>
                     </div>
                     <div className="prose prose-slate max-w-none">
-                        <p className="text-slate-700 leading-relaxed text-[15px] whitespace-pre-wrap bg-white p-0">
+                        <p className="text-slate-700 dark:text-slate-200 leading-relaxed text-[15px] whitespace-pre-wrap bg-white dark:bg-slate-900 p-0">
                             {journal.content}
                         </p>
                     </div>
@@ -359,14 +359,14 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
 
                 {/* SECTION 2: WORK RESULT & OBSTACLES */}
                 < div className="grid grid-cols-1 md:grid-cols-2 gap-4" >
-                    <div className="bg-white border-2 border-slate-50 rounded-xl p-4 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900 border-2 border-slate-50 rounded-xl p-4 shadow-sm">
                         <h5 className="text-xs font-bold text-slate-400 uppercase mb-2">Hasil Pekerjaan</h5>
                         <div className="flex items-center gap-3">
                             {journal.work_result === 'completed' && <CheckCircle2 className="w-6 h-6 text-green-500" />}
                             {journal.work_result === 'progress' && <Loader2 className="w-6 h-6 text-blue-500" />}
                             {journal.work_result === 'pending' && <AlertTriangle className="w-6 h-6 text-amber-500" />}
                             <div>
-                                <p className="font-semibold text-slate-700 capitalize">
+                                <p className="font-semibold text-slate-700 dark:text-slate-200 capitalize">
                                     {journal.work_result === 'completed' ? 'Selesai' :
                                         journal.work_result === 'progress' ? 'Dalam Progress' : 'Tertunda'}
                                 </p>
@@ -382,12 +382,12 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                                     <AlertTriangle className="w-3.5 h-3.5" />
                                     Kendala Dihadapi
                                 </h5>
-                                <p className="text-sm text-slate-700">
+                                <p className="text-sm text-slate-700 dark:text-slate-200">
                                     {journal.obstacles}
                                 </p>
                             </div>
                         ) : (
-                            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-center justify-center text-slate-400 text-sm italic">
+                            <div className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex items-center justify-center text-slate-400 text-sm italic">
                                 Tidak ada kendala yang dilaporkan.
                             </div>
                         )
@@ -395,8 +395,8 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                 </div >
 
                 {/* SECTION 3: METADATA & MOOD */}
-                < section className="bg-slate-50/50 rounded-xl p-4 border border-slate-100" >
-                    <div className="flex flex-wrap gap-6 text-sm text-slate-600">
+                < section className="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800" >
+                    <div className="flex flex-wrap gap-6 text-sm text-slate-600 dark:text-slate-300">
                         <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-blue-500" />
                             <span className="font-medium">Durasi Kerja:</span>
@@ -416,7 +416,7 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                     journal.manager_notes && !showRevisionInput && (
                         <div className={`p-4 rounded-xl border-l-4 ${status === 'need_revision' ? 'bg-orange-50 border-orange-400' : 'bg-blue-50 border-blue-400'}`}>
                             <h5 className={`font-bold text-sm mb-1 ${status === 'need_revision' ? 'text-orange-900' : 'text-blue-900'}`}>Catatan Manager</h5>
-                            <p className="text-sm text-slate-700">{journal.manager_notes}</p>
+                            <p className="text-sm text-slate-700 dark:text-slate-200">{journal.manager_notes}</p>
                         </div>
                     )
                 }
@@ -448,7 +448,7 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                         placeholder="Tuliskan catatan revisi untuk karyawan..."
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
-                        className="bg-white min-h-[80px]"
+                        className="bg-white dark:bg-slate-900 min-h-[80px]"
                         autoFocus
                     />
                     <div className="flex justify-end gap-3">
@@ -467,7 +467,7 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
         // Standard Actions
         return (
             <div className="flex gap-3 justify-end w-full">
-                <Button variant="outline" onClick={onClose} className="mr-auto text-slate-500">
+                <Button variant="outline" onClick={onClose} className="mr-auto text-slate-500 dark:text-slate-400">
                     Tutup
                 </Button>
 
@@ -504,13 +504,13 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
         return (
             <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
                 <SheetContent className="sm:max-w-xl w-[720px] overflow-y-auto flex flex-col gap-0 p-0">
-                    <SheetHeader className="p-6 border-b border-slate-100 bg-white sticky top-0 z-10">
+                    <SheetHeader className="p-6 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-10">
                         <SheetTitle>Detail Jurnal</SheetTitle>
                     </SheetHeader>
-                    <div className="flex-1 overflow-y-auto p-6 bg-white">
+                    <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900">
                         <ContentRender />
                     </div>
-                    <div className="p-6 border-t border-slate-100 bg-white sticky bottom-0 z-10 shadow-[0_-5px_20px_-10px_rgba(0,0,0,0.05)]">
+                    <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky bottom-0 z-10 shadow-[0_-5px_20px_-10px_rgba(0,0,0,0.05)]">
                         <FooterActions />
                     </div>
                 </SheetContent>
@@ -529,7 +529,7 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
                     <div className="flex-1 overflow-y-auto p-6">
                         <ContentRender />
                     </div>
-                    <div className="p-6 pt-4 border-t bg-slate-50">
+                    <div className="p-6 pt-4 border-t bg-slate-50 dark:bg-slate-800">
                         <FooterActions />
                     </div>
                 </DialogContent>
@@ -541,13 +541,13 @@ export function JournalDetailView({ journalId, isOpen, onClose, onUpdate }: Jour
     return (
         <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DrawerContent className="max-h-[96vh] flex flex-col">
-                <DrawerHeader className="text-left border-b border-slate-100">
+                <DrawerHeader className="text-left border-b border-slate-100 dark:border-slate-800">
                     <DrawerTitle>Detail Jurnal</DrawerTitle>
                 </DrawerHeader>
-                <div className="flex-1 overflow-y-auto p-4 bg-white">
+                <div className="flex-1 overflow-y-auto p-4 bg-white dark:bg-slate-900">
                     <ContentRender />
                 </div>
-                <div className="p-4 border-t border-slate-100 bg-white pb-8">
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 pb-8">
                     <FooterActions />
                 </div>
             </DrawerContent>

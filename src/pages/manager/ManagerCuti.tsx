@@ -289,20 +289,20 @@ const ManagerCuti = () => {
       <div className="space-y-6 pb-20">
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 vibe-stat-grid">
-          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[18px]">
+          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[18px]">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
                   <FileText className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-extrabold text-slate-800 tracking-tight">{stats.total}</p>
+                  <p className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">{stats.total}</p>
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[18px]">
+          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[18px]">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center">
@@ -315,7 +315,7 @@ const ManagerCuti = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[18px]">
+          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[18px]">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
@@ -328,7 +328,7 @@ const ManagerCuti = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[18px]">
+          <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[18px]">
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center">
@@ -351,11 +351,11 @@ const ManagerCuti = () => {
               placeholder="Cari nama, departemen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 bg-white/70 backdrop-blur-md border-slate-200/60 rounded-xl shadow-sm font-medium text-slate-800"
+              className="pl-10 h-11 bg-white dark:bg-slate-900/70 backdrop-blur-md border-slate-200/60 rounded-xl shadow-sm font-medium text-slate-800 dark:text-slate-100"
             />
           </div>
           <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-full sm:w-[180px] h-11 border-slate-200/60 rounded-xl bg-white/70 backdrop-blur-md font-medium">
+            <SelectTrigger className="w-full sm:w-[180px] h-11 border-slate-200/60 rounded-xl bg-white dark:bg-slate-900/70 backdrop-blur-md font-medium">
               <SelectValue placeholder="Filter status" />
             </SelectTrigger>
             <SelectContent>
@@ -368,7 +368,7 @@ const ManagerCuti = () => {
         </div>
 
         {/* Table */}
-        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
+        <Card className="border-white/60 shadow-sm shadow-slate-200/40 bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[20px] vibe-glass-card">
           <div className="overflow-x-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
@@ -376,18 +376,18 @@ const ManagerCuti = () => {
               </div>
             ) : filteredRequests.length === 0 ? (
               <div className="py-16 text-center">
-                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800/80 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Calendar className="h-8 w-8 text-slate-400" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-700">Tidak Ada Data</h3>
-                <p className="text-slate-500 text-sm font-medium mt-1">Tidak ada pengajuan cuti dengan kriteria tersebut</p>
+                <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200">Tidak Ada Data</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Tidak ada pengajuan cuti dengan kriteria tersebut</p>
               </div>
             ) : (
               <>
                 <div className="hidden md:block overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-slate-50/50 border-b border-slate-100">
+                      <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
                         <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Karyawan</TableHead>
                         <TableHead className="hidden sm:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Jenis Cuti</TableHead>
                         <TableHead className="hidden md:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Tanggal</TableHead>
@@ -403,11 +403,11 @@ const ManagerCuti = () => {
                           <TableRow key={request.id}>
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center">
-                                  <User className="h-4 w-4 text-slate-500" />
+                                <div className="h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center">
+                                  <User className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                                 </div>
                                 <div>
-                                  <p className="font-semibold text-slate-800 text-sm">{request.profile?.full_name || "Tanpa Nama"}</p>
+                                  <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{request.profile?.full_name || "Tanpa Nama"}</p>
                                   <p className="text-xs text-slate-400 flex items-center gap-1 font-medium">
                                     <Building2 className="h-3 w-3" />
                                     {request.profile?.department || "-"}
@@ -462,25 +462,25 @@ const ManagerCuti = () => {
                 </div>
 
                 {/* Mobile Cards */}
-                <div className="md:hidden flex flex-col p-4 gap-3 bg-slate-50/50 rounded-b-[20px]">
+                <div className="md:hidden flex flex-col p-4 gap-3 bg-slate-50/50 dark:bg-slate-800/50 rounded-b-[20px]">
                   {filteredRequests.map((request) => {
                     const duration = differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1;
                     return (
-                      <div key={request.id} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex flex-col gap-3">
+                      <div key={request.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm flex flex-col gap-3">
                         <div className="flex justify-between items-start">
                           <div className="flex gap-3">
-                            <div className="h-10 w-10 mt-1 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-                              <User className="h-5 w-5 text-slate-500" />
+                            <div className="h-10 w-10 mt-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center shrink-0">
+                              <User className="h-5 w-5 text-slate-500 dark:text-slate-400" />
                             </div>
                             <div>
-                              <h4 className="font-bold text-slate-900 text-sm line-clamp-1">{request.profile?.full_name || "Tanpa Nama"}</h4>
-                              <p className="text-[11px] text-slate-500 flex items-center gap-1">
+                              <h4 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-1">{request.profile?.full_name || "Tanpa Nama"}</h4>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                 <Building2 className="h-3 w-3" />
                                 {request.profile?.department || "Karyawan"}
                               </p>
                               <div className="mt-1 flex items-center gap-2">
                                 {getStatusBadge(request.status)}
-                                <Badge variant="outline" className="text-[10px] bg-slate-50 text-slate-600 leading-tight">
+                                <Badge variant="outline" className="text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 leading-tight">
                                   {getLeaveTypeLabel(request.leave_type)}
                                 </Badge>
                               </div>
@@ -488,16 +488,16 @@ const ManagerCuti = () => {
                           </div>
                         </div>
 
-                        <div className="bg-slate-50 rounded-xl p-3 flex justify-between items-center">
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 flex justify-between items-center">
                           <div className="flex flex-col">
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Mulai - Selesai</span>
-                            <span className="text-[11px] font-semibold text-slate-700">
+                            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
                               {format(new Date(request.start_date), "dd MMM yy")} - {format(new Date(request.end_date), "dd MMM yy")}
                             </span>
                           </div>
                           <div className="flex flex-col text-right">
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Durasi</span>
-                            <span className="text-xs font-bold text-slate-800">{duration} hari</span>
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{duration} hari</span>
                           </div>
                         </div>
 

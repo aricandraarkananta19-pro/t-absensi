@@ -109,8 +109,8 @@ export function JournalReviewDetail({
 
     if (!journal) {
         return (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50">
-                <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-5">
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 dark:bg-slate-800/50">
+                <div className="w-20 h-20 rounded-3xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center mb-5">
                     <FileText className="w-10 h-10 text-slate-300" />
                 </div>
                 <p className="text-base font-semibold text-slate-400">Pilih jurnal untuk melihat detail</p>
@@ -161,24 +161,24 @@ export function JournalReviewDetail({
     };
 
     return (
-        <div className="flex flex-col h-full bg-white">
+        <div className="flex flex-col h-full bg-white dark:bg-slate-900">
             {/* Header */}
-            <div className="px-8 py-7 border-b border-slate-100 shrink-0">
+            <div className="px-8 py-7 border-b border-slate-100 dark:border-slate-800 shrink-0">
                 {/* Status + ID */}
                 <div className="flex items-center justify-between mb-5">
                     <StatusBadge status={verification_status} />
-                    <span className="text-[11px] font-mono text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg">
+                    <span className="text-[11px] font-mono text-slate-400 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
                         ID: #{journal.id.substring(0, 8).toUpperCase()}
                     </span>
                 </div>
 
                 {/* Title */}
-                <h1 className="text-xl font-bold text-slate-900 mb-6 leading-snug">
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-6 leading-snug">
                     {displayTitle}
                 </h1>
 
                 {/* User Info Card */}
-                <div className="flex items-center justify-between bg-gradient-to-r from-slate-50 to-white rounded-2xl p-4 border border-slate-100">
+                <div className="flex items-center justify-between bg-gradient-to-r from-slate-50 to-white rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-3">
                         <Avatar className="h-11 w-11 border-2 border-white shadow-md">
                             <AvatarImage src={profile.avatar_url || undefined} />
@@ -187,8 +187,8 @@ export function JournalReviewDetail({
                             </AvatarFallback>
                         </Avatar>
                         <div>
-                            <h3 className="text-sm font-bold text-slate-900">{profile.full_name || "Unknown User"}</h3>
-                            <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">{profile.full_name || "Unknown User"}</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
                                 <span>{profile.position || "Karyawan"}</span>
                                 <span className="text-slate-200">•</span>
                                 <span>{profile.department || "General"}</span>
@@ -199,14 +199,14 @@ export function JournalReviewDetail({
                     <div className="hidden sm:flex items-center gap-5">
                         <div className="text-right">
                             <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Tanggal</p>
-                            <p className="text-sm font-semibold text-slate-800">
+                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                                 {format(new Date(date), "d MMM yyyy", { locale: localeId })}
                             </p>
                         </div>
                         <div className="w-px h-10 bg-slate-200/60" />
                         <div className="text-right">
                             <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Durasi</p>
-                            <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800 justify-end">
+                            <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100 justify-end">
                                 <Clock className="w-3.5 h-3.5 text-blue-500" />
                                 {durationText}
                             </div>
@@ -220,14 +220,14 @@ export function JournalReviewDetail({
                 <div className="space-y-8 max-w-4xl">
                     {/* Activity Description */}
                     <section>
-                        <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
                             <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
                                 <FileText className="w-3.5 h-3.5 text-blue-600" />
                             </div>
                             Deskripsi Aktivitas
                         </h3>
-                        <div className="p-5 bg-slate-50/70 rounded-xl border border-slate-100">
-                            <div className="prose prose-slate text-sm max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap">
+                        <div className="p-5 bg-slate-50/70 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div className="prose prose-slate text-sm max-w-none text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
                                 {content}
                             </div>
                         </div>
@@ -236,9 +236,9 @@ export function JournalReviewDetail({
                     {/* History Section */}
                     {history.length > 0 && (
                         <section>
-                            <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center">
-                                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center">
+                                    <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                                 </div>
                                 Jurnal Sebelumnya
                             </h3>
@@ -246,13 +246,13 @@ export function JournalReviewDetail({
                                 {history.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 bg-white hover:bg-slate-50/70 transition-all duration-200"
+                                        className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50/70 transition-all duration-200"
                                     >
                                         <div className="flex flex-col gap-1 min-w-0 flex-1 mr-3">
-                                            <span className="text-xs font-semibold text-slate-700">
+                                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
                                                 {format(new Date(item.date), "EEEE, d MMM yyyy", { locale: localeId })}
                                             </span>
-                                            <span className="text-xs text-slate-500 truncate">
+                                            <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
                                                 {item.content}
                                             </span>
                                         </div>
@@ -266,13 +266,13 @@ export function JournalReviewDetail({
             </div>
 
             {/* Footer Action Area */}
-            <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/40 shrink-0">
+            <div className="px-8 py-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 shrink-0">
                 <div className="max-w-4xl mx-auto space-y-4">
                     <Textarea
                         placeholder="Tambahkan catatan untuk karyawan (wajib untuk penolakan/revisi)..."
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        className="bg-white border-slate-200 min-h-[80px] focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none rounded-xl text-sm"
+                        className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 min-h-[80px] focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none rounded-xl text-sm"
                     />
 
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -294,7 +294,7 @@ export function JournalReviewDetail({
 
                             <Button
                                 variant="outline"
-                                className="flex-1 sm:flex-none border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl h-10 font-semibold gap-1.5 transition-all"
+                                className="flex-1 sm:flex-none border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:bg-slate-800 rounded-xl h-10 font-semibold gap-1.5 transition-all"
                                 onClick={() => handleAction('revise')}
                                 disabled={isProcessing || !comment}
                             >
