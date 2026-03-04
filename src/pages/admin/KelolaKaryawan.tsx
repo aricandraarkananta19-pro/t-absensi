@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   LayoutDashboard, Users, Clock, BarChart3, Building2, Shield, Key,
-  Settings, Database, BookOpen, Plus, Search, Filter, Archive, RotateCcw
+  Settings, Database, BookOpen, Plus, Search, Filter, Archive, RotateCcw, Trash2
 } from "lucide-react";
 import { ADMIN_MENU_SECTIONS } from "@/config/menu";
 import { Button } from "@/components/ui/button";
@@ -80,6 +80,7 @@ const KelolaKaryawan = () => {
   const [editingEmployee, setEditingEmployee] = useState<EmployeeData | null>(null);
   const [newDepartment, setNewDepartment] = useState("");
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Form
   const form = useForm<EmployeeFormData>({
@@ -104,6 +105,7 @@ const KelolaKaryawan = () => {
 
   useEffect(() => {
     fetchEmployees();
+    setSelectedIds([]); // Reset selection when filters change
   }, [page, debouncedSearch, departmentFilter, statusFilter, showArchived]);
 
   // --- FETCH FUNCTIONS ---
@@ -230,6 +232,40 @@ const KelolaKaryawan = () => {
     }
   };
 
+  const handleBulkArchive = async () => {
+    if (!selectedIds.length) return;
+    if (!confirm(`Are you sure you want to archive ${selectedIds.length} employees?`)) return;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ deleted_at: new Date().toISOString() })
+      .in("id", selectedIds);
+
+    if (error) toast({ variant: "destructive", title: "Failed", description: error.message });
+    else {
+      toast({ title: "Success", description: `${selectedIds.length} employees archived.` });
+      setSelectedIds([]);
+      fetchEmployees();
+      fetchStats();
+    }
+  };
+
+  const handleSelect = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedIds(prev => [...prev, id]);
+    } else {
+      setSelectedIds(prev => prev.filter(item => item !== id));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(employees.map(emp => emp.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
   const handleRestore = async (emp: EmployeeData) => {
     if (!confirm(`Are you sure you want to restore ${emp.full_name}?`)) return;
 
@@ -347,7 +383,7 @@ const KelolaKaryawan = () => {
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px] bg-slate-50 border-slate-200">
+              <SelectTrigger className="w-[150px] bg-slate-50 border-slate-200 hidden sm:flex">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
@@ -358,15 +394,25 @@ const KelolaKaryawan = () => {
               </SelectContent>
             </Select>
 
-            <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shrink-0"
-              onClick={handleAddNew}
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Employee</span>
-              <span className="sm:hidden">Add</span>
-              <span className="sm:hidden">Add</span>
-            </Button>
+            {selectedIds.length > 0 ? (
+              <Button
+                variant="destructive"
+                className="gap-2 shrink-0 bg-red-600 hover:bg-red-700 font-medium"
+                onClick={handleBulkArchive}
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Bulk Archive ({selectedIds.length})</span>
+              </Button>
+            ) : (
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shrink-0"
+                onClick={handleAddNew}
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add Employee</span>
+                <span className="sm:hidden">Add</span>
+              </Button>
+            )}
 
             <Button
               variant={showArchived ? "secondary" : "outline"}
@@ -412,6 +458,9 @@ const KelolaKaryawan = () => {
           totalRecords={totalRecords}
           onPageChange={setPage}
           viewMode={viewMode}
+          selectedIds={selectedIds}
+          onSelect={handleSelect}
+          onSelectAll={handleSelectAll}
         />
       </div>
 

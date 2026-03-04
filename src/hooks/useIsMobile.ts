@@ -10,7 +10,6 @@ const MOBILE_BREAKPOINT = 640;
 // Admin paths that should NEVER use mobile layout
 const ADMIN_PATHS = [
     "/admin",
-    "/manager"
 ];
 
 const isAdminPath = (): boolean => {

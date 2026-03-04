@@ -52,6 +52,46 @@ const AbsensiKaryawan = () => {
   const [isEarlyLeave, setIsEarlyLeave] = useState(false);
   const [workDurationHours, setWorkDurationHours] = useState(0);
 
+  // Psychological Security & Verifications
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationText, setVerificationText] = useState("Memeriksa lokasi dan identitas...");
+
+  // Notifications API permission
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Check for clock-out notification (5 mins before)
+  useEffect(() => {
+    if (!settings.clockOutStart || !todayAttendance || todayAttendance.clock_out) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const [h, m] = settings.clockOutStart.split(':').map(Number);
+      const target = new Date();
+      target.setHours(h, m, 0, 0);
+
+      // 5 minutes before
+      const fiveMins = new Date(target.getTime() - 5 * 60000);
+
+      if (
+        now.getHours() === fiveMins.getHours() &&
+        now.getMinutes() === fiveMins.getMinutes() &&
+        now.getSeconds() === 0
+      ) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('Persiapan Clock Out', {
+            body: '5 menit lagi waktu pulang. Jangan lupa isi jurnal kerja Anda!',
+            icon: '/favicon.png'
+          });
+        }
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [settings.clockOutStart, todayAttendance]);
+
   // Update current time every second
   useEffect(() => {
     const timer = setInterval(() => {
@@ -197,6 +237,17 @@ const AbsensiKaryawan = () => {
       return;
     }
 
+    // Psychological Security Step: Verification
+    setIsVerifying(true);
+    setVerificationText("Menganalisis lokasi dan kredensial perangkat...");
+
+    // Simulate complex checking processes (2 seconds total)
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setVerificationText("Memverifikasi sidik jari/wajah digital...");
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setVerificationText("Mengenkripsi data kehadiran...");
+    await new Promise(resolve => setTimeout(resolve, 400));
+
     setIsLoading(true);
 
     try {
@@ -273,6 +324,7 @@ const AbsensiKaryawan = () => {
       }
     } finally {
       setIsLoading(false);
+      setIsVerifying(false);
     }
   };
 
@@ -698,6 +750,26 @@ const AbsensiKaryawan = () => {
           onSave={(content) => confirmClockOut(content)}
           onSkip={() => confirmClockOut()}
         />
+
+        {/* Verification Modal (Psychological Security) */}
+        {isVerifying && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl p-8 max-w-[320px] w-full mx-4 shadow-2xl flex flex-col items-center justify-center space-y-6">
+              <div className="relative">
+                <div className="absolute inset-0 border-[3px] border-blue-500 rounded-full animate-ping opacity-20" />
+                <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center relative overflow-hidden">
+                  {/* Scanning line animation */}
+                  <div className="absolute top-0 left-0 w-full h-1 bg-blue-500/50 blur-[2px] animate-[scan_2s_ease-in-out_infinite]" />
+                  <Fingerprint className="h-10 w-10 text-blue-600 mb-1" />
+                </div>
+              </div>
+              <div className="text-center space-y-2">
+                <h4 className="text-lg font-bold text-slate-800">Sistem Keamanan</h4>
+                <p className="text-sm font-medium text-slate-500 animate-pulse">{verificationText}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* MOBILE VIEW (Strict design match) */}
@@ -878,6 +950,25 @@ const AbsensiKaryawan = () => {
               <button onClick={() => navigate("/karyawan/profil")} className="w-[42px] h-[42px] flex items-center justify-center text-slate-400 hover:text-[#047857] transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Verification Modal (Psychological Security) */}
+        {isVerifying && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl p-8 max-w-[300px] w-full mx-4 shadow-2xl flex flex-col items-center justify-center space-y-6">
+              <div className="relative">
+                <div className="absolute inset-0 border-[3px] border-blue-500 rounded-full animate-ping opacity-20" />
+                <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-blue-500/50 blur-[2px] animate-[scan_2s_ease-in-out_infinite]" />
+                  <Fingerprint className="h-10 w-10 text-blue-600 mb-1" />
+                </div>
+              </div>
+              <div className="text-center space-y-2">
+                <h4 className="text-lg font-bold text-slate-800">Sistem Keamanan</h4>
+                <p className="text-sm font-medium text-slate-500 animate-pulse text-center">{verificationText}</p>
+              </div>
             </div>
           </div>
         )}

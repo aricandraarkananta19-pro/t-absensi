@@ -92,8 +92,8 @@ const RiwayatAbsensi = () => {
       .from("attendance")
       .select("*")
       .eq("user_id", user.id)
-      .gte("clock_in", start.toISOString())
-      .lte("clock_in", new Date(end.getTime() + 86400000).toISOString())
+      .gte("date", startStr)
+      .lte("date", endStr)
       .order("clock_in", { ascending: false });
 
     // 2. Fetch approved leave requests for accurate status

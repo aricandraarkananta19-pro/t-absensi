@@ -77,10 +77,25 @@ const RootRedirect = () => {
   return user ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth" replace />;
 };
 
-// Global Loading Fallback
+// Global Loading Fallback (Consistent Skeleton Loading)
 const PageLoader = () => (
-  <div className="flex min-h-[50vh] w-full items-center justify-center">
-    <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
+  <div className="flex flex-col min-h-screen w-full bg-slate-50 p-6 md:p-12 gap-8 animate-in fade-in duration-300">
+    <div className="flex flex-col md:flex-row items-start md:items-center justify-between w-full gap-4">
+      <div className="flex flex-col gap-3 w-full md:w-1/3">
+        <div className="h-8 w-3/4 bg-slate-200/70 rounded-lg animate-pulse" />
+        <div className="h-4 w-1/2 bg-slate-200/70 rounded-md animate-pulse" />
+      </div>
+      <div className="hidden md:flex gap-3">
+        <div className="h-10 w-24 bg-slate-200/70 rounded-xl animate-pulse" />
+        <div className="h-10 w-10 bg-slate-200/70 rounded-full animate-pulse" />
+      </div>
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 w-full mt-4">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="h-32 w-full bg-white border border-slate-100 rounded-2xl animate-pulse shadow-[0_8px_30px_rgb(0,0,0,0.02)]" />
+      ))}
+    </div>
+    <div className="h-[400px] w-full bg-white border border-slate-100 rounded-2xl animate-pulse shadow-[0_8px_30px_rgb(0,0,0,0.02)] mt-2" />
   </div>
 );
 

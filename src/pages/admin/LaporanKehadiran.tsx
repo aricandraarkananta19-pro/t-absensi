@@ -8,6 +8,9 @@ import {
     TrendingUp, UserCheck, UserX, Timer, Filter, LayoutGrid, LogIn, LogOut,
     Briefcase, MoreHorizontal, Printer
 } from "lucide-react";
+import {
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -166,14 +169,7 @@ const LaporanKehadiran = () => {
     const [filterDepartment, setFilterDepartment] = useState("all");
 
     // Date Range State - Initialize from URL or default
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
-        const fromParam = searchParams.get("from");
-        const toParam = searchParams.get("to");
-        if (fromParam && toParam) {
-            return { from: new Date(`${fromParam}T00:00:00`), to: new Date(`${toParam}T23:59:59`) };
-        }
-        return undefined; // Will be set by effect
-    });
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
     // Modals
     const [dialogOpen, setDialogOpen] = useState(false); // Reject Reason Modal
@@ -209,24 +205,13 @@ const LaporanKehadiran = () => {
     const availablePeriods = useMemo(() => {
         const periods = [];
         const today = new Date();
-        const cutoffDay = settings?.attendanceStartDate ? parseInt(settings.attendanceStartDate.split('-')[2]) : 1;
-        const isStandard = cutoffDay === 1;
 
         for (let i = 0; i < 12; i++) {
             const date = subMonths(today, i);
             const monthName = format(date, "MMMM yyyy", { locale: id });
 
-            let from: Date, to: Date;
-
-            if (isStandard) {
-                from = startOfDay(startOfMonth(date));
-                to = endOfDay(endOfMonth(date));
-            } else {
-                const endOfPeriod = setDate(date, cutoffDay - 1);
-                const startOfPeriod = setDate(subMonths(date, 1), cutoffDay);
-                from = startOfDay(startOfPeriod);
-                to = endOfDay(endOfPeriod);
-            }
+            const from = startOfDay(startOfMonth(date));
+            const to = endOfDay(endOfMonth(date));
 
             periods.push({
                 label: monthName,
@@ -236,7 +221,7 @@ const LaporanKehadiran = () => {
             });
         }
         return periods;
-    }, [settings?.attendanceStartDate]);
+    }, []);
 
     const handlePeriodChange = (val: string) => {
         if (val === "custom") return;
@@ -246,26 +231,28 @@ const LaporanKehadiran = () => {
     };
 
     useEffect(() => {
-        if (dateRange?.from && dateRange?.to) return;
-
-        if (!settingsLoading && settings?.attendanceStartDate) {
-            const hasUrlParams = searchParams.get("from") && searchParams.get("to");
-            if (!hasUrlParams) {
-                const activeStart = new Date(settings.attendanceStartDate);
-                if (activeStart.toString() === 'Invalid Date') return;
-                const activeEnd = subDays(addMonths(activeStart, 1), 1);
-                const newRange = { from: activeStart, to: activeEnd };
-                setDateRange(newRange);
-                const newParams = new URLSearchParams(searchParams);
-                newParams.set("from", format(activeStart, "yyyy-MM-dd"));
-                newParams.set("to", format(activeEnd, "yyyy-MM-dd"));
-                setSearchParams(newParams, { replace: true });
+        if (dateRange?.from && dateRange?.to) {
+            // Keeps export period val properly synced
+            const syncedPeriod = availablePeriods.find(p => p.from.getTime() === dateRange.from?.getTime() && p.to?.getTime() === dateRange.to?.getTime());
+            if (syncedPeriod) {
+                setExportPeriodVal(syncedPeriod.value);
+            } else {
+                setExportPeriodVal("custom");
             }
-        } else if (!settingsLoading && !settings?.attendanceStartDate && !dateRange) {
-            const now = new Date();
-            setDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
+            return;
         }
-    }, [settingsLoading, settings?.attendanceStartDate, searchParams, dateRange]);
+        if (settingsLoading) return;
+
+        if (availablePeriods.length > 0) {
+            const defaultPeriod = availablePeriods[0];
+            setDateRange({ from: defaultPeriod.from, to: defaultPeriod.to });
+
+            const newParams = new URLSearchParams(searchParams);
+            newParams.set("from", format(defaultPeriod.from, "yyyy-MM-dd"));
+            newParams.set("to", format(defaultPeriod.to, "yyyy-MM-dd"));
+            setSearchParams(newParams, { replace: true });
+        }
+    }, [settingsLoading, searchParams, availablePeriods, dateRange]);
 
     const toTitleCase = (str: string | null): string => {
         if (!str) return "—";
@@ -361,17 +348,16 @@ const LaporanKehadiran = () => {
             });
 
             // 2. Fetch All Attendance
-            const startDateIso = dateRange.from.toISOString();
-            const endDateObj = dateRange.to || dateRange.from;
-            const endDateIso = new Date(endDateObj.getTime() + 86400000).toISOString();
+            const startStr = format(dateRange.from, 'yyyy-MM-dd');
+            const endStr = format(dateRange.to || dateRange.from, 'yyyy-MM-dd');
 
-            const { data: allAttendance, error: attendanceError } = await supabase
+            const { data: rangeAtt, error: attendanceError } = await supabase
                 .from("attendance")
                 .select("*")
-                .gte("clock_in", startDateIso)
-                .lte("clock_in", endDateIso);
-
+                .gte("date", startStr)
+                .lte("date", endStr);
             if (attendanceError) throw attendanceError;
+            const allAttendance = rangeAtt;
 
             // 3. Fetch All Leaves
             const { data: allLeaves, error: leavesError } = await supabase
@@ -502,30 +488,44 @@ const LaporanKehadiran = () => {
 
     const summaryStats = useMemo(() => {
         const totalEmployees = employeeReports.length;
-        const totalPresent = employeeReports.reduce((sum, e) => sum + (isToday(new Date()) ? e.present > 0 ? 1 : 0 : e.present), 0); // Simplified for "Today" Card logic if needed, but here stick to period totals
-
-        // For "Hadir Hari Ini" Card specifically, we need today's present count.
-        // But since this is a REPORT over a PERIOD, "Hadir Hari Ini" might be misleading if period is last month.
-        // However, the DESIGN usually implies specific context.
-        // I'll calculate totals for the PERIOD, but title them appropriately.
-        // "Hadir Hari Ini" implies Today.
-        // If the user selected a past period, maybe show "Total Hadir (Periode)".
-        // I will stick to "Total Kehadiran" to be safe for any period.
+        const totalPresent = employeeReports.reduce((sum, e) => sum + e.present, 0) + employeeReports.reduce((sum, e) => sum + e.late, 0);
 
         return {
             totalEmployees,
-            totalPresent: employeeReports.reduce((sum, e) => sum + e.present + e.late, 0),
+            totalPresent,
             totalAbsent: employeeReports.reduce((sum, e) => sum + e.absent, 0),
             totalLate: employeeReports.reduce((sum, e) => sum + e.late, 0),
             totalLateMinutes: employeeReports.reduce((sum, e) => sum + e.lateMinutes, 0),
             totalLeave: employeeReports.reduce((sum, e) => sum + e.leave, 0),
-            waitingCheckIn: employeeReports.filter(e => {
-                // Determine if 'waiting' status (future/no record today)
-                const todayRecord = e.details.find(d => isToday(new Date(d.date)));
-                return !todayRecord?.clockIn && !todayRecord?.isWeekend;
-            }).length // Approx logic for "Belum Absen" today
+            waitingCheckIn: Math.max(0, employeeReports.length - (employeeReports.reduce((sum, e) => sum + (e.present > 0 ? 1 : 0), 0))) // Approx check
         };
     }, [employeeReports]);
+
+    const dailyTrendData = useMemo(() => {
+        if (!dateRange?.from || !dateRange?.to) return [];
+        const dataMap: Record<string, { date: string, hadir: number, terlambat: number, izin: number, absen: number }> = {};
+
+        let curr = new Date(dateRange.from);
+        while (curr <= dateRange.to) {
+            const dateStr = format(curr, 'yyyy-MM-dd');
+            dataMap[dateStr] = { date: format(curr, 'dd MMM'), hadir: 0, terlambat: 0, izin: 0, absen: 0 };
+            curr = new Date(curr.getTime() + 86400000);
+        }
+
+        employeeReports.forEach(emp => {
+            emp.details.forEach(d => {
+                const dateKey = d.date; // yyyy-MM-dd
+                if (dataMap[dateKey]) {
+                    if (d.status === 'present' || d.status === 'early_leave') dataMap[dateKey].hadir++;
+                    else if (d.status === 'late') dataMap[dateKey].terlambat++;
+                    else if (d.status === 'leave' || d.status === 'sick' || d.status === 'permission') dataMap[dateKey].izin++;
+                    else if (d.status === 'absent' || d.status === 'alpha') dataMap[dateKey].absen++;
+                }
+            });
+        });
+
+        return Object.values(dataMap);
+    }, [employeeReports, dateRange]);
 
     const handleApprove = async (request: LeaveRequest) => {
         const { error } = await supabase.from("leave_requests").update({ status: "approved", approved_by: user?.id, approved_at: new Date().toISOString() }).eq("id", request.id);
@@ -776,7 +776,42 @@ const LaporanKehadiran = () => {
             customExportNode={customExportNode}
         >
             <div className="space-y-8 pb-20">
-                {/* 1. Summary Cards */}
+
+                {/* 1. Filter Bar for Period Selection */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-blue-50 text-blue-600 p-2 rounded-xl">
+                            <CalendarIcon className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800 text-sm">Filter Tanggal & Bulan</h3>
+                            <p className="text-[11px] text-slate-500 font-medium">Laporan akan dimuat ulang sesuai periode yang Anda pilih</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <Select
+                            value={exportPeriodVal}
+                            onValueChange={(val) => {
+                                setExportPeriodVal(val);
+                                handlePeriodChange(val);
+                            }}
+                        >
+                            <SelectTrigger className="w-full sm:w-[220px] h-10 font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-blue-500">
+                                <SelectValue placeholder="Pilih Periode/Bulan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availablePeriods.map((p, idx) => (
+                                    <SelectItem key={p.value} value={p.value} className={idx === 0 ? "font-semibold text-blue-700" : ""}>
+                                        {idx === 0 ? `📌 Bulan Ini (${p.label})` : idx === 1 ? `⏳ Bulan Lalu (${p.label})` : p.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                {/* 2. Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Card 1: Hadir Hari Ini / Total Kehadiran */}
                     <Card className="border-none shadow-sm bg-white hover:shadow-md transition-all rounded-xl relative overflow-hidden group">
@@ -863,13 +898,54 @@ const LaporanKehadiran = () => {
                                 <span className="text-3xl font-bold text-slate-900">{summaryStats.waitingCheckIn}</span>
                                 <span className="text-sm text-slate-400 font-medium">Staff</span>
                             </div>
-                            <p className="text-xs text-slate-500">Waiting for check-in...</p>
+                            <p className="text-xs text-slate-500">Menunggu data absensi sinkron</p>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* 2. Main Content Card */}
-                <Card className="border-none shadow-sm bg-white rounded-xl overflow-hidden min-h-[500px]">
+                {/* 3. Trend Grafik Kehadiran */}
+                <Card className="border-slate-200 shadow-sm bg-white rounded-xl overflow-hidden p-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="font-bold text-slate-900 text-lg">Tren Kehadiran Harian</h3>
+                            <p className="text-sm text-slate-500 font-medium">Distribusi kehadiran staf di bulan terpilih</p>
+                        </div>
+                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                            <BarChart3 className="w-5 h-5" />
+                        </div>
+                    </div>
+                    <div className="h-[250px] w-full">
+                        {dailyTrendData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={dailyTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorHadir" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="colorTerlambat" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px -5px rgba(0,0,0,0.1)' }} />
+                                    <Area type="monotone" name="Tepat Waktu" dataKey="hadir" stroke="#22c55e" strokeWidth={3} fillOpacity={1} fill="url(#colorHadir)" />
+                                    <Area type="monotone" name="Terlambat" dataKey="terlambat" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorTerlambat)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                                <p className="text-slate-400 font-medium">Beban chart kosong atau sedang meloading...</p>
+                            </div>
+                        )}
+                    </div>
+                </Card>
+
+                {/* 4. Main Content Card */}
+                <Card className="border-slate-200 shadow-sm bg-white rounded-xl overflow-hidden min-h-[500px]">
                     <div className="border-b border-slate-100 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                         <div className="flex items-center gap-2">
                             <h3 className="font-bold text-lg text-slate-900">Kehadiran Karyawan</h3>

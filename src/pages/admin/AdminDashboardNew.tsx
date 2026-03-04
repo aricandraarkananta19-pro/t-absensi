@@ -373,7 +373,7 @@ const AdminDashboardNew = () => {
                             {stats.lateToday === 0 ? (
                                 <><CheckCircle className="w-4 h-4 text-emerald-500" /><span className="text-xs font-semibold text-slate-600">Performa waktu sempurna</span></>
                             ) : (
-                                <><TrendingDown className="w-4 h-4 text-rose-500" /><span className="text-xs font-semibold text-slate-600">Terlambat terbanyak di R&D</span></>
+                                <><TrendingDown className="w-4 h-4 text-rose-500" /><span className="text-xs font-semibold text-slate-600">{stats.lateToday} karyawan terlambat hari ini</span></>
                             )}
                         </div>
                     </div>

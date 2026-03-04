@@ -5,6 +5,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
     Table,
     TableBody,
@@ -51,6 +52,9 @@ interface EmployeeTableProps {
     isArchivedView?: boolean;
     onRestore?: (employee: EmployeeData) => void;
     viewMode?: 'table' | 'grid';
+    selectedIds?: string[];
+    onSelect?: (id: string, checked: boolean) => void;
+    onSelectAll?: (checked: boolean) => void;
 }
 
 export function EmployeeTable({
@@ -64,7 +68,10 @@ export function EmployeeTable({
     onPageChange,
     isArchivedView,
     onRestore,
-    viewMode = 'table'
+    viewMode = 'table',
+    selectedIds = [],
+    onSelect,
+    onSelectAll
 }: EmployeeTableProps) {
 
     // Helper for Status Badge
@@ -119,7 +126,16 @@ export function EmployeeTable({
                 <Table>
                     <TableHeader className="bg-slate-50">
                         <TableRow>
-                            <TableHead className="min-w-[250px] pl-6 py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Employee Profile</TableHead>
+                            <TableHead className="w-[40px] pl-6 py-4">
+                                {onSelectAll && (
+                                    <Checkbox
+                                        checked={data.length > 0 && selectedIds.length === data.length}
+                                        onCheckedChange={(checked) => onSelectAll(!!checked)}
+                                        aria-label="Select all"
+                                    />
+                                )}
+                            </TableHead>
+                            <TableHead className="min-w-[250px] py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Employee Profile</TableHead>
                             <TableHead className="min-w-[100px] font-semibold text-slate-600 text-xs uppercase tracking-wider">NIP</TableHead>
                             <TableHead className="min-w-[150px] font-semibold text-slate-600 text-xs uppercase tracking-wider">Department</TableHead>
                             <TableHead className="min-w-[150px] font-semibold text-slate-600 text-xs uppercase tracking-wider">Position</TableHead>
@@ -137,7 +153,16 @@ export function EmployeeTable({
                         ) : (
                             data.map((employee) => (
                                 <TableRow key={employee.id} className="hover:bg-slate-50/50 transition-colors group border-b border-slate-100 last:border-0">
-                                    <TableCell className="pl-6 py-4">
+                                    <TableCell className="pl-6 w-[40px]">
+                                        {onSelect && (
+                                            <Checkbox
+                                                checked={selectedIds.includes(employee.id)}
+                                                onCheckedChange={(checked) => onSelect(employee.id, !!checked)}
+                                                aria-label={`Select ${employee.full_name}`}
+                                            />
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="py-4">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-10 w-10 border border-slate-100 shadow-sm">
                                                 <AvatarImage src={employee.avatar_url || undefined} />

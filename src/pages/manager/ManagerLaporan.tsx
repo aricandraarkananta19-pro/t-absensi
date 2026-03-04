@@ -8,6 +8,9 @@ import {
   TrendingUp, UserCheck, UserX, Timer, Filter, LayoutGrid, LogIn, LogOut,
   Briefcase, MoreHorizontal, Printer
 } from "lucide-react";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -157,14 +160,7 @@ const ManagerLaporan = () => {
   const [filterDepartment, setFilterDepartment] = useState("all");
 
   // Date Range State - Initialize from URL or default
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
-    const fromParam = searchParams.get("from");
-    const toParam = searchParams.get("to");
-    if (fromParam && toParam) {
-      return { from: new Date(fromParam), to: new Date(toParam) };
-    }
-    return undefined; // Will be set by effect
-  });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   // Modals
   const [dialogOpen, setDialogOpen] = useState(false); // Reject Reason Modal
@@ -200,24 +196,13 @@ const ManagerLaporan = () => {
   const availablePeriods = useMemo(() => {
     const periods = [];
     const today = new Date();
-    const cutoffDay = settings?.attendanceStartDate ? parseInt(settings.attendanceStartDate.split('-')[2]) : 1;
-    const isStandard = cutoffDay === 1;
 
     for (let i = 0; i < 12; i++) {
       const date = subMonths(today, i);
       const monthName = format(date, "MMMM yyyy", { locale: id });
 
-      let from: Date, to: Date;
-
-      if (isStandard) {
-        from = startOfDay(startOfMonth(date));
-        to = endOfDay(endOfMonth(date));
-      } else {
-        const endOfPeriod = setDate(date, cutoffDay - 1);
-        const startOfPeriod = setDate(subMonths(date, 1), cutoffDay);
-        from = startOfDay(startOfPeriod);
-        to = endOfDay(endOfPeriod);
-      }
+      const from = startOfDay(startOfMonth(date));
+      const to = endOfDay(endOfMonth(date));
 
       periods.push({
         label: monthName,
@@ -227,7 +212,7 @@ const ManagerLaporan = () => {
       });
     }
     return periods;
-  }, [settings?.attendanceStartDate]);
+  }, []);
 
   const handlePeriodChange = (val: string) => {
     if (val === "custom") return;
@@ -237,26 +222,28 @@ const ManagerLaporan = () => {
   };
 
   useEffect(() => {
-    if (dateRange?.from && dateRange?.to) return;
-
-    if (!settingsLoading && settings?.attendanceStartDate) {
-      const hasUrlParams = searchParams.get("from") && searchParams.get("to");
-      if (!hasUrlParams) {
-        const activeStart = new Date(settings.attendanceStartDate);
-        if (activeStart.toString() === 'Invalid Date') return;
-        const activeEnd = subDays(addMonths(activeStart, 1), 1);
-        const newRange = { from: activeStart, to: activeEnd };
-        setDateRange(newRange);
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set("from", format(activeStart, "yyyy-MM-dd"));
-        newParams.set("to", format(activeEnd, "yyyy-MM-dd"));
-        setSearchParams(newParams, { replace: true });
+    if (dateRange?.from && dateRange?.to) {
+      // Keeps export period val properly synced
+      const syncedPeriod = availablePeriods.find(p => p.from.getTime() === dateRange.from?.getTime() && p.to?.getTime() === dateRange.to?.getTime());
+      if (syncedPeriod) {
+        setExportPeriodVal(syncedPeriod.value);
+      } else {
+        setExportPeriodVal("custom");
       }
-    } else if (!settingsLoading && !settings?.attendanceStartDate && !dateRange) {
-      const now = new Date();
-      setDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
+      return;
     }
-  }, [settingsLoading, settings?.attendanceStartDate, searchParams, dateRange]);
+    if (settingsLoading) return;
+
+    if (availablePeriods.length > 0) {
+      const defaultPeriod = availablePeriods[0];
+      setDateRange({ from: defaultPeriod.from, to: defaultPeriod.to });
+
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set("from", format(defaultPeriod.from, "yyyy-MM-dd"));
+      newParams.set("to", format(defaultPeriod.to, "yyyy-MM-dd"));
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [settingsLoading, searchParams, availablePeriods, dateRange]);
 
   const toTitleCase = (str: string | null): string => {
     if (!str) return "—";
@@ -352,17 +339,16 @@ const ManagerLaporan = () => {
       });
 
       // 2. Fetch All Attendance
-      const startDateIso = dateRange.from.toISOString();
-      const endDateObj = dateRange.to || dateRange.from;
-      const endDateIso = new Date(endDateObj.getTime() + 86400000).toISOString();
+      const startStr = format(dateRange.from, 'yyyy-MM-dd');
+      const endStr = format(dateRange.to || dateRange.from, 'yyyy-MM-dd');
 
-      const { data: allAttendance, error: attendanceError } = await supabase
+      const { data: rangeAtt, error: attendanceError } = await supabase
         .from("attendance")
         .select("*")
-        .gte("clock_in", startDateIso)
-        .lte("clock_in", endDateIso);
-
+        .gte("date", startStr)
+        .lte("date", endStr);
       if (attendanceError) throw attendanceError;
+      const allAttendance = rangeAtt;
 
       // 3. Fetch All Leaves
       const { data: allLeaves, error: leavesError } = await supabase
@@ -494,21 +480,42 @@ const ManagerLaporan = () => {
   const summaryStats = useMemo(() => {
     const totalEmployees = employeeReports.length;
 
-
     return {
       totalEmployees,
-      totalPresent: employeeReports.reduce((sum, e) => sum + e.present + e.late, 0),
+      totalPresent: employeeReports.reduce((sum, e) => sum + e.present, 0) + employeeReports.reduce((sum, e) => sum + e.late, 0),
       totalAbsent: employeeReports.reduce((sum, e) => sum + e.absent, 0),
       totalLate: employeeReports.reduce((sum, e) => sum + e.late, 0),
       totalLateMinutes: employeeReports.reduce((sum, e) => sum + e.lateMinutes, 0),
       totalLeave: employeeReports.reduce((sum, e) => sum + e.leave, 0),
-      waitingCheckIn: employeeReports.filter(e => {
-        // Determine if 'waiting' status (future/no record today)
-        const todayRecord = e.details.find(d => isToday(new Date(d.date)));
-        return !todayRecord?.clockIn && !todayRecord?.isWeekend;
-      }).length // Approx logic for "Belum Absen" today
+      waitingCheckIn: Math.max(0, employeeReports.length - (employeeReports.reduce((sum, e) => sum + (e.present > 0 ? 1 : 0), 0))) // Approx check
     };
   }, [employeeReports]);
+
+  const dailyTrendData = useMemo(() => {
+    if (!dateRange?.from || !dateRange?.to) return [];
+    const dataMap: Record<string, { date: string, hadir: number, terlambat: number, izin: number, absen: number }> = {};
+
+    let curr = new Date(dateRange.from);
+    while (curr <= dateRange.to) {
+      const dateStr = format(curr, 'yyyy-MM-dd');
+      dataMap[dateStr] = { date: format(curr, 'dd MMM'), hadir: 0, terlambat: 0, izin: 0, absen: 0 };
+      curr = new Date(curr.getTime() + 86400000);
+    }
+
+    employeeReports.forEach(emp => {
+      emp.details.forEach(d => {
+        const dateKey = d.date; // yyyy-MM-dd
+        if (dataMap[dateKey]) {
+          if (d.status === 'present' || d.status === 'early_leave') dataMap[dateKey].hadir++;
+          else if (d.status === 'late') dataMap[dateKey].terlambat++;
+          else if (d.status === 'leave' || d.status === 'sick' || d.status === 'permission') dataMap[dateKey].izin++;
+          else if (d.status === 'absent' || d.status === 'alpha') dataMap[dateKey].absen++;
+        }
+      });
+    });
+
+    return Object.values(dataMap);
+  }, [employeeReports, dateRange]);
 
   const handleApprove = async (request: LeaveRequest) => {
     const { error } = await supabase.from("leave_requests").update({ status: "approved", approved_by: user?.id, approved_at: new Date().toISOString() }).eq("id", request.id);
@@ -747,56 +754,38 @@ const ManagerLaporan = () => {
       customExportNode={customExportNode}
     >
       <div className="space-y-6 pb-20">
-        {/* HEADERS & FILTERS */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex flex-col gap-1 w-full sm:w-auto">
-            <div className="text-sm font-medium text-slate-500">Pilih Periode:</div>
-            <div className="flex gap-2">
-              <Select onValueChange={handlePeriodChange}>
-                <SelectTrigger className="w-[180px] bg-white border-slate-200 shadow-sm">
-                  <SelectValue placeholder="Pilih Periode" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="custom" className="text-blue-600 font-medium">+ Custom Date</SelectItem>
-                  {availablePeriods.map((p, idx) => (
-                    <SelectItem key={idx} value={p.value}>{p.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <CalendarDays className="h-9 w-9 text-slate-400 p-2 bg-slate-50 rounded-md border border-slate-200" />
+
+        {/* 1. Filter Bar for Period Selection */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-50 text-blue-600 p-2 rounded-xl">
+              <CalendarIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-800 text-sm">Filter Tanggal & Bulan</h3>
+              <p className="text-[11px] text-slate-500 font-medium">Laporan akan dimuat ulang sesuai periode yang Anda pilih</p>
             </div>
           </div>
 
-          <div className="flex gap-2 w-full sm:w-auto flex-wrap justify-end">
-            <div className="flex bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" className={cn("text-xs font-normal justify-start text-left w-[240px]", !dateRange && "text-muted-foreground")}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange?.from ? (
-                      dateRange.to ? (
-                        <>{format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}</>
-                      ) : (
-                        format(dateRange.from, "LLL dd, y")
-                      )
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                    initialFocus
-                    mode="range"
-                    defaultMonth={dateRange?.from}
-                    selected={dateRange}
-                    onSelect={handleDateRangeChange}
-                    numberOfMonths={2}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            {/* Export Menu dipindahkan ke customExportNode di EnterpriseLayout */}
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <Select
+              value={exportPeriodVal}
+              onValueChange={(val) => {
+                setExportPeriodVal(val);
+                handlePeriodChange(val);
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-[220px] h-10 font-bold bg-slate-50 border-slate-200 rounded-xl focus:ring-blue-500">
+                <SelectValue placeholder="Pilih Periode/Bulan" />
+              </SelectTrigger>
+              <SelectContent>
+                {availablePeriods.map((p, idx) => (
+                  <SelectItem key={p.value} value={p.value} className={idx === 0 ? "font-semibold text-blue-700" : ""}>
+                    {idx === 0 ? `📌 Bulan Ini (${p.label})` : idx === 1 ? `⏳ Bulan Lalu (${p.label})` : p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -891,6 +880,61 @@ const ManagerLaporan = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Trend Kehadiran Chart */}
+        <Card className="border-none shadow-sm bg-white rounded-xl overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Tren Kehadiran Harian</h3>
+                <p className="text-xs text-slate-500">Visualisasi data absensi harian pada periode terpilih</p>
+              </div>
+              <div className="flex gap-4 text-xs font-semibold">
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Hadir</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Terlambat</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-400"></span> Alpha</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Cuti/Sakit</span>
+              </div>
+            </div>
+            <div className="w-full h-[220px]">
+              {dailyTrendData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={dailyTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorHadir" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorTerlambat" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorIzin" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 600 }}
+                      itemStyle={{ fontWeight: 700 }}
+                    />
+                    <Area type="monotone" dataKey="hadir" stackId="1" stroke="#10b981" strokeWidth={2} fill="url(#colorHadir)" />
+                    <Area type="monotone" dataKey="terlambat" stackId="2" stroke="#f59e0b" strokeWidth={2} fill="url(#colorTerlambat)" />
+                    <Area type="monotone" dataKey="izin" stackId="3" stroke="#a855f7" strokeWidth={2} fill="url(#colorIzin)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                  <BarChart3 className="w-10 h-10 mb-2 opacity-20" />
+                  <span className="text-xs">Data tren belum tersedia</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* 2. Main Content Card */}
         <Card className="border-none shadow-sm bg-white rounded-xl overflow-hidden min-h-[500px]">
