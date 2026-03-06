@@ -32,7 +32,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { exportToExcel } from "@/lib/exportUtils";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
 import { ADMIN_MENU_SECTIONS } from "@/config/menu";
 
@@ -190,6 +189,7 @@ const Pengaturan = () => {
         lokasi: r.clock_in_location || "-"
       }));
 
+      const { exportToExcel } = await import("@/lib/exportUtils");
       exportToExcel({
         title: "Backup Data Absensi",
         subtitle: `Diexport pada ${new Date().toLocaleString("id-ID")}`,

@@ -64,8 +64,7 @@ export default function PengajuanCutiMobile({
     return (
         <div className={cn("flex flex-col min-h-screen pb-[100px] font-sans animate-in fade-in slide-in-from-bottom-4 duration-500", isDark ? "bg-slate-900" : "bg-[#F8FAFC]")}>
             {/* Premium Dark Header */}
-            <div className={cn("text-white pt-[max(env(safe-area-inset-top),32px)] pb-12 px-6 rounded-b-[40px] shadow-lg relative overflow-hidden", isDark ? "bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800" : "bg-[#0F172A]")}>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white dark:bg-slate-900/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            <div className={cn("text-white pt-[max(env(safe-area-inset-top),32px)] pb-12 px-6 rounded-b-[40px] shadow-sm relative overflow-hidden", isDark ? "bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800" : "bg-gradient-to-br from-slate-900 to-slate-800")}>
                 <div className="relative z-10 mb-2">
                     <h1 className="text-xl font-bold tracking-tight">Manajemen Cuti</h1>
                     <p className="text-sm font-medium text-slate-400 mt-1">Sisa hak cuti tahunan Anda: {remainingLeave} Hari</p>
@@ -74,7 +73,7 @@ export default function PengajuanCutiMobile({
 
             <div className="px-6 -mt-8 relative z-20">
                 {/* Visual Budget Ring Chart */}
-                <div className={cn("p-6 rounded-[28px] shadow-[0_8px_30px_rgba(0,0,0,0.04)] border mb-6 flex items-center justify-between transition-all", isDark ? "bg-slate-800/80 backdrop-blur-md border-slate-700/50" : "bg-white/90 backdrop-blur-md border-slate-200/50")}>
+                <div className={cn("p-6 rounded-[24px] shadow-sm border mb-6 flex items-center justify-between", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
                     <div>
                         <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">Kuota Tahunan</h3>
                         <div className="flex items-baseline gap-1.5">
@@ -108,7 +107,7 @@ export default function PengajuanCutiMobile({
                 {/* Primary Action Button */}
                 <button
                     onClick={onOpenNewRequest}
-                    className="w-full bg-[#2563EB] hover:bg-[#1E40AF] text-white rounded-2xl p-4 font-bold text-[15px] flex items-center justify-center gap-2 active:scale-95 transition-all shadow-[0_8px_20px_rgba(37,99,235,0.2)] mb-8"
+                    className="w-full bg-blue-600 active:bg-blue-700 text-white rounded-[20px] p-4 font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-md shadow-blue-500/20 mb-8"
                 >
                     <Plus className="w-5 h-5" /> Ajukan Cuti / Izin
                 </button>
@@ -129,7 +128,7 @@ export default function PengajuanCutiMobile({
                         </div>
                     ) : (
                         leaveRequests.map((req) => (
-                            <div key={req.id} className={cn("p-4 rounded-[20px] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
+                            <div key={req.id} className={cn("p-4 rounded-[20px] shadow-sm border", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
                                 <div className="flex justify-between items-start mb-3">
                                     <div>
                                         <h4 className={cn("font-bold text-sm mb-1", isDark ? "text-white" : "text-[#0F172A]")}>{getLeaveTypeLabel(req.leave_type)}</h4>

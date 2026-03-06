@@ -511,14 +511,14 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
                 {/* Gradient Background */}
                 <div className={cn("absolute inset-0", isDark ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" : "bg-gradient-to-br from-[#312E81] via-[#3730A3] to-[#4338CA]")} />
                 {/* Decorative orbs */}
-                <div className="absolute top-0 right-0 w-60 h-60 bg-white/[0.06] rounded-full blur-3xl -translate-y-1/3 translate-x-1/4 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-40 h-40 bg-indigo-400/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-60 h-60 rounded-full bg-white/[0.06] -translate-y-1/3 translate-x-1/4 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-40 h-40 rounded-full bg-indigo-400/10 translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
                 <div className="relative z-10 pt-[max(env(safe-area-inset-top),36px)] pb-10 px-6">
                     {/* Top Bar: Greeting + Logout */}
                     <div className="flex justify-between items-start mb-6 vibe-animate">
                         <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-full bg-white/15 border border-white/20 flex items-center justify-center text-white font-bold text-base uppercase backdrop-blur-sm">
+                            <div className="w-11 h-11 rounded-full bg-white/15 border border-white/20 flex items-center justify-center text-white font-bold text-base uppercase">
                                 {firstName.charAt(0)}
                             </div>
                             <div>
@@ -530,16 +530,16 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
                             {/* Dark Mode Toggle */}
                             <button
                                 onClick={toggleTheme}
-                                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center border border-white/10 active:scale-90 transition-all backdrop-blur-sm"
+                                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center border border-white/10 active:scale-90 transition-transform"
                                 aria-label="Toggle dark mode"
                             >
                                 {isDark ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4 text-white/70" />}
                             </button>
                             {/* Bell with Notification Badge */}
-                            <button className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center border border-white/10 active:scale-90 transition-transform backdrop-blur-sm relative">
+                            <button className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center border border-white/10 active:scale-90 transition-transform relative">
                                 <Bell className="w-4 h-4 text-white/80" />
                                 {notifCount > 0 && (
-                                    <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse">
+                                    <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 shadow-sm">
                                         {notifCount > 9 ? '9+' : notifCount}
                                     </span>
                                 )}
@@ -547,7 +547,7 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
                             <button
                                 onClick={() => setShowLogoutConfirm(true)}
                                 disabled={isLoggingOut}
-                                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center border border-white/10 active:scale-90 transition-transform backdrop-blur-sm disabled:opacity-50"
+                                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center border border-white/10 active:scale-90 transition-transform disabled:opacity-50"
                             >
                                 {isLoggingOut ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <LogOut className="w-4 h-4 text-white/80" />}
                             </button>
@@ -589,14 +589,14 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
             {/* ===== KARYAWAN: Clock-In Button ===== */}
             {isKaryawan && (
                 <div className="px-6 -mt-7 relative z-20 flex flex-col items-center w-full vibe-animate vibe-delay-2">
-                    <div className="bg-white p-2 rounded-[36px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-slate-100/80 mb-5">
+                    <div className="bg-white p-2 rounded-[36px] shadow-sm border border-slate-100/80 mb-5">
                         <button
                             onClick={handleClockAction}
                             disabled={isActionLoading || isFinished}
                             className={cn(
-                                "w-[148px] h-[148px] rounded-[28px] flex flex-col items-center justify-center gap-2 transition-all duration-300 relative overflow-hidden",
-                                !todayAttendance ? "bg-gradient-to-br from-[#4F46E5] to-[#6366F1] text-white active:scale-95 shadow-[0_8px_24px_rgba(79,70,229,0.35)]" :
-                                    isWorking ? "bg-gradient-to-br from-[#DC2626] to-[#EF4444] text-white active:scale-95 shadow-[0_8px_24px_rgba(220,38,38,0.3)]" :
+                                "w-[148px] h-[148px] rounded-[28px] flex flex-col items-center justify-center gap-2 transition-transform active:scale-95 relative overflow-hidden",
+                                !todayAttendance ? "bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/30" :
+                                    isWorking ? "bg-gradient-to-br from-red-600 to-red-500 text-white shadow-lg shadow-red-500/30" :
                                         "bg-slate-50 text-slate-400 cursor-not-allowed border border-slate-200"
                             )}
                         >
@@ -634,7 +634,7 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
                         <div className="w-full bg-white rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-slate-100 mb-5 vibe-animate vibe-delay-3">
                             <div className="flex justify-between items-center mb-3">
                                 <div className="flex items-center gap-2">
-                                    <div className={cn("w-2.5 h-2.5 rounded-full", isWorking ? "bg-emerald-500 animate-pulse" : "bg-slate-300")} />
+                                    <div className={cn("w-2.5 h-2.5 rounded-full", isWorking ? "bg-emerald-500" : "bg-slate-300")} />
                                     <span className="text-[11px] font-bold uppercase tracking-widest text-slate-800">
                                         {isWorking ? "Sedang Bekerja" : "Sesi Selesai"}
                                     </span>
@@ -681,7 +681,7 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
                         isDark ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-100")}>
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                                <div className={cn("w-2.5 h-2.5 rounded-full animate-pulse", "bg-emerald-500")} />
+                                <div className={cn("w-2.5 h-2.5 rounded-full bg-emerald-500")} />
                                 <span className={cn("text-[11px] font-bold uppercase tracking-widest", isDark ? "text-slate-400" : "text-slate-500")}>Status Tim Hari Ini</span>
                             </div>
                             <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-md",
@@ -739,8 +739,8 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
                                     key={item.href}
                                     to={item.href}
                                     className={cn(
-                                        "group rounded-2xl border p-4 flex items-center gap-3.5 active:scale-[0.98] transition-all duration-200 vibe-animate",
-                                        isDark ? "bg-slate-800/80 border-slate-700 active:bg-slate-700" : "bg-white border-slate-100 active:bg-slate-50",
+                                        "group rounded-2xl border p-4 flex items-center gap-3.5 active:scale-[0.98] transition-transform vibe-animate",
+                                        isDark ? "bg-slate-800 border-slate-700 active:bg-slate-700" : "bg-white border-slate-100 active:bg-slate-50",
                                     )}
                                     style={{ animationDelay: `${(idx + 3) * 60}ms` }}
                                 >

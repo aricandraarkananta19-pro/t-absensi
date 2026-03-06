@@ -94,7 +94,7 @@ export default function RiwayatAbsensiMobile({
                 <div className="relative z-10 pt-[max(env(safe-area-inset-top),40px)] pb-6 px-5">
                     <div className="flex justify-between items-center">
                         <h1 className="text-xl font-bold text-white tracking-tight">Riwayat Kehadiran</h1>
-                        <button onClick={onExport} className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900/10 backdrop-blur-sm flex items-center justify-center border border-white/10 active:scale-95 transition-transform">
+                        <button onClick={onExport} className="w-9 h-9 rounded-xl bg-white/20 dark:bg-slate-900/30 flex items-center justify-center border border-white/10 active:scale-95 transition-transform">
                             <Download className="w-4 h-4 text-white" />
                         </button>
                     </div>
@@ -167,9 +167,9 @@ export default function RiwayatAbsensiMobile({
                                     key={i}
                                     onClick={() => setSelectedDate(d)}
                                     className={cn(
-                                        "flex flex-col items-center justify-center py-1.5 rounded-xl transition-all duration-200",
+                                        "flex flex-col items-center justify-center py-1.5 rounded-xl transition-colors active:scale-95",
                                         !isCurrentMonth && "opacity-25",
-                                        isSelected && "bg-indigo-600 shadow-md shadow-indigo-200",
+                                        isSelected && "bg-indigo-600 shadow-sm",
                                         isToday && !isSelected && "bg-indigo-50"
                                     )}
                                 >
@@ -207,7 +207,7 @@ export default function RiwayatAbsensiMobile({
 
                 {/* Selected date detail */}
                 {selectedRecord && selectedRecord.status !== 'future' && selectedRecord.status !== 'weekend' && (
-                    <div className="mt-3 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="mt-3 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 animate-in fade-in zoom-in-95 duration-150">
                         <div className="flex items-center justify-between mb-3">
                             <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
                                 {format(selectedDate, 'EEEE, d MMMM', { locale: idLocale })}
@@ -261,7 +261,7 @@ export default function RiwayatAbsensiMobile({
                                 : null;
 
                             return (
-                                <div key={idx} className={cn("rounded-xl shadow-sm border p-3.5 flex items-center gap-3 transition-all duration-200 active:scale-[0.99]", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
+                                <div key={idx} className={cn("rounded-xl shadow-sm border p-3.5 flex items-center gap-3 active:scale-[0.98] transition-transform", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
                                     {/* Date circle */}
                                     <div className={cn("w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0 border", badge.bg)}>
                                         <span className={cn("text-sm font-bold leading-none", badge.color)}>{new Date(item.date).getDate()}</span>

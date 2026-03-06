@@ -79,8 +79,7 @@ export default function JurnalSayaMobile({
     return (
         <div className={cn("flex flex-col min-h-screen pb-[120px] font-sans animate-in fade-in slide-in-from-bottom-4 duration-500", isDark ? "bg-[#0F172A]" : "bg-[#F8FAFC]")}>
             {/* Premium Header */}
-            <div className={cn("text-white pt-[max(env(safe-area-inset-top),32px)] pb-12 px-6 rounded-b-[40px] shadow-lg relative overflow-hidden", isDark ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-b border-slate-800/80" : "bg-gradient-to-br from-[#0F172A] to-[#1e293b]")}>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            <div className={cn("text-white pt-[max(env(safe-area-inset-top),32px)] pb-12 px-6 rounded-b-[40px] shadow-sm relative overflow-hidden", isDark ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-b border-slate-800" : "bg-gradient-to-br from-slate-900 to-slate-800")}>
                 <div className="relative z-10 flex justify-between items-start mb-2">
                     <div>
                         <h1 className="text-[26px] font-black tracking-tighter mb-1">Jurnal Timeline</h1>
@@ -89,7 +88,7 @@ export default function JurnalSayaMobile({
 
                     <button
                         onClick={() => setFilterStatus(filterStatus === "Bulan Ini" ? "Semua" : "Bulan Ini")}
-                        className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 active:scale-95 transition-transform"
+                        className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/10 active:scale-[0.98] transition-transform"
                     >
                         <Calendar className="w-3.5 h-3.5 text-indigo-300" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-indigo-100">{filterStatus}</span>
@@ -101,9 +100,8 @@ export default function JurnalSayaMobile({
                 {/* Timeline Layout */}
                 <div className={cn("space-y-0 relative", journals.length > 0 && "before:absolute before:inset-y-4 before:left-[17px] before:w-[2px] before:bg-gradient-to-b before:from-indigo-500/50 before:via-slate-200 dark:before:via-slate-700/50 before:to-transparent")}>
                     {filteredJournals.length === 0 ? (
-                        <div className={cn("rounded-[32px] p-8 mt-6 border text-center flex flex-col items-center justify-center shadow-lg backdrop-blur-xl relative overflow-hidden", isDark ? "bg-slate-800/80 border-slate-700/50" : "bg-white/90 border-slate-200/50")}>
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                            <div className={cn("w-16 h-16 rounded-[20px] flex items-center justify-center mb-4 rotate-3 shadow-sm", isDark ? "bg-slate-700/80" : "bg-indigo-50")}>
+                        <div className={cn("rounded-[28px] p-8 mt-6 border text-center flex flex-col items-center justify-center shadow-sm relative overflow-hidden", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
+                            <div className={cn("w-16 h-16 rounded-[20px] flex items-center justify-center mb-4 shadow-sm", isDark ? "bg-slate-700" : "bg-indigo-50")}>
                                 <FileText className={cn("w-8 h-8", isDark ? "text-slate-400" : "text-indigo-500")} />
                             </div>
                             <span className={cn("text-base font-black tracking-tight", isDark ? "text-white" : "text-slate-800")}>Belum Ada Cerita Hari Ini</span>
@@ -120,11 +118,11 @@ export default function JurnalSayaMobile({
                                 <div key={journal.id} className="relative pl-12 py-3 group">
                                     {/* Timeline Node */}
                                     <div className={cn(
-                                        "absolute left-[12px] top-6 w-3 h-3 rounded-full border-2 shadow-[0_0_10px_rgba(0,0,0,0.1)] z-10 transition-transform group-hover:scale-125",
-                                        isToday ? "bg-indigo-500 border-white dark:border-slate-900 shadow-indigo-500/40" : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"
+                                        "absolute left-[12px] top-6 w-3 h-3 rounded-full border-2 z-10",
+                                        isToday ? "bg-indigo-500 border-white dark:border-slate-900 shadow-sm shadow-indigo-500/40" : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"
                                     )} />
 
-                                    <div className={cn("p-5 rounded-[24px] shadow-[0_8px_30px_rgba(0,0,0,0.04)] border relative overflow-hidden transition-all active:scale-[0.98]", isDark ? "bg-slate-800/90 backdrop-blur-md border-slate-700/50" : "bg-white/90 backdrop-blur-md border-slate-200/50")}>
+                                    <div className={cn("p-5 rounded-[24px] shadow-sm border relative overflow-hidden transition-transform active:scale-[0.99]", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
                                         <div className="flex justify-between items-start mb-3">
                                             <div className="flex items-center gap-2">
                                                 {/* Glass Category Pill */}
@@ -163,7 +161,7 @@ export default function JurnalSayaMobile({
             {/* Bouncy Bottom Sheet using Vaul Drawer */}
             <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
                 <DrawerTrigger asChild>
-                    <button className="fixed bottom-[110px] right-6 w-[60px] h-[60px] bg-indigo-600 text-white rounded-[22px] rotate-3 hover:rotate-0 flex items-center justify-center shadow-[0_12px_30px_rgba(79,70,229,0.4)] hover:bg-indigo-500 active:scale-90 transition-all z-50 focus:outline-none focus:ring-4 focus:ring-indigo-500/20">
+                    <button className="fixed bottom-[110px] right-6 w-[60px] h-[60px] bg-indigo-600 text-white rounded-[22px] rotate-3 active:rotate-0 flex items-center justify-center shadow-lg shadow-indigo-500/30 active:bg-indigo-700 active:scale-95 transition-transform z-50 focus:outline-none focus:ring-4 focus:ring-indigo-500/20">
                         <Plus className="w-7 h-7" />
                     </button>
                 </DrawerTrigger>

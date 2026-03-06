@@ -21,7 +21,7 @@ import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { AttendanceStats } from "@/components/attendance/AttendanceStats";
 import { AttendanceHistoryTable } from "@/components/attendance/AttendanceHistoryTable";
-import { exportAttendanceExcel, exportAttendanceHRPDF } from "@/lib/attendanceExportUtils";
+// exportAttendanceExcel and HRPDF will be dynamically imported
 import { toast } from "@/hooks/use-toast";
 import KaryawanWorkspaceLayout from "@/components/layout/KaryawanWorkspaceLayout";
 import RiwayatAbsensiMobile from "./RiwayatAbsensiMobile";
@@ -167,8 +167,12 @@ const RiwayatAbsensi = () => {
       leaveRequests: []
     };
 
-    if (type === 'excel') exportAttendanceExcel(exportData, reportTitle);
-    if (type === 'pdf') exportAttendanceHRPDF(exportData, reportTitle);
+    if (type === 'excel') {
+      import("@/lib/attendanceExportUtils").then(m => m.exportAttendanceExcel(exportData, reportTitle));
+    }
+    if (type === 'pdf') {
+      import("@/lib/attendanceExportUtils").then(m => m.exportAttendanceHRPDF(exportData, reportTitle));
+    }
 
     toast({ title: "Export Berhasil", description: `Laporan ${type.toUpperCase()} telah diunduh.` });
   };

@@ -30,8 +30,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToPDF, exportToExcel } from "@/lib/exportUtils";
-import { generateAttendanceExcel } from "@/lib/excelExport";
-import { exportAttendanceExcel, exportAttendanceHRPDF, exportAttendanceManagementPDF, AttendanceReportData, AttendanceReportEmployee } from "@/lib/attendanceExportUtils";
+import { AttendanceReportData, AttendanceReportEmployee } from "@/lib/attendanceExportUtils";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { ABSENSI_WAJIB_ROLE, EXCLUDED_USER_NAMES } from "@/lib/constants";
@@ -638,6 +637,7 @@ const ManagerLaporan = () => {
           })
         );
 
+        const { generateAttendanceExcel } = await import("@/lib/excelExport");
         await generateAttendanceExcel({
           month: periodStr,
           companyName: 'PT. TALENTA TRAINCOM INDONESIA',
@@ -653,13 +653,23 @@ const ManagerLaporan = () => {
         setIsExportingExcel(false);
       }
     } else if (exportFormat === "pdf_hr") {
-      exportAttendanceHRPDF(buildExportData(), `laporan-hr-${format(new Date(), 'yyyy-MM-dd')}`);
-      toast({ title: "Berhasil", description: "PDF HR diunduh" });
-      setExportModalOpen(false);
+      setIsExportingExcel(true);
+      try {
+        const { exportAttendanceHRPDF } = await import("@/lib/attendanceExportUtils");
+        exportAttendanceHRPDF(buildExportData(), `laporan-hr-${format(new Date(), 'yyyy-MM-dd')}`);
+        toast({ title: "Berhasil", description: "PDF HR diunduh" });
+      } catch (e: any) {
+        toast({ variant: "destructive", title: "Gagal", description: e.message });
+      } finally { setIsExportingExcel(false); setExportModalOpen(false); }
     } else if (exportFormat === "pdf_manajemen") {
-      exportAttendanceManagementPDF(buildExportData(), `laporan-manajemen-${format(new Date(), 'yyyy-MM-dd')}`);
-      toast({ title: "Berhasil", description: "PDF Manajemen diunduh" });
-      setExportModalOpen(false);
+      setIsExportingExcel(true);
+      try {
+        const { exportAttendanceManagementPDF } = await import("@/lib/attendanceExportUtils");
+        exportAttendanceManagementPDF(buildExportData(), `laporan-manajemen-${format(new Date(), 'yyyy-MM-dd')}`);
+        toast({ title: "Berhasil", description: "PDF Manajemen diunduh" });
+      } catch (e: any) {
+        toast({ variant: "destructive", title: "Gagal", description: e.message });
+      } finally { setIsExportingExcel(false); setExportModalOpen(false); }
     }
   };
 

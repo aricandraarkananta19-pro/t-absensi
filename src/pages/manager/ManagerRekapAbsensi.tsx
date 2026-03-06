@@ -16,7 +16,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { exportToExcel, exportToPDF } from "@/lib/exportUtils";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import EnterpriseLayout from "@/components/layout/EnterpriseLayout";
 import { MANAGER_MENU_SECTIONS } from "@/config/menu";
@@ -294,6 +293,27 @@ const ManagerRekapAbsensi = () => {
     }));
   };
 
+  const handleExportExcel = async () => {
+    const { exportToExcel } = await import("@/lib/exportUtils");
+    exportToExcel({
+      title: "Rekap Absensi " + formatDate(filterDate),
+      data: getExportData(),
+      columns: exportColumns,
+      filename: `rekap-absensi-${filterDate}`,
+    });
+  };
+
+  const handleExportPDF = async () => {
+    const { exportToPDF } = await import("@/lib/exportUtils");
+    exportToPDF({
+      title: "Rekap Absensi",
+      subtitle: formatDate(filterDate),
+      data: getExportData(),
+      columns: exportColumns.map(c => c.header),
+      filename: `rekap-absensi-${filterDate}`,
+    });
+  };
+
   return (
     <EnterpriseLayout
       title="Rekap Absensi"
@@ -304,7 +324,7 @@ const ManagerRekapAbsensi = () => {
       onRefresh={fetchAttendance}
       refreshInterval={0}
       showExport={true}
-      onExport={() => exportToExcel({ title: "Rekap", filename: "rekap", columns: exportColumns, data: getExportData() })}
+      onExport={handleExportExcel}
       breadcrumbs={[
         { label: "Manager", href: "/manager" },
         { label: "Rekap Absensi" },
@@ -453,7 +473,12 @@ const ManagerRekapAbsensi = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => exportToExcel({ title: "Rekap", filename: "rekap", columns: exportColumns, data: getExportData() })}>Excel</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={handleExportExcel}>
+                    <FileSpreadsheet className="w-4 h-4 mr-2" /> Export Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={handleExportPDF}>
+                    <FileText className="w-4 h-4 mr-2" /> Export PDF
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
