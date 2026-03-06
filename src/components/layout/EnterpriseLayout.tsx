@@ -4,16 +4,19 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     LayoutDashboard, Users, Clock, BarChart3, Calendar, Building2,
     Shield, Key, Settings, LogOut, ChevronLeft, ChevronRight,
-    RefreshCw, Download, Bell, Menu, X, MoreHorizontal, FileText, UserCog
+    RefreshCw, Download, Bell, Menu, X, MoreHorizontal, FileText, UserCog,
+    Sun, Moon, Briefcase
 } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { NotificationPanel } from "@/components/notifications/NotificationPanel";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -79,6 +82,7 @@ const EnterpriseLayout = ({
     breadcrumbs
 }: EnterpriseLayoutProps) => {
     const { user, signOut } = useAuth();
+    const { isDark, toggleTheme } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -123,9 +127,20 @@ const EnterpriseLayout = ({
     const adminMobileNav = [
         { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
         { icon: Users, label: "Karyawan", href: "/admin/karyawan" },
-        { icon: FileText, label: "Laporan", href: "/admin/laporan" }, // Short for Reports
-        { icon: MoreHorizontal, label: "Menu", href: "#menu" }, // Trigger for full menu
+        { icon: FileText, label: "Laporan", href: "/admin/laporan" },
+        { icon: MoreHorizontal, label: "Menu", href: "#menu" },
     ];
+
+    // MANAGER MOBILE NAV ITEMS
+    const managerMobileNav = [
+        { icon: LayoutDashboard, label: "Beranda", href: "/dashboard" },
+        { icon: Clock, label: "Rekap", href: "/manager/absensi" },
+        { icon: Briefcase, label: "Jurnal", href: "/manager/jurnal" },
+        { icon: Calendar, label: "Cuti", href: "/manager/cuti" },
+    ];
+
+    const isManager = roleLabel?.toLowerCase().includes('manager');
+    const mobileNav = isManager ? managerMobileNav : adminMobileNav;
 
     return (
         <div className="min-h-screen bg-slate-50/80 dark:bg-slate-950 font-['Inter',system-ui,sans-serif] pb-24 lg:pb-0 relative overflow-x-hidden">
@@ -144,14 +159,23 @@ const EnterpriseLayout = ({
                 <div className="flex items-center h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-4 border-b border-slate-100/80 dark:border-slate-700/80 bg-white/50 dark:bg-slate-900/50">
                     <div className="flex items-center gap-3 min-w-0">
                         <div
-                            className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-md bg-gradient-to-br from-slate-800 to-slate-600"
+                            className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-indigo-600 via-blue-600 to-blue-700 border border-blue-400/30 relative overflow-hidden group"
                         >
-                            <img src={logoImage} alt="Logo" className="h-6 w-6 object-contain" />
+                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-in-out" />
+                            <img src={logoImage} alt="Logo" className="h-7 w-7 object-contain brightness-0 invert drop-shadow-md relative z-10 transition-transform duration-500 group-hover:scale-110" />
                         </div>
                         {!isCollapsed && (
-                            <div className="min-w-0 overflow-hidden">
-                                <h1 className="font-extrabold text-slate-800 text-sm leading-none truncate tracking-tight">Talenta Traincom</h1>
-                                <p className="text-[10px] text-slate-400 leading-tight mt-1 font-medium tracking-wider uppercase">Enterprise HRIS</p>
+                            <div className="min-w-0 overflow-hidden ml-0.5">
+                                <h1 className="font-extrabold text-slate-900 dark:text-white text-[15px] leading-tight truncate tracking-tight">
+                                    Talenta<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 ml-1">Traincom</span>
+                                </h1>
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 font-bold tracking-[0.15em] uppercase flex items-center gap-1.5">
+                                    <span className="relative flex h-1.5 w-1.5 shrink-0">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                    </span>
+                                    Indonesia
+                                </p>
                             </div>
                         )}
                     </div>
@@ -243,9 +267,10 @@ const EnterpriseLayout = ({
                         <div className="flex items-center gap-4">
                             {/* Mobile Logo Only */}
                             <div className="md:hidden flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-800 to-slate-600 flex items-center justify-center shadow-sm">
-                                    <img src={logoImage} alt="Logo" className="h-5 w-5 object-contain" />
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 via-blue-600 to-blue-700 flex items-center justify-center shadow-lg border border-blue-400/30 relative overflow-hidden">
+                                    <img src={logoImage} alt="Logo" className="h-5 w-5 object-contain brightness-0 invert drop-shadow-sm relative z-10" />
                                 </div>
+                                <span className="font-extrabold text-slate-900 dark:text-white text-sm tracking-tight">Talenta<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 ml-0.5">Traincom</span></span>
                             </div>
 
                             {/* Global Search */}
@@ -265,17 +290,24 @@ const EnterpriseLayout = ({
                         {/* Top Nav Actions */}
                         <div className="flex items-center gap-3 sm:gap-4">
                             {showRefresh && (
-                                <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 cursor-pointer transition-colors" onClick={handleManualRefresh}>
+                                <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer transition-colors" onClick={handleManualRefresh}>
                                     <RefreshCw className="h-3.5 w-3.5" />
                                 </div>
                             )}
 
                             {customExportNode}
 
-                            <Button variant="ghost" size="icon" className="relative text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-full h-9 w-9">
-                                <Bell className="h-4 w-4" />
-                                <span className="absolute top-2 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full border border-white"></span>
+                            {/* Dark Mode Toggle */}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={toggleTheme}
+                                className="relative text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full h-9 w-9 transition-colors"
+                            >
+                                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                             </Button>
+
+                            <NotificationPanel role={roleLabel?.toLowerCase().includes('manager') ? 'manager' : 'admin'} isDark={isDark} />
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -335,10 +367,10 @@ const EnterpriseLayout = ({
                 </div>
             </main>
 
-            {/* ADMIN MOBILE BOTTOM NAV (iOS Style Premium) - Hidden on Tablet (md) upwards */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-2xl border-t border-slate-200/50 shadow-[0_-4px_16px_rgba(0,0,0,0.04)] pb-[env(safe-area-inset-bottom)]">
+            {/* MOBILE BOTTOM NAV (iOS Style Premium) - Hidden on Tablet (md) upwards */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-t border-slate-200/50 dark:border-slate-700/50 shadow-[0_-4px_16px_rgba(0,0,0,0.04)] pb-[env(safe-area-inset-bottom)]">
                 <div className="flex items-center justify-around h-[66px] px-4">
-                    {adminMobileNav.map((item) => {
+                    {mobileNav.map((item) => {
                         const isActive = location.pathname === item.href || (item.href !== "/dashboard" && location.pathname.startsWith(item.href) && item.href !== "#menu");
 
                         if (item.href === "#menu") {

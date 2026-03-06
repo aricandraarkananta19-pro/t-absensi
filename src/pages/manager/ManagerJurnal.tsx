@@ -206,15 +206,15 @@ const ManagerJurnal = () => {
                 { label: "Jurnal Tim" },
             ]}
         >
-            <div className="max-w-[1400px] mx-auto pb-20">
+            <div className="max-w-[1400px] mx-auto pb-20 animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
 
                 {/* Summary Insight Bar (SaaS Workspace Style) */}
-                <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-3xl p-6 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden shadow-xl shadow-blue-900/20 border border-indigo-800/50">
+                <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-[28px] p-6 lg:p-8 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden shadow-xl shadow-indigo-900/20 border border-indigo-800/30">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] pointer-events-none" />
                     <div className="absolute bottom-0 left-10 w-48 h-48 bg-blue-400/10 rounded-full blur-[60px] pointer-events-none" />
 
                     <div className="relative z-10 flex-1">
-                        <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 tracking-tight">
+                        <h2 className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 tracking-tight">
                             Sekilas Jurnal Tim
                         </h2>
                         <p className="text-blue-200 text-sm mt-1 font-medium max-w-sm">
@@ -224,11 +224,11 @@ const ManagerJurnal = () => {
                         </p>
                     </div>
 
-                    <div className="relative z-10 flex items-center gap-6 md:gap-12 bg-white/10 backdrop-blur-md rounded-2xl px-8 py-5 border border-white/10">
+                    <div className="relative z-10 flex items-center gap-6 md:gap-12 bg-white/[.07] backdrop-blur-md rounded-[20px] px-8 py-5 border border-white/[.08]">
                         <div className="flex flex-col">
                             <span className="text-blue-200 uppercase tracking-widest text-[10px] font-bold mb-1">Vol. Jurnal</span>
                             <div className="flex items-baseline gap-1.5">
-                                <span className="text-2xl font-extrabold text-white">{totalJournals}</span>
+                                <span className="text-2xl font-black text-white tracking-tight">{totalJournals}</span>
                                 <span className="text-xs text-blue-200 font-semibold">minggu ini</span>
                             </div>
                         </div>
@@ -238,7 +238,7 @@ const ManagerJurnal = () => {
                         <div className="flex flex-col">
                             <span className="text-blue-200 uppercase tracking-widest text-[10px] font-bold mb-1">Tingkat Persetujuan</span>
                             <div className="flex items-baseline gap-1.5">
-                                <span className={cn("text-2xl font-extrabold", approvalRate >= 80 ? "text-emerald-400" : "text-amber-400")}>
+                                <span className={cn("text-2xl font-black tracking-tight", approvalRate >= 80 ? "text-emerald-400" : "text-amber-400")}>
                                     {approvalRate}%
                                 </span>
                                 <span className="text-xs text-blue-200 font-semibold">disetujui</span>
@@ -250,7 +250,7 @@ const ManagerJurnal = () => {
                         <div className="flex flex-col">
                             <span className="text-blue-200 uppercase tracking-widest text-[10px] font-bold mb-1">Produktivitas</span>
                             <div className="flex items-baseline gap-1.5">
-                                <span className="text-2xl font-extrabold text-blue-300">~{avgPerUser}</span>
+                                <span className="text-2xl font-black text-sky-300 tracking-tight">~{avgPerUser}</span>
                                 <span className="text-xs text-blue-200 font-semibold">/karyawan</span>
                             </div>
                         </div>
@@ -270,9 +270,9 @@ const ManagerJurnal = () => {
 
                 {/* ACTION BAR */}
                 {selectedIds.length > 0 && (
-                    <div className="flex items-center gap-3 mb-6 p-4 bg-blue-50/50 rounded-[20px] border border-blue-100 animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm backdrop-blur-sm">
+                    <div className="flex items-center gap-3 mb-6 p-4 bg-indigo-50/50 dark:bg-indigo-500/10 rounded-[20px] border border-indigo-100 dark:border-indigo-800/30 animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm backdrop-blur-sm">
                         <div className="flex items-center gap-2">
-                            <Badge className="bg-blue-600 text-white hover:bg-blue-600 h-8 px-4 text-xs font-bold rounded-xl shadow-sm">
+                            <Badge className="bg-indigo-600 text-white hover:bg-indigo-600 h-8 px-4 text-xs font-black rounded-xl shadow-sm">
                                 {selectedIds.length} jurnal dipilih
                             </Badge>
                         </div>
@@ -299,7 +299,7 @@ const ManagerJurnal = () => {
 
                 {/* SLIDE-IN DETAIL PANEL (PREMIUM MODE) */}
                 <Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-                    <SheetContent className="w-full sm:max-w-[800px] p-0 border-l border-slate-200/60 shadow-2xl">
+                    <SheetContent className="w-full sm:max-w-[800px] p-0 border-l border-slate-200/50 dark:border-slate-800/50 shadow-2xl">
                         <div className="h-full overflow-y-auto bg-slate-50/50 dark:bg-slate-800/50">
                             {viewJournal && (
                                 <JournalReviewDetail

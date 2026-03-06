@@ -5,7 +5,7 @@ export interface DailyAttendanceStatus {
     date: string; // YYYY-MM-DD
     formattedDate: string;
     dayName: string;
-    status: 'present' | 'late' | 'early_leave' | 'absent' | 'leave' | 'permission' | 'alpha' | 'holiday' | 'future' | 'weekend';
+    status: 'present' | 'late' | 'early_leave' | 'absent' | 'leave' | 'permission' | 'sick' | 'alpha' | 'holiday' | 'future' | 'weekend';
     clockIn: string | null;
     clockOut: string | null;
     recordId: string | null;
@@ -76,8 +76,12 @@ export const generateAttendancePeriod = (
         }
 
         // 1. Find existing attendance record
-        // Normalize DB timestamp to Jakarta Date String (YYYY-MM-DD)
+        // First try matching via the 'date' column (most reliable for manual entries)
+        // Then fallback to normalizing clock_in timestamp to Jakarta timezone
         const record = records.find(r => {
+            // Priority 1: Match by explicit 'date' field (set by manual entries)
+            if (r.date && r.date === dateStr) return true;
+            // Priority 2: Match by clock_in timezone conversion
             if (!r.clock_in) return false;
             const recordDateJakarta = new Date(r.clock_in).toLocaleDateString('en-CA', {
                 timeZone: 'Asia/Jakarta'

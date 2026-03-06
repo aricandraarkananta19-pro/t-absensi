@@ -160,28 +160,8 @@ const PWAUpdatePrompt = () => {
         );
     }
 
-    // Install PWA Prompt
-    if (deferredPrompt) {
-        return (
-            <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] animate-slide-up w-[calc(100%-2rem)] max-w-[360px]">
-                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-blue-100 overflow-hidden text-center p-5 relative">
-                    <button onClick={() => setDeferredPrompt(null)} className="absolute top-3 right-3 p-1 hover:bg-gray-100 rounded-full">
-                        <X className="h-4 w-4 text-gray-400" />
-                    </button>
-                    <div className="w-12 h-12 bg-blue-50 rounded-2xl mx-auto flex items-center justify-center mb-3">
-                        <img src="/favicon.png" alt="T-Absensi" className="w-8 h-8 object-contain" />
-                    </div>
-                    <h4 className="font-bold text-gray-900 text-[15px]">Install T-Absensi App</h4>
-                    <p className="text-sm text-gray-500 mt-1 mb-4 leading-relaxed">
-                        Tambahkan aplikasi ke layar utama untuk akses lebih cepat dan tanpa address bar chrome.
-                    </p>
-                    <Button onClick={handleInstallApp} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl h-10 shadow-sm shadow-blue-600/20">
-                        Install Sekarang
-                    </Button>
-                </div>
-            </div>
-        );
-    }
+    // Install PWA Prompt has been removed as per user request
+    // This is now handled elegantly by other parts of the application or hidden
 
     return null;
 };

@@ -12,6 +12,8 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import MobileNavigation from "@/components/MobileNavigation";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/ThemeContext";
+import talentaLogo from "@/assets/logo.png";
+import { NotificationPanel } from "@/components/notifications/NotificationPanel";
 
 interface KaryawanWorkspaceLayoutProps {
     children: React.ReactNode;
@@ -50,13 +52,18 @@ export default function KaryawanWorkspaceLayout({ children, notifCount = 0 }: Ka
                 isDark ? "bg-slate-900/80 border-slate-700/50" : "bg-white/80 border-slate-200/50")}>
                 <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
-                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shadow-md hover:scale-105 transition-transform",
-                                isDark ? "bg-indigo-600" : "bg-slate-900")}>
-                                <Zap className="w-4 h-4 text-white fill-white" />
+                        <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => navigate('/dashboard')}>
+                            <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shadow-md bg-gradient-to-br from-indigo-600 via-blue-600 to-blue-700 border border-blue-400/30 relative overflow-hidden transition-all duration-300 group-hover:shadow-lg")}>
+                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-in-out" />
+                                <img src={talentaLogo} alt="Logo" className="h-5 w-5 object-contain brightness-0 invert drop-shadow-md relative z-10 transition-transform duration-500 group-hover:scale-110" />
                             </div>
-                            <span className={cn("font-bold text-sm tracking-tight hidden sm:block",
-                                isDark ? "text-white" : "text-slate-900")}>T-Absensi</span>
+                            <div className="hidden sm:block">
+                                <span className={cn("font-extrabold text-[15px] tracking-tight leading-none block",
+                                    isDark ? "text-white" : "text-slate-900")}>
+                                    Talenta<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 ml-0.5">Traincom</span>
+                                </span>
+                                <span className="text-[9px] font-bold tracking-[0.15em] uppercase text-slate-500 block mt-0.5">Indonesia</span>
+                            </div>
                         </div>
 
                         <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
@@ -90,19 +97,8 @@ export default function KaryawanWorkspaceLayout({ children, notifCount = 0 }: Ka
                             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                         </button>
 
-                        {/* Bell with Notification Count */}
-                        <button className={cn("relative p-2 rounded-full transition-colors",
-                            isDark ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-50 text-slate-400")}>
-                            <Bell className="w-4 h-4" />
-                            {notifCount > 0 ? (
-                                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 px-1">
-                                    {notifCount > 9 ? '9+' : notifCount}
-                                </span>
-                            ) : (
-                                <span className={cn("absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2",
-                                    isDark ? "border-slate-900" : "border-white")}></span>
-                            )}
-                        </button>
+                        {/* Notification Panel */}
+                        <NotificationPanel role="karyawan" isDark={isDark} />
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

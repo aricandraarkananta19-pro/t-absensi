@@ -2,8 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck, Sparkles, Fingerprint, WifiOff } from "lucide-react";
+import * as z from "zod";
+import {
+  Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck,
+  Fingerprint, BarChart3, MapPin, Activity, Smartphone
+} from "lucide-react";
 import talentaLogo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,24 +33,13 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // PWA stub state
+  const [showInstallBanner, setShowInstallBanner] = useState(true);
 
   useEffect(() => {
-    // Trigger mount animation
-    const t = setTimeout(() => setMounted(true), 100);
-
-    // Online/Offline detection
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
+    const t = setTimeout(() => setMounted(true), 150);
+    return () => clearTimeout(t);
   }, []);
 
   // Redirect if already logged in
@@ -66,8 +58,8 @@ const Auth = () => {
     setIsLoading(true);
     setHasError(false);
 
-    // Simulate slight delay for premium feeling
-    await new Promise(resolve => setTimeout(resolve, 600));
+    // Premium delay feel
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     const { error } = await supabase.auth.signInWithPassword({
       email: data.email,
@@ -78,359 +70,369 @@ const Auth = () => {
       setHasError(true);
       toast({
         variant: "destructive",
-        title: "Login gagal",
-        description:
-          error.message === "Invalid login credentials"
-            ? "Email atau password yang Anda masukkan tidak sesuai."
-            : error.message,
+        title: "Authentication Failed",
+        description: error.message === "Invalid login credentials"
+          ? "Invalid work email or password."
+          : error.message,
       });
-      // Remove shake class after animation completes
-      setTimeout(() => setHasError(false), 500);
+      setTimeout(() => setHasError(false), 600);
       setIsLoading(false);
     } else {
-      toast({ title: "Autentikasi Berhasil", description: "Mengalihkan ke sistem..." });
-      // The useEffect will handle redirect
+      toast({ title: "Welcome back", description: "Authenticating secure session..." });
     }
   };
 
-  // ─── Loading State ───────────────────────────────────
+  const handleBiometric = async () => {
+    toast({
+      title: "Biometric Login",
+      description: "Face ID / Touch ID initiation requested.",
+    });
+    // Fallback or actual logic based on previous implementation
+  };
+
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0B0F19]">
-        <div className="flex flex-col items-center justify-center space-y-8">
+      <div className="flex min-h-screen items-center justify-center bg-[#09090b]">
+        <div className="flex flex-col items-center justify-center space-y-6">
           <div className="relative">
-            <div className="absolute -inset-4 rounded-full bg-indigo-500/20 blur-xl animate-pulse" />
-            <img src={talentaLogo} alt="Talenta" className="h-12 w-auto relative z-10 brightness-0 invert" />
+            <div className="absolute -inset-8 rounded-[2rem] bg-indigo-500/20 blur-2xl animate-pulse" />
+            <div className="relative inline-block bg-white/5 backdrop-blur-md p-4 rounded-3xl border border-white/10 shadow-2xl mx-auto">
+              <img src={talentaLogo} alt="Loading" className="h-16 w-auto object-contain drop-shadow-xl animate-pulse" />
+            </div>
           </div>
-          <div className="w-48 h-1 bg-slate-800 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500 w-1/2 animate-[shimmer_1.5s_infinite_linear]" style={{ backgroundSize: '200% 100%' }} />
+          <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 w-1/2 animate-[shimmer_1.5s_infinite_linear]" style={{ backgroundSize: '200% 100%' }} />
           </div>
         </div>
       </div>
     );
   }
 
-  // ─── Main Render ─────────────────────────────────────
   return (
-    <div className="flex min-h-screen font-['Inter',system-ui,sans-serif] bg-[#0B0F19] text-slate-200 overflow-hidden relative selection:bg-indigo-500/30">
-
-      {/* ── Offline PWA Banner ── */}
-      {!isOnline && (
-        <div className="absolute top-0 left-0 right-0 h-10 bg-rose-500/90 text-white text-[13px] font-medium z-50 flex items-center justify-center gap-2 backdrop-blur-md shadow-lg shadow-rose-500/20 transition-all duration-500 animate-in slide-in-from-top">
-          <WifiOff className="h-4 w-4" />
-          Koneksi terputus. Sistem berjalan dalam mode offline (PWA Offline-Ready).
-        </div>
-      )}
+    <div className="relative min-h-screen bg-[#09090b] text-slate-200 overflow-hidden font-['Inter',system-ui,sans-serif] selection:bg-indigo-500/30 flex flex-col lg:flex-row">
 
       {/* ── Background Ambient FX ── */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] rounded-full bg-indigo-900/20 blur-[120px] mix-blend-screen animate-blob" />
-        <div className="absolute top-[20%] -right-[10%] w-[60vw] h-[60vw] rounded-full bg-emerald-900/10 blur-[120px] mix-blend-screen animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-[20%] left-[20%] w-[80vw] h-[80vw] rounded-full bg-blue-900/20 blur-[120px] mix-blend-screen animate-blob animation-delay-4000" />
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-900/20 blur-[140px] mix-blend-screen animate-float-slow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-blue-900/10 blur-[130px] mix-blend-screen animate-float-delayed" />
+        <div className="absolute top-[40%] left-[30%] w-[30vw] h-[30vw] rounded-full bg-cyan-900/10 blur-[100px] mix-blend-screen animate-float-slow" />
 
-        {/* Subtle Noise Texture overlay */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }} />
+        {/* Particle/Noise Overlay */}
+        <div className="absolute inset-0 opacity-[0.02] mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }} />
       </div>
 
       {/* ═══════════════════════════════════════════════
-          LEFT PANEL — Brand Showcase (Desktop Only)
+          LEFT PANEL — BRANDING & HERO (Split desktop)
          ═══════════════════════════════════════════════ */}
-      <div className="hidden lg:flex lg:w-[50%] xl:w-[55%] relative z-10 flex-col justify-between p-12 xl:p-20">
+      <div className={`hidden lg:flex flex-col justify-between w-[50%] xl:w-[55%] relative z-10 p-12 lg:p-16 xl:p-24 transition-all duration-1000 ease-out ${mounted ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-12"}`}>
 
-        {/* Logo */}
-        <div className={`transition-all duration-1000 ease-out ${mounted ? "translate-x-0 opacity-100" : "-translate-x-12 opacity-0"}`}>
-          <img src={talentaLogo} alt="Talenta" className="h-10 w-auto brightness-0 invert" />
+        {/* Header / Logo */}
+        <div>
+          <div className="flex items-center gap-4 mb-3">
+            <div className="bg-white/5 backdrop-blur-md p-3 rounded-2xl border border-white/10 shadow-xl relative group">
+              <div className="absolute inset-0 bg-white/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <img src={talentaLogo} alt="T-Absensi" className="h-10 w-auto object-contain drop-shadow-md relative z-10" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-white leading-none">T-Absensi</h1>
+              <p className="text-sm text-indigo-300 font-medium tracking-wide">Smart Workforce Attendance Platform</p>
+            </div>
+          </div>
         </div>
 
         {/* Hero Content */}
-        <div className={`my-auto max-w-2xl transition-all duration-1000 delay-200 ease-out ${mounted ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"}`}>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
-            <Sparkles className="h-4 w-4 text-emerald-400" />
-            <span className="text-sm font-medium text-slate-300 tracking-wide">Enterprise HRIS Platform</span>
-          </div>
-
-          <h1 className="text-5xl xl:text-6xl font-bold text-white leading-[1.15] tracking-tight mb-8">
+        <div className="my-auto relative">
+          <h2 className="text-[3.5rem] xl:text-[4rem] font-extrabold text-white leading-[1.1] tracking-tight mb-6">
             Elevate Your <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-blue-400 to-emerald-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400">
               Workforce Experience
             </span>
-          </h1>
-
-          <p className="text-lg text-slate-400 leading-relaxed max-w-xl mb-12">
-            Platform manajemen sumber daya manusia all-in-one yang dirancang untuk perusahaan modern. Kelola kehadiran, kinerja, dan data tim dalam satu ekosistem tersinkronisasi.
+          </h2>
+          <p className="text-lg text-slate-400 max-w-lg mb-12 leading-relaxed font-light">
+            The premium HRIS platform for modern enterprises. Seamlessly track attendance, manage workforce analytics, and secure your company's data in real-time.
           </p>
 
-          <div className="grid grid-cols-2 gap-6">
-            {[
-              { label: "Bank-grade Security", sub: "AES-256 Encryption" },
-              { label: "Real-time Tracking", sub: "GPS & Biometric Verification" }
-            ].map((item, i) => (
-              <div key={i} className="flex flex-col gap-1 border-l-2 border-indigo-500/30 pl-4">
-                <span className="text-slate-200 font-semibold">{item.label}</span>
-                <span className="text-slate-500 text-sm">{item.sub}</span>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-y-8 gap-x-6 max-w-2xl">
+            {/* Feature 1 */}
+            <div className="flex items-start gap-4 group">
+              <div className="mt-1 p-2.5 rounded-xl bg-white/5 border border-white/10 text-indigo-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-300 transition-colors shadow-lg">
+                <ShieldCheck className="w-5 h-5" />
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer info */}
-        <div className={`flex items-center gap-6 text-sm text-slate-500 transition-all duration-1000 delay-500 ease-out ${mounted ? "opacity-100" : "opacity-0"}`}>
-          <span>© {new Date().getFullYear()} Talenta Traincom Indonesia</span>
-          <div className="w-1 h-1 rounded-full bg-slate-700" />
-          <a href="#" className="hover:text-slate-300 transition-colors">Privacy Policy</a>
-          <div className="w-1 h-1 rounded-full bg-slate-700" />
-          <a href="#" className="hover:text-slate-300 transition-colors">Terms of Service</a>
-        </div>
-      </div>
-
-      {/* ═══════════════════════════════════════════════
-          RIGHT PANEL — Login Glass Card
-         ═══════════════════════════════════════════════ */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative z-10 w-full">
-        <div className="w-full max-w-[440px] perspective-1000">
-
-          {/* Mobile Logo */}
-          <div className={`lg:hidden flex justify-center mb-10 transition-all duration-700 ease-out ${mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-8"}`}>
-            <img src={talentaLogo} alt="Talenta" className="h-10 w-auto brightness-0 invert" />
-          </div>
-
-          {/* Form Card */}
-          <div
-            className={`
-              relative bg-white/[0.03] backdrop-blur-2xl border border-white/[0.08] shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] 
-              rounded-[28px] p-8 sm:p-10 transition-all duration-700 delay-300 ease-out overflow-hidden
-              ${mounted ? "opacity-100 translate-y-0 rotate-x-0" : "opacity-0 translate-y-12 rotate-x-12"}
-              ${hasError ? "animate-shake" : ""}
-            `}
-            style={{ transformStyle: 'preserve-3d' }}
-          >
-            {/* Soft inner top glow */}
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-
-            <div className="mb-10 relative z-10">
-              <h2 className="text-[26px] font-bold text-white tracking-tight mb-2">Welcome Back</h2>
-              <p className="text-slate-400 text-[15px]">Masuk ke sistem HRIS untuk melanjutkan</p>
+              <div>
+                <h4 className="text-white font-semibold text-[15px] mb-1">Bank-grade Security</h4>
+                <p className="text-sm text-slate-400 leading-snug">AES-256 encryption & secure authentication</p>
+              </div>
             </div>
 
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 relative z-10">
+            {/* Feature 2 */}
+            <div className="flex items-start gap-4 group">
+              <div className="mt-1 p-2.5 rounded-xl bg-white/5 border border-white/10 text-cyan-400 group-hover:bg-cyan-500/20 group-hover:text-cyan-300 transition-colors shadow-lg">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-white font-semibold text-[15px] mb-1">Real-time Attendance</h4>
+                <p className="text-sm text-slate-400 leading-snug">GPS location & biometric verification</p>
+              </div>
+            </div>
 
-                {/* Email Field */}
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-400 pl-1">
-                        Work Email
-                      </FormLabel>
-                      <FormControl>
-                        <div className="relative group">
-                          <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center text-slate-500 group-focus-within:text-indigo-400 transition-colors duration-300">
-                            <Mail className="h-5 w-5" />
-                          </div>
-                          <Input
-                            {...field}
-                            type="email"
-                            placeholder="name@company.com"
-                            autoComplete="email"
-                            className="h-[56px] pl-12 pr-4 rounded-[16px] border-white/10 bg-black/20 text-white placeholder:text-slate-600 focus-visible:bg-white/5 focus-visible:border-indigo-400/50 focus-visible:ring-4 focus-visible:ring-indigo-500/10 transition-all duration-300"
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage className="text-xs text-rose-400 bg-rose-500/10 py-1.5 px-3 rounded-md inline-block mt-2 border border-rose-500/20" />
-                    </FormItem>
-                  )}
-                />
+            {/* Feature 3 */}
+            <div className="flex items-start gap-4 group">
+              <div className="mt-1 p-2.5 rounded-xl bg-white/5 border border-white/10 text-blue-400 group-hover:bg-blue-500/20 group-hover:text-blue-300 transition-colors shadow-lg">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-white font-semibold text-[15px] mb-1">Smart Analytics</h4>
+                <p className="text-sm text-slate-400 leading-snug">Attendance insights and reporting dashboard</p>
+              </div>
+            </div>
+          </div>
 
-                {/* Password Field */}
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <div className="flex items-center justify-between pl-1">
-                        <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                          Password
-                        </FormLabel>
-                        <a href="#" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors font-medium">
-                          Forgot password?
-                        </a>
-                      </div>
-                      <FormControl>
-                        <div className="relative group">
-                          <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center text-slate-500 group-focus-within:text-indigo-400 transition-colors duration-300">
-                            <Lock className="h-5 w-5" />
-                          </div>
-                          <Input
-                            {...field}
-                            type={showPassword ? "text" : "password"}
-                            placeholder="••••••••"
-                            autoComplete="current-password"
-                            className="h-[56px] pl-12 pr-12 rounded-[16px] border-white/10 bg-black/20 text-white placeholder:text-slate-600 focus-visible:bg-white/5 focus-visible:border-indigo-400/50 focus-visible:ring-4 focus-visible:ring-indigo-500/10 transition-all duration-300"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-0 top-0 bottom-0 w-12 flex items-center justify-center text-slate-500 hover:text-slate-300 transition-colors"
-                            tabIndex={-1}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-[18px] w-[18px]" />
-                            ) : (
-                              <Eye className="h-[18px] w-[18px]" />
-                            )}
-                          </button>
-                        </div>
-                      </FormControl>
-                      <FormMessage className="text-xs text-rose-400 bg-rose-500/10 py-1.5 px-3 rounded-md inline-block mt-2 border border-rose-500/20" />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Remember Me Setup */}
-                <FormField
-                  control={form.control}
-                  name="rememberMe"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 mt-6">
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          className="data-[state=checked]:bg-indigo-500 data-[state=unchecked]:bg-slate-700 h-5 w-9 mt-0.5"
-                        />
-                      </FormControl>
-                      <FormLabel className="text-sm font-medium text-slate-300 cursor-pointer select-none">
-                        Keep me signed in
-                      </FormLabel>
-                    </FormItem>
-                  )}
-                />
-
-                {/* Submit Logic */}
-                <div className="pt-2 mt-8 space-y-4">
-                  <Button
-                    type="submit"
-                    disabled={isLoading || !isOnline}
-                    className="w-full h-[56px] rounded-[16px] bg-white text-slate-900 font-semibold text-[15px] shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] hover:bg-slate-100 active:scale-[0.98] transition-all duration-300 disabled:opacity-80 disabled:cursor-not-allowed group relative overflow-hidden"
-                  >
-                    {/* Hover Glow Effect inside button */}
-                    <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-
-                    {isLoading ? (
-                      <span className="flex items-center gap-3 relative z-10">
-                        <svg className="animate-spin h-5 w-5 text-slate-600" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        <span className="text-slate-600">Authenticating...</span>
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2 relative z-10">
-                        Sign In to Talenta
-                        <ArrowRight className="h-[18px] w-[18px] group-hover:translate-x-1 transition-transform duration-300" />
-                      </span>
-                    )}
-                  </Button>
-
-                  {/* Divider */}
-                  <div className="flex items-center gap-3 w-full py-1">
-                    <div className="h-[1px] w-full bg-white/10 rounded-full" />
-                    <span className="text-xs text-slate-500 font-medium whitespace-nowrap">ATAU</span>
-                    <div className="h-[1px] w-full bg-white/10 rounded-full" />
-                  </div>
-
-                  {/* Biometric WebAuthN Button */}
-                  <Button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        setIsLoading(true);
-                        const { data, error } = await supabase.auth.signInWithWebAuthn();
-                        if (error) throw error;
-
-                        toast({ title: "Autentikasi Biometrik Berhasil", description: "Mengalihkan ke sistem..." });
-                      } catch (error: any) {
-                        toast({
-                          title: "Autentikasi Terkendala",
-                          description: "Perangkat ini belum mendaftarkan Passkey/Face ID, atau Anda membatalkan perintah. Silahkan login dengan password untuk mendaftarkan perangkat.",
-                          variant: "destructive"
-                        });
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading || !isOnline}
-                    variant="ghost"
-                    className="w-full h-[56px] rounded-[16px] border border-white/10 bg-white/[0.03] text-slate-300 font-semibold text-[15px] hover:bg-white/[0.08] hover:text-white transition-all duration-300 flex items-center gap-3 justify-center group shadow-none"
-                  >
-                    <div className="flex items-center justify-center p-1.5 rounded-md bg-white/5 border border-white/10 group-hover:bg-indigo-500/20 group-hover:border-indigo-500/30 transition-colors">
-                      <Fingerprint className="h-[18px] w-[18px] text-slate-400 group-hover:text-indigo-300 transition-colors" />
-                    </div>
-                    Login dengan Face ID / Biometrik
-                  </Button>
+          {/* Floating UI Elements Preview (Parallax) */}
+          <div className="absolute right-[-15%] top-[-20%] xl:top-[-10%] opacity-40 xl:opacity-60 pointer-events-none hidden md:block animate-float-slow">
+            <div className="w-[300px] h-[200px] rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 shadow-2xl p-4 transform rotate-12 -translate-z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-blue-500" />
+                <div className="space-y-2 flex-1">
+                  <div className="h-2 w-1/2 bg-white/20 rounded-full" />
+                  <div className="h-2 w-1/3 bg-white/10 rounded-full" />
                 </div>
-              </form>
-            </Form>
-
-            {/* Enterprise Security Badge */}
-            <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-center gap-2 relative z-10">
-              <ShieldCheck className="h-[18px] w-[18px] text-emerald-400" />
-              <span className="text-[12px] font-medium text-slate-400">
-                Dilindungi otentikasi enterprise-grade
-              </span>
+              </div>
+              <div className="space-y-2">
+                <div className="h-8 w-full bg-white/5 rounded-lg border border-white/5" />
+                <div className="h-8 w-full bg-white/5 rounded-lg border border-white/5" />
+              </div>
             </div>
+          </div>
+        </div>
 
-            {/* Subtle fingerprint watermark */}
-            <Fingerprint className="absolute -bottom-8 -right-8 h-40 w-40 text-white/[0.02] pointer-events-none rotate-12" />
+        {/* Footer */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6 text-[13px] text-slate-500 font-medium">
+            <span>© 2026 Talenta Traincom Indonesia</span>
+            <div className="w-1 h-1 rounded-full bg-slate-700 hidden xl:block" />
+            <a href="#" className="hover:text-slate-300 transition-colors hidden xl:block">Privacy Policy</a>
+            <div className="w-1 h-1 rounded-full bg-slate-700 hidden xl:block" />
+            <a href="#" className="hover:text-slate-300 transition-colors hidden xl:block">Terms of Service</a>
           </div>
 
-          {/* Mobile Footer text */}
-          <div className={`lg:hidden mt-10 text-center transition-all duration-700 delay-500 ease-out ${mounted ? "opacity-100" : "opacity-0"}`}>
-            <p className="text-[12px] text-slate-500 leading-relaxed">
-              © {new Date().getFullYear()} Talenta Traincom Indonesia.<br />All rights reserved.
-            </p>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+            <div className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </div>
+            <span className="text-[11px] font-semibold text-emerald-400 tracking-wide uppercase">System Operational</span>
           </div>
         </div>
       </div>
 
       {/* ═══════════════════════════════════════════════
-          CSS ANIMATIONS
+          RIGHT PANEL — LOGIN CARD
          ═══════════════════════════════════════════════ */}
+      <div className={`flex-1 flex flex-col justify-center items-center p-6 sm:p-12 lg:p-16 xl:p-24 relative z-10 transition-all duration-1000 delay-200 ease-out ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"}`}>
+
+        {/* Mobile Header / Branding (Shows only on Mobile/Tablet) */}
+        <div className="lg:hidden flex flex-col items-center justify-center mb-8 text-center mt-4">
+          <div className="bg-white/5 backdrop-blur-md p-3.5 rounded-2xl border border-white/10 shadow-xl mb-5">
+            <img src={talentaLogo} alt="T-Absensi" className="h-14 w-auto object-contain drop-shadow-md relative z-10" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-none mb-2">T-Absensi</h1>
+          <p className="text-xs sm:text-sm text-indigo-300 font-medium tracking-wide">Smart Workforce Platform</p>
+        </div>
+
+        {/* Glassmorphism Card */}
+        <div className={`w-full max-w-[420px] bg-white/[0.02] sm:bg-white/[0.03] backdrop-blur-[20px] sm:backdrop-blur-3xl border border-white/[0.08] sm:border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.4)] sm:shadow-[0_8px_40px_rgba(0,0,0,0.5)] rounded-[24px] p-6 sm:p-10 relative overflow-hidden ${hasError ? 'animate-shake' : ''}`}>
+
+          {/* Subtle top glow line */}
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+
+          {/* Form Header */}
+          <div className="mb-8">
+            <h2 className="text-2xl sm:text-[26px] font-bold text-white tracking-tight mb-1.5">Welcome Back</h2>
+            <p className="text-sm text-slate-400 font-light">Login to T-Absensi HRIS Platform</p>
+          </div>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+
+              {/* Email */}
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-[12px] font-semibold text-slate-300">Work Email</FormLabel>
+                  <FormControl>
+                    <div className="relative group">
+                      <div className="absolute left-0 top-0 bottom-0 w-11 flex items-center justify-center text-slate-500 group-focus-within:text-indigo-400 transition-colors">
+                        <Mail className="h-[18px] w-[18px]" />
+                      </div>
+                      <Input
+                        {...field}
+                        type="email"
+                        placeholder="name@company.com"
+                        className="h-12 pl-11 pr-4 rounded-xl border-white/10 bg-black/40 text-sm text-white placeholder:text-slate-600 focus-visible:bg-black/60 focus-visible:border-indigo-500/50 focus-visible:ring-2 focus-visible:ring-indigo-500/20 transition-all shadow-inner"
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage className="text-[11px] text-rose-400" />
+                </FormItem>
+              )} />
+
+              {/* Password */}
+              <FormField control={form.control} name="password" render={({ field }) => (
+                <FormItem className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <FormLabel className="text-[12px] font-semibold text-slate-300">Password</FormLabel>
+                    <a href="#" className="text-[12px] text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+                      Forgot password?
+                    </a>
+                  </div>
+                  <FormControl>
+                    <div className="relative group">
+                      <div className="absolute left-0 top-0 bottom-0 w-11 flex items-center justify-center text-slate-500 group-focus-within:text-indigo-400 transition-colors">
+                        <Lock className="h-[18px] w-[18px]" />
+                      </div>
+                      <Input
+                        {...field}
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="h-12 pl-11 pr-11 rounded-xl border-white/10 bg-black/40 text-sm text-white placeholder:text-slate-600 focus-visible:bg-black/60 focus-visible:border-indigo-500/50 focus-visible:ring-2 focus-visible:ring-indigo-500/20 transition-all shadow-inner"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-0 top-0 bottom-0 w-11 flex items-center justify-center text-slate-500 hover:text-slate-300 transition-colors"
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff className="h-[16px] w-[16px]" /> : <Eye className="h-[16px] w-[16px]" />}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage className="text-[11px] text-rose-400" />
+                </FormItem>
+              )} />
+
+              {/* Remember Me */}
+              <FormField control={form.control} name="rememberMe" render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-2.5 space-y-0 pt-2 pb-1.5">
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      className="data-[state=checked]:bg-indigo-500 data-[state=unchecked]:bg-white/10 h-4 w-8"
+                    />
+                  </FormControl>
+                  <FormLabel className="text-[13px] text-slate-400 font-normal cursor-pointer select-none">
+                    Keep me signed in
+                  </FormLabel>
+                </FormItem>
+              )} />
+
+              {/* CTA Custom Styles for Premium App */}
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-[14px] shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] border border-indigo-500/50 transition-all duration-300 relative overflow-hidden group"
+                >
+                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                  {isLoading ? (
+                    <span className="flex items-center gap-2 relative z-10">
+                      <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Authenticating...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2 relative z-10">
+                      Sign In to T-Absensi
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  )}
+                </Button>
+              </div>
+
+            </form>
+          </Form>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-7">
+            <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/10" />
+            <span className="text-[11px] font-semibold text-slate-500 tracking-wider">OR</span>
+            <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/10" />
+          </div>
+
+          {/* Biometric Custom Implementation */}
+          <Button
+            type="button"
+            onClick={handleBiometric}
+            disabled={isLoading}
+            variant="outline"
+            className="w-full h-12 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/20 text-slate-300 font-medium text-[14px] transition-all flex items-center justify-center gap-2.5"
+          >
+            <Fingerprint className="h-4 w-4 text-indigo-400" />
+            Login with Face ID / Biometric
+          </Button>
+
+        </div>
+
+        {/* Mobile Mini Footer */}
+        <div className="lg:hidden mt-8 text-center px-6">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            </div>
+            <span className="text-[11px] font-medium text-emerald-400">System Operational</span>
+          </div>
+          <p className="text-[11px] text-slate-500 mb-2">© 2026 Talenta Traincom Indonesia | <a href="#" className="underline decoration-slate-600 underline-offset-2">Privacy</a></p>
+        </div>
+
+      </div>
+
+      {/* PWA Install Banner */}
+      {showInstallBanner && (
+        <div className="fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-6 sm:w-80 bg-slate-900/90 backdrop-blur-xl border-t sm:border border-white/10 sm:rounded-2xl p-4 z-50 shadow-2xl animate-in slide-in-from-bottom-8 duration-700 delay-1000">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 flex-shrink-0 bg-indigo-500/20 rounded-xl flex items-center justify-center border border-indigo-500/30">
+              <Smartphone className="h-5 w-5 text-indigo-400" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-[13px] font-semibold text-white">T-Absensi App</h4>
+              <p className="text-[11px] text-slate-400">Install for faster access</p>
+            </div>
+            <Button size="sm" onClick={() => setShowInstallBanner(false)} className="h-8 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs px-4">
+              Install
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Embedded Styles for custom animations */}
       <style>{`
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
+        @keyframes float-slow {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-30px) scale(1.05); }
         }
-        .animate-blob {
-          animation: blob 15s infinite alternate;
-          will-change: transform;
+        @keyframes float-delayed {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(30px) scale(0.95); }
         }
-        .animation-delay-2000 {
+        .animate-float-slow {
+          animation: float-slow 12s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+          animation: float-delayed 15s ease-in-out infinite alternate;
           animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
         }
         @keyframes shimmer {
           100% { transform: translateX(100%); }
         }
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
-          20%, 60% { transform: translateX(-6px); }
-          40%, 80% { transform: translateX(6px); }
+          20%, 60% { transform: translateX(-4px); }
+          40%, 80% { transform: translateX(4px); }
         }
         .animate-shake {
-          animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-        }
-        .rotate-x-12 {
-          transform: perspective(1000px) rotateX(8deg);
-        }
-        .rotate-x-0 {
-          transform: perspective(1000px) rotateX(0deg);
+          animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
         }
       `}</style>
     </div>

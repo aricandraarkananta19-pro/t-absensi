@@ -46,11 +46,12 @@ export const MiniSidebar = ({ userInitials, onLogout }: MiniSidebarProps) => {
                 <div className="relative z-10 flex flex-col h-full">
                     {/* Logo */}
                     <div className="p-4 border-b border-slate-800 flex items-center justify-center">
-                        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#0066b3] to-[#00aaff] flex items-center justify-center shadow-lg shadow-blue-500/25">
-                            <img src={logoImage} alt="Logo" className="h-6 w-6 object-contain" />
+                        <div className="h-10 w-10 flex-shrink-0 rounded-xl bg-gradient-to-br from-indigo-500 via-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/25 border border-white/10 relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-in-out" />
+                            <img src={logoImage} alt="Logo" className="h-6 w-6 object-contain brightness-0 invert drop-shadow-md relative z-10 transition-transform duration-500 group-hover:scale-110" />
                         </div>
                         {isExpanded && (
-                            <span className="ml-3 font-bold text-white animate-fade-in">Talenta</span>
+                            <span className="ml-3 font-extrabold text-white animate-fade-in tracking-tight">Talenta<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300 ml-0.5">Traincom</span></span>
                         )}
                     </div>
 
@@ -74,8 +75,8 @@ export const MiniSidebar = ({ userInitials, onLogout }: MiniSidebarProps) => {
                                         key={item.href}
                                         to={item.href}
                                         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all min-h-[44px] ${isActive
-                                                ? "bg-gradient-to-r from-[#0066b3]/20 to-[#7dc242]/10 text-white border border-[#0066b3]/30"
-                                                : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                                            ? "bg-gradient-to-r from-[#0066b3]/20 to-[#7dc242]/10 text-white border border-[#0066b3]/30"
+                                            : "text-slate-400 hover:bg-slate-800 hover:text-white"
                                             } ${isExpanded ? "" : "justify-center"}`}
                                         title={!isExpanded ? item.title : undefined}
                                     >

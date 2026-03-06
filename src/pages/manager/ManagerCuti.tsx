@@ -290,79 +290,46 @@ const ManagerCuti = () => {
         { label: "Kelola Cuti" },
       ]}
     >
-      <div className="space-y-6 pb-20">
+      <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-700">
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 vibe-stat-grid">
-          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+          {[
+            { icon: FileText, label: "Total", value: stats.total, gradient: "from-indigo-500 to-blue-600", shadow: "shadow-indigo-500/20", bg: "border-indigo-200/40 dark:border-indigo-800/30 bg-gradient-to-br from-white to-indigo-50/30 dark:from-slate-900 dark:to-indigo-950/20", color: "text-indigo-600 dark:text-indigo-400" },
+            { icon: Clock, label: "Menunggu", value: stats.pending, gradient: "from-amber-500 to-orange-600", shadow: "shadow-amber-500/20", bg: "border-amber-200/40 dark:border-amber-800/30 bg-gradient-to-br from-white to-amber-50/30 dark:from-slate-900 dark:to-amber-950/20", color: "text-amber-600 dark:text-amber-400" },
+            { icon: Check, label: "Disetujui", value: stats.approved, gradient: "from-emerald-500 to-green-600", shadow: "shadow-emerald-500/20", bg: "border-emerald-200/40 dark:border-emerald-800/30 bg-gradient-to-br from-white to-emerald-50/30 dark:from-slate-900 dark:to-emerald-950/20", color: "text-emerald-600 dark:text-emerald-400" },
+            { icon: X, label: "Ditolak", value: stats.rejected, gradient: "from-rose-500 to-red-600", shadow: "shadow-rose-500/20", bg: "border-rose-200/40 dark:border-rose-800/30 bg-gradient-to-br from-white to-rose-50/30 dark:from-slate-900 dark:to-rose-950/20", color: "text-rose-600 dark:text-rose-400" },
+          ].map((s, i) => (
+            <div key={i} className={`group relative p-5 rounded-[24px] border overflow-hidden hover:shadow-lg transition-all duration-300 ${s.bg}`}>
+              <div className="absolute top-0 right-0 w-24 h-24 bg-black/[.02] rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:scale-125 transition-transform duration-500" />
+              <div className="relative flex items-center gap-3.5">
+                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center shadow-lg ${s.shadow} shrink-0`}>
+                  <s.icon className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">{stats.total}</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total</p>
+                  <p className={`text-2xl font-black tracking-tighter ${s.color}`}>{s.value}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">{s.label}</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-extrabold text-amber-600 tracking-tight">{stats.pending}</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Menunggu</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                  <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-extrabold text-emerald-600 tracking-tight">{stats.approved}</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Disetujui</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
-                  <X className="h-5 w-5 text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-extrabold text-red-600 tracking-tight">{stats.rejected}</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ditolak</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          ))}
         </div>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               placeholder="Cari nama, departemen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 bg-white dark:bg-slate-900/70 backdrop-blur-md border-slate-200/60 rounded-xl shadow-sm font-medium text-slate-800 dark:text-slate-100"
+              className="pl-11 h-12 bg-white/90 dark:bg-slate-900/70 backdrop-blur-md border-slate-200/50 dark:border-slate-700/50 rounded-2xl shadow-sm font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300"
             />
           </div>
           <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-full sm:w-[180px] h-11 border-slate-200/60 rounded-xl bg-white dark:bg-slate-900/70 backdrop-blur-md font-medium">
+            <SelectTrigger className="w-full sm:w-[200px] h-12 border-slate-200/50 dark:border-slate-700/50 rounded-2xl bg-white/90 dark:bg-slate-900/70 backdrop-blur-md font-bold">
               <SelectValue placeholder="Filter status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-xl">
               <SelectItem value="all">Semua Status</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="approved">Disetujui</SelectItem>
@@ -372,177 +339,143 @@ const ManagerCuti = () => {
         </div>
 
         {/* Table */}
-        <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl">
-          <div className="overflow-x-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-blue-600" />
+        <div className="rounded-[28px] border border-slate-200/50 dark:border-slate-800/50 shadow-sm bg-white/90 dark:bg-slate-900/70 backdrop-blur-md overflow-hidden">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-indigo-600" />
+            </div>
+          ) : filteredRequests.length === 0 ? (
+            <div className="py-20 text-center">
+              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800/80 rounded-2xl flex items-center justify-center mx-auto mb-4 rotate-3">
+                <Calendar className="h-8 w-8 text-slate-400" />
               </div>
-            ) : filteredRequests.length === 0 ? (
-              <div className="py-16 text-center">
-                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800/80 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="h-8 w-8 text-slate-400" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200">Tidak Ada Data</h3>
-                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Tidak ada pengajuan cuti dengan kriteria tersebut</p>
-              </div>
-            ) : (
-              <>
-                <div className="hidden md:block overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                        <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Karyawan</TableHead>
-                        <TableHead className="hidden sm:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Jenis Cuti</TableHead>
-                        <TableHead className="hidden md:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Tanggal</TableHead>
-                        <TableHead className="hidden lg:table-cell font-bold text-slate-400 text-xs uppercase tracking-wider">Durasi</TableHead>
-                        <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Status</TableHead>
-                        <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Aksi</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredRequests.map((request) => {
-                        const duration = differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1;
-                        return (
-                          <TableRow key={request.id}>
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center">
-                                  <User className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{request.profile?.full_name || "Tanpa Nama"}</p>
-                                  <p className="text-xs text-slate-400 flex items-center gap-1 font-medium">
-                                    <Building2 className="h-3 w-3" />
-                                    {request.profile?.department || "-"}
-                                  </p>
-                                </div>
+              <h3 className="text-lg font-black text-slate-700 dark:text-slate-200 tracking-tight">Tidak Ada Data</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Tidak ada pengajuan cuti dengan kriteria tersebut</p>
+            </div>
+          ) : (
+            <>
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                      <TableHead className="font-black text-slate-400 text-[10px] uppercase tracking-widest py-4">Karyawan</TableHead>
+                      <TableHead className="hidden sm:table-cell font-black text-slate-400 text-[10px] uppercase tracking-widest">Jenis Cuti</TableHead>
+                      <TableHead className="hidden md:table-cell font-black text-slate-400 text-[10px] uppercase tracking-widest">Tanggal</TableHead>
+                      <TableHead className="hidden lg:table-cell font-black text-slate-400 text-[10px] uppercase tracking-widest">Durasi</TableHead>
+                      <TableHead className="font-black text-slate-400 text-[10px] uppercase tracking-widest">Status</TableHead>
+                      <TableHead className="font-black text-slate-400 text-[10px] uppercase tracking-widest">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRequests.map((request) => {
+                      const duration = differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1;
+                      return (
+                        <TableRow key={request.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-900/50 dark:to-indigo-800/30 flex items-center justify-center shadow-sm">
+                                <User className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                               </div>
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              <Badge variant="outline">{getLeaveTypeLabel(request.leave_type)}</Badge>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              <div className="text-sm">
-                                <p>{format(new Date(request.start_date), "dd MMM yyyy", { locale: id })}</p>
-                                <p className="text-muted-foreground">s/d {format(new Date(request.end_date), "dd MMM yyyy", { locale: id })}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell className="hidden lg:table-cell">
-                              <span className="font-medium">{duration} hari</span>
-                            </TableCell>
-                            <TableCell>{getStatusBadge(request.status)}</TableCell>
-                            <TableCell>
-                              {request.status === "pending" ? (
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="gap-1 text-success hover:text-success hover:bg-success/10"
-                                    onClick={() => handleApprove(request)}
-                                  >
-                                    <Check className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Setujui</span>
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    onClick={() => handleReject(request)}
-                                  >
-                                    <X className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Tolak</span>
-                                  </Button>
-                                </div>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">-</span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Mobile Cards */}
-                <div className="md:hidden flex flex-col p-4 gap-3 bg-slate-50/50 dark:bg-slate-800/50 rounded-b-[20px]">
-                  {filteredRequests.map((request) => {
-                    const duration = differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1;
-                    return (
-                      <div key={request.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm flex flex-col gap-3">
-                        <div className="flex justify-between items-start">
-                          <div className="flex gap-3">
-                            <div className="h-10 w-10 mt-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center shrink-0">
-                              <User className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-1">{request.profile?.full_name || "Tanpa Nama"}</h4>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                <Building2 className="h-3 w-3" />
-                                {request.profile?.department || "Karyawan"}
-                              </p>
-                              <div className="mt-1 flex items-center gap-2">
-                                {getStatusBadge(request.status)}
-                                <Badge variant="outline" className="text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 leading-tight">
-                                  {getLeaveTypeLabel(request.leave_type)}
-                                </Badge>
+                              <div>
+                                <p className="font-bold text-slate-800 dark:text-slate-100 text-sm">{request.profile?.full_name || "Tanpa Nama"}</p>
+                                <p className="text-[11px] text-slate-400 flex items-center gap-1 font-semibold">
+                                  <Building2 className="h-3 w-3" />
+                                  {request.profile?.department || "-"}
+                                </p>
                               </div>
                             </div>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg border border-slate-200/50 dark:border-slate-700/50">{getLeaveTypeLabel(request.leave_type)}</span>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <div className="text-sm">
+                              <p className="font-semibold text-slate-700 dark:text-slate-200">{format(new Date(request.start_date), "dd MMM yyyy", { locale: id })}</p>
+                              <p className="text-xs text-slate-400 font-medium">s/d {format(new Date(request.end_date), "dd MMM yyyy", { locale: id })}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            <span className="font-black text-slate-700 dark:text-slate-200 text-sm">{duration} hari</span>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(request.status)}</TableCell>
+                          <TableCell>
+                            {request.status === "pending" ? (
+                              <div className="flex gap-2">
+                                <Button size="sm" className="gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-sm shadow-emerald-500/20 h-9 font-bold text-xs" onClick={() => handleApprove(request)}>
+                                  <Check className="h-3.5 w-3.5" /> Setujui
+                                </Button>
+                                <Button size="sm" variant="outline" className="gap-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-500/10 border-rose-200 dark:border-rose-800/50 rounded-xl h-9 font-bold text-xs" onClick={() => handleReject(request)}>
+                                  <X className="h-3.5 w-3.5" /> Tolak
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-slate-400 font-medium">—</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden flex flex-col p-4 gap-3 bg-slate-50/50 dark:bg-slate-800/20 rounded-b-[28px]">
+                {filteredRequests.map((request) => {
+                  const duration = differenceInDays(new Date(request.end_date), new Date(request.start_date)) + 1;
+                  return (
+                    <div key={request.id} className="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-100 dark:border-slate-800 p-5 shadow-sm flex flex-col gap-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex gap-3">
+                          <div className="h-10 w-10 mt-0.5 rounded-xl bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-900/50 dark:to-indigo-800/30 flex items-center justify-center shrink-0 shadow-sm">
+                            <User className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                          </div>
+                          <div>
+                            <h4 className="font-black text-slate-900 dark:text-white text-sm tracking-tight">{request.profile?.full_name || "Tanpa Nama"}</h4>
+                            <p className="text-[11px] text-slate-400 font-semibold">{request.profile?.department || "Karyawan"}</p>
                           </div>
                         </div>
-
-                        <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 flex justify-between items-center">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Mulai - Selesai</span>
-                            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
-                              {format(new Date(request.start_date), "dd MMM yy")} - {format(new Date(request.end_date), "dd MMM yy")}
-                            </span>
-                          </div>
-                          <div className="flex flex-col text-right">
-                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Durasi</span>
-                            <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{duration} hari</span>
-                          </div>
-                        </div>
-
-                        {request.status === "pending" && (
-                          <div className="flex gap-2 w-full pt-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1 gap-1 text-success hover:text-success hover:bg-success/10 font-bold tracking-wide"
-                              onClick={() => handleApprove(request)}
-                            >
-                              <Check className="h-4 w-4" /> Setujui
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold tracking-wide"
-                              onClick={() => handleReject(request)}
-                            >
-                              <X className="h-4 w-4" /> Tolak
-                            </Button>
-                          </div>
-                        )}
+                        {getStatusBadge(request.status)}
                       </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        </Card>
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 flex justify-between items-center border border-slate-100/50 dark:border-slate-700/30">
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest block mb-0.5">Periode</span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                            {format(new Date(request.start_date), "dd MMM")} — {format(new Date(request.end_date), "dd MMM yy")}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest block mb-0.5">Durasi</span>
+                          <span className="text-xs font-black text-slate-800 dark:text-slate-100">{duration} hari</span>
+                        </div>
+                      </div>
+                      {request.status === "pending" && (
+                        <div className="flex gap-2 w-full pt-1">
+                          <Button size="sm" className="flex-1 gap-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold" onClick={() => handleApprove(request)}>
+                            <Check className="h-4 w-4" /> Setujui
+                          </Button>
+                          <Button size="sm" variant="outline" className="flex-1 gap-1 text-rose-600 border-rose-200 rounded-xl font-bold" onClick={() => handleReject(request)}>
+                            <X className="h-4 w-4" /> Tolak
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Approve Dialog */}
       <AlertDialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-[24px] border-slate-200/50 dark:border-slate-700/50 shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Setujui Pengajuan Cuti</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-lg font-black tracking-tight">Setujui Pengajuan Cuti</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-slate-500 leading-relaxed">
               Anda akan menyetujui pengajuan cuti dari{" "}
-              <span className="font-semibold">{selectedRequest?.profile?.full_name}</span>
+              <span className="font-bold text-slate-700 dark:text-slate-200">{selectedRequest?.profile?.full_name}</span>
               {" "}untuk tanggal{" "}
               {selectedRequest && format(new Date(selectedRequest.start_date), "dd MMM yyyy", { locale: id })}
               {" "}s/d{" "}
@@ -550,12 +483,8 @@ const ManagerCuti = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isUpdating}>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmApprove}
-              disabled={isUpdating}
-              className="bg-success hover:bg-success/90"
-            >
+            <AlertDialogCancel disabled={isUpdating} className="rounded-xl font-bold">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmApprove} disabled={isUpdating} className="bg-emerald-600 hover:bg-emerald-700 rounded-xl font-bold shadow-sm shadow-emerald-500/20">
               {isUpdating ? "Memproses..." : "Ya, Setujui"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -564,12 +493,12 @@ const ManagerCuti = () => {
 
       {/* Reject Dialog */}
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-[24px] border-slate-200/50 dark:border-slate-700/50 shadow-2xl">
           <DialogHeader>
-            <DialogTitle>Tolak Pengajuan Cuti</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg font-black tracking-tight">Tolak Pengajuan Cuti</DialogTitle>
+            <DialogDescription className="text-sm text-slate-500 leading-relaxed">
               Berikan alasan penolakan untuk{" "}
-              <span className="font-semibold">{selectedRequest?.profile?.full_name}</span>
+              <span className="font-bold text-slate-700 dark:text-slate-200">{selectedRequest?.profile?.full_name}</span>
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -578,17 +507,12 @@ const ManagerCuti = () => {
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
               rows={3}
+              className="rounded-xl border-slate-200/50 dark:border-slate-700/50 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-300"
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)} disabled={isUpdating}>
-              Batal
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmReject}
-              disabled={isUpdating || !rejectionReason.trim()}
-            >
+            <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)} disabled={isUpdating} className="rounded-xl font-bold">Batal</Button>
+            <Button variant="destructive" onClick={confirmReject} disabled={isUpdating || !rejectionReason.trim()} className="rounded-xl font-bold shadow-sm shadow-rose-500/20">
               {isUpdating ? "Memproses..." : "Tolak Cuti"}
             </Button>
           </DialogFooter>

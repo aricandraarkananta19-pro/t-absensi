@@ -7,6 +7,7 @@ import {
   ArrowLeft, FileText, Calendar, Plus, Clock, CheckCircle2,
   XCircle, AlertCircle, Trash2, ChevronRight
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,6 +58,9 @@ const PengajuanCuti = () => {
   const [isFetching, setIsFetching] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [usedLeaveDays, setUsedLeaveDays] = useState(0);
+
+  const maxLeaveDays = settings.maxLeaveDays || 12;
+  const remainingLeave = Math.max(0, maxLeaveDays - usedLeaveDays);
 
   const form = useForm<LeaveFormData>({
     resolver: zodResolver(leaveSchema),
@@ -318,31 +322,62 @@ const PengajuanCuti = () => {
         </Dialog>
       </div>
 
-      {/* Stats Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
-        <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Sisa Cuti</p>
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-4xl font-extrabold text-slate-800 dark:text-slate-100">{Math.max(0, settings.maxLeaveDays - usedLeaveDays)}</h3>
-            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Hari</span>
+      {/* Stats Section with Visual Budget Ring Chart */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        {/* Ring Chart Card */}
+        <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[28px] p-6 shadow-sm border border-slate-200/50 dark:border-slate-800/50 flex flex-col justify-between">
+          <div className="flex items-center justify-between w-full h-full">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Kuota Tahunan</p>
+              <div className="flex items-baseline gap-1.5 font-sans">
+                <h3 className={cn("text-4xl font-black tracking-tighter", remainingLeave <= 3 ? "text-amber-500" : "text-slate-800 dark:text-white")}>{remainingLeave}</h3>
+                <span className="text-xs font-bold text-slate-400">Hari</span>
+              </div>
+              <div className="mt-3 text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg w-fit border border-slate-200/50 dark:border-slate-700/50">
+                {usedLeaveDays} Hari Terpakai
+              </div>
+            </div>
+
+            <div className="relative w-[110px] h-[110px] flex items-center justify-center">
+              <svg className="w-full h-full -rotate-90 drop-shadow-sm" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#F1F5F9" strokeWidth="12" className="dark:stroke-slate-800" />
+                <circle
+                  cx="50" cy="50" r="38" fill="none"
+                  stroke={remainingLeave <= 3 ? "#F59E0B" : "#10B981"}
+                  strokeWidth="12" strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 38}
+                  strokeDashoffset={(2 * Math.PI * 38) - ((Math.min(100, Math.round((usedLeaveDays / maxLeaveDays) * 100)) / 100) * (2 * Math.PI * 38))}
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-base font-black tracking-tight text-slate-800 dark:text-slate-200">{maxLeaveDays > 0 ? 100 - Math.min(100, Math.round((usedLeaveDays / maxLeaveDays) * 100)) : 0}%</span>
+                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Sisa</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
-          <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Disetujui</p>
+
+        {/* Existing Mini Stats */}
+        <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[28px] p-6 shadow-sm border border-slate-200/50 dark:border-slate-800/50 flex flex-col justify-center relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-transform group-hover:scale-110" />
+          <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-3 flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Disetujui</p>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-4xl font-extrabold text-emerald-600">
+            <h3 className="text-5xl font-black text-emerald-600 tracking-tighter">
               {leaveRequests.filter(l => l.status === "approved").length}
             </h3>
-            <span className="text-sm font-semibold text-emerald-600/60">Pengajuan</span>
+            <span className="text-xs font-bold text-emerald-600/60 uppercase tracking-wider">Pengajuan</span>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[24px] p-6 border border-white/40 shadow-sm relative overflow-hidden">
-          <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">Menunggu</p>
+
+        <div className="bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-[28px] p-6 shadow-sm border border-slate-200/50 dark:border-slate-800/50 flex flex-col justify-center relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-transform group-hover:scale-110" />
+          <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Menunggu</p>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-4xl font-extrabold text-amber-600">
+            <h3 className="text-5xl font-black text-amber-500 tracking-tighter">
               {leaveRequests.filter(l => l.status === "pending").length}
             </h3>
-            <span className="text-sm font-semibold text-amber-600/60">Pengajuan</span>
+            <span className="text-xs font-bold text-amber-500/60 uppercase tracking-wider">Pengajuan</span>
           </div>
         </div>
       </div>

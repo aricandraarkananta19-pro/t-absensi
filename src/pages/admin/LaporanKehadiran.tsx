@@ -6,7 +6,7 @@ import {
     Download, BarChart3, RefreshCw, FileSpreadsheet,
     AlertTriangle, CalendarDays, ChevronDown, Home, ChevronRightIcon,
     TrendingUp, UserCheck, UserX, Timer, Filter, LayoutGrid, LogIn, LogOut,
-    Briefcase, MoreHorizontal, Printer
+    Briefcase, MoreHorizontal, Printer, MapPin, Building2, AlertCircle
 } from "lucide-react";
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
@@ -31,7 +32,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { exportToPDF, exportToExcel } from "@/lib/exportUtils";
 import { generateAttendanceExcel } from "@/lib/excelExport";
-import { exportAttendanceExcel, exportAttendanceHRPDF, exportAttendanceManagementPDF, AttendanceReportData, AttendanceReportEmployee } from "@/lib/attendanceExportUtils";
+import { exportAttendanceExcel, exportAttendanceHRPDF, exportAttendanceManagementPDF, exportSingleReceiptPDF, AttendanceReportData, AttendanceReportEmployee } from "@/lib/attendanceExportUtils";
 import { ReportService } from "@/services/reportService";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -184,6 +185,16 @@ const LaporanKehadiran = () => {
     const [exportFormat, setExportFormat] = useState("excel");
     const [exportPeriodVal, setExportPeriodVal] = useState("");
 
+    const [manualModalOpen, setManualModalOpen] = useState(false);
+    const [selectedDateRecord, setSelectedDateRecord] = useState<DailyAttendanceStatus | null>(null);
+    const [manualClockIn, setManualClockIn] = useState("");
+    const [manualClockOut, setManualClockOut] = useState("");
+    const [manualStatus, setManualStatus] = useState("present");
+    const [manualNotes, setManualNotes] = useState("Lupa clock in/out (Admin Update)");
+
+    const [attendanceDetailOpen, setAttendanceDetailOpen] = useState(false);
+    const [attendanceLocationOpen, setAttendanceLocationOpen] = useState(false);
+    const [attendanceDetailData, setAttendanceDetailData] = useState<any>(null);
     // ==========================================
     // DATE RANGE LOGIC (PERSISTENT & AUTO)
     // ==========================================
@@ -348,16 +359,31 @@ const LaporanKehadiran = () => {
             });
 
             // 2. Fetch All Attendance
-            const startStr = format(dateRange.from, 'yyyy-MM-dd');
-            const endStr = format(dateRange.to || dateRange.from, 'yyyy-MM-dd');
+            // We expand the clock_in bounds to make sure we catch everything in the defined period
+            const startOfDayStr = `${format(dateRange.from, 'yyyy-MM-dd')}T00:00:00+07:00`;
+            const endOfDayStr = `${format(dateRange.to || dateRange.from, 'yyyy-MM-dd')}T23:59:59.999+07:00`;
 
+            // Fetch by clock_in range (primary)
             const { data: rangeAtt, error: attendanceError } = await supabase
                 .from("attendance")
                 .select("*")
-                .gte("date", startStr)
-                .lte("date", endStr);
+                .gte("clock_in", startOfDayStr)
+                .lte("clock_in", endOfDayStr);
             if (attendanceError) throw attendanceError;
-            const allAttendance = rangeAtt;
+
+            // Also fetch by 'date' column to catch manually inserted records
+            // whose clock_in timestamps might be slightly outside the range
+            const { data: dateAtt } = await supabase
+                .from("attendance")
+                .select("*")
+                .gte("date", startDate)
+                .lte("date", endDate);
+
+            // Merge both sets, deduping by id
+            const mergedMap = new Map<string, any>();
+            (rangeAtt || []).forEach(r => mergedMap.set(r.id, r));
+            (dateAtt || []).forEach(r => mergedMap.set(r.id, r));
+            const allAttendance = Array.from(mergedMap.values());
 
             // 3. Fetch All Leaves
             const { data: allLeaves, error: leavesError } = await supabase
@@ -478,6 +504,17 @@ const LaporanKehadiran = () => {
         };
     }, []);
 
+    // *** Sync selectedEmployee with latest data from employeeReports ***
+    // After fetchEmployeeReports() updates state, selectedEmployee is a stale snapshot.
+    // This effect finds the matching fresh record and updates it, so the detail view reflects changes.
+    useEffect(() => {
+        if (selectedEmployee && employeeReports.length > 0) {
+            const updated = employeeReports.find(e => e.user_id === selectedEmployee.user_id);
+            if (updated) {
+                setSelectedEmployee(updated);
+            }
+        }
+    }, [employeeReports]);
     const filteredReports = employeeReports.filter((emp) => {
         const matchesSearch = emp.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             emp.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -538,6 +575,120 @@ const LaporanKehadiran = () => {
         const { error } = await supabase.from("leave_requests").update({ status: "rejected", approved_by: user?.id, approved_at: new Date().toISOString(), rejection_reason: rejectionReason }).eq("id", selectedRequest.id);
         if (error) toast({ variant: "destructive", title: "Gagal", description: error.message });
         else { toast({ title: "Berhasil", description: "Pengajuan cuti ditolak" }); setDialogOpen(false); setSelectedRequest(null); setRejectionReason(""); fetchLeaveRequests(); }
+    };
+
+    const handleAction = async (action: 'detail' | 'location' | 'download' | 'manual', record: DailyAttendanceStatus) => {
+        if (action === 'manual') {
+            if (!selectedEmployee) {
+                toast({ variant: "destructive", title: "Gagal", description: "Pilih karyawan terlebih dahulu." });
+                return;
+            }
+            setSelectedDateRecord(record);
+            // Default time handling based on previous value or default shift times.
+            setManualClockIn(record.clockIn ? format(new Date(record.clockIn), 'HH:mm') : "08:00");
+            setManualClockOut(record.clockOut ? format(new Date(record.clockOut), 'HH:mm') : "17:00");
+
+            // Set default status if it was present/late/etc.
+            setManualStatus(["present", "late", "absent", "leave", "permission", "sick", "alpha"].includes(record.status) ? record.status : "present");
+            setManualNotes(record.notes || "Lupa clock in/out (Admin Update)");
+            setManualModalOpen(true);
+        } else {
+            if (!record.recordId) {
+                toast({ variant: "destructive", title: "Data Kosong", description: "Belum ada rekaman di database untuk tanggal ini." });
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from('attendance')
+                .select('*')
+                .eq('id', record.recordId)
+                .single();
+
+            if (error || !data) {
+                toast({ variant: "destructive", title: "Gagal Mengambil Data", description: "Terjadi kesalahan saat menarik detail absen." });
+                return;
+            }
+
+            if (action === 'location') {
+                setAttendanceDetailData(data);
+                setAttendanceLocationOpen(true);
+            } else if (action === 'download') {
+                toast({ title: "Mempersiapkan Unduhan", description: "Membuat dokumen PDF..." });
+                exportSingleReceiptPDF(data, selectedEmployee?.full_name || "Karyawan", record.formattedDate);
+            } else if (action === 'detail') {
+                setAttendanceDetailData({ ...data, _employeeInfo: selectedEmployee, _recordInfo: record });
+                setAttendanceDetailOpen(true);
+            }
+        }
+    };
+
+    const submitManualAttendance = async () => {
+        if (!selectedEmployee || !selectedDateRecord) return;
+
+        try {
+            // Need to merge time with selected date
+            const dateStr = selectedDateRecord.date;
+            const clockInObj = parse(`${dateStr} ${manualClockIn}`, 'yyyy-MM-dd HH:mm', new Date());
+            const clockOutObj = manualClockOut ? parse(`${dateStr} ${manualClockOut}`, 'yyyy-MM-dd HH:mm', new Date()) : null;
+
+            // 1. Check if record already exists - search BOTH by clock_in range AND by date column
+            const startOfDayCheck = `${dateStr}T00:00:00+07:00`;
+            const endOfDayCheck = `${dateStr}T23:59:59.999+07:00`;
+
+            // Strategy A: Find by clock_in timestamp range
+            const { data: byClockIn } = await supabase
+                .from('attendance')
+                .select('id')
+                .eq('user_id', selectedEmployee.user_id)
+                .gte('clock_in', startOfDayCheck)
+                .lte('clock_in', endOfDayCheck)
+                .maybeSingle();
+
+            // Strategy B: Find by date column (for manually inserted records)
+            const { data: byDate } = await supabase
+                .from('attendance')
+                .select('id')
+                .eq('user_id', selectedEmployee.user_id)
+                .eq('date', dateStr)
+                .maybeSingle();
+
+            const existingId = byClockIn?.id || byDate?.id;
+
+            const payload = {
+                clock_in: clockInObj.toISOString(),
+                clock_out: clockOutObj ? clockOutObj.toISOString() : null,
+                status: manualStatus,
+                notes: manualNotes,
+                date: dateStr,
+                updated_at: new Date().toISOString()
+            };
+
+            if (existingId) {
+                // Update existing record
+                const { error } = await supabase
+                    .from('attendance')
+                    .update(payload)
+                    .eq('id', existingId);
+                if (error) throw error;
+            } else {
+                // Insert new record
+                const { error } = await supabase
+                    .from('attendance')
+                    .insert({
+                        user_id: selectedEmployee.user_id,
+                        ...payload
+                    });
+                if (error) throw error;
+            }
+
+            toast({ title: "Berhasil", description: "Data absensi manual berhasil disimpan." });
+            setManualModalOpen(false);
+
+            // Refresh data and WAIT for it to complete before continuing
+            await fetchEmployeeReports();
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Gagal", description: error.message || "Terjadi kesalahan saat menyimpan data absensi." });
+        }
     };
 
     const [isExportingExcel, setIsExportingExcel] = useState(false);
@@ -1250,6 +1401,7 @@ const LaporanKehadiran = () => {
                                 <AttendanceHistoryTable
                                     data={selectedEmployee.details}
                                     isLoading={isLoading}
+                                    onAction={handleAction}
                                 />
                             ) : (
                                 <AttendanceCalendarView
@@ -1261,6 +1413,242 @@ const LaporanKehadiran = () => {
                     </div>
                 </DialogContent>
             </Dialog >
+
+            {/* MANUAL ATTENDANCE MODAL */}
+            <Dialog open={manualModalOpen} onOpenChange={setManualModalOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Set Absensi Manual</DialogTitle>
+                        <DialogDescription>
+                            Perbarui data absensi karyawan secara manual jika terjadi kesalahan sistem atau lupa clock in/out.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="flex bg-slate-50 dark:bg-slate-800 p-3 rounded-lg flex-col gap-1 border border-slate-100 dark:border-slate-700">
+                            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{selectedEmployee?.full_name}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{selectedDateRecord?.formattedDate}</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="clock_in" className="text-xs font-semibold uppercase text-slate-500">Jam Masuk</Label>
+                                <Input
+                                    id="clock_in"
+                                    type="time"
+                                    value={manualClockIn}
+                                    onChange={(e) => setManualClockIn(e.target.value)}
+                                    className="h-10 border-slate-200"
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="clock_out" className="text-xs font-semibold uppercase text-slate-500">Jam Pulang</Label>
+                                <Input
+                                    id="clock_out"
+                                    type="time"
+                                    value={manualClockOut}
+                                    onChange={(e) => setManualClockOut(e.target.value)}
+                                    className="h-10 border-slate-200"
+                                    placeholder="HH:mm"
+                                />
+                                <span className="text-[10px] text-slate-400 italic mt-0.5">Kosongkan jika belum/tidak absen pulang</span>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-2 mt-2">
+                            <Label htmlFor="status" className="text-xs font-semibold uppercase text-slate-500">Status Kehadiran</Label>
+                            <Select value={manualStatus} onValueChange={setManualStatus}>
+                                <SelectTrigger className="w-full h-10 border-slate-200" id="status">
+                                    <SelectValue placeholder="Pilih status kehadiran" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="present">Hadir Tepat Waktu</SelectItem>
+                                    <SelectItem value="late">Hadir Terlambat</SelectItem>
+                                    <SelectItem value="early_leave">Pulang Cepat</SelectItem>
+                                    <SelectItem value="absent">Alpha / Tanpa Keterangan</SelectItem>
+                                    <SelectItem value="leave">Cuti / Sakit / Izin (Set via System)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="grid gap-2 mt-2">
+                            <Label htmlFor="notes" className="text-xs font-semibold uppercase text-slate-500">Catatan Admin</Label>
+                            <Textarea
+                                id="notes"
+                                value={manualNotes}
+                                onChange={(e) => setManualNotes(e.target.value)}
+                                className="resize-none h-20 border-slate-200 text-sm"
+                                placeholder="Misal: Lupa absen pulang, dikonfirmasi via WA"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setManualModalOpen(false)}>Batal</Button>
+                        <Button onClick={submitManualAttendance} className="bg-blue-600 hover:bg-blue-700 text-white">
+                            Simpan Perubahan
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Detail Modal */}
+            <Dialog open={attendanceDetailOpen} onOpenChange={setAttendanceDetailOpen}>
+                <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden border-slate-200 dark:border-slate-800 shadow-2xl">
+                    <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 text-white flex justify-between items-start">
+                        <div>
+                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                                <FileText className="h-5 w-5 text-blue-200" /> Detail Kehadiran Harian
+                            </DialogTitle>
+                            <DialogDescription className="text-blue-100/80 mt-1.5 text-xs">
+                                Informasi lengkap rekaman absen karyawan.
+                            </DialogDescription>
+                        </div>
+                        <Badge variant="outline" className="bg-white/10 text-white border-white/20 uppercase tracking-widest text-[10px]">
+                            {attendanceDetailData?.status}
+                        </Badge>
+                    </div>
+
+                    {attendanceDetailData && (
+                        <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 text-sm">
+                            <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm mb-5">
+                                <Avatar className="h-12 w-12 border-2 border-slate-100 dark:border-slate-800">
+                                    <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-lg">
+                                        {attendanceDetailData._employeeInfo?.full_name?.substring(0, 2).toUpperCase() || 'ID'}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-bold text-slate-900 dark:text-white text-base">{attendanceDetailData._employeeInfo?.full_name}</p>
+                                    <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-0.5">
+                                        <Building2 className="w-3.5 h-3.5" />
+                                        {attendanceDetailData._employeeInfo?.department}
+                                        <span className="text-slate-300">•</span>
+                                        <span>{attendanceDetailData._recordInfo?.formattedDate}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 mb-5">
+                                <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                                        <Clock className="h-3.5 w-3.5 text-blue-500" /> Waktu Masuk
+                                    </span>
+                                    <span className="font-mono text-xl font-bold text-slate-800 dark:text-slate-100">
+                                        {attendanceDetailData.clock_in ? format(new Date(attendanceDetailData.clock_in), 'HH:mm:ss') : '--:--:--'}
+                                    </span>
+                                </div>
+                                <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                                        <LogOut className="h-3.5 w-3.5 text-amber-500" /> Waktu Pulang
+                                    </span>
+                                    <span className="font-mono text-xl font-bold text-slate-800 dark:text-slate-100">
+                                        {attendanceDetailData.clock_out ? format(new Date(attendanceDetailData.clock_out), 'HH:mm:ss') : '--:--:--'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden mb-5">
+                                <div className="bg-slate-50/80 dark:bg-slate-800/80 px-4 py-2 border-b border-slate-100 dark:border-slate-800">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Catatan / Jurnal Khusus</span>
+                                </div>
+                                <div className="p-4 text-slate-700 dark:text-slate-300 min-h-[60px] text-sm leading-relaxed">
+                                    {attendanceDetailData.notes || <span className="text-slate-400 italic">Tidak ada catatan / keterangan untuk absen hari ini.</span>}
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center px-2 py-1 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg">
+                                <span className="text-xs font-bold text-blue-600/70 dark:text-blue-400/70 uppercase tracking-wider">Durasi Kalkulasi</span>
+                                <div className="font-bold text-blue-700 dark:text-blue-400 text-sm">
+                                    {attendanceDetailData.work_hours ? `${attendanceDetailData.work_hours} Jam Tercatat` : 'Belum Selesai'}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <div className="px-6 py-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                        <Button variant="outline" onClick={() => setAttendanceDetailOpen(false)} className="font-semibold text-slate-600 hover:bg-slate-50">
+                            Tutup Detail
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Location Modal */}
+            <Dialog open={attendanceLocationOpen} onOpenChange={setAttendanceLocationOpen}>
+                <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-slate-200 dark:border-slate-800 shadow-2xl">
+                    <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+                        <DialogTitle className="text-lg font-bold flex items-center gap-2">
+                            <MapPin className="h-5 w-5 text-indigo-500" /> Titik Peta Lokasi (GPS)
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-slate-500 mt-1">
+                            Posisi radar koordinat saat karyawan melakukan validasi presensi.
+                        </DialogDescription>
+                    </div>
+
+                    {attendanceDetailData && (
+                        <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 text-sm space-y-4">
+
+                            {/* Card Clock In */}
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300 group">
+                                <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 bg-slate-50/80 dark:bg-slate-800/80">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Titik Presensi Masuk</span>
+                                </div>
+                                <div className="p-4">
+                                    <p className="text-slate-800 dark:text-slate-200 font-medium text-sm leading-relaxed mb-3">
+                                        {attendanceDetailData.clock_in_location || <span className="italic text-slate-400">Lokasi / Koordinat tidak direkam oleh sistem.</span>}
+                                    </p>
+
+                                    {attendanceDetailData.clock_in_lat && attendanceDetailData.clock_in_lng && (
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${attendanceDetailData.clock_in_lat},${attendanceDetailData.clock_in_lng}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center justify-center w-full gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-colors duration-200"
+                                        >
+                                            <MapPin className="w-3.5 h-3.5" /> Telusuri di Google Maps
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Card Clock Out */}
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300 group">
+                                <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2 bg-slate-50/80 dark:bg-slate-800/80">
+                                    <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Titik Presensi Pulang</span>
+                                </div>
+                                <div className="p-4">
+                                    <p className="text-slate-800 dark:text-slate-200 font-medium text-sm leading-relaxed mb-3">
+                                        {attendanceDetailData.clock_out_location || <span className="italic text-slate-400">Lokasi / Koordinat tidak direkam oleh sistem.</span>}
+                                    </p>
+
+                                    {attendanceDetailData.clock_out_lat && attendanceDetailData.clock_out_lng && (
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${attendanceDetailData.clock_out_lat},${attendanceDetailData.clock_out_lng}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center justify-center w-full gap-2 px-4 py-2 bg-amber-50 text-amber-700 hover:bg-amber-500 hover:text-white rounded-lg text-xs font-bold transition-colors duration-200"
+                                        >
+                                            <MapPin className="w-3.5 h-3.5" /> Telusuri di Google Maps
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Disclaimer */}
+                            <div className="bg-indigo-50/60 dark:bg-indigo-900/10 text-indigo-800 dark:text-indigo-400 p-3.5 rounded-xl border border-indigo-100/50 dark:border-indigo-800/50 flex gap-3.5 items-start mt-2 shadow-sm">
+                                <div className="mt-0.5 p-1 bg-indigo-100 dark:bg-indigo-800/50 rounded-md">
+                                    <AlertCircle className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <p className="text-[11px] leading-relaxed font-medium">Titik peta sepenuhnya bergantung pada keakuratan pembacaan <b>Sensor GPS Perangkat/Browser</b> milik karyawan yang memvalidasi tombol presensi online.</p>
+                            </div>
+                        </div>
+                    )}
+                    <div className="px-6 py-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                        <Button variant="outline" onClick={() => setAttendanceLocationOpen(false)} className="font-semibold text-slate-600 hover:bg-slate-50 w-full sm:w-auto">
+                            Tutup Pelacak
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
         </EnterpriseLayout >
     );

@@ -757,16 +757,16 @@ const ManagerLaporan = () => {
         { label: "Laporan" },
       ]}
     >
-      <div className="space-y-6 pb-20">
+      <div className="space-y-8 pb-20 animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
 
         {/* 1. Filter Bar for Period Selection */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/90 dark:bg-slate-900/70 backdrop-blur-md p-6 rounded-[28px] border border-slate-200/50 dark:border-slate-800/50 shadow-sm transition-all hover:shadow-lg">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-50 text-blue-600 p-2 rounded-xl">
+            <div className="bg-gradient-to-br from-indigo-500 to-blue-600 text-white p-2.5 rounded-xl shadow-lg shadow-indigo-500/20">
               <CalendarIcon className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Filter Tanggal & Bulan</h3>
+              <h3 className="font-black text-slate-800 dark:text-slate-100 text-sm tracking-tight">Filter Tanggal & Bulan</h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Laporan akan dimuat ulang sesuai periode yang Anda pilih</p>
             </div>
           </div>
@@ -794,18 +794,18 @@ const ManagerLaporan = () => {
         </div>
 
         {/* 1. Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Card 1: Hadir Hari Ini / Total Kehadiran */}
-          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-2xl relative overflow-hidden group">
+          <Card className="border-slate-200/40 dark:border-slate-800/40 shadow-sm bg-white/90 dark:bg-slate-900/70 backdrop-blur-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 rounded-[24px] relative overflow-hidden group">
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-4">
-                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">HADIR (Periode Ini)</div>
-                <div className="h-8 w-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">HADIR (Periode Ini)</div>
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
                   <UserCheck className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{summaryStats.totalPresent}</span>
+                <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{summaryStats.totalPresent}</span>
                 <span className="text-sm text-slate-400 font-medium">/ {(dateRange?.to && dateRange?.from) ? Math.round(differenceInMinutes(dateRange.to, dateRange.from) / 1440 * summaryStats.totalEmployees) : '-'} Total</span>
               </div>
               <Progress value={75} className="h-1.5 bg-slate-100 dark:bg-slate-800/80" indicatorClassName="bg-blue-600" />
@@ -816,19 +816,19 @@ const ManagerLaporan = () => {
           </Card>
 
           {/* Card 2: Terlambat */}
-          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-2xl relative overflow-hidden group">
+          <Card className="border-slate-200/40 dark:border-slate-800/40 shadow-sm bg-white/90 dark:bg-slate-900/70 backdrop-blur-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 rounded-[24px] relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <Timer className="h-24 w-24 text-amber-500" />
             </div>
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-4">
-                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">TERLAMBAT</div>
-                <div className="h-8 w-8 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">TERLAMBAT</div>
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
                   <Clock className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-3 mb-1">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{summaryStats.totalLate}</span>
+                <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{summaryStats.totalLate}</span>
                 <Badge variant="secondary" className="bg-amber-50 dark:bg-amber-900/30 text-amber-600 hover:bg-amber-50 text-[10px] px-1.5 py-0 h-5">
                   <TrendingUp className="h-3 w-3 mr-1" /> +2
                 </Badge>
@@ -841,19 +841,19 @@ const ManagerLaporan = () => {
           </Card>
 
           {/* Card 3: Izin / Sakit */}
-          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-2xl relative overflow-hidden group">
+          <Card className="border-slate-200/40 dark:border-slate-800/40 shadow-sm bg-white/90 dark:bg-slate-900/70 backdrop-blur-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 rounded-[24px] relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <FileText className="h-24 w-24 text-purple-500" />
             </div>
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-4">
-                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">IZIN / SAKIT</div>
-                <div className="h-8 w-8 rounded-full bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">IZIN / SAKIT</div>
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
                   <FileText className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{summaryStats.totalLeave}</span>
+                <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{summaryStats.totalLeave}</span>
                 <span className="text-sm text-slate-400 font-medium">Staf</span>
               </div>
               <div className="flex gap-2 mt-2">
@@ -864,19 +864,19 @@ const ManagerLaporan = () => {
           </Card>
 
           {/* Card 4: Belum Absen */}
-          <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 rounded-2xl relative overflow-hidden group">
+          <Card className="border-slate-200/40 dark:border-slate-800/40 shadow-sm bg-white/90 dark:bg-slate-900/70 backdrop-blur-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 rounded-[24px] relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <UserX className="h-24 w-24 text-red-500" />
             </div>
             <CardContent className="p-5 relative z-10">
               <div className="flex justify-between items-start mb-4">
-                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">BELUM ABSEN</div>
-                <div className="h-8 w-8 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
+                <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">BELUM ABSEN</div>
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center text-white shadow-lg shadow-rose-500/20">
                   <UserX className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{summaryStats.waitingCheckIn}</span>
+                <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{summaryStats.waitingCheckIn}</span>
                 <span className="text-sm text-slate-400 font-medium">Staf</span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">Menunggu absensi masuk...</p>
@@ -885,12 +885,12 @@ const ManagerLaporan = () => {
         </div>
 
         {/* Trend Kehadiran Chart */}
-        <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900 rounded-2xl overflow-hidden">
-          <CardContent className="p-5">
+        <Card className="border-slate-200/50 dark:border-slate-800/50 shadow-sm bg-white/90 dark:bg-slate-900/70 backdrop-blur-md rounded-[28px] overflow-hidden">
+          <CardContent className="p-6">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Tren Kehadiran Harian</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Visualisasi data absensi harian pada periode terpilih</p>
+                <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">Tren Kehadiran Harian</h3>
+                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">Visualisasi data absensi pada periode terpilih</p>
               </div>
               <div className="flex gap-4 text-xs font-semibold">
                 <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Hadir</span>
@@ -940,10 +940,10 @@ const ManagerLaporan = () => {
         </Card>
 
         {/* 2. Main Content Card */}
-        <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900 rounded-2xl overflow-hidden min-h-[500px]">
+        <Card className="border-slate-200/50 dark:border-slate-800/50 shadow-sm bg-white/90 dark:bg-slate-900/70 backdrop-blur-md rounded-[28px] overflow-hidden min-h-[500px]">
           <div className="border-b border-slate-100 dark:border-slate-800 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-lg text-slate-900 dark:text-white">Kehadiran Karyawan</h3>
+              <h3 className="font-black text-lg text-slate-900 dark:text-white tracking-tight">Kehadiran Karyawan</h3>
               <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700 border-blue-200">
                 {filteredReports.length} Staff
               </Badge>
@@ -976,13 +976,13 @@ const ManagerLaporan = () => {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-50/50 dark:bg-slate-800/50">
-                        <TableHead className="w-12 py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 pl-4">No</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400">Detail Karyawan</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-center">Total Hadir</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-center">Terlambat (Menit)</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-center">Status Cuti / Izin</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-right pr-6">Tingkat Kehadiran</TableHead>
-                        <TableHead className="py-4 font-semibold text-xs uppercase text-slate-500 dark:text-slate-400 text-center">Detail</TableHead>
+                        <TableHead className="w-12 py-4 font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 pl-4">No</TableHead>
+                        <TableHead className="py-4 font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500">Detail Karyawan</TableHead>
+                        <TableHead className="py-4 font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 text-center">Total Hadir</TableHead>
+                        <TableHead className="py-4 font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 text-center">Terlambat (Menit)</TableHead>
+                        <TableHead className="py-4 font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 text-center">Status Cuti / Izin</TableHead>
+                        <TableHead className="py-4 font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 text-right pr-6">Tingkat Kehadiran</TableHead>
+                        <TableHead className="py-4 font-black text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 text-center">Detail</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -996,7 +996,7 @@ const ManagerLaporan = () => {
                         const leaveCount = emp.details.filter(d => d.status === 'leave').length;
 
                         return (
-                          <TableRow key={emp.user_id} className="hover:bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 transition-colors">
+                          <TableRow key={emp.user_id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800 transition-colors">
                             <TableCell className="text-slate-500 dark:text-slate-400 text-xs font-medium pl-4">{index + 1}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-3">

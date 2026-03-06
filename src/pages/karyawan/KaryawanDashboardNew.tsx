@@ -698,47 +698,120 @@ const KaryawanDashboardNew = () => {
                         </div>
                     </div>
 
-                    {/* Recent Timeline */}
+                    {/* Recent Timeline — Premium Redesign */}
                     <div className={cn(cardBase, "p-6")}>
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className={cn("font-bold text-sm", textPrimary)}>Aktivitas Terbaru</h3>
-                            <Link to="/karyawan/jurnal" className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
-                                Lihat semua <ArrowUpRight className="w-3 h-3" />
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-2.5">
+                                <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center border",
+                                    isDark ? "bg-slate-700 border-slate-600" : "bg-indigo-50 border-indigo-100")}>
+                                    <Clock className={cn("w-4 h-4", isDark ? "text-slate-300" : "text-indigo-600")} />
+                                </div>
+                                <div>
+                                    <h3 className={cn("font-bold text-sm", textPrimary)}>Aktivitas Terbaru</h3>
+                                    <p className={cn("text-[10px] font-medium", textMuted)}>Log jurnal kerja terakhir</p>
+                                </div>
+                            </div>
+                            <Link to="/karyawan/jurnal"
+                                className={cn("text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1",
+                                    isDark ? "text-indigo-400 bg-indigo-900/30 hover:bg-indigo-900/50 border border-indigo-800/40"
+                                        : "text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100")}>
+                                Lihat Semua <ArrowUpRight className="w-3 h-3" />
                             </Link>
                         </div>
 
-                        <div className="space-y-6 relative before:absolute before:inset-y-2 before:left-[11px] before:w-px before:bg-slate-200 dark:before:bg-slate-700">
+                        <div className="space-y-3">
                             {recentActivities.length > 0 ? (
                                 recentActivities.map((activity, idx) => {
-                                    let displayTitle = activity.content;
-                                    if (displayTitle?.startsWith("**")) {
-                                        const parts = displayTitle.split('\n\n');
-                                        displayTitle = parts.length > 1 ? parts[1] : displayTitle.replace(/\*\*(.*?)\*\*/g, '$1');
+                                    // Parse title from markdown-style content
+                                    let displayTitle = '';
+                                    let displayBody = activity.content || '';
+                                    if (displayBody.startsWith("**")) {
+                                        const match = displayBody.match(/\*\*(.*?)\*\*/);
+                                        displayTitle = match ? match[1] : '';
+                                        displayBody = displayBody.replace(/\*\*(.*?)\*\*\n?\n?/, '').trim();
                                     }
+
                                     const categoryLabel = activity.obstacles || 'Umum';
+                                    const categoryMap: Record<string, { emoji: string; color: string; bg: string; darkBg: string }> = {
+                                        'development': { emoji: '🛠️', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-100', darkBg: 'bg-blue-900/20 border-blue-800/40' },
+                                        'meeting': { emoji: '📋', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-100', darkBg: 'bg-amber-900/20 border-amber-800/40' },
+                                        'design': { emoji: '🎨', color: 'text-pink-700', bg: 'bg-pink-50 border-pink-100', darkBg: 'bg-pink-900/20 border-pink-800/40' },
+                                        'research': { emoji: '🔬', color: 'text-cyan-700', bg: 'bg-cyan-50 border-cyan-100', darkBg: 'bg-cyan-900/20 border-cyan-800/40' },
+                                        'support': { emoji: '🤝', color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-100', darkBg: 'bg-emerald-900/20 border-emerald-800/40' },
+                                        'learning': { emoji: '📚', color: 'text-violet-700', bg: 'bg-violet-50 border-violet-100', darkBg: 'bg-violet-900/20 border-violet-800/40' },
+                                        'administration': { emoji: '📄', color: 'text-slate-700', bg: 'bg-slate-100 border-slate-200', darkBg: 'bg-slate-700/30 border-slate-600/40' },
+                                    };
+                                    const catStyle = categoryMap[categoryLabel.toLowerCase()] || { emoji: '📝', color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-100', darkBg: 'bg-indigo-900/20 border-indigo-800/40' };
+                                    const durationHours = activity.duration ? (activity.duration / 60).toFixed(1) : null;
 
                                     return (
-                                        <div key={idx} className={cn("relative pl-8 group cursor-pointer rounded-xl -ml-2 p-2 transition-colors",
-                                            isDark ? "hover:bg-slate-700/50" : "hover:bg-slate-50")}>
-                                            <div className={cn("absolute left-[3px] top-3.5 w-[17px] h-[17px] rounded-full border-2 flex items-center justify-center",
-                                                isDark ? "bg-slate-800 border-slate-600 group-hover:border-indigo-400" : "bg-white border-slate-300 group-hover:border-indigo-500")}>
-                                                <div className={cn("w-1.5 h-1.5 rounded-full transition-colors",
-                                                    isDark ? "bg-slate-600 group-hover:bg-indigo-400" : "bg-slate-300 group-hover:bg-indigo-500")} />
-                                            </div>
-                                            <div className="flex flex-col gap-0.5">
-                                                <div className="flex items-baseline justify-between">
-                                                    <span className={cn("text-xs font-bold", textPrimary)}>{categoryLabel}</span>
-                                                    <span className={cn("text-[10px] font-semibold", textMuted)}>
-                                                        {activity.created_at ? new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                                                    </span>
+                                        <div key={idx}
+                                            className={cn(
+                                                "group relative rounded-2xl border p-4 transition-all duration-200 hover:shadow-md",
+                                                isDark
+                                                    ? "bg-slate-800/50 border-slate-700/60 hover:border-slate-600 hover:bg-slate-700/60"
+                                                    : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/50"
+                                            )}>
+                                            <div className="flex items-start gap-3.5">
+                                                {/* Category Icon */}
+                                                <div className={cn("w-10 h-10 rounded-xl border flex items-center justify-center text-base shrink-0 transition-transform duration-200 group-hover:scale-110",
+                                                    isDark ? catStyle.darkBg : catStyle.bg)}>
+                                                    {catStyle.emoji}
                                                 </div>
-                                                <p className={cn("text-[13px] line-clamp-2 mt-1 font-medium", textSecondary)}>{displayTitle}</p>
+
+                                                {/* Content */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-start justify-between gap-2 mb-1">
+                                                        <h4 className={cn("text-[13px] font-bold leading-snug truncate", textPrimary)}>
+                                                            {displayTitle || categoryLabel}
+                                                        </h4>
+                                                        <span className={cn("text-[10px] font-semibold whitespace-nowrap shrink-0 mt-0.5", textMuted)}>
+                                                            {activity.created_at ? new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                                        </span>
+                                                    </div>
+
+                                                    <p className={cn("text-xs line-clamp-2 leading-relaxed mb-2.5", textSecondary)}>
+                                                        {displayBody || 'Tidak ada deskripsi.'}
+                                                    </p>
+
+                                                    {/* Meta Row */}
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider",
+                                                            isDark ? catStyle.darkBg + ' ' + catStyle.color.replace('700', '400') : catStyle.bg + ' ' + catStyle.color)}>
+                                                            {categoryLabel}
+                                                        </span>
+                                                        {durationHours && (
+                                                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-md border",
+                                                                isDark ? "bg-slate-700 border-slate-600 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-500")}>
+                                                                ⏱ {durationHours} jam
+                                                            </span>
+                                                        )}
+                                                        {activity.date && (
+                                                            <span className={cn("text-[10px] font-medium", textMuted)}>
+                                                                {(() => {
+                                                                    try { return format(new Date(activity.date + 'T00:00:00'), 'd MMM yyyy', { locale: idLocale }); }
+                                                                    catch { return activity.date; }
+                                                                })()}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     );
                                 })
                             ) : (
-                                <div className={cn("pl-6 text-sm font-medium", textMuted)}>Belum ada aktivitas tercatat. Mulai bekerja dan buat jurnal harian Anda.</div>
+                                <div className={cn("flex flex-col items-center justify-center py-10 text-center rounded-2xl border-2 border-dashed",
+                                    isDark ? "border-slate-700" : "border-slate-200")}>
+                                    <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-4",
+                                        isDark ? "bg-slate-700" : "bg-slate-100")}>
+                                        <FileText className={cn("w-7 h-7", textMuted)} />
+                                    </div>
+                                    <h4 className={cn("text-sm font-bold mb-1", textPrimary)}>Belum Ada Aktivitas</h4>
+                                    <p className={cn("text-xs font-medium max-w-[240px]", textMuted)}>
+                                        Mulai catat jurnal harian Anda untuk melacak progres pekerjaan.
+                                    </p>
+                                </div>
                             )}
                         </div>
                     </div>

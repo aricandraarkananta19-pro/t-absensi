@@ -73,15 +73,35 @@ export default function PengajuanCutiMobile({
             </div>
 
             <div className="px-6 -mt-8 relative z-20">
-                {/* Balance Cards */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                    <div className={cn("p-4 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.04)] border flex flex-col items-center text-center", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sisa Cuti</span>
-                        <span className="text-3xl font-bold text-[#16A34A]">{remainingLeave}</span>
+                {/* Visual Budget Ring Chart */}
+                <div className={cn("p-6 rounded-[28px] shadow-[0_8px_30px_rgba(0,0,0,0.04)] border mb-6 flex items-center justify-between transition-all", isDark ? "bg-slate-800/80 backdrop-blur-md border-slate-700/50" : "bg-white/90 backdrop-blur-md border-slate-200/50")}>
+                    <div>
+                        <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">Kuota Tahunan</h3>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className={cn("text-[42px] font-black tracking-tighter leading-none", remainingLeave <= 3 ? "text-amber-500" : (isDark ? "text-white" : "text-slate-800"))}>{remainingLeave}</span>
+                            <span className="text-xs font-bold text-slate-400">Hari</span>
+                        </div>
+                        <div className="mt-3 text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-3 py-1.5 rounded-lg w-fit border border-slate-200/50 dark:border-slate-600/50 flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                            {usedLeaveDays} Hari Terpakai
+                        </div>
                     </div>
-                    <div className={cn("p-4 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.04)] border flex flex-col items-center text-center", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100")}>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Terpakai</span>
-                        <span className={cn("text-3xl font-bold", isDark ? "text-white" : "text-[#0F172A]")}>{usedLeaveDays}</span>
+                    <div className="relative w-[110px] h-[110px] flex items-center justify-center">
+                        <svg className="w-full h-full -rotate-90 drop-shadow-sm" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="38" fill="none" stroke={isDark ? "#334155" : "#F1F5F9"} strokeWidth="12" />
+                            <circle
+                                cx="50" cy="50" r="38" fill="none"
+                                stroke={remainingLeave <= 3 ? "#F59E0B" : "#10B981"}
+                                strokeWidth="12" strokeLinecap="round"
+                                strokeDasharray={2 * Math.PI * 38}
+                                strokeDashoffset={(2 * Math.PI * 38) - ((Math.min(100, Math.round((usedLeaveDays / maxLeaveDays) * 100)) / 100) * (2 * Math.PI * 38))}
+                                className="transition-all duration-1000 ease-out"
+                            />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className={cn("text-base font-black tracking-tight", isDark ? "text-slate-200" : "text-slate-700")}>{maxLeaveDays > 0 ? 100 - Math.min(100, Math.round((usedLeaveDays / maxLeaveDays) * 100)) : 0}%</span>
+                            <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">Sisa</span>
+                        </div>
                     </div>
                 </div>
 

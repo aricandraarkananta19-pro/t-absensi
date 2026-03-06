@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { format } from "date-fns";
 import logoUrl from "@/assets/logo.png";
 
 // ============== TYPES ==============
@@ -351,11 +352,12 @@ export const exportAttendanceHRPDF = async (data: AttendanceReportData, filename
 
     // === HEADER ===
     if (logoImg) {
-        doc.addImage(logoImg, "PNG", margin, 8, 18, 18);
-        doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.setTextColor(30, 64, 175);
-        doc.text(COMPANY_NAME, margin + 22, 14);
-        doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(100);
-        doc.text(COMPANY_DIV, margin + 22, 19);
+        const logoWidth = 50;
+        const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+        doc.addImage(logoImg, "PNG", margin, 8, logoWidth, logoHeight);
+
+        doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(100);
+        doc.text("DIVISI HUMAN RESOURCES", pageWidth - margin, 14, { align: "right" });
     }
 
     doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
@@ -549,12 +551,19 @@ export const exportAttendanceManagementPDF = async (data: AttendanceReportData, 
 
     // === HEADER ===
     if (logoImg) {
-        doc.addImage(logoImg, "PNG", margin, 15, 22, 22);
+        const logoWidth = 60;
+        const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
+        const logoX = (pageWidth - logoWidth) / 2;
+        doc.addImage(logoImg, "PNG", logoX, 12, logoWidth, logoHeight);
+
+        doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(80);
+        doc.text(COMPANY_DIV, pageWidth / 2, 12 + logoHeight + 5, { align: "center" });
+    } else {
+        doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.setTextColor(30, 64, 175);
+        doc.text(COMPANY_NAME, pageWidth / 2, 22, { align: "center" });
+        doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(80);
+        doc.text(COMPANY_DIV, pageWidth / 2, 28, { align: "center" });
     }
-    doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.setTextColor(30, 64, 175);
-    doc.text(COMPANY_NAME, pageWidth / 2, 22, { align: "center" });
-    doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(80);
-    doc.text(COMPANY_DIV, pageWidth / 2, 28, { align: "center" });
 
     doc.setDrawColor(30, 64, 175); doc.setLineWidth(0.8);
     doc.line(margin, 35, pageWidth - margin, 35);
@@ -654,6 +663,173 @@ export const exportAttendanceManagementPDF = async (data: AttendanceReportData, 
     doc.text(`Dokumen ini digenerate otomatis oleh T-Absensi System`, margin, footerY + 6);
     doc.text(`Dicetak: ${printDate}`, pageWidth - margin, footerY + 6, { align: "right" });
 
+    doc.save(`${filename}.pdf`);
+};
+
+export const exportSingleReceiptPDF = async (record: any, employeeName: string, dateDisplay: string) => {
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a5" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+    const printDate = new Date().toLocaleString("id-ID");
+
+    // Corporate Brand Colors
+    const primaryColor: [number, number, number] = [30, 64, 175]; // Blue 800
+    const textColor: [number, number, number] = [51, 65, 85]; // Slate 700
+    const lightGray: [number, number, number] = [248, 250, 252]; // Slate 50
+    const borderColor: [number, number, number] = [226, 232, 240]; // Slate 200
+
+    // Load logo
+    let logoImg: HTMLImageElement | null = null;
+    try { logoImg = await loadImage(logoUrl); } catch (e) { console.warn("Logo not loaded"); }
+
+    // --- Header Section ---
+    // Background rect for header
+    doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
+    doc.rect(0, 0, pageWidth, 35, "F");
+
+    if (logoImg) {
+        // Adjust logo display
+        const logoHeight = 12;
+        const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+        doc.addImage(logoImg, "PNG", margin, 12, logoWidth, logoHeight);
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.text("BUKTI KEHADIRAN", pageWidth - margin, 18, { align: "right" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text(COMPANY_NAME, pageWidth - margin, 24, { align: "right" });
+
+    // --- Content Section ---
+    const startY = 45;
+
+    // Status Badge Logic
+    let statusText = record.status?.toUpperCase() || 'HADIR';
+    let statusBg: [number, number, number] = [241, 245, 249]; // default
+    let statusColor: [number, number, number] = [100, 116, 139];
+    if (statusText === 'PRESENT' || statusText === 'HADIR') {
+        statusText = 'HADIR TEPAT WKT'; statusBg = [220, 252, 231]; statusColor = [22, 101, 52];
+    }
+    else if (statusText === 'LATE' || statusText === 'TERLAMBAT') {
+        statusText = 'TERLAMBAT'; statusBg = [254, 243, 199]; statusColor = [180, 83, 9];
+    }
+    else if (statusText === 'ABSENT' || statusText === 'ALPHA') {
+        statusText = 'TIDAK HADIR'; statusBg = [254, 226, 226]; statusColor = [185, 28, 28];
+    }
+
+    // Draw Employee Info Top
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    doc.text(employeeName, margin, startY);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Tanggal Absen: ${dateDisplay}`, margin, startY + 5);
+
+    // Draw Status Badge right aligned
+    doc.setFillColor(statusBg[0], statusBg[1], statusBg[2]);
+    doc.roundedRect(pageWidth - margin - 35, startY - 2, 35, 7, 1, 1, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+    doc.text(statusText, pageWidth - margin - 17.5, startY + 3, { align: "center", baseline: "middle" });
+
+    // Divider Line
+    doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+    doc.setLineWidth(0.5);
+    doc.line(margin, startY + 12, pageWidth - margin, startY + 12);
+
+    // --- Details Grid ---
+    let detailY = startY + 22;
+    const col1X = margin;
+    const col2X = margin + 35;
+
+    const printRow = (label: string, value: string, isBoldValue: boolean = false) => {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.text(label, col1X, detailY);
+
+        doc.setFont("helvetica", isBoldValue ? "bold" : "normal");
+        doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+        const textLines = doc.splitTextToSize(value, pageWidth - col2X - margin);
+        doc.text(textLines, col2X, detailY);
+        detailY += (textLines.length * 4) + 5;
+    };
+
+    const safeFormatTime = (dateStr: string | null) => {
+        if (!dateStr) return "-";
+        try { return new Date(dateStr).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
+        catch { return "-"; }
+    };
+
+    const safeFormatLocation = (lat: any, lng: any, fallbackStr: string) => {
+        if (lat && lng) return `Terlacak (Lat: ${Number(lat).toFixed(4)}, Lng: ${Number(lng).toFixed(4)})`;
+        if (fallbackStr && fallbackStr !== 'Tidak Ada Lokasi' && fallbackStr !== '') return fallbackStr;
+        return "Lokasi tidak direkam GPS";
+    };
+
+    printRow("Jam Masuk", safeFormatTime(record.clock_in), true);
+    printRow("Titik Masuk", safeFormatLocation(record.clock_in_lat, record.clock_in_lng, record.clock_in_location));
+
+    detailY += 2; // Extra gap
+
+    printRow("Jam Pulang", safeFormatTime(record.clock_out), true);
+    printRow("Titik Pulang", safeFormatLocation(record.clock_out_lat, record.clock_out_lng, record.clock_out_location));
+
+    detailY += 2; // Extra gap
+
+    // Notes block wrapper
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text("Catatan Kh.", col1X, detailY);
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    const notesStr = record.notes || "-";
+    const notesLines = doc.splitTextToSize(notesStr, pageWidth - col2X - margin);
+    doc.text(notesLines, col2X, detailY);
+
+    detailY += (notesLines.length * 4) + 5;
+
+    // --- Validation Footer Box ---
+    const boxY = pageHeight - 45;
+
+    doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
+    doc.setDrawColor(borderColor[0], borderColor[1], borderColor[2]);
+    doc.roundedRect(margin, boxY, pageWidth - (margin * 2), 25, 2, 2, "FD");
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.text("VALIDASI SISTEM", margin + 5, boxY + 7);
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(`ID Rekam   : ${record.id || "N/A"}`, margin + 5, boxY + 14);
+    doc.text(`Dicetak    : ${printDate}`, margin + 5, boxY + 19);
+
+    // Decorative lock icon or check text
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(7);
+    doc.setTextColor(150);
+    doc.text("Dokumen valid & sah digenerate T-Absensi", pageWidth - margin - 5, boxY + 22, { align: "right" });
+
+    // Footer brand
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(200);
+    doc.text("T-ABSENSI SYSTEM", pageWidth / 2, pageHeight - 8, { align: "center", charSpace: 1 });
+
+    const filename = `Bukti_Absen_${employeeName.replace(/\s+/g, "_")}_${format(new Date(), 'ddMMyy_HHmm')}`;
     doc.save(`${filename}.pdf`);
 };
 

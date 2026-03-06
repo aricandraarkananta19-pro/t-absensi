@@ -311,7 +311,7 @@ const ManagerRekapAbsensi = () => {
       ]}
     >
       {/* Date Navigation Bar */}
-      <div className="mb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out mb-8 grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Date Selector */}
         <div
           className="p-4 rounded-2xl border flex items-center gap-4"
@@ -368,9 +368,9 @@ const ManagerRekapAbsensi = () => {
             <Activity className="h-6 w-6 text-white" />
           </div>
           <div className="flex-1">
-            <p className="text-sm text-slate-600 dark:text-slate-300">Tingkat Kehadiran</p>
+            <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tingkat Kehadiran</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold" style={{ color: BRAND_COLORS.green }}>
+              <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
                 {attendanceRate}%
               </span>
               <span className="text-sm text-slate-500 dark:text-slate-400">
@@ -397,8 +397,8 @@ const ManagerRekapAbsensi = () => {
             <Timer className="h-6 w-6 text-white" />
           </div>
           <div className="flex-1">
-            <p className="text-sm text-slate-600 dark:text-slate-300">Data Real-time</p>
-            <p className="text-base font-semibold text-slate-800 dark:text-slate-100">
+            <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Data Real-time</p>
+            <p className="text-lg font-black text-slate-800 dark:text-white tracking-tight">
               {lastUpdated?.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) || "-"}
             </p>
           </div>
@@ -409,7 +409,7 @@ const ManagerRekapAbsensi = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5 mb-8">
         <StatCard icon={Users} label="Total Karyawan" value={totalEmployees} colorClass="text-blue-600" bgClass="bg-blue-50" />
         <StatCard icon={CheckCircle2} label="Hadir" value={stats.present} colorClass="text-emerald-600" bgClass="bg-emerald-50" />
         <StatCard icon={AlertCircle} label="Terlambat" value={stats.late} colorClass="text-amber-600" bgClass="bg-amber-50" />
@@ -419,7 +419,7 @@ const ManagerRekapAbsensi = () => {
       </div>
 
       {/* Filters & Export */}
-      <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md mb-6 rounded-2xl">
+      <Card className="border-slate-200/50 dark:border-slate-800/50 shadow-sm bg-white/90 dark:bg-slate-900/70 backdrop-blur-md mb-8 rounded-[28px]">
         <CardContent className="py-4">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -462,19 +462,19 @@ const ManagerRekapAbsensi = () => {
       </Card>
 
       {/* Table */}
-      <Card className="border-slate-200/60 dark:border-slate-700/60 shadow-sm bg-white dark:bg-slate-900/70 backdrop-blur-md rounded-2xl">
+      <Card className="border-slate-200/50 dark:border-slate-800/50 shadow-sm bg-white/90 dark:bg-slate-900/70 backdrop-blur-md rounded-[28px] overflow-hidden">
         <CardContent className="p-0">
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                  <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider">Karyawan</TableHead>
-                  <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider hidden sm:table-cell">Departemen</TableHead>
-                  <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Clock In</TableHead>
-                  <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Clock Out</TableHead>
-                  <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center hidden md:table-cell">Durasi</TableHead>
-                  <TableHead className="font-bold text-slate-400 text-xs uppercase tracking-wider text-center">Status</TableHead>
+                <TableRow className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                  <TableHead className="font-black text-slate-400 text-[10px] uppercase tracking-widest">Karyawan</TableHead>
+                  <TableHead className="font-black text-slate-400 text-[10px] uppercase tracking-widest hidden sm:table-cell">Departemen</TableHead>
+                  <TableHead className="font-black text-slate-400 text-[10px] uppercase tracking-widest text-center">Clock In</TableHead>
+                  <TableHead className="font-black text-slate-400 text-[10px] uppercase tracking-widest text-center">Clock Out</TableHead>
+                  <TableHead className="font-black text-slate-400 text-[10px] uppercase tracking-widest text-center hidden md:table-cell">Durasi</TableHead>
+                  <TableHead className="font-black text-slate-400 text-[10px] uppercase tracking-widest text-center">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

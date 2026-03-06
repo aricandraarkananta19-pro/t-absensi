@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { MapPin, CheckCircle2, Bell, Clock, BarChart3, FileCheck, Users, ChevronRight, Building2, LogOut, Settings, TrendingUp, CalendarDays, UserCircle, Moon, Sun, Edit3, RefreshCw, Send, X } from "lucide-react";
+import { MapPin, CheckCircle2, Bell, Clock, BarChart3, FileCheck, Users, ChevronRight, Building2, LogOut, Settings, TrendingUp, CalendarDays, UserCircle, Moon, Sun, Edit3, RefreshCw, Send, X, AlertTriangle } from "lucide-react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
@@ -672,35 +672,164 @@ export default function MobileDashboardView({ role }: { role: "admin" | "manager
                 </div>
             )}
 
-            {/* ===== ADMIN / MANAGER: Quick Access Menu ===== */}
+            {/* ===== MANAGER: Premium Mobile Dashboard ===== */}
             {!isKaryawan && (
-                <div className="px-6 -mt-5 relative z-20 w-full vibe-animate vibe-delay-2">
-                    <h3 className={cn("text-[12px] font-bold uppercase tracking-widest mb-3 flex items-center gap-2", isDark ? "text-slate-400" : "text-slate-500")}>
-                        <span className={cn("w-5 h-px", isDark ? "bg-slate-600" : "bg-slate-300")} />
-                        Menu Cepat
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-5">
-                        {(role === 'admin' ? adminMenuItems : managerMenuItems).map((item, idx) => (
-                            <Link
-                                key={item.href}
-                                to={item.href}
-                                className={cn(
-                                    "rounded-2xl shadow-[0_1px_4px_rgba(0,0,0,0.03)] border p-4 flex items-center gap-3.5 active:scale-[0.98] transition-all duration-200 vibe-animate",
-                                    isDark ? "bg-slate-800 border-slate-700" : "bg-white",
-                                    item.border
-                                )}
-                                style={{ animationDelay: `${(idx + 2) * 60}ms` }}
-                            >
-                                <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0", item.bg)}>
-                                    <item.icon className={cn("w-5 h-5", item.color)} />
+                <div className="px-5 -mt-5 relative z-20 w-full space-y-5">
+
+                    {/* Live Team Status Card */}
+                    <div className={cn("rounded-2xl p-4 shadow-sm border vibe-animate vibe-delay-2",
+                        isDark ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-100")}>
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <div className={cn("w-2.5 h-2.5 rounded-full animate-pulse", "bg-emerald-500")} />
+                                <span className={cn("text-[11px] font-bold uppercase tracking-widest", isDark ? "text-slate-400" : "text-slate-500")}>Status Tim Hari Ini</span>
+                            </div>
+                            <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-md",
+                                isDark ? "bg-emerald-900/30 text-emerald-400 border border-emerald-800/40" : "bg-emerald-50 text-emerald-600 border border-emerald-100")}>Live</span>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-2">
+                            <div className={cn("rounded-xl p-3 text-center border",
+                                isDark ? "bg-emerald-900/20 border-emerald-800/30" : "bg-emerald-50/80 border-emerald-100/60")}>
+                                <span className="text-xl font-extrabold text-emerald-600 block">{monthStats.present}</span>
+                                <span className={cn("text-[8px] font-bold uppercase tracking-wider", isDark ? "text-emerald-400/60" : "text-emerald-600/60")}>Hadir</span>
+                            </div>
+                            <div className={cn("rounded-xl p-3 text-center border",
+                                isDark ? "bg-amber-900/20 border-amber-800/30" : "bg-amber-50/80 border-amber-100/60")}>
+                                <span className="text-xl font-extrabold text-amber-600 block">{monthStats.late}</span>
+                                <span className={cn("text-[8px] font-bold uppercase tracking-wider", isDark ? "text-amber-400/60" : "text-amber-600/60")}>Telat</span>
+                            </div>
+                            <div className={cn("rounded-xl p-3 text-center border",
+                                isDark ? "bg-red-900/20 border-red-800/30" : "bg-red-50/80 border-red-100/60")}>
+                                <span className="text-xl font-extrabold text-red-500 block">{monthStats.absent}</span>
+                                <span className={cn("text-[8px] font-bold uppercase tracking-wider", isDark ? "text-red-400/60" : "text-red-600/60")}>Absent</span>
+                            </div>
+                            <div className={cn("rounded-xl p-3 text-center border",
+                                isDark ? "bg-indigo-900/20 border-indigo-800/30" : "bg-indigo-50/80 border-indigo-100/60")}>
+                                <span className={cn("text-xl font-extrabold block", isDark ? "text-white" : "text-slate-800")}>{monthStats.totalHours}<span className="text-xs font-medium text-slate-400">j</span></span>
+                                <span className={cn("text-[8px] font-bold uppercase tracking-wider", isDark ? "text-indigo-400/60" : "text-indigo-600/60")}>Jam</span>
+                            </div>
+                        </div>
+
+                        {/* Attendance Rate Bar */}
+                        <div className="mt-3">
+                            <div className="flex items-center justify-between mb-1.5">
+                                <span className={cn("text-[10px] font-bold", isDark ? "text-slate-400" : "text-slate-500")}>Tingkat Kehadiran</span>
+                                <span className={cn("text-[11px] font-extrabold", attendanceRate >= 80 ? "text-emerald-600" : "text-amber-600")}>{attendanceRate}%</span>
+                            </div>
+                            <div className={cn("w-full h-2 rounded-full overflow-hidden", isDark ? "bg-slate-700" : "bg-slate-100")}>
+                                <div
+                                    className={cn("h-full rounded-full transition-all duration-1000 ease-out",
+                                        attendanceRate >= 80 ? "bg-gradient-to-r from-emerald-500 to-emerald-400" : "bg-gradient-to-r from-amber-500 to-amber-400")}
+                                    style={{ width: `${attendanceRate}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Quick Access Menu — Enhanced */}
+                    <div className="vibe-animate vibe-delay-3">
+                        <h3 className={cn("text-[11px] font-bold uppercase tracking-widest mb-3 flex items-center gap-2", isDark ? "text-slate-400" : "text-slate-500")}>
+                            <span className={cn("w-5 h-px", isDark ? "bg-slate-600" : "bg-slate-300")} />
+                            Menu Cepat
+                        </h3>
+                        <div className="grid grid-cols-1 gap-2.5">
+                            {(role === 'admin' ? adminMenuItems : managerMenuItems).map((item, idx) => (
+                                <Link
+                                    key={item.href}
+                                    to={item.href}
+                                    className={cn(
+                                        "group rounded-2xl border p-4 flex items-center gap-3.5 active:scale-[0.98] transition-all duration-200 vibe-animate",
+                                        isDark ? "bg-slate-800/80 border-slate-700 active:bg-slate-700" : "bg-white border-slate-100 active:bg-slate-50",
+                                    )}
+                                    style={{ animationDelay: `${(idx + 3) * 60}ms` }}
+                                >
+                                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform duration-200 group-active:scale-95", item.bg, "border", item.border)}>
+                                        <item.icon className={cn("w-5 h-5", item.color)} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <span className={cn("text-[13px] font-bold block leading-tight", isDark ? "text-white" : "text-slate-800")}>{item.title}</span>
+                                        <span className={cn("text-[11px] font-medium", isDark ? "text-slate-400" : "text-slate-400")}>{item.desc}</span>
+                                    </div>
+                                    <ChevronRight className={cn("w-4 h-4 shrink-0 transition-transform duration-200 group-active:translate-x-0.5", isDark ? "text-slate-500" : "text-slate-300")} />
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Manager: Log Kehadiran Terbaru */}
+                    <div className="vibe-animate vibe-delay-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className={cn("text-[11px] font-bold uppercase tracking-widest flex items-center gap-2", isDark ? "text-slate-400" : "text-slate-500")}>
+                                <span className={cn("w-5 h-px", isDark ? "bg-slate-600" : "bg-slate-300")} />
+                                Log Kehadiran Saya
+                            </h3>
+                            <button onClick={() => navigate(getLogLink())} className="text-[11px] font-bold text-indigo-600 tracking-wide active:opacity-70">Semua</button>
+                        </div>
+
+                        {!isDataLoaded ? (
+                            <div className="space-y-2.5">
+                                {[1, 2, 3].map(i => <Skeleton key={i} className="h-[56px] rounded-2xl" />)}
+                            </div>
+                        ) : attendanceLogs.length === 0 ? (
+                            <div className={cn("rounded-2xl p-8 border text-center flex flex-col items-center",
+                                isDark ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-100")}>
+                                <div className={cn("w-12 h-12 rounded-full flex items-center justify-center mb-2",
+                                    isDark ? "bg-slate-700" : "bg-slate-50")}>
+                                    <Clock className={cn("w-5 h-5", isDark ? "text-slate-500" : "text-slate-300")} />
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <span className={cn("text-[13px] font-bold block leading-tight", isDark ? "text-white" : "text-slate-800")}>{item.title}</span>
-                                    <span className={cn("text-[11px] font-medium", isDark ? "text-slate-400" : "text-slate-400")}>{item.desc}</span>
-                                </div>
-                                <ChevronRight className={cn("w-4 h-4 shrink-0", isDark ? "text-slate-500" : "text-slate-300")} />
-                            </Link>
-                        ))}
+                                <span className={cn("text-[13px] font-bold", isDark ? "text-slate-300" : "text-slate-600")}>Belum Ada Log</span>
+                                <span className={cn("text-[11px] mt-0.5", isDark ? "text-slate-500" : "text-slate-400")}>Log kehadiran akan muncul di sini.</span>
+                            </div>
+                        ) : (
+                            <div className={cn("rounded-2xl border overflow-hidden",
+                                isDark ? "bg-slate-800/80 border-slate-700" : "bg-white border-slate-100")}>
+                                {attendanceLogs.slice(0, 4).map((log, logIdx) => {
+                                    const dateObj = new Date(log.time);
+                                    const isToday = format(dateObj, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                                    const isOut = log.type === "out";
+                                    return (
+                                        <div key={log.id} className={cn("flex items-center gap-3 px-4 py-3 transition-colors",
+                                            logIdx < attendanceLogs.slice(0, 4).length - 1 && (isDark ? "border-b border-slate-700/50" : "border-b border-slate-50"))}>
+                                            <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border",
+                                                isOut
+                                                    ? (isDark ? "bg-slate-700 border-slate-600" : "bg-slate-50 border-slate-200")
+                                                    : log.status === "Terlambat"
+                                                        ? (isDark ? "bg-amber-900/20 border-amber-800/40" : "bg-amber-50 border-amber-100")
+                                                        : (isDark ? "bg-emerald-900/20 border-emerald-800/40" : "bg-emerald-50 border-emerald-100")
+                                            )}>
+                                                {isOut
+                                                    ? <LogOut className={cn("w-3.5 h-3.5", isDark ? "text-slate-400" : "text-slate-400")} />
+                                                    : log.status === "Terlambat"
+                                                        ? <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                                                        : <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                                }
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className={cn("text-[12px] font-bold", isDark ? "text-white" : "text-slate-700")}>
+                                                        {isOut ? "Clock Out" : "Clock In"}
+                                                    </span>
+                                                    <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded",
+                                                        isOut
+                                                            ? (isDark ? "bg-slate-700 text-slate-400" : "bg-slate-100 text-slate-500")
+                                                            : log.status === "Terlambat"
+                                                                ? "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400"
+                                                                : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
+                                                    )}>{log.status}</span>
+                                                </div>
+                                                <span className={cn("text-[10px] font-medium", isDark ? "text-slate-500" : "text-slate-400")}>
+                                                    {isToday ? "Hari Ini" : format(dateObj, 'd MMM', { locale: idLocale })}
+                                                </span>
+                                            </div>
+                                            <span className={cn("text-sm font-bold tabular-nums", isDark ? "text-slate-300" : "text-slate-600")}>
+                                                {format(dateObj, 'HH:mm')}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

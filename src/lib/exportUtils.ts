@@ -77,21 +77,15 @@ export const exportToPDF = async (options: ExportOptions) => {
   // --- HEADER SECTION ---
   // Logo
   if (logoImg) {
-    const logoWidth = 20;
+    const logoWidth = 50;
     const logoHeight = (logoImg.height / logoImg.width) * logoWidth;
     doc.addImage(logoImg, "PNG", margin, 10, logoWidth, logoHeight);
 
-    // Company Name (Right of logo)
-    doc.setFontSize(14);
+    // Division (Right aligned)
+    doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 64, 175); // Corporate Blue #1E40AF
-    doc.text(COMPANY_NAME, margin + logoWidth + 5, 16);
-
-    // Division
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
     doc.setTextColor(100);
-    doc.text(COMPANY_DIV, margin + logoWidth + 5, 21);
+    doc.text("DIVISI HUMAN RESOURCES", pageWidth - margin, 18, { align: "right" });
   } else {
     // Fallback if no logo
     doc.setFontSize(14);
